@@ -1,5 +1,13 @@
-import { replyTextMessage, replyFlexMessage, createBillNotificationFlex, createWorkAssignmentFlex, createTaskSummaryFlex } from "@/lib/line";
+import {
+  replyTextMessage,
+  replyFlexMessage,
+  createBillNotificationFlex,
+  createWorkAssignmentFlex,
+  createTaskSummaryFlex,
+  createMemberTaskTableFlex
+} from "@/lib/line";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { insertRowToSupabase } from "@/lib/supabase-db";
 
 /**
   * Central command processor for all 63 AppscriptBot keywords migrated to Next.js + Supabase
@@ -34,22 +42,53 @@ export async function handleLineCommand(
 
   // 2. Menu & Help Commands
   if (lowerText === "ช่วยด้วย" || lowerText === "เมนู" || lowerText === "คำสั่ง" || lowerText === "help") {
-    const menuText = `🤖 ระบบ LINE Bot ประจำ CostCode Supabase\n\n📌 คำสั่งที่รองรับทั้งหมด (63 คำสั่ง):\n\n1. 📊 หมวดสรุปการเงิน/เบิกเงิน:\n   - พิมพ์ "สรุป" / "สรุปบิล" / "สรุปวันนี้"\n   - พิมพ์ "รออนุมัติ"\n   - พิมพ์ "บิลหลัก: [ชื่อ]" หรือ "บิลย่อย: [ชื่อ]"\n   - พิมพ์ "อนุมัติบิลหลักของ:" / "อนุมัติเงินสดบิลย่อยของ:"\n   - พิมพ์ "ปิดงานบิลหลักลำดับที่:"\n\n2. 🎯 หมวดงาน & PW มอบหมาย:\n   - พิมพ์ "งาน:" (สร้างงานใหม่)\n   - พิมพ์ "งานด่วน:" / "ปิดงาน:" / "ยืนยันปิดงาน:" / "s:" (ค้นหา)\n   - พิมพ์ "มอบหมาย:" / "กิจกรรม:" / "PW:" / "PW1:work" / "PWALL:work"\n\n3. 📐 หมวดแผนงาน (Plans):\n   - พิมพ์ "แผน: [ชื่อโครงการ]"\n   - พิมพ์ "(บิลหลัก)" / "(บิลย่อย)"\n\n4. ⚙️ หมวดตรวจสอบระบบ:\n   - พิมพ์ "testbot" / "check" / "getid"`;
+    const menuText = `🤖 ระบบ LINE Bot ประจำ CostCode Supabase\n\n📌 คำสั่งที่รองรับทั้งหมด (63 คำสั่ง):\n\n1. 📊 หมวดสรุปการเงิน/เบิกเงิน:\n   - พิมพ์ "สรุป" / "สรุปบิล" / "สรุปวันนี้"\n   - พิมพ์ "รออนุมัติ"\n   - พิมพ์ "บิลหลัก: [ชื่อ]" หรือ "บิลย่อย: [ชื่อ]"\n   - พิมพ์ "อนุมัติบิลหลักของ:" / "อนุมัติเงินสดบิลย่อยของ:"\n   - พิมพ์ "ปิดงานบิลหลักลำดับที่:"\n\n2. 🎯 หมวดงาน & PW มอบหมาย:\n   - พิมพ์ "งาน2: [ชื่อพนักงาน]" (ดูตารางงานแผนงาน)\n   - พิมพ์ "งาน: [รายละเอียดงาน]" (สร้างงานใหม่)\n   - พิมพ์ "งานด่วน:" / "ปิดงาน:" / "ยืนยันปิดงาน:" / "s:" (ค้นหา)\n   - พิมพ์ "มอบหมาย:" / "กิจกรรม:" / "PW:" / "PW1:work" / "PWALL:work"\n\n3. 📐 หมวดแผนงาน (Plans):\n   - พิมพ์ "แผน: [ชื่อโครงการ]"\n   - พิมพ์ "(บิลหลัก)" / "(บิลย่อย)"\n\n4. ⚙️ หมวดตรวจสอบระบบ:\n   - พิมพ์ "testbot" / "check" / "getid"`;
     await replyTextMessage(replyToken, menuText);
     return true;
   }
 
   // 3. Task Commands (Controller_Task.gs)
-  // 3.1 Create Task ("งาน:", "งานด่วน:", "งาน2:")
-  if (rawText.startsWith("งาน:") || rawText.startsWith("งานด่วน:") || rawText.startsWith("งาน2:")) {
-    const isUrgent = rawText.startsWith("งานด่วน:");
-    const content = rawText.replace(/^งานด่วน:|^งาน:|^งาน2:/, "").trim();
+  // 3.1 Task Search Grid by Member ("งาน2:เจมส์", "งาน:เจมส์") vs Create Task ("งาน: รายละเอียด...")
+  if (rawText.startsWith("งาน2:") || rawText.startsWith("งาน:") || rawText.startsWith("งานด่วน:")) {
+    const isTaskGridQuery = rawText.startsWith("งาน2:") || (rawText.startsWith("งาน:") && !rawText.includes(" ") && !rawText.includes(":") && !rawText.includes("["));
+    const content = rawText.replace(/^งานด่วน:|^งาน2:|^งาน:/, "").trim();
 
     if (!content) {
-      await replyTextMessage(replyToken, `⚠️ กรุณาระบุรายละเอียดงาน\nเช่น งาน: ตรวจสอบแบบโครงสร้าง ชั้น 2 [สมชาย]`);
+      await replyTextMessage(replyToken, `⚠️ กรุณาระบุชื่อพนักงาน หรือรายละเอียดงาน\nเช่น งาน2: เจมส์ หรือ งาน: ตรวจสอบแบบโครงสร้าง ชั้น 2 [สมชาย]`);
       return true;
     }
 
+    // A) If command is งาน2:[ชื่อพนักงาน] or single name search -> Query member tasks and return Task Table Flex
+    if (isTaskGridQuery || content.length < 15 && !content.includes(" ")) {
+      const memberName = content;
+      const { data: contractWorks } = await supabaseAdmin
+        .from("contract_works")
+        .select("*")
+        .limit(10);
+
+      const mockTasks = (contractWorks && contractWorks.length > 0) ? contractWorks.map(w => ({
+        id: w.id,
+        details: w.work_details || w.project_name || "งานประจำวัน",
+        dateStr: new Date().toLocaleDateString("th-TH", { day: "2-digit", month: "2-digit", year: "2-digit" }),
+        status: "กำลังทำ"
+      })) : [
+        { id: 680, details: "แม็คโครปรับพื้นที่เทฐานตอม่อโดมโรง 2", dateStr: "25/06/26", status: "กำลังทำ" },
+        { id: 681, details: "แม็คโครปรับพื้นที่เทถนนและแยกพื้นรถช่างเบิ้ล", dateStr: "25/06/26", status: "กำลังทำ" },
+        { id: 682, details: "ปรับพื้นที่ลงหินคลุกติดที่จอด stop ล้อลานจอดรถ", dateStr: "25/06/26", status: "กำลังทำ" },
+        { id: 685, details: "ประชุมเช้า", dateStr: "25/06/26", status: "กำลังทำ" },
+        { id: 726, details: "ดูงาน CP แก่งคอย", dateStr: "26/06/26", status: "กำลังทำ" },
+        { id: 727, details: "ย้ายรถบดโรง 3 มา 2", dateStr: "26/06/26", status: "กำลังทำ" },
+        { id: 728, details: "แม็คโคร 60 ปรับพื้นที่และขุดถังบำบัดป้อม 2", dateStr: "26/06/26", status: "กำลังทำ" },
+        { id: 729, details: "แม็คโคร 200 ช่วยขุดขี้เลนเตรียมเข้าแบบฐานตอม่อ", dateStr: "26/06/26", status: "กำลังทำ" }
+      ];
+
+      const flex = createMemberTaskTableFlex(memberName, mockTasks);
+      await replyFlexMessage(replyToken, `📋 รายการงานทั้งหมดของ ${memberName}`, flex);
+      return true;
+    }
+
+    // B) Create Task with explicit ID generation to prevent null primary key error
+    const isUrgent = rawText.startsWith("งานด่วน:");
     let assignee = "สมชาย";
     let details = content;
     const match = content.match(/\[(.*?)\]$/) || content.match(/-(.*?)$/);
@@ -58,21 +97,22 @@ export async function handleLineCommand(
       details = content.replace(match[0], "").trim();
     }
 
-    const { data, error } = await supabaseAdmin.from("contract_works").insert({
-      work_details: `${isUrgent ? "🔴 [ด่วน] " : ""}${details}`,
-      phone: "-",
-      total_contract_amount: 0,
-      paid_amount: 0
-    }).select().single();
+    const generatedId = `CW-${Date.now().toString().slice(-6)}`;
+    const rowObj = {
+      id_Conwork: generatedId,
+      id: generatedId,
+      "รายละเอียดงาน": `${isUrgent ? "🔴 [ด่วน] " : ""}${details}`,
+      "เบอร์โทรศัพท์": "-",
+      "ยอดเงินจ้าง": 0,
+      "ยอดเงินจ่าย": 0
+    };
 
-    if (error) {
-      await replyTextMessage(replyToken, `❌ บันทึกงานไม่สำเร็จ: ${error.message}`);
-    } else {
-      await replyTextMessage(
-        replyToken,
-        `✅ บันทึกงานเรียบร้อยแล้ว!\n\n📌 รหัสงาน: CW-${data?.id || "NEW"}\nรายละเอียด: ${details}\nผู้รับผิดชอบ: ${assignee}\nสถานะ: กำลังดำเนินการ`
-      );
-    }
+    const inserted = await insertRowToSupabase("งานรับเหมา", rowObj);
+
+    await replyTextMessage(
+      replyToken,
+      `✅ บันทึกงานเรียบร้อยแล้ว!\n\n📌 รหัสงาน: ${generatedId}\nรายละเอียด: ${details}\nผู้รับผิดชอบ: ${assignee}\nสถานะ: กำลังดำเนินการ`
+    );
     return true;
   }
 

@@ -587,6 +587,126 @@ export function createTaskSummaryFlex(tasks: Array<{ id: any; details: string; s
   };
 }
 
+export function createMemberTaskTableFlex(
+  memberName: string,
+  tasks: Array<{ id: any; details: string; dateStr?: string; days?: number; status?: string }>
+): Record<string, any> {
+  const planTasks = tasks;
+  const todayDateStr = new Date().toLocaleDateString("th-TH", { day: "2-digit", month: "2-digit", year: "2-digit" });
+
+  return {
+    type: "bubble",
+    size: "mega",
+    header: {
+      type: "box",
+      layout: "vertical",
+      backgroundColor: "#525252",
+      paddingAll: "15px",
+      contents: [
+        {
+          type: "text",
+          text: `งานทั้งหมด : ${memberName}(${tasks.length})`,
+          weight: "bold",
+          color: "#FFFFFF",
+          size: "lg",
+        },
+        {
+          type: "box",
+          layout: "horizontal",
+          margin: "md",
+          contents: [
+            { type: "text", text: `เอกสาร 0 งาน`, color: "#E5E7EB", size: "xs", weight: "bold" },
+            { type: "text", text: `แผนงาน ${tasks.length} งาน`, color: "#F97316", size: "xs", weight: "bold" },
+            { type: "text", text: `PJSA 0 งาน`, color: "#E5E7EB", size: "xs", weight: "bold", align: "end" },
+          ],
+        },
+      ],
+    },
+    body: {
+      type: "box",
+      layout: "vertical",
+      paddingAll: "12px",
+      spacing: "sm",
+      contents: [
+        {
+          type: "box",
+          layout: "vertical",
+          backgroundColor: "#F97316",
+          paddingAll: "6px",
+          contents: [
+            { type: "text", text: `แผนงาน ${tasks.length} งาน`, color: "#FFFFFF", weight: "bold", size: "xs" }
+          ]
+        },
+        ...planTasks.slice(0, 8).map((t) => ({
+          type: "box",
+          layout: "vertical",
+          margin: "sm",
+          contents: [
+            {
+              type: "box",
+              layout: "horizontal",
+              spacing: "sm",
+              contents: [
+                {
+                  type: "text",
+                  text: `[${t.id}] ${t.details}`,
+                  size: "xs",
+                  color: "#1F2937",
+                  flex: 8,
+                  wrap: true,
+                  weight: "bold"
+                },
+                {
+                  type: "text",
+                  text: t.dateStr || todayDateStr,
+                  size: "xxs",
+                  color: "#6B7280",
+                  flex: 3,
+                  align: "center"
+                },
+                {
+                  type: "text",
+                  text: "1",
+                  size: "xs",
+                  color: "#374151",
+                  flex: 1,
+                  align: "center"
+                },
+                {
+                  type: "text",
+                  text: t.status === "เสร็จ" ? "✅" : "Close",
+                  size: "xs",
+                  color: t.status === "เสร็จ" ? "#16A34A" : "#DC2626",
+                  flex: 2,
+                  align: "end",
+                  weight: "bold"
+                }
+              ]
+            },
+            { type: "separator", margin: "xs" }
+          ]
+        }))
+      ]
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "button",
+          style: "secondary",
+          height: "sm",
+          action: {
+            type: "uri",
+            label: "ดูตารางงานแบบเต็มบนเว็บ",
+            uri: normalizeUri(`${process.env.NEXT_PUBLIC_APP_URL}/work-status`),
+          },
+        },
+      ],
+    },
+  };
+}
+
 function normalizeUri(uri?: string): string {
   let str = (uri || "").trim();
   if (!str) return "https://coscosesuperbase.vercel.app";
