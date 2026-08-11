@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
+export { supabaseAdmin };
 import { cached } from "@/lib/cache";
 import { normalizeDateToIso } from "@/lib/dates";
 

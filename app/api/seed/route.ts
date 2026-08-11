@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { insertRowToSupabase, supabaseAdmin } from "@/lib/supabase-db";
+import { insertRowToSupabase } from "@/lib/supabase-db";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function GET() {
   return handleSeed();
