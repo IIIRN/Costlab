@@ -607,7 +607,12 @@ export function createMemberTaskTableFlex(
 ): Record<string, any> {
   const planTasks = tasks;
   const todayDateStr = new Date().toLocaleDateString("th-TH", { day: "2-digit", month: "2-digit", year: "2-digit" });
-  const currentMonth = new Date().getMonth() + 1;
+  const todayDate = new Date();
+  const currentMonth = todayDate.getMonth() + 1;
+  const d0 = todayDate.getDate();
+  const d_minus_1 = new Date(todayDate.getTime() - 86400000).getDate();
+  const d_plus_1 = new Date(todayDate.getTime() + 86400000).getDate();
+  const d_plus_2 = new Date(todayDate.getTime() + 2 * 86400000).getDate();
 
   return {
     type: "bubble",
@@ -650,7 +655,7 @@ export function createMemberTaskTableFlex(
           backgroundColor: "#F97316",
           paddingAll: "6px",
           contents: [
-            { type: "text", text: `แผนงาน ${tasks.length} งาน (เดือน ${currentMonth})`, color: "#FFFFFF", weight: "bold", size: "xs" }
+            { type: "text", text: `แผนงาน ${tasks.length} งาน (ไทม์ไลน์ 4 วัน - เดือน ${currentMonth})`, color: "#FFFFFF", weight: "bold", size: "xs" }
           ]
         },
         // Table Column Header Row
@@ -660,9 +665,33 @@ export function createMemberTaskTableFlex(
           margin: "xs",
           contents: [
             { type: "text", text: "รายการทั้งหมด", size: "xxs", weight: "bold", color: "#6B7280", flex: 6 },
+            { type: "separator" },
             { type: "text", text: "เริ่ม/เสร็จ", size: "xxs", weight: "bold", color: "#6B7280", flex: 3, align: "center" },
+            { type: "separator" },
             { type: "text", text: "num", size: "xxs", weight: "bold", color: "#6B7280", flex: 1, align: "center" },
-            { type: "text", text: "ไทม์ไลน์", size: "xxs", weight: "bold", color: "#6B7280", flex: 3, align: "center" },
+            { type: "separator" },
+            {
+              type: "box",
+              layout: "vertical",
+              flex: 5,
+              contents: [
+                { type: "text", text: "ไทม์ไลน์ 4 วัน", size: "xxs", weight: "bold", color: "#6B7280", align: "center" },
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    { type: "text", text: `${d_minus_1}`, size: "xxs", align: "center", flex: 1, color: "#6B7280" },
+                    { type: "separator", color: "#EF4444" },
+                    { type: "text", text: `${d0}`, size: "xxs", align: "center", flex: 1, color: "#EF4444", weight: "bold" },
+                    { type: "separator", color: "#EF4444" },
+                    { type: "text", text: `${d_plus_1}`, size: "xxs", align: "center", flex: 1, color: "#6B7280" },
+                    { type: "separator" },
+                    { type: "text", text: `${d_plus_2}`, size: "xxs", align: "center", flex: 1, color: "#6B7280" }
+                  ]
+                }
+              ]
+            },
+            { type: "separator" },
             { type: "text", text: "สถานะ", size: "xxs", weight: "bold", color: "#6B7280", flex: 2, align: "end" }
           ]
         },
@@ -689,6 +718,7 @@ export function createMemberTaskTableFlex(
                     wrap: true,
                     weight: "bold"
                   },
+                  { type: "separator" },
                   {
                     type: "text",
                     text: t.dateStr || todayDateStr,
@@ -697,6 +727,7 @@ export function createMemberTaskTableFlex(
                     flex: 3,
                     align: "center"
                   },
+                  { type: "separator" },
                   {
                     type: "text",
                     text: "1",
@@ -705,13 +736,23 @@ export function createMemberTaskTableFlex(
                     flex: 1,
                     align: "center"
                   },
+                  { type: "separator" },
+                  // 4-Day Timeline Grid with Red Today Column Border Line
                   {
-                    type: "text",
-                    text: index % 2 === 0 ? "⬜🟦⬜" : "🟦⬜⬜",
-                    size: "xxs",
-                    flex: 3,
-                    align: "center"
+                    type: "box",
+                    layout: "horizontal",
+                    flex: 5,
+                    contents: [
+                      { type: "text", text: index % 3 === 0 ? "🟦" : "⬜", size: "xxs", align: "center", flex: 1 },
+                      { type: "separator", color: "#EF4444" },
+                      { type: "text", text: "🟦", size: "xxs", align: "center", flex: 1, color: "#EF4444" },
+                      { type: "separator", color: "#EF4444" },
+                      { type: "text", text: index % 2 === 0 ? "🟦" : "⬜", size: "xxs", align: "center", flex: 1 },
+                      { type: "separator" },
+                      { type: "text", text: "⬜", size: "xxs", align: "center", flex: 1 }
+                    ]
                   },
+                  { type: "separator" },
                   {
                     type: "text",
                     text: t.status === "เสร็จ" ? "✅" : "Close",
