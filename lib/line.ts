@@ -413,6 +413,248 @@ export function createDailySummaryFlex(summary: {
   };
 }
 
+export function createBillSearchResultFlex(
+  title: string,
+  bills: Array<{
+    id: any;
+    bill_no?: string;
+    project_name?: string;
+    vendor_or_person?: string;
+    description?: string;
+    requester?: string;
+    amount?: number | string;
+    status?: string;
+    image_url?: string;
+    image_urls?: string[];
+  }>,
+  isSub: boolean = false
+): Record<string, any> {
+  const totalAmount = bills.reduce((sum, b) => sum + Number(b.amount || 0), 0);
+  const formattedTotal = totalAmount.toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  return {
+    type: "bubble",
+    size: "giga",
+    header: {
+      type: "box",
+      layout: "vertical",
+      backgroundColor: isSub ? "#D97706" : "#1E293B",
+      paddingAll: "15px",
+      contents: [
+        {
+          type: "text",
+          text: `🧾 ${title}`,
+          weight: "bold",
+          color: "#FFFFFF",
+          size: "lg",
+        },
+        {
+          type: "box",
+          layout: "horizontal",
+          margin: "xs",
+          contents: [
+            { type: "text", text: `พบ ${bills.length} รายการ`, color: "#E2E8F0", size: "xs" },
+            { type: "text", text: `รวม ฿${formattedTotal}`, color: "#FDE047", size: "xs", weight: "bold", align: "end" }
+          ]
+        }
+      ],
+    },
+    body: {
+      type: "box",
+      layout: "vertical",
+      paddingAll: "12px",
+      spacing: "sm",
+      contents: bills.slice(0, 5).map((b, idx) => {
+        const amt = Number(b.amount || 0).toLocaleString("th-TH");
+        const billId = String(b.id || b.bill_no || idx + 1);
+        const requesterName = b.requester || b.vendor_or_person || "สมชาย";
+
+        // Parse single or multiple images
+        let imgList: string[] = [];
+        if (Array.isArray(b.image_urls) && b.image_urls.length > 0) {
+          imgList = b.image_urls.filter(url => typeof url === "string" && url.startsWith("http"));
+        } else if (b.image_url && b.image_url.startsWith("http")) {
+          imgList = [b.image_url];
+        }
+
+        const isSingleImage = imgList.length === 1;
+        const isMultiImage = imgList.length > 1;
+
+        const textDetailsBox = {
+          type: "box",
+          layout: "vertical",
+          flex: isSingleImage ? 7 : 10,
+          contents: [
+            {
+              type: "box",
+              layout: "horizontal",
+              contents: [
+                { type: "text", text: `#${billId} | ${b.project_name || "โครงการทั่วไป"}`, weight: "bold", size: "xs", color: "#0F172A", flex: 7, wrap: true },
+                { type: "text", text: `฿${amt}`, weight: "bold", size: "xs", color: "#059669", flex: 3, align: "end" }
+              ]
+            },
+            {
+              type: "box",
+              layout: "baseline",
+              margin: "xs",
+              contents: [
+                { type: "text", text: "ผู้เบิก/ร้าน:", size: "xxs", color: "#64748B", flex: 3 },
+                { type: "text", text: requesterName, size: "xxs", color: "#1E293B", flex: 7, wrap: true }
+              ]
+            },
+            {
+              type: "box",
+              layout: "baseline",
+              margin: "xs",
+              contents: [
+                { type: "text", text: "รายละเอียด:", size: "xxs", color: "#64748B", flex: 3 },
+                { type: "text", text: b.description || "-", size: "xxs", color: "#334155", flex: 7, wrap: true }
+              ]
+            },
+            {
+              type: "box",
+              layout: "horizontal",
+              margin: "xs",
+              contents: [
+                { type: "text", text: `สถานะ: ${b.status || "รออนุมัติ"}`, size: "xxs", color: b.status === "อนุมัติแล้ว" || b.status === "เบิกแล้ว" ? "#16A34A" : "#D97706", weight: "bold", flex: 5 },
+                {
+                  type: "text",
+                  text: "[อนุมัติ]",
+                  size: "xxs",
+                  color: "#2563EB",
+                  align: "end",
+                  weight: "bold",
+                  flex: 3,
+                  action: {
+                    type: "message",
+                    label: "อนุมัติ",
+                    text: isSub ? `อนุมัติเงินสดบิลย่อยของ: ${requesterName}` : `อนุมัติบิลหลักของ: ${requesterName}`
+                  }
+                },
+                {
+                  type: "text",
+                  text: "[ปิดงาน]",
+                  size: "xxs",
+                  color: "#DC2626",
+                  align: "end",
+                  weight: "bold",
+                  flex: 2,
+                  action: {
+                    type: "message",
+                    label: "ปิดงาน",
+                    text: `ปิดงานบิลหลักลำดับที่: ${billId}`
+                  }
+                }
+              ]
+            }
+          ]
+        };
+
+        // Multi Image Gallery Grid (Row of 3-4 images)
+        if (isMultiImage) {
+          const displayedImgs = imgList.slice(0, 4);
+          const multiImgRow = {
+            type: "box",
+            layout: "horizontal",
+            margin: "xs",
+            spacing: "xs",
+            contents: displayedImgs.map((imgUrl, imgIdx) => ({
+              type: "image",
+              url: imgUrl,
+              aspectRatio: "1:1",
+              aspectMode: "cover",
+              flex: 1,
+              action: {
+                type: "uri",
+                label: `รูปที่ ${imgIdx + 1}`,
+                uri: normalizeUri(imgUrl)
+              }
+            }))
+          };
+
+          return {
+            type: "box",
+            layout: "vertical",
+            margin: "xs",
+            paddingAll: "8px",
+            backgroundColor: "#F8FAFC",
+            cornerRadius: "6px",
+            contents: [
+              textDetailsBox,
+              {
+                type: "box",
+                layout: "horizontal",
+                margin: "xs",
+                contents: [
+                  { type: "text", text: `📷 อัลบั้มรูปแนบใบเสร็จ (${imgList.length} รูป - แตะรูปเพื่อขยาย):`, size: "xxs", color: "#475569", weight: "bold" }
+                ]
+              },
+              multiImgRow
+            ]
+          };
+        }
+
+        // Single Image Layout (Side by side)
+        if (isSingleImage) {
+          return {
+            type: "box",
+            layout: "horizontal",
+            margin: "xs",
+            paddingAll: "8px",
+            backgroundColor: "#F8FAFC",
+            cornerRadius: "6px",
+            spacing: "sm",
+            contents: [
+              {
+                type: "image",
+                url: imgList[0],
+                aspectRatio: "1:1",
+                aspectMode: "cover",
+                flex: 3,
+                gravity: "center",
+                action: {
+                  type: "uri",
+                  label: "ดูรูปใบเสร็จ",
+                  uri: normalizeUri(imgList[0])
+                }
+              },
+              textDetailsBox
+            ]
+          };
+        }
+
+        // No Image Layout
+        return {
+          type: "box",
+          layout: "vertical",
+          margin: "xs",
+          paddingAll: "8px",
+          backgroundColor: "#F8FAFC",
+          cornerRadius: "6px",
+          contents: [textDetailsBox]
+        };
+      })
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "button",
+          style: "primary",
+          color: isSub ? "#D97706" : "#1E293B",
+          height: "sm",
+          action: {
+            type: "uri",
+            label: "🌐 ดูรายละเอียดบิลทั้งหมดบนเว็บ",
+            uri: normalizeUri(`${process.env.NEXT_PUBLIC_APP_URL}/bills`),
+          },
+        },
+      ],
+    },
+  };
+}
+
 export function createWorkAssignmentFlex(work: {
   id?: string | number;
   title?: string;

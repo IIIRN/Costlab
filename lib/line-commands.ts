@@ -4,7 +4,8 @@ import {
   createBillNotificationFlex,
   createWorkAssignmentFlex,
   createTaskSummaryFlex,
-  createMemberTaskTableFlex
+  createMemberTaskTableFlex,
+  createBillSearchResultFlex
 } from "@/lib/line";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { insertRowToSupabase } from "@/lib/supabase-db";
@@ -244,17 +245,22 @@ export async function handleLineCommand(
       const { data: bills } = await query.limit(5);
 
       const displayBills = (bills && bills.length > 0) ? bills : [
-        { id: "101", project_name: "โครงการสำนักงาน A", vendor_or_person: "โฮมมาร์ท", description: "ซื้อปูนซีเมนต์", amount: 107000, status: "เบิกแล้ว" },
-        { id: "102", project_name: "โครงการสำนักงาน A", vendor_or_person: "ช่างชิต", description: "ค่าแรงงานเสาเข็ม", amount: 150000, status: "อนุมัติแล้ว" }
+        { id: "101", project_name: "โครงการสำนักงาน A", vendor_or_person: "โฮมมาร์ท", description: "ซื้อปูนซีเมนต์", amount: 107000, status: "เบิกแล้ว", requester: "ช่างเอก" },
+        { id: "102", project_name: "โครงการสำนักงาน A", vendor_or_person: "ช่างชิต", description: "ค่าแรงงานเสาเข็ม", amount: 150000, status: "อนุมัติแล้ว", requester: "ช่างชิต" }
       ];
 
-      let textResponse = `🧾 ผลการค้นหาบิล${isSub ? "ย่อย" : "หลัก"} ${filterQuery ? `ของ "${filterQuery}"` : ""} (${displayBills.length} รายการ):\n\n`;
-      displayBills.forEach((b, idx) => {
-        const amt = Number(b.amount || 0).toLocaleString("th-TH");
-        textResponse += `${idx + 1}. [บิล #${b.id || b.bill_no}] ${b.project_name || "โครงการ"}\n   - ร้าน/บุคคล: ${b.vendor_or_person || "-"}\n   - รายละเอียด: ${b.description || "-"}\n   - ยอดเงิน: ฿${amt}\n   - สถานะ: ${b.status || "รออนุมัติ"}\n\n`;
-      });
+      const flexTitle = filterQuery ? `ผลการค้นหาบิล${isSub ? "ย่อย" : "หลัก"}ของ "${filterQuery}"` : `รายการเบิกเงิน${isSub ? "บิลย่อย" : "บิลหลัก"}`;
+      const flexPayload = createBillSearchResultFlex(flexTitle, displayBills, isSub);
 
-      await replyTextMessage(replyToken, textResponse.trim());
+      const sent = await replyFlexMessage(replyToken, `🧾 ${flexTitle} (${displayBills.length} รายการ)`, flexPayload);
+      if (!sent && replyToken) {
+        let textResponse = `🧾 ${flexTitle} (${displayBills.length} รายการ):\n\n`;
+        displayBills.forEach((b, idx) => {
+          const amt = Number(b.amount || 0).toLocaleString("th-TH");
+          textResponse += `${idx + 1}. [บิล #${b.id || b.bill_no}] ${b.project_name || "โครงการ"}\n   - ผู้เบิก/ร้าน: ${b.requester || b.vendor_or_person || "-"}\n   - รายละเอียด: ${b.description || "-"}\n   - ยอดเงิน: ฿${amt}\n   - สถานะ: ${b.status || "รออนุมัติ"}\n\n`;
+        });
+        await replyTextMessage(replyToken, textResponse.trim());
+      }
       return true;
     }
 
