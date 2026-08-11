@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { LINE_CONFIG } from "@/lib/line/config";
 
 const LINE_API_BASE = "https://api.line.me/v2/bot/message";
 
@@ -17,9 +18,9 @@ export async function getDynamicAccessToken(): Promise<string> {
       }
     }
   } catch (e) {
-    // Fall back to process.env
+    // Fall back to process.env or LINE_CONFIG
   }
-  return process.env.LINE_CHANNEL_ACCESS_TOKEN || "";
+  return process.env.LINE_CHANNEL_ACCESS_TOKEN || LINE_CONFIG.CHANNEL_ACCESS_TOKEN || "";
 }
 
 export type LineSendResult = {
@@ -609,16 +610,15 @@ export function createMemberTaskTableFlex(
 
   return {
     type: "bubble",
-    size: "mega",
     header: {
       type: "box",
       layout: "vertical",
-      backgroundColor: "#0F172A",
-      paddingAll: "16px",
+      backgroundColor: "#525252",
+      paddingAll: "15px",
       contents: [
         {
           type: "text",
-          text: `📋 งานทั้งหมด : ${memberName} (${tasks.length})`,
+          text: `งานทั้งหมด : ${memberName}(${tasks.length})`,
           weight: "bold",
           color: "#FFFFFF",
           size: "lg",
@@ -627,32 +627,10 @@ export function createMemberTaskTableFlex(
           type: "box",
           layout: "horizontal",
           margin: "md",
-          spacing: "xs",
           contents: [
-            {
-              type: "box",
-              layout: "vertical",
-              backgroundColor: "#334155",
-              cornerRadius: "6px",
-              paddingAll: "4px",
-              contents: [{ type: "text", text: `เอกสาร 0`, color: "#94A3B8", size: "xxs", align: "center", weight: "bold" }]
-            },
-            {
-              type: "box",
-              layout: "vertical",
-              backgroundColor: "#EA580C",
-              cornerRadius: "6px",
-              paddingAll: "4px",
-              contents: [{ type: "text", text: `แผนงาน ${tasks.length}`, color: "#FFFFFF", size: "xxs", align: "center", weight: "bold" }]
-            },
-            {
-              type: "box",
-              layout: "vertical",
-              backgroundColor: "#059669",
-              cornerRadius: "6px",
-              paddingAll: "4px",
-              contents: [{ type: "text", text: `PJSA 0`, color: "#FFFFFF", size: "xxs", align: "center", weight: "bold" }]
-            }
+            { type: "text", text: `เอกสาร 0 งาน`, color: "#E5E7EB", size: "xs", weight: "bold" },
+            { type: "text", text: `แผนงาน ${tasks.length} งาน`, color: "#F97316", size: "xs", weight: "bold" },
+            { type: "text", text: `PJSA 0 งาน`, color: "#E5E7EB", size: "xs", weight: "bold", align: "end" },
           ],
         },
       ],
@@ -663,54 +641,33 @@ export function createMemberTaskTableFlex(
       paddingAll: "12px",
       spacing: "sm",
       contents: [
-        // Group Banner
         {
           type: "box",
           layout: "vertical",
           backgroundColor: "#F97316",
-          cornerRadius: "6px",
           paddingAll: "6px",
           contents: [
-            { type: "text", text: `📌 แผนงานกำลังดำเนินการ (${tasks.length} รายการ)`, color: "#FFFFFF", weight: "bold", size: "xs" }
+            { type: "text", text: `แผนงาน ${tasks.length} งาน`, color: "#FFFFFF", weight: "bold", size: "xs" }
           ]
         },
-        // Table Column Header
-        {
-          type: "box",
-          layout: "horizontal",
-          backgroundColor: "#F1F5F9",
-          paddingAll: "6px",
-          cornerRadius: "4px",
-          margin: "xs",
-          contents: [
-            { type: "text", text: "รายการทั้งหมด", size: "xxs", weight: "bold", color: "#475569", flex: 6 },
-            { type: "text", text: "เริ่ม/เสร็จ", size: "xxs", weight: "bold", color: "#475569", flex: 3, align: "center" },
-            { type: "text", text: "วัน", size: "xxs", weight: "bold", color: "#475569", flex: 1, align: "center" },
-            { type: "text", text: "ไทม์ไลน์", size: "xxs", weight: "bold", color: "#475569", flex: 3, align: "center" },
-            { type: "text", text: "สถานะ", size: "xxs", weight: "bold", color: "#475569", flex: 2, align: "end" }
-          ]
-        },
-        // Table Task Items
         ...planTasks.slice(0, 8).map((t, index) => {
           const taskIdStr = String(t.id || index + 100);
           return {
             type: "box",
             layout: "vertical",
-            margin: "xs",
-            paddingAll: "4px",
+            margin: "sm",
             contents: [
               {
                 type: "box",
                 layout: "horizontal",
-                spacing: "xs",
-                gravity: "center",
+                spacing: "sm",
                 contents: [
                   {
                     type: "text",
-                    text: `[${taskIdStr}] ${t.details}`,
+                    text: `[${taskIdStr}]${t.details}`,
                     size: "xs",
-                    color: "#0F172A",
-                    flex: 6,
+                    color: "#1F2937",
+                    flex: 8,
                     wrap: true,
                     weight: "bold"
                   },
@@ -718,7 +675,7 @@ export function createMemberTaskTableFlex(
                     type: "text",
                     text: t.dateStr || todayDateStr,
                     size: "xxs",
-                    color: "#64748B",
+                    color: "#6B7280",
                     flex: 3,
                     align: "center"
                   },
@@ -726,44 +683,27 @@ export function createMemberTaskTableFlex(
                     type: "text",
                     text: "1",
                     size: "xs",
-                    color: "#334155",
+                    color: "#374151",
                     flex: 1,
-                    align: "center",
-                    weight: "bold"
-                  },
-                  {
-                    type: "text",
-                    text: index % 2 === 0 ? "⬜🟦⬜" : "🟦⬜⬜",
-                    size: "xxs",
-                    flex: 3,
                     align: "center"
                   },
                   {
-                    type: "box",
-                    layout: "vertical",
-                    backgroundColor: t.status === "เสร็จ" ? "#16A34A" : "#EF4444",
-                    cornerRadius: "4px",
-                    paddingAll: "3px",
+                    type: "text",
+                    text: t.status === "เสร็จ" ? "✅" : "Close",
+                    size: "xs",
+                    color: t.status === "เสร็จ" ? "#16A34A" : "#DC2626",
                     flex: 2,
+                    align: "end",
+                    weight: "bold",
                     action: {
                       type: "message",
-                      label: t.status === "เสร็จ" ? "เสร็จ" : "Close",
+                      label: "Close",
                       text: `ปิดงาน: ${taskIdStr}`
-                    },
-                    contents: [
-                      {
-                        type: "text",
-                        text: t.status === "เสร็จ" ? "เสร็จ" : "Close",
-                        color: "#FFFFFF",
-                        size: "xxs",
-                        align: "center",
-                        weight: "bold"
-                      }
-                    ]
+                    }
                   }
                 ]
               },
-              { type: "separator", margin: "xs", color: "#E2E8F0" }
+              { type: "separator", margin: "xs" }
             ]
           };
         })
@@ -775,12 +715,11 @@ export function createMemberTaskTableFlex(
       contents: [
         {
           type: "button",
-          style: "primary",
-          color: "#0F172A",
+          style: "secondary",
           height: "sm",
           action: {
             type: "uri",
-            label: "🌐 เปิดดูตารางงานเต็มบนระบบเว็บ",
+            label: "ดูตารางงานแบบเต็มบนเว็บ",
             uri: normalizeUri(`${process.env.NEXT_PUBLIC_APP_URL}/work-status`),
           },
         },
