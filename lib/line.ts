@@ -726,16 +726,27 @@ export function createMemberTaskTableFlex(
                     align: "center"
                   },
                   {
-                    type: "button",
-                    style: "primary",
-                    color: t.status === "เสร็จ" ? "#16A34A" : "#EF4444",
-                    height: "xs",
+                    type: "box",
+                    layout: "vertical",
+                    backgroundColor: t.status === "เสร็จ" ? "#16A34A" : "#EF4444",
+                    cornerRadius: "4px",
+                    paddingAll: "3px",
                     flex: 2,
                     action: {
                       type: "message",
                       label: t.status === "เสร็จ" ? "เสร็จ" : "Close",
                       text: `ปิดงาน: ${taskIdStr}`
-                    }
+                    },
+                    contents: [
+                      {
+                        type: "text",
+                        text: t.status === "เสร็จ" ? "เสร็จ" : "Close",
+                        color: "#FFFFFF",
+                        size: "xxs",
+                        align: "center",
+                        weight: "bold"
+                      }
+                    ]
                   }
                 ]
               },
