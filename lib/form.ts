@@ -40,19 +40,52 @@ async function getRefOptions(column: FieldSchema) {
 }
 
 async function listHydratedContractOptions(column: FieldSchema): Promise<RefOption[]> {
-  const rows = await hydrateContractRows(await getRows(TABLES.CONTRACT_WORK, 120_000));
-  const keyColumn = column.refKey || TABLE_KEYS[TABLES.CONTRACT_WORK] || "_RowNumber";
-  const labelColumn = column.refLabel || keyColumn;
-  const rowColumns = unique([keyColumn, labelColumn, ...getRefRowColumns(column)]);
+  const [contractRows, contractorRows] = await Promise.all([
+    hydrateContractRows(await getRows(TABLES.CONTRACT_WORK, 120_000)),
+    getRows(TABLES.CONTRACTOR, 120_000).catch(() => [])
+  ]);
 
-  return rows
+  const contractorMap = new Map<string, string>();
+  for (const c of contractorRows) {
+    const id = String(c["id_Contractor"] || c.id || "").trim();
+    const name = String(c["ชื่อเล่น"] || c["ชื่อ-นามสกุล"] || c["ชื่อผู้รับเหมา"] || c.name || "").trim();
+    if (id && name) contractorMap.set(id, name);
+  }
+
+  const keyColumn = column.refKey || TABLE_KEYS[TABLES.CONTRACT_WORK] || "_RowNumber";
+  const rowColumns = unique([keyColumn, "id_Contractor", "ชื่อเล่น", "ผู้รับเหมา", "รายละเอียดงาน", ...getRefRowColumns(column)]);
+
+  return contractRows
     .filter(row => row[keyColumn] !== "" && row[keyColumn] !== undefined && row[keyColumn] !== null)
     .slice(0, 1000)
-    .map(row => ({
-      value: row[keyColumn],
-      label: row[labelColumn] ? `${row[keyColumn]} - ${row[labelColumn]}` : String(row[keyColumn]),
-      row: pick(row, rowColumns)
-    }));
+    .map(row => {
+      const idVal = String(row[keyColumn]);
+      const contractorId = String(row["id_Contractor"] || "").trim();
+      const contractorName = contractorMap.get(contractorId) ||
+                             String(row["ชื่อเล่น"] || row["ผู้รับเหมา"] || row["ชื่อ-นามสกุล"] || "").trim();
+      const details = String(row["รายละเอียดงาน"] || "").trim();
+
+      let displayLabel = idVal;
+      if (contractorName && details) {
+        displayLabel = `${contractorName} (${idVal} - ${details})`;
+      } else if (contractorName) {
+        displayLabel = `${contractorName} (${idVal})`;
+      } else if (details) {
+        displayLabel = `${idVal} - ${details}`;
+      }
+
+      const rowData = pick(row, rowColumns);
+      if (contractorName) {
+        rowData["ชื่อเล่น"] = contractorName;
+        rowData["ผู้รับเหมา"] = contractorName;
+      }
+
+      return {
+        value: idVal,
+        label: displayLabel,
+        row: rowData
+      };
+    });
 }
 
 async function getFormSchemaWithSheetOptions(tableName: string): Promise<FieldSchema[]> {

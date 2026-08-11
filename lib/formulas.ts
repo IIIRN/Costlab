@@ -11,11 +11,19 @@ export async function applyBillFormulas(row: SheetRow) {
 
 export async function hydrateBillRows(
   rows: SheetRow[],
-  preloadedContext?: { projects?: SheetRow[]; stores?: SheetRow[]; contracts?: SheetRow[] }
+  preloadedContext?: { projects?: SheetRow[]; stores?: SheetRow[]; contracts?: SheetRow[]; contractors?: SheetRow[] }
 ) {
   const projects = preloadedContext?.projects || await getRows(TABLES.PROJECT, 120_000);
   const stores = preloadedContext?.stores || await getRows(TABLES.STORE, 120_000);
-  const contracts = preloadedContext?.contracts || await getRows(TABLES.CONTRACT_WORK, 60_000);
+  const rawContracts = preloadedContext?.contracts || await getRows(TABLES.CONTRACT_WORK, 60_000);
+  const contractors = preloadedContext?.contractors || await getRows(TABLES.CONTRACTOR, 60_000).catch(() => []);
+
+  const contractorMap = new Map<string, string>();
+  for (const c of contractors) {
+    const id = String(c["id_Contractor"] || c.id || "").trim();
+    const name = String(c["ชื่อเล่น"] || c["ชื่อ-นามสกุล"] || c["ชื่อผู้รับเหมา"] || c.name || "").trim();
+    if (id && name) contractorMap.set(id, name);
+  }
 
   const projectMap = new Map<string, SheetRow>();
   for (const item of projects) {
@@ -42,15 +50,24 @@ export async function hydrateBillRows(
   }
 
   const contractMap = new Map<string, SheetRow>();
-  for (const item of contracts) {
+  for (const item of rawContracts) {
+    const contractorId = String(item["id_Contractor"] || "").trim();
+    const contractorName = contractorMap.get(contractorId) || String(item["ชื่อเล่น"] || item["ผู้รับเหมา"] || "").trim();
+
+    const hydratedItem = {
+      ...item,
+      "ชื่อเล่น": contractorName || item["ชื่อเล่น"] || "",
+      "ผู้รับเหมา": contractorName || item["ผู้รับเหมา"] || ""
+    };
+
     const k1 = String(item["id_Conwork"] || "").trim();
     const k2 = String(item.id || "").trim();
     const k3 = String(item["ชื่อเล่น"] || "").trim();
     const k4 = String(item["รายละเอียดงาน"] || "").trim();
-    if (k1) contractMap.set(k1, item);
-    if (k2) contractMap.set(k2, item);
-    if (k3) contractMap.set(k3, item);
-    if (k4) contractMap.set(k4, item);
+    if (k1) contractMap.set(k1, hydratedItem);
+    if (k2) contractMap.set(k2, hydratedItem);
+    if (k3) contractMap.set(k3, hydratedItem);
+    if (k4) contractMap.set(k4, hydratedItem);
   }
 
   const indexedContext = { projectMap, storeMap, contractMap };
@@ -77,20 +94,26 @@ export async function hydrateContractRows(rows: SheetRow[]) {
 }
 
 async function getContractFormulaContext() {
-  const [projects, dataRows] = await Promise.all([
-    getRows(TABLES.PROJECT, 30_000),
-    getRows(TABLES.DATA, 15_000)
+  const [projects, contractors, dataRows] = await Promise.all([
+    getRows(TABLES.PROJECT, 30_000).catch(() => []),
+    getRows(TABLES.CONTRACTOR, 30_000).catch(() => []),
+    getRows(TABLES.DATA, 15_000).catch(() => [])
   ]);
-  return { projects, paidByContract: contractPaidAmounts(dataRows) };
+  return { projects, contractors, paidByContract: contractPaidAmounts(dataRows) };
 }
 
 function applyContractFormulasWithContext(
   row: SheetRow,
-  context: { projects: SheetRow[]; paidByContract: Record<string, number> }
+  context: { projects: SheetRow[]; contractors: SheetRow[]; paidByContract: Record<string, number> }
 ) {
   const project = context.projects.find(item => String(item["ID Project"]) === String(row["ID Project"]));
   if (project) {
     row["ชื่อ Project"] = project["ชื่อ Project"] || row["ชื่อ Project"] || "";
+  }
+  const contractor = context.contractors.find(item => String(item["id_Contractor"]) === String(row["id_Contractor"]));
+  if (contractor) {
+    row["ชื่อเล่น"] = contractor["ชื่อเล่น"] || contractor["ชื่อ-นามสกุล"] || row["ชื่อเล่น"] || "";
+    row["ผู้รับเหมา"] = contractor["ชื่อเล่น"] || contractor["ชื่อ-นามสกุล"] || row["ผู้รับเหมา"] || "";
   }
   const key = contractPaymentKey(row);
   const paid = key ? context.paidByContract[key] || 0 : 0;
@@ -169,7 +192,9 @@ function applyBillFormulasFast(
     }
   }
 
-  const contractKey = String(row["ผู้รับเหมา"] || "").trim();
+  const rawContractorId = String(row["ผู้รับเหมา"] || row.contractor_id || row.conwork_id || "").trim();
+  const rawVendorStr = String(row["ร้าน/บุคคล"] || "").trim();
+  const contractKey = rawContractorId || (rawVendorStr.startsWith("CW") ? rawVendorStr : "");
   let contract: SheetRow | undefined;
   if (contractKey) {
     contract = context.contractMap.get(contractKey);
@@ -198,13 +223,22 @@ function applyBillFormulasFast(
 
 function vendorNameFast(row: SheetRow, storeMap: Map<string, SheetRow>, contract?: SheetRow) {
   const vendorType = String(row["ร้านค้า/ผู้รับเหมา"] || "").trim();
-  if (vendorType === "ผู้รับเหมา") {
-    return contract?.["ชื่อเล่น"] || contract?.["ชื่อ-นามสกุล"] || row["ผู้รับเหมา"] || row["ร้าน/บุคคล"] || "";
+  const rawVendor = String(row["ร้าน/บุคคล"] || "").trim();
+  const rawContractor = String(row["ผู้รับเหมา"] || "").trim();
+
+  const isContractor = vendorType === "ผู้รับเหมา" || (!vendorType && (rawContractor || rawVendor.startsWith("CW") || contract));
+
+  if (isContractor) {
+    const nameFromContract = contract?.["ชื่อเล่น"] || contract?.["ชื่อ-นามสกุล"] || contract?.["ผู้รับเหมา"];
+    if (nameFromContract) return nameFromContract;
+    if (rawVendor && !rawVendor.startsWith("CW")) return rawVendor;
+    if (rawContractor && !rawContractor.startsWith("CW")) return rawContractor;
+    return contract?.["id_Conwork"] || rawVendor || rawContractor || "";
   }
   const storeKey = String(row["ร้านค้า"] || row.store_id || "").trim();
-  if (!storeKey) return row["ร้าน/บุคคล"] || "";
+  if (!storeKey) return rawVendor || "";
   const store = storeMap.get(storeKey);
-  return store?.["ชื่อร้านค้า"] || store?.["ชื่อเต็ม"] || store?.name || row["ร้าน/บุคคล"] || storeKey;
+  return store?.["ชื่อร้านค้า"] || store?.["ชื่อเต็ม"] || store?.name || rawVendor || storeKey;
 }
 
 function applyBillFormulasWithContext(

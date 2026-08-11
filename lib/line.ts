@@ -295,24 +295,6 @@ export function createBillNotificationFlex(bill: {
         },
       ],
     },
-    footer: {
-      type: "box",
-      layout: "horizontal",
-      spacing: "sm",
-      contents: [
-        {
-          type: "button",
-          style: "primary",
-          color: "#0F172A",
-          height: "sm",
-          action: {
-            type: "uri",
-            label: "เปิดดูบนระบบเว็บ",
-            uri: normalizeUri(process.env.NEXT_PUBLIC_APP_URL),
-          },
-        },
-      ],
-    },
   };
 }
 
@@ -390,23 +372,6 @@ export function createDailySummaryFlex(summary: {
             { type: "text", text: "รวมยอดเงินทั้งสิ้น", weight: "bold", color: "#0F172A", size: "sm" },
             { type: "text", text: `฿${formattedAmount}`, weight: "bold", color: "#2563EB", size: "lg", align: "end" },
           ],
-        },
-      ],
-    },
-    footer: {
-      type: "box",
-      layout: "vertical",
-      contents: [
-        {
-          type: "button",
-          style: "primary",
-          color: "#2563EB",
-          height: "sm",
-          action: {
-            type: "uri",
-            label: "เข้าสู่ระบบเพื่อจัดการ",
-            uri: normalizeUri(process.env.NEXT_PUBLIC_APP_URL),
-          },
         },
       ],
     },
@@ -635,23 +600,6 @@ export function createBillSearchResultFlex(
         };
       })
     },
-    footer: {
-      type: "box",
-      layout: "vertical",
-      contents: [
-        {
-          type: "button",
-          style: "primary",
-          color: isSub ? "#D97706" : "#1E293B",
-          height: "sm",
-          action: {
-            type: "uri",
-            label: "🌐 ดูรายละเอียดบิลทั้งหมดบนเว็บ",
-            uri: normalizeUri(`${process.env.NEXT_PUBLIC_APP_URL}/bills`),
-          },
-        },
-      ],
-    },
   };
 }
 
@@ -751,23 +699,6 @@ export function createWorkAssignmentFlex(work: {
         },
       ],
     },
-    footer: {
-      type: "box",
-      layout: "vertical",
-      contents: [
-        {
-          type: "button",
-          style: "primary",
-          color: "#4F46E5",
-          height: "sm",
-          action: {
-            type: "uri",
-            label: "ดูงานบนระบบเว็บ",
-            uri: normalizeUri(`${process.env.NEXT_PUBLIC_APP_URL}/contract-open`),
-          },
-        },
-      ],
-    },
   };
 }
 
@@ -822,23 +753,6 @@ export function createTaskSummaryFlex(tasks: Array<{ id: any; details: string; s
           },
         ],
       })),
-    },
-    footer: {
-      type: "box",
-      layout: "vertical",
-      contents: [
-        {
-          type: "button",
-          style: "primary",
-          color: "#059669",
-          height: "sm",
-          action: {
-            type: "uri",
-            label: "ดูหน้าจัดการงาน",
-            uri: normalizeUri(`${process.env.NEXT_PUBLIC_APP_URL}/work-status`),
-          },
-        },
-      ],
     },
   };
 }
@@ -1016,22 +930,6 @@ export function createMemberTaskTableFlex(
           };
         })
       ]
-    },
-    footer: {
-      type: "box",
-      layout: "vertical",
-      contents: [
-        {
-          type: "button",
-          style: "secondary",
-          height: "sm",
-          action: {
-            type: "uri",
-            label: "ดูตารางงานแบบเต็มบนเว็บ",
-            uri: normalizeUri(`${process.env.NEXT_PUBLIC_APP_URL}/work-status`),
-          },
-        },
-      ],
     },
   };
 }
