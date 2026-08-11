@@ -1,19 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { LINE_CONFIG } from "@/lib/line/config";
 
 export const dynamic = "force-dynamic";
 
 const DEFAULT_CONFIG = {
-  LINE_CHANNEL_ACCESS_TOKEN: process.env.LINE_CHANNEL_ACCESS_TOKEN || "",
+  LINE_CHANNEL_ACCESS_TOKEN: process.env.LINE_CHANNEL_ACCESS_TOKEN || LINE_CONFIG.CHANNEL_ACCESS_TOKEN || "",
   LINE_CHANNEL_SECRET: process.env.LINE_CHANNEL_SECRET || "",
-  LINE_USER_ID_OWN: process.env.LINE_USER_ID_OWN || "",
-  LINE_USER_ID_APPROVER: process.env.LINE_USER_ID_APPROVER || "",
-  LINE_GROUP_ID_TASK: process.env.LINE_GROUP_ID_TASK || "",
-  LINE_GROUP_ID_SUMMARY: process.env.LINE_GROUP_ID_SUMMARY || "",
-  LINE_GROUP_ID_PW: process.env.LINE_GROUP_ID_PW || "",
-  LINE_GROUP_ID_PLAN: process.env.LINE_GROUP_ID_PLAN || "",
-  LINE_GROUP_ID_FINANCE: process.env.LINE_GROUP_ID_FINANCE || "",
-  LINE_GROUP_ID_PAID: process.env.LINE_GROUP_ID_PAID || "",
+  LINE_USER_ID_OWN: process.env.LINE_USER_ID_OWN || LINE_CONFIG.USER_ID_OWN || "",
+  LINE_USER_ID_APPROVER: process.env.LINE_USER_ID_APPROVER || LINE_CONFIG.USER_ID_APPROVER || "",
+  LINE_GROUP_ID_TASK: process.env.LINE_GROUP_ID_TASK || LINE_CONFIG.GROUP_ID_TASK || "",
+  LINE_GROUP_ID_SUMMARY: process.env.LINE_GROUP_ID_SUMMARY || LINE_CONFIG.GROUP_ID_SUMMARY || "",
+  LINE_GROUP_ID_PW: process.env.LINE_GROUP_ID_PW || LINE_CONFIG.GROUP_ID_PW || "",
+  LINE_GROUP_ID_PLAN: process.env.LINE_GROUP_ID_PLAN || LINE_CONFIG.GROUP_ID_PLAN || "",
+  LINE_GROUP_ID_FINANCE: process.env.LINE_GROUP_ID_FINANCE || LINE_CONFIG.GROUP_ID_FINANCE || "",
+  LINE_GROUP_ID_PAID: process.env.LINE_GROUP_ID_PAID || LINE_CONFIG.GROUP_ID_PAID || "",
 };
 
 export async function GET() {

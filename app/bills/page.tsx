@@ -39,16 +39,17 @@ export default async function BillsPage({ searchParams }: BillsPageProps) {
   const cookieStore = await cookies();
   const isAdmin = cookieStore.get("auth_role")?.value === "Admin";
 
-  const [allRows, peopleRows, projectRows, storeRows, contractRows, form] = await Promise.all([
+  const [allRows, peopleRows, projectRows, storeRows, contractRows, contractorRows, form] = await Promise.all([
     safeRows(TABLES.DATA),
     safeRows(TABLES.PEOPLE),
     safeRows(TABLES.PROJECT),
     safeRows(TABLES.STORE),
     safeRows(TABLES.CONTRACT_WORK),
+    safeRows(TABLES.CONTRACTOR),
     getFormPayload(TABLES.DATA).catch(() => null)
   ]);
   const requesterNames = requesterNameMap(peopleRows);
-  const hydratedRows = await hydrateBillRows(allRows, { projects: projectRows, stores: storeRows, contracts: contractRows });
+  const hydratedRows = await hydrateBillRows(allRows, { projects: projectRows, stores: storeRows, contracts: contractRows, contractors: contractorRows });
   const sortedRows = sortBillRows(hydratedRows, sort || "latest");
   const rows = nonEmptyRows(sortedRows, columns);
 
