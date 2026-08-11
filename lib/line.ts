@@ -736,7 +736,7 @@ export function createMemberTaskTableFlex(
               {
                 type: "box",
                 layout: "horizontal",
-                spacing: "none",
+                spacing: "xs",
                 gravity: "center",
                 contents: [
                   // Title Column
