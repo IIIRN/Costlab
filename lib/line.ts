@@ -160,7 +160,12 @@ export async function sendFlexMessage(to: string, altText: string, flexContents:
 
 export async function replyFlexMessage(replyToken: string, altText: string, flexContents: Record<string, any>): Promise<boolean> {
   const token = await getDynamicAccessToken();
-  if (!token || token.includes("your-line") || !replyToken) return false;
+  if (!token || token.includes("your-line") || !replyToken) {
+    if (replyToken) {
+      await replyTextMessage(replyToken, altText);
+    }
+    return false;
+  }
   try {
     const res = await fetch(`${LINE_API_BASE}/reply`, {
       method: "POST",
@@ -179,9 +184,17 @@ export async function replyFlexMessage(replyToken: string, altText: string, flex
         ],
       }),
     });
-    return res.ok;
+
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => ({}));
+      console.warn("⚠️ Flex reply failed, falling back to text reply:", errJson);
+      await replyTextMessage(replyToken, `${altText}\n\n(แสดงผลรายละเอียดเพิ่มเติมบนระบบเว็บ)`);
+      return true;
+    }
+    return true;
   } catch (error: any) {
     console.error("❌ Failed to reply flex message to LINE:", error.message || error);
+    await replyTextMessage(replyToken, altText);
     return false;
   }
 }
