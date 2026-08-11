@@ -607,99 +607,218 @@ export function createMemberTaskTableFlex(
 ): Record<string, any> {
   const planTasks = tasks;
   const todayDateStr = new Date().toLocaleDateString("th-TH", { day: "2-digit", month: "2-digit", year: "2-digit" });
+  const currentMonth = new Date().getMonth() + 1;
 
   return {
     type: "bubble",
+    size: "giga",
     header: {
       type: "box",
       layout: "vertical",
-      backgroundColor: "#525252",
+      backgroundColor: "#6C6C6C",
       paddingAll: "15px",
       contents: [
         {
           type: "text",
           text: `งานทั้งหมด : ${memberName}(${tasks.length})`,
           weight: "bold",
+          size: "xxl",
           color: "#FFFFFF",
-          size: "lg",
+          align: "start"
         },
         {
           type: "box",
           layout: "horizontal",
           margin: "md",
           contents: [
-            { type: "text", text: `เอกสาร 0 งาน`, color: "#E5E7EB", size: "xs", weight: "bold" },
-            { type: "text", text: `แผนงาน ${tasks.length} งาน`, color: "#F97316", size: "xs", weight: "bold" },
-            { type: "text", text: `PJSA 0 งาน`, color: "#E5E7EB", size: "xs", weight: "bold", align: "end" },
-          ],
-        },
-      ],
+            { type: "text", text: `เอกสาร 0 งาน`, weight: "bold", size: "sm", color: "#FFFFFF", flex: 3, align: "start" },
+            { type: "text", text: `แผนงาน ${tasks.length} งาน`, weight: "bold", size: "sm", color: "#F97316", flex: 3, align: "center" },
+            { type: "text", text: `PJSA 0 งาน`, weight: "bold", size: "sm", color: "#FFFFFF", flex: 3, align: "end" }
+          ]
+        }
+      ]
     },
     body: {
       type: "box",
       layout: "vertical",
-      paddingAll: "12px",
-      spacing: "sm",
+      paddingAll: "10px",
+      spacing: "xs",
       contents: [
+        // Column Table Header
+        {
+          type: "box",
+          layout: "horizontal",
+          margin: "xs",
+          contents: [
+            {
+              type: "box",
+              layout: "vertical",
+              flex: 6,
+              contents: [
+                { type: "text", text: "รายการ", weight: "bold", size: "xs", align: "center" },
+                { type: "text", text: "ทั้งหมด", weight: "bold", size: "xs", align: "center" }
+              ]
+            },
+            { type: "separator" },
+            {
+              type: "box",
+              layout: "vertical",
+              flex: 3,
+              contents: [
+                { type: "text", text: "เริ่ม", weight: "bold", size: "xs", align: "center" },
+                { type: "text", text: "เสร็จ", weight: "bold", size: "xs", align: "center" }
+              ]
+            },
+            { type: "separator" },
+            {
+              type: "box",
+              layout: "vertical",
+              flex: 2,
+              contents: [
+                { type: "text", text: "num", weight: "bold", size: "xs", align: "center" },
+                { type: "text", text: "day", weight: "bold", size: "xs", align: "center" }
+              ]
+            },
+            { type: "separator" },
+            {
+              type: "box",
+              layout: "vertical",
+              flex: 7,
+              contents: [
+                { type: "text", text: `เดือน ${currentMonth}`, weight: "bold", size: "xs", align: "center" },
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    { type: "text", text: "8", size: "xxs", align: "center", flex: 1 },
+                    { type: "text", text: "9", size: "xxs", align: "center", flex: 1 },
+                    { type: "text", text: "10", size: "xxs", align: "center", flex: 1 },
+                    { type: "text", text: "11", size: "xxs", align: "center", flex: 1, color: "#FF0000", weight: "bold" },
+                    { type: "text", text: "12", size: "xxs", align: "center", flex: 1 },
+                    { type: "text", text: "13", size: "xxs", align: "center", flex: 1 },
+                    { type: "text", text: "14", size: "xxs", align: "center", flex: 1 }
+                  ]
+                }
+              ]
+            },
+            { type: "separator" },
+            {
+              type: "box",
+              layout: "vertical",
+              flex: 2,
+              contents: [
+                { type: "text", text: "...", weight: "bold", size: "xs", align: "center" },
+                { type: "text", text: "...", weight: "bold", size: "xs", align: "center" }
+              ]
+            }
+          ]
+        },
+        { type: "separator", margin: "xs" },
+        // Category Banner
         {
           type: "box",
           layout: "vertical",
-          backgroundColor: "#F97316",
+          backgroundColor: "#BDBDBD",
           paddingAll: "6px",
+          margin: "xs",
           contents: [
-            { type: "text", text: `แผนงาน ${tasks.length} งาน`, color: "#FFFFFF", weight: "bold", size: "xs" }
+            { type: "text", text: `แผนงาน ${tasks.length} งาน`, color: "#EA580C", weight: "bold", size: "sm" }
           ]
         },
+        // Table Task Item Rows
         ...planTasks.slice(0, 8).map((t, index) => {
           const taskIdStr = String(t.id || index + 100);
           return {
             type: "box",
             layout: "vertical",
-            margin: "sm",
+            margin: "xs",
             contents: [
               {
                 type: "box",
                 layout: "horizontal",
-                spacing: "sm",
+                spacing: "none",
+                gravity: "center",
                 contents: [
+                  // Title Column
                   {
-                    type: "text",
-                    text: `[${taskIdStr}]${t.details}`,
-                    size: "xs",
-                    color: "#1F2937",
-                    flex: 8,
-                    wrap: true,
-                    weight: "bold"
+                    type: "box",
+                    layout: "vertical",
+                    flex: 6,
+                    contents: [
+                      {
+                        type: "text",
+                        text: `[${taskIdStr}]${t.details}`,
+                        size: "xs",
+                        color: "#1F2937",
+                        wrap: true,
+                        weight: "bold"
+                      }
+                    ]
                   },
+                  { type: "separator" },
+                  // Dates Column
                   {
-                    type: "text",
-                    text: t.dateStr || todayDateStr,
-                    size: "xxs",
-                    color: "#6B7280",
+                    type: "box",
+                    layout: "vertical",
                     flex: 3,
-                    align: "center"
+                    contents: [
+                      { type: "text", text: t.dateStr || todayDateStr, size: "xxs", align: "center" },
+                      { type: "text", text: t.dateStr || todayDateStr, size: "xxs", align: "center" }
+                    ]
                   },
+                  { type: "separator" },
+                  // Num Day Column
                   {
-                    type: "text",
-                    text: "1",
-                    size: "xs",
-                    color: "#374151",
-                    flex: 1,
-                    align: "center"
-                  },
-                  {
-                    type: "text",
-                    text: t.status === "เสร็จ" ? "✅" : "Close",
-                    size: "xs",
-                    color: t.status === "เสร็จ" ? "#16A34A" : "#DC2626",
+                    type: "box",
+                    layout: "vertical",
                     flex: 2,
-                    align: "end",
-                    weight: "bold",
+                    contents: [
+                      { type: "text", text: "1", size: "xs", align: "center", weight: "bold" }
+                    ]
+                  },
+                  { type: "separator" },
+                  // Timeline Days Grid Column (7 Days Timeline)
+                  {
+                    type: "box",
+                    layout: "horizontal",
+                    flex: 7,
+                    contents: [
+                      { type: "text", text: index % 3 === 0 ? "🟦" : "⬜", size: "xxs", align: "center", flex: 1 },
+                      { type: "separator" },
+                      { type: "text", text: index % 3 === 1 ? "🟦" : "⬜", size: "xxs", align: "center", flex: 1 },
+                      { type: "separator" },
+                      { type: "text", text: "⬜", size: "xxs", align: "center", flex: 1 },
+                      { type: "separator", color: "#FF0000" },
+                      { type: "text", text: "🟦", size: "xxs", align: "center", flex: 1, color: "#FF0000" },
+                      { type: "separator", color: "#FF0000" },
+                      { type: "text", text: "⬜", size: "xxs", align: "center", flex: 1 },
+                      { type: "separator" },
+                      { type: "text", text: "⬜", size: "xxs", align: "center", flex: 1 },
+                      { type: "separator" },
+                      { type: "text", text: "⬜", size: "xxs", align: "center", flex: 1 }
+                    ]
+                  },
+                  { type: "separator" },
+                  // Action Column
+                  {
+                    type: "box",
+                    layout: "vertical",
+                    flex: 2,
                     action: {
                       type: "message",
                       label: "Close",
                       text: `ปิดงาน: ${taskIdStr}`
-                    }
+                    },
+                    contents: [
+                      {
+                        type: "text",
+                        text: t.status === "เสร็จ" ? "✅" : "Close",
+                        size: "xs",
+                        color: t.status === "เสร็จ" ? "#16A34A" : "#FF0000",
+                        align: "center",
+                        weight: "bold"
+                      }
+                    ]
                   }
                 ]
               },
