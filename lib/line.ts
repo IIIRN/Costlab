@@ -399,6 +399,194 @@ export function createDailySummaryFlex(summary: {
   };
 }
 
+export function createWorkAssignmentFlex(work: {
+  id?: string | number;
+  title?: string;
+  project_name?: string;
+  contractor_name?: string;
+  amount?: number;
+  details?: string;
+  contact?: string;
+  phone?: string;
+}): Record<string, any> {
+  const formattedAmount = Number(work.amount || 0).toLocaleString("th-TH", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+  return {
+    type: "bubble",
+    size: "mega",
+    header: {
+      type: "box",
+      layout: "vertical",
+      backgroundColor: "#1E1B4B",
+      paddingAll: "15px",
+      contents: [
+        {
+          type: "text",
+          text: "👷‍♂️ รายการมอบหมายงาน (PW)",
+          weight: "bold",
+          color: "#FFFFFF",
+          size: "md",
+        },
+        {
+          type: "text",
+          text: `รหัสงาน: ${work.id || "-"}`,
+          color: "#A5B4FC",
+          size: "xs",
+          margin: "xs",
+        },
+      ],
+    },
+    body: {
+      type: "box",
+      layout: "vertical",
+      paddingAll: "16px",
+      spacing: "md",
+      contents: [
+        {
+          type: "box",
+          layout: "vertical",
+          spacing: "sm",
+          contents: [
+            {
+              type: "box",
+              layout: "baseline",
+              contents: [
+                { type: "text", text: "โครงการ:", color: "#64748B", size: "xs", flex: 2 },
+                { type: "text", text: work.project_name || "-", weight: "bold", color: "#1E293B", size: "xs", flex: 5, wrap: true },
+              ],
+            },
+            {
+              type: "box",
+              layout: "baseline",
+              contents: [
+                { type: "text", text: "ผู้รับเหมา:", color: "#64748B", size: "xs", flex: 2 },
+                { type: "text", text: work.contractor_name || "-", color: "#1E293B", size: "xs", flex: 5, wrap: true },
+              ],
+            },
+            {
+              type: "box",
+              layout: "baseline",
+              contents: [
+                { type: "text", text: "รายละเอียด:", color: "#64748B", size: "xs", flex: 2 },
+                { type: "text", text: work.details || "-", color: "#1E293B", size: "xs", flex: 5, wrap: true },
+              ],
+            },
+            {
+              type: "box",
+              layout: "baseline",
+              contents: [
+                { type: "text", text: "ติดต่อ:", color: "#64748B", size: "xs", flex: 2 },
+                { type: "text", text: `${work.contact || "-"} (${work.phone || "-"})`, color: "#1E293B", size: "xs", flex: 5, wrap: true },
+              ],
+            },
+          ],
+        },
+        { type: "separator" },
+        {
+          type: "box",
+          layout: "horizontal",
+          contents: [
+            { type: "text", text: "ยอดเงินว่าจ้าง", weight: "bold", color: "#0F172A", size: "sm" },
+            { type: "text", text: `฿${formattedAmount}`, weight: "bold", color: "#4F46E5", size: "lg", align: "end" },
+          ],
+        },
+      ],
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "button",
+          style: "primary",
+          color: "#4F46E5",
+          height: "sm",
+          action: {
+            type: "uri",
+            label: "ดูงานบนระบบเว็บ",
+            uri: normalizeUri(`${process.env.NEXT_PUBLIC_APP_URL}/contract-open`),
+          },
+        },
+      ],
+    },
+  };
+}
+
+export function createTaskSummaryFlex(tasks: Array<{ id: any; details: string; status: string; project: string }>): Record<string, any> {
+  return {
+    type: "bubble",
+    header: {
+      type: "box",
+      layout: "vertical",
+      backgroundColor: "#065F46",
+      paddingAll: "15px",
+      contents: [
+        {
+          type: "text",
+          text: "🎯 สรุปงานค้างที่ต้องดำเนินการ",
+          weight: "bold",
+          color: "#FFFFFF",
+          size: "md",
+        },
+        {
+          type: "text",
+          text: `ทั้งหมด ${tasks.length} รายการ`,
+          color: "#A7F3D0",
+          size: "xs",
+          margin: "xs",
+        },
+      ],
+    },
+    body: {
+      type: "box",
+      layout: "vertical",
+      paddingAll: "16px",
+      spacing: "sm",
+      contents: tasks.slice(0, 5).map((t, idx) => ({
+        type: "box",
+        layout: "vertical",
+        margin: idx > 0 ? "sm" : "none",
+        contents: [
+          {
+            type: "text",
+            text: `${idx + 1}. [${t.project || "งานทั่วไป"}] ${t.details}`,
+            size: "xs",
+            weight: "bold",
+            color: "#1E293B",
+            wrap: true,
+          },
+          {
+            type: "text",
+            text: `สถานะ: ${t.status || "กำลังทำ"}`,
+            size: "xxs",
+            color: "#059669",
+          },
+        ],
+      })),
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "button",
+          style: "primary",
+          color: "#059669",
+          height: "sm",
+          action: {
+            type: "uri",
+            label: "ดูหน้าจัดการงาน",
+            uri: normalizeUri(`${process.env.NEXT_PUBLIC_APP_URL}/work-status`),
+          },
+        },
+      ],
+    },
+  };
+}
+
 function normalizeUri(uri?: string): string {
   let str = (uri || "").trim();
   if (!str) return "https://coscosesuperbase.vercel.app";
@@ -407,3 +595,4 @@ function normalizeUri(uri?: string): string {
   }
   return str;
 }
+

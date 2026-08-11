@@ -16,7 +16,7 @@ export default async function BillsPage({ searchParams }: BillsPageProps) {
   const query = await searchParams;
   const search = firstSearchParam(query?.search).trim();
   const page = parsePositiveInt(firstSearchParam(query?.page), 1);
-  const pageSize = parsePositiveInt(firstSearchParam(query?.pageSize), 80);
+  const pageSize = parsePositiveInt(firstSearchParam(query?.pageSize), 20);
   const sort = parseSort(firstSearchParam(query?.sort));
   const viewName = "กรอกบิล";
   const columns = [
