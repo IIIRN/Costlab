@@ -44,20 +44,32 @@ export function AppNav({ icons = {}, isCollapsed = false }: AppNavProps) {
   };
 
   const isSettingsActive = pathname === "/settings";
+  const isOptionsActive = pathname.startsWith("/settings/options");
   const isLineSystemActive = pathname.startsWith("/settings/line-system") || pathname.startsWith("/line-system");
   const isUsersActive = pathname.startsWith("/settings/users") || pathname.startsWith("/users");
 
   return (
     <nav className="nav">
       <Link
+        className={isOptionsActive ? "active" : ""}
+        href="/settings/options"
+        title="ตั้งค่าตัวเลือกระบบ"
+      >
+        <span className="nav-icon" aria-hidden="true">
+          <Sliders size={18} strokeWidth={2} />
+        </span>
+        {!isCollapsed && <span className="nav-label font-semibold text-slate-200">ตั้งค่าตัวเลือกระบบ</span>}
+      </Link>
+
+      <Link
         className={isSettingsActive ? "active" : ""}
         href="/settings"
         title="สถานะ Supabase"
       >
         <span className="nav-icon" aria-hidden="true">
-          <Settings size={18} strokeWidth={2.2} />
+          <Settings size={18} strokeWidth={2} />
         </span>
-        {!isCollapsed && <span className="nav-label font-bold text-amber-300">สถานะ Supabase</span>}
+        {!isCollapsed && <span className="nav-label font-semibold text-slate-200">สถานะ Supabase</span>}
       </Link>
 
       <Link
@@ -66,9 +78,9 @@ export function AppNav({ icons = {}, isCollapsed = false }: AppNavProps) {
         title="ระบบ LINE Bot & Webhook"
       >
         <span className="nav-icon" aria-hidden="true">
-          <MessageSquare size={18} strokeWidth={2.2} />
+          <MessageSquare size={18} strokeWidth={2} />
         </span>
-        {!isCollapsed && <span className="nav-label font-bold text-emerald-400">ระบบ LINE Bot</span>}
+        {!isCollapsed && <span className="nav-label font-semibold text-slate-200">ระบบ LINE Bot</span>}
       </Link>
 
       <Link
@@ -77,9 +89,9 @@ export function AppNav({ icons = {}, isCollapsed = false }: AppNavProps) {
         title="จัดการผู้ใช้ระบบ"
       >
         <span className="nav-icon" aria-hidden="true">
-          <IdCard size={18} strokeWidth={2.2} />
+          <IdCard size={18} strokeWidth={2} />
         </span>
-        {!isCollapsed && <span className="nav-label font-bold text-sky-400">จัดการผู้ใช้ระบบ</span>}
+        {!isCollapsed && <span className="nav-label font-semibold text-slate-200">จัดการผู้ใช้ระบบ</span>}
       </Link>
 
       {!isCollapsed && <div className="nav-section-title mt-2">เมนูการทำงาน</div>}
@@ -94,3 +106,4 @@ export function AppNav({ icons = {}, isCollapsed = false }: AppNavProps) {
     </nav>
   );
 }
+

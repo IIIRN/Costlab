@@ -96,14 +96,14 @@ export async function WorkStatusDashboard() {
 
 function AmountPanel({ title, value, className = "" }: { title: string; value: number; className?: string }) {
   return (
-    <div className={`bg-white rounded-lg p-5 border border-slate-200/90 shadow-2xs space-y-3 ${className}`}>
-      <header className="flex items-center justify-between text-xs font-extrabold text-slate-400 uppercase tracking-wider">
+    <div className={`bg-white rounded-md p-4 border border-slate-200 space-y-2.5 ${className}`}>
+      <header className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">
         <h3>{title}</h3>
         <small className="text-slate-400 font-normal">บาท</small>
       </header>
-      <div className="bg-slate-50 p-4 rounded-xl flex flex-col gap-1">
-        <span className="text-xs text-slate-500 font-semibold">{title}</span>
-        <strong className="text-xl font-extrabold text-slate-900">{money(value)}</strong>
+      <div className="bg-slate-50 p-3 rounded-md border border-slate-100 flex flex-col gap-0.5">
+        <span className="text-xs text-slate-500 font-medium">{title}</span>
+        <strong className="text-lg font-bold text-slate-900">{money(value)}</strong>
       </div>
     </div>
   );
@@ -115,44 +115,44 @@ function FollowPanel({ title, count, requesterNames, rows }: { title: string; co
   const rowCountText = rows.length > visibleRows.length ? `${visibleRows.length} / ${rows.length}` : String(visibleRows.length);
 
   return (
-    <div className="bg-white rounded-lg border border-slate-200/90 shadow-2xs overflow-hidden">
-      <header className="p-4 bg-slate-50/80 border-b border-slate-200/90 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-extrabold text-slate-800">{title}</h3>
-        <div className="flex items-center gap-3 text-xs">
-          <span className="font-bold text-slate-500">{rowCountText} รายการ</span>
-          <strong className="font-extrabold text-slate-900 bg-white px-2.5 py-1 rounded-lg border border-slate-200">{money(amountTotal)}</strong>
+    <div className="bg-white rounded-md border border-slate-200 overflow-hidden">
+      <header className="p-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-xs font-bold text-slate-800">{title}</h3>
+        <div className="flex items-center gap-2.5 text-xs">
+          <span className="font-semibold text-slate-500">{rowCountText} รายการ</span>
+          <strong className="font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200">{money(amountTotal)}</strong>
         </div>
       </header>
       {visibleRows.length ? (
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-700 border-collapse">
             <thead>
-              <tr className="bg-slate-100/90 text-slate-600 font-bold border-b border-slate-200 text-[11px] uppercase tracking-wider">
-                <th className="py-3 px-3">ลำดับ</th>
-                <th className="py-3 px-3">ร้าน/บุคคล</th>
-                <th className="py-3 px-3">Project</th>
-                <th className="py-3 px-3">รายการ</th>
-                <th className="py-3 px-3">วันที่</th>
-                <th className="py-3 px-3">ผู้เบิก</th>
-                <th className="py-3 px-3 text-right">ยอดเงิน</th>
-                <th className="py-3 px-3">เงื่อนไข</th>
+              <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-200 text-xs">
+                <th className="py-2.5 px-3 border-r border-slate-200">ลำดับ</th>
+                <th className="py-2.5 px-3 border-r border-slate-200">ร้าน/บุคคล</th>
+                <th className="py-2.5 px-3 border-r border-slate-200">Project</th>
+                <th className="py-2.5 px-3 border-r border-slate-200">รายการ</th>
+                <th className="py-2.5 px-3 border-r border-slate-200">วันที่</th>
+                <th className="py-2.5 px-3 border-r border-slate-200">ผู้เบิก</th>
+                <th className="py-2.5 px-3 border-r border-slate-200 text-right">ยอดเงิน</th>
+                <th className="py-2.5 px-3">เงื่อนไข</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 font-normal">
               {visibleRows.map((row, index) => (
-                <tr key={String(row._sheetRow || row["ลำดับ"] || index)} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="py-2.5 px-3 text-slate-500">{formatCell(row["ลำดับ"]) || "-"}</td>
-                  <td className="py-2.5 px-3 font-bold text-slate-900">{formatCell(row["ร้าน/บุคคล"]) || "-"}</td>
-                  <td className="py-2.5 px-3 text-slate-600">{formatCell(row["ชื่อ Project"]) || "-"}</td>
-                  <td className="py-2.5 px-3 text-slate-600 max-w-[200px] truncate">{formatCell(row["สินค้า/ทำงาน"] || row["รายการ"]) || "-"}</td>
-                  <td className="py-2.5 px-3 text-slate-500 whitespace-nowrap">{formatCell(row["ว/ด/ป"]) || "-"}</td>
-                  <td className="py-2.5 px-3 text-slate-600">{requesterName(row["ผู้เบิก"], requesterNames) || "-"}</td>
-                  <td className="py-2.5 px-3 text-right font-extrabold text-slate-900">{money(row["ยอดเงิน"])}</td>
-                  <td className="py-2.5 px-3">
-                    <div className="flex flex-wrap gap-1 text-[10px] font-bold">
-                      <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200">vat {formatCell(row.vat) || "-"}</span>
-                      <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200">หัก {formatCell(row["หัก"]) || "-"}</span>
-                      {hasValue(row["เครดิต"]) ? <span className="bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded border border-amber-200">เครดิต {formatCell(row["เครดิต"])}</span> : null}
+                <tr key={String(row._sheetRow || row["ลำดับ"] || index)} className="hover:bg-slate-50 transition-colors">
+                  <td className="py-2 px-3 border-r border-slate-100 text-slate-500">{formatCell(row["ลำดับ"]) || "-"}</td>
+                  <td className="py-2 px-3 border-r border-slate-100 font-bold text-slate-900">{formatCell(row["ร้าน/บุคคล"]) || "-"}</td>
+                  <td className="py-2 px-3 border-r border-slate-100 text-slate-600">{formatCell(row["ชื่อ Project"]) || "-"}</td>
+                  <td className="py-2 px-3 border-r border-slate-100 text-slate-600 max-w-[200px] truncate">{formatCell(row["สินค้า/ทำงาน"] || row["รายการ"]) || "-"}</td>
+                  <td className="py-2 px-3 border-r border-slate-100 text-slate-500 whitespace-nowrap">{formatCell(row["ว/ด/ป"]) || "-"}</td>
+                  <td className="py-2 px-3 border-r border-slate-100 text-slate-600">{requesterName(row["ผู้เบิก"], requesterNames) || "-"}</td>
+                  <td className="py-2 px-3 border-r border-slate-100 text-right font-bold text-slate-900">{money(row["ยอดเงิน"])}</td>
+                  <td className="py-2 px-3">
+                    <div className="flex flex-wrap gap-1 text-[10px] font-semibold">
+                      <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200">vat {formatCell(row.vat) || "-"}</span>
+                      <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200">หัก {formatCell(row["หัก"]) || "-"}</span>
+                      {hasValue(row["เครดิต"]) ? <span className="bg-slate-100 text-slate-800 px-1.5 py-0.5 rounded border border-slate-300">เครดิต {formatCell(row["เครดิต"])}</span> : null}
                     </div>
                   </td>
                 </tr>
@@ -161,7 +161,7 @@ function FollowPanel({ title, count, requesterNames, rows }: { title: string; co
           </table>
         </div>
       ) : (
-        <div className="p-8 text-center text-slate-400 text-xs font-medium">ไม่พบข้อมูล</div>
+        <div className="p-6 text-center text-slate-400 text-xs">ไม่พบข้อมูล</div>
       )}
     </div>
   );
@@ -198,16 +198,16 @@ function ProjectStatusPanel({
   tone?: "default" | "green";
 }) {
   return (
-    <div className="bg-white rounded-lg border border-slate-200/90 shadow-2xs overflow-hidden">
-      <header className="p-4 bg-slate-50/80 border-b border-slate-200/90 flex items-center justify-between">
-        <h3 className="text-sm font-extrabold text-slate-800">{title}</h3>
-        <strong className="text-xs font-extrabold text-slate-600 bg-white px-2.5 py-1 rounded-lg border border-slate-200">{count} รายการ</strong>
+    <div className="bg-white rounded-md border border-slate-200 overflow-hidden">
+      <header className="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+        <h3 className="text-xs font-bold text-slate-800">{title}</h3>
+        <strong className="text-xs font-semibold text-slate-700 bg-white px-2 py-0.5 rounded border border-slate-200">{count} รายการ</strong>
       </header>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 p-3">
         {rows.slice(0, 60).map((row, index) => (
           <ProjectItemCard key={String(row["ID Project"] || row._sheetRow || index)} title={title} row={row} tone={tone} />
         ))}
-        {!rows.length ? <div className="col-span-full p-8 text-center text-slate-400 text-xs font-medium">ไม่พบข้อมูล</div> : null}
+        {!rows.length ? <div className="col-span-full p-6 text-center text-slate-400 text-xs">ไม่พบข้อมูล</div> : null}
       </div>
     </div>
   );
@@ -223,47 +223,39 @@ function ProjectItemCard({ title, row, tone }: { title: string; row: SheetRow; t
   const totalVat = row["ยอดรวม vat"];
   const budget = row["งบไม่เกิน"];
 
-  const colorMap: Record<string, string> = {
-    red: "#dc2626",
-    green: "#16853d",
-    black: "#1e293b"
-  };
-  const rawColor = String(row.color || "").toLowerCase().trim();
-  const headerBg = colorMap[rawColor] || (tone === "green" ? "#16853d" : "#334155");
-
   return (
-    <article className="bg-white rounded-lg border border-slate-200/90 overflow-hidden shadow-2xs hover:shadow-md transition-all flex flex-col">
-      <div className="px-4 py-2.5 flex items-center justify-between text-xs font-extrabold text-white" style={{ backgroundColor: headerBg }}>
-        <strong>{title}</strong>
+    <article className="bg-white rounded-md border border-slate-200 overflow-hidden transition flex flex-col text-xs">
+      <div className="px-3 py-2 flex items-center justify-between text-xs font-bold text-white bg-slate-800">
+        <span>{title}</span>
         <span className="font-mono text-[11px] opacity-90">#{formatCell(row["ID Project"])}</span>
       </div>
-      <div className="p-4 space-y-3 flex-1 flex flex-col justify-between text-xs">
+      <div className="p-3 space-y-2.5 flex-1 flex flex-col justify-between">
         <div>
           <div className="flex items-start justify-between gap-2">
-            <strong className="font-extrabold text-slate-900 text-xs line-clamp-2">{formatCell(projectName) || "-"}</strong>
-            <span className="text-[10px] font-semibold text-slate-400 shrink-0">{formatCell(date) || "-"}</span>
+            <strong className="font-bold text-slate-900 text-xs line-clamp-2">{formatCell(projectName) || "-"}</strong>
+            <span className="text-[10px] font-normal text-slate-500 shrink-0">{formatCell(date) || "-"}</span>
           </div>
-          <div className="mt-2 text-[11px] text-slate-500 space-y-0.5">
-            <div>ลูกค้า: <span className="font-semibold text-slate-700">{formatCell(customer) || "-"}</span></div>
-            <div>บริษัท: <span className="font-semibold text-slate-700">{formatCell(company) || "-"}</span></div>
-            <div>ผู้รับผิดชอบ: <span className="font-semibold text-slate-700">{formatCell(owner) || "-"}</span></div>
+          <div className="mt-1.5 text-xs text-slate-600 space-y-0.5">
+            <div>ลูกค้า: <span className="font-medium text-slate-800">{formatCell(customer) || "-"}</span></div>
+            <div>บริษัท: <span className="font-medium text-slate-800">{formatCell(company) || "-"}</span></div>
+            <div>ผู้รับผิดชอบ: <span className="font-medium text-slate-800">{formatCell(owner) || "-"}</span></div>
           </div>
         </div>
         
-        <div className="bg-slate-50 p-2.5 rounded-lg grid grid-cols-2 gap-2 text-[11px]">
+        <div className="bg-slate-50 p-2 rounded border border-slate-100 grid grid-cols-2 gap-2 text-xs">
           <div>
-            <span className="text-slate-400 text-[10px]">ยอดรวม</span>
-            <div className="font-extrabold text-slate-900">{money(total)}</div>
+            <span className="text-slate-500 text-[10px]">ยอดรวม</span>
+            <div className="font-bold text-slate-900">{money(total)}</div>
           </div>
           <div>
-            <span className="text-slate-400 text-[10px]">ยอดรวม vat</span>
-            <div className="font-extrabold text-slate-900">{money(totalVat)}</div>
+            <span className="text-slate-500 text-[10px]">ยอดรวม vat</span>
+            <div className="font-bold text-slate-900">{money(totalVat)}</div>
           </div>
         </div>
 
-        <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-100 text-slate-500">
+        <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100 text-slate-500">
           <span>งบไม่เกิน: <strong className="text-slate-800">{money(budget)}</strong></span>
-          <span>รวม ALL: <strong className="text-indigo-600">{money(total)}</strong></span>
+          <span>รวม ALL: <strong className="text-slate-900 font-bold">{money(total)}</strong></span>
         </div>
       </div>
     </article>
@@ -282,23 +274,23 @@ function SummaryTable({
   rows: Array<Array<string | number>>;
 }) {
   return (
-    <div className="bg-white rounded-lg border border-slate-200/90 shadow-2xs overflow-hidden">
-      <header className="p-4 bg-slate-50/80 border-b border-slate-200/90">
-        <h3 className="text-sm font-extrabold text-slate-800">{title}</h3>
-        <small className="text-slate-400 font-medium">{subtitle}</small>
+    <div className="bg-white rounded-md border border-slate-200 overflow-hidden">
+      <header className="p-3 bg-slate-50 border-b border-slate-200">
+        <h3 className="text-xs font-bold text-slate-800">{title}</h3>
+        <small className="text-slate-500 font-normal">{subtitle}</small>
       </header>
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs text-slate-700 border-collapse">
           <thead>
-            <tr className="bg-slate-100/90 text-slate-600 font-bold border-b border-slate-200 text-[11px] uppercase tracking-wider">
-              {header.map(column => <th key={column} className="py-2.5 px-3">{column}</th>)}
+            <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-200 text-xs">
+              {header.map(column => <th key={column} className="py-2.5 px-3 border-r border-slate-200">{column}</th>)}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 font-normal">
             {rows.map((row, index) => (
-              <tr key={`${title}-${index}`} className="hover:bg-slate-50/80 transition-colors">
+              <tr key={`${title}-${index}`} className="hover:bg-slate-50 transition-colors">
                 {row.map((cell, cellIndex) => (
-                  <td key={cellIndex} className={`py-2 px-3 ${typeof cell === "number" ? "font-extrabold text-slate-900 text-right" : "font-medium"}`}>
+                  <td key={cellIndex} className={`py-2 px-3 border-r border-slate-100 ${typeof cell === "number" ? "font-bold text-slate-900 text-right" : "font-normal"}`}>
                     {typeof cell === "number" ? money(cell) : cell}
                   </td>
                 ))}
@@ -390,3 +382,4 @@ async function safeRows(tableName: string): Promise<SheetRow[]> {
     return [];
   }
 }
+

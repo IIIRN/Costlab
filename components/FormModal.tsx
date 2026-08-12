@@ -50,6 +50,30 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
       const nextValues = detail?.row
         ? getRowStringValues(form, detail.row)
         : getInitialStringValues(form);
+      if (detail?.row) {
+        form.schema.filter(f => f.type === "Ref" && f.refFill).forEach(field => {
+          const refVal = nextValues[field.name];
+          if (refVal) {
+            const options = form.refOptions[field.name] || [];
+            const selectedOpt = options.find(opt =>
+              String(opt.value) === refVal ||
+              String(opt.label) === refVal ||
+              (opt.row && (
+                String(opt.row.id) === refVal ||
+                String(opt.row.id_Contractor) === refVal ||
+                String(opt.row.id_store) === refVal
+              ))
+            );
+            if (selectedOpt) {
+              Object.entries(field.refFill!).forEach(([targetField, sourceColumn]) => {
+                if (!hasValue(nextValues[targetField])) {
+                  nextValues[targetField] = String(selectedOpt.row?.[sourceColumn] ?? "");
+                }
+              });
+            }
+          }
+        });
+      }
       applyLocalFormulas(nextValues, form.tableName);
       setError("");
       setEnumListSearch({});
@@ -151,10 +175,10 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
         </div>
       ) : null}
       {open ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" role="presentation">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/40 backdrop-blur-[2px] animate-in fade-in" role="presentation">
           <form
-            className={`w-full bg-white rounded-lg shadow-2xl overflow-hidden flex flex-col border border-slate-100 max-h-[90vh] ${
-              relaxed ? "max-w-5xl" : "max-w-3xl"
+            className={`w-full bg-white rounded-lg shadow-xl overflow-hidden flex flex-col border border-slate-200 max-h-[92vh] ${
+              relaxed ? "max-w-6xl" : "max-w-4xl"
             }`}
             role="dialog"
             aria-modal="true"
@@ -162,24 +186,24 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
             aria-busy={saving}
             onSubmit={submitForm}
           >
-            <header className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white shrink-0">
+            <header className="flex items-center justify-between px-5 py-3 border-b border-slate-200 bg-white shrink-0">
               <div>
-                <h3 id="form-modal-title" className="text-base font-extrabold text-slate-900 m-0">
+                <h3 id="form-modal-title" className="text-sm font-bold text-slate-900 m-0">
                   {isEditing ? title.replace(/^เพิ่ม/, "แก้ไข") : title}
                 </h3>
-                <span className="text-xs text-slate-400 font-medium">{form.tableName}</span>
+                <span className="text-[11px] text-slate-400">{form.tableName}</span>
               </div>
               <button
                 type="button"
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                className="w-7 h-7 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
                 aria-label="ปิด"
                 disabled={saving}
                 onClick={() => { setOpen(false); setEditSheetRow(null); }}
               >
-                <X size={18} />
+                <X size={15} />
               </button>
             </header>
-            <div className="p-6 overflow-y-auto flex-1">
+            <div className="px-5 py-5 overflow-y-auto flex-1">
               {saving ? (
                 <div className="absolute inset-0 z-20 bg-white/80 backdrop-blur-2xs flex items-center justify-center">
                   <LoadingState title="กำลังบันทึก" message="กำลังอัปโหลดและบันทึกข้อมูล" compact />
@@ -187,33 +211,33 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
               ) : null}
               <fieldset className="space-y-4 border-0 p-0 m-0" disabled={saving}>
                 {form.tableName === TABLES.DATA ? (
-                  <div className="p-3.5 bg-slate-900 text-white rounded-lg flex items-center justify-between shadow-xs border border-slate-800">
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-md flex items-center gap-8 text-xs">
                     <div className="flex flex-col">
-                      <span className="text-[11px] text-slate-400 font-medium">ยอดเงินรวม</span>
-                      <span className="text-base font-bold text-emerald-400">
-                        {Number(values["ยอดเงิน"] || 0).toLocaleString("th-TH", { minimumFractionDigits: 2 })} ฿
+                      <span className="text-slate-400">ยอดเงินรวม</span>
+                      <span className="text-sm font-bold text-emerald-700">
+                        {Number(values["ยอดเงิน"] || 0).toLocaleString("th-TH", { minimumFractionDigits: 2 })} ฝ
                       </span>
                     </div>
                     {values["หัก"] ? (
-                      <div className="flex flex-col border-l border-slate-700 pl-4">
-                        <span className="text-[11px] text-slate-400 font-medium">หัก ณ ที่จ่าย ({values["หัก"]}%)</span>
-                        <span className="text-sm font-semibold text-amber-400">
-                          - {Number(values["3เปอร์"] || values["จำนวนหัก"] || 0).toLocaleString("th-TH", { minimumFractionDigits: 2 })} ฿
+                      <div className="flex flex-col border-l border-slate-200 pl-4">
+                        <span className="text-slate-400">หัก ณ ที่จ่าย ({values["หัก"]}%)</span>
+                        <span className="font-semibold text-amber-600">
+                          - {Number(values["3เปอร์"] || values["จำนวนหัก"] || 0).toLocaleString("th-TH", { minimumFractionDigits: 2 })} ฝ
                         </span>
                       </div>
                     ) : null}
-                    <div className="flex flex-col border-l border-slate-700 pl-4">
-                      <span className="text-[11px] text-slate-400 font-medium">ยอดโอนสุทธิ</span>
-                      <span className="text-base font-bold text-sky-400">
-                        {Number(values["ยอดโอน"] || values["ยอดเงิน"] || 0).toLocaleString("th-TH", { minimumFractionDigits: 2 })} ฿
+                    <div className="flex flex-col border-l border-slate-200 pl-4">
+                      <span className="text-slate-400">ยอดโอนสุทธิ์</span>
+                      <span className="text-sm font-bold text-indigo-700">
+                        {Number(values["ยอดโอน"] || values["ยอดเงิน"] || 0).toLocaleString("th-TH", { minimumFractionDigits: 2 })} ฝ
                       </span>
                     </div>
                   </div>
                 ) : null}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-x-4 gap-y-3">
                   {visibleFields.map(field => (
-                    <div className={`${getFieldClassName(field)} space-y-1.5`} key={field.name}>
-                      <label className="text-xs font-extrabold text-slate-800 block">{getFieldLabel(field)}{field.required ? <span className="text-rose-500 font-extrabold ml-0.5">*</span> : ""}</label>
+                    <div className={`${getFieldClassName(field)} space-y-1`} key={field.name}>
+                      <label className="text-xs font-medium text-slate-800 block">{getFieldLabel(field)}{field.required ? <span className="text-rose-500 ml-0.5">*</span> : ""}</label>
                       {renderField(
                         field,
                         form,
@@ -224,28 +248,28 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
                         enumListSearch[field.name] || "",
                         value => setEnumListSearch(current => ({ ...current, [field.name]: value }))
                       )}
-                      {field.description ? <small className="text-[11px] text-slate-400 mt-1 block">{field.description}</small> : null}
+                      {field.description ? <small className="text-xs text-slate-500 block">{field.description}</small> : null}
                     </div>
                   ))}
                 </div>
-                {error ? <div className="p-3 bg-rose-50 text-rose-600 rounded-lg border border-rose-200 text-xs font-semibold">{error}</div> : null}
+                {error ? <div className="p-2.5 bg-rose-50 text-rose-600 rounded-md border border-rose-200 text-xs font-medium">{error}</div> : null}
               </fieldset>
             </div>
-            <footer className="flex items-center justify-end gap-2 px-6 py-3.5 bg-slate-50 border-t border-slate-100 shrink-0">
+            <footer className="flex items-center justify-end gap-2 px-4 py-3 bg-slate-50 border-t border-slate-200 shrink-0">
               <button
                 type="button"
                 disabled={saving}
                 onClick={() => { setOpen(false); setEditSheetRow(null); }}
-                className="px-4 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-200/60 transition cursor-pointer"
+                className="px-3 py-1.5 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-200/70 border border-slate-200 bg-white transition cursor-pointer"
               >
                 ยกเลิก
               </button>
               <button
                 type={submitPath ? "submit" : "button"}
                 disabled={saving || !submitPath}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 transition shadow-2xs cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 transition cursor-pointer"
               >
-                <Save size={16} />
+                <Save size={13} />
                 <span>{saving ? "กำลังบันทึก" : "บันทึก"}</span>
               </button>
             </footer>
@@ -576,7 +600,7 @@ function renderField(
         readOnly={readOnly}
         rows={3}
         onChange={event => onChange(event.target.value)}
-        className="w-full p-3 bg-slate-50/70 hover:bg-slate-100/90 focus:bg-white border border-slate-300 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 rounded-lg text-xs font-semibold text-slate-900 placeholder:text-slate-400 transition-all resize-y shadow-2xs"
+        className="w-full p-2.5 bg-white border border-slate-300 focus:border-slate-500 focus:outline-none rounded-md text-xs text-slate-800 placeholder:text-slate-400 transition-all resize-y"
       />
     );
   }
@@ -591,7 +615,7 @@ function renderField(
       readOnly={readOnly}
       lang={billDateMode ? "th-TH" : undefined}
       onChange={event => onChange(billDateMode ? normalizeBillDateInput(event.target.value) : event.target.value)}
-      className="w-full h-9.5 px-3 bg-slate-50/70 hover:bg-slate-100/90 focus:bg-white border border-slate-300 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 rounded-lg text-xs font-semibold text-slate-900 placeholder:text-slate-400 transition-all shadow-2xs"
+      className="w-full h-9 px-2.5 bg-white border border-slate-300 focus:border-slate-500 focus:outline-none rounded-md text-xs text-slate-800 placeholder:text-slate-400 transition-all"
     />
   );
 }
@@ -611,16 +635,16 @@ function SearchableRefSelect({
   placeholder: string;
   onChange: (value: string) => void;
 }) {
-  const selectedOption = options.find(option =>
+  const selectedOption = value ? options.find(option =>
     String(option.value) === value ||
     String(option.label) === value ||
     (option.row && (
       String(option.row.id) === value ||
       String(option.row.id_store) === value ||
       String(option.row["ชื่อร้านค้า"]) === value ||
-      Object.values(option.row).some(v => String(v) === value)
+      Object.values(option.row).some(v => v !== null && v !== undefined && String(v).trim() !== "" && String(v) === value)
     ))
-  );
+  ) : undefined;
   const selectedLabel = selectedOption ? optionLabel(selectedOption) : value;
   const selectedImgUrl = (selectedOption?.row?.image || selectedOption?.row?.image_url || "") as string;
 
@@ -1078,3 +1102,4 @@ function toNumber(value: unknown) {
 function formatDecimal(value: number) {
   return Number.isInteger(value) ? String(value) : value.toFixed(2);
 }
+

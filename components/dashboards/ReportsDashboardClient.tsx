@@ -472,116 +472,92 @@ export function ReportsDashboardClient({
   }
 
   return (
-    <div className="w-full flex flex-col gap-3 p-3 sm:p-4 max-w-[1700px] mx-auto font-sans print:p-0">
-      {/* 1. EXECUTIVE COMPACT HEADER CARD */}
-      <div className="bg-slate-900 text-white rounded-2xl p-4 shadow-md border border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-        {/* Title */}
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center shrink-0">
-            <BarChart3 className="text-teal-400" size={19} />
-          </div>
-          <div>
-            <h1 className="text-base font-black tracking-tight text-white flex items-center gap-2">
-              <span>รายงานวิเคราะห์การเงินและต้นทุนโครงการ</span>
-              <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded-md border border-emerald-800/60 uppercase">
-                Executive Mode
-              </span>
-            </h1>
-            <p className="text-xs text-slate-400 font-medium">
-              คำนวณและสรุปข้อมูลต้นทุนค่าของ ค่าแรง ภาษี และร้านค้าสำหรับผู้ประกอบการ
-            </p>
-          </div>
+    <div className="w-full flex flex-col gap-4 p-4 sm:p-5 max-w-[1700px] mx-auto font-sans text-sm text-slate-800 print:p-0">
+      {/* 1. HEADER ROW */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
+        <div>
+          <h1 className="text-lg font-bold text-slate-900">รายงานวิเคราะห์การเงินและต้นทุนโครงการ</h1>
+          <p className="text-xs text-slate-500 mt-0.5">คำนวณและสรุปข้อมูลต้นทุนค่าของ ค่าแรง ภาษี และผู้รับเหมา</p>
         </div>
 
-        {/* Quick KPI Badges & Entrepreneur Calculator Trigger */}
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          <div className="bg-slate-800/90 px-3 py-1.5 rounded-xl border border-slate-700">
-            <span className="text-[10px] font-bold text-slate-400 uppercase block">ยอดโอนเงินสุทธิ</span>
-            <span className="text-sm font-black text-emerald-400">{money(totalTransferAll)}</span>
+        {/* Quick Stats Strip & Calculator Toggle */}
+        <div className="flex flex-wrap items-center gap-3 text-xs">
+          <div className="border border-slate-200 rounded-md px-3 py-1.5 bg-white">
+            <span className="text-[11px] text-slate-400 block">ยอดโอนเงินสุทธิ</span>
+            <span className="font-bold text-emerald-700">{money(totalTransferAll)}</span>
           </div>
 
-          <div className="bg-slate-800/90 px-3 py-1.5 rounded-xl border border-slate-700">
-            <span className="text-[10px] font-bold text-slate-400 uppercase block">ยอดเงินบิลรวม</span>
-            <span className="text-sm font-black text-white">{money(totalBillAmountAll)}</span>
+          <div className="border border-slate-200 rounded-md px-3 py-1.5 bg-white">
+            <span className="text-[11px] text-slate-400 block">ยอดเงินบิลรวม</span>
+            <span className="font-bold text-slate-900">{money(totalBillAmountAll)}</span>
           </div>
 
-          {/* Entrepreneur Quick Calculator Toggle */}
           <button
             type="button"
             onClick={() => setShowCalculator(!showCalculator)}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition border cursor-pointer ${
+            className={`px-3 py-1.5 rounded-md font-semibold transition border cursor-pointer ${
               showCalculator
-                ? "bg-teal-500 text-slate-950 border-teal-400 shadow-md shadow-teal-500/20"
-                : "bg-slate-800 hover:bg-slate-700 text-teal-300 border-slate-700"
+                ? "bg-slate-900 text-white border-slate-900"
+                : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
             }`}
           >
-            <Calculator size={14} />
-            <span>เครื่องมือคิดคำนวณ</span>
+            เครื่องมือคิดคำนวณ
           </button>
 
-          {/* Refresh Button */}
           <button
             type="button"
             onClick={refreshData}
             disabled={refreshing}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition border border-slate-700 cursor-pointer"
+            className="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 font-semibold rounded-md hover:bg-slate-50 transition cursor-pointer"
           >
-            <RotateCw size={14} className={refreshing ? "animate-spin" : ""} />
-            <span>{refreshing ? "รีเฟรช..." : "รีเฟรช"}</span>
+            {refreshing ? "รีเฟรช..." : "รีเฟรช"}
           </button>
         </div>
       </div>
 
-      {/* 2. ENTREPRENEUR FINANCIAL CALCULATOR DRAWER (IF TOGGLED) */}
+      {/* 2. ENTREPRENEUR FINANCIAL CALCULATOR DRAWER */}
       {showCalculator && (
-        <div className="bg-slate-900 text-white rounded-2xl p-4 border border-teal-500/40 shadow-xl animate-in fade-in zoom-in duration-200">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-3">
-            <div className="flex items-center gap-2">
-              <Calculator className="text-teal-400" size={18} />
-              <h2 className="text-xs font-black text-white uppercase tracking-wider">
-                เครื่องมือช่วยผู้ประกอบการคำนวณและประเมินผลกำไร (Entrepreneur Calculator)
-              </h2>
-            </div>
-            <button type="button" onClick={() => setShowCalculator(false)} className="text-slate-400 hover:text-white">
-              <X size={16} />
+        <div className="border border-slate-200 rounded-md p-4 bg-white space-y-3">
+          <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+            <h2 className="text-xs font-bold text-slate-800">
+              เครื่องมือช่วยคำนวณภาษีและประเมินผลกำไร
+            </h2>
+            <button type="button" onClick={() => setShowCalculator(false)} className="text-slate-400 hover:text-slate-700">
+              <X size={15} />
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Calc 1: VAT & WHT Quick Calculator */}
-            <div className="bg-slate-800/90 rounded-xl p-3 border border-slate-700 flex flex-col justify-between">
-              <span className="text-xs font-extrabold text-teal-300 mb-2 flex items-center gap-1.5">
-                <Receipt size={14} />
-                <span>1. เครื่องมือคำนวณภาษี VAT 7% & หัก ณ ที่จ่าย (WHT)</span>
-              </span>
-
-              <div className="grid grid-cols-3 gap-2 mb-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            {/* VAT & WHT Calculator */}
+            <div className="border border-slate-200 rounded-md p-3 bg-slate-50/50 space-y-3">
+              <span className="font-bold text-slate-700 block">1. คำนวณภาษี VAT 7% & หัก ณ ที่จ่าย (WHT)</span>
+              <div className="grid grid-cols-3 gap-2">
                 <div>
-                  <label className="text-[10px] font-bold text-slate-400 block mb-1">ยอดก่อนภาษี (บาท)</label>
+                  <label className="text-[11px] text-slate-500 block mb-1">ยอดก่อนภาษี (บาท)</label>
                   <input
                     type="number"
                     value={calcBaseAmount}
                     onChange={(e) => setCalcBaseAmount(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg focus:outline-none focus:border-teal-400"
+                    className="w-full bg-white border border-slate-300 text-xs font-semibold px-2.5 py-1 rounded-md focus:outline-none focus:border-slate-500"
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-slate-400 block mb-1">VAT %</label>
+                  <label className="text-[11px] text-slate-500 block mb-1">VAT %</label>
                   <select
                     value={calcVatPercent}
                     onChange={(e) => setCalcVatPercent(Number(e.target.value))}
-                    className="w-full bg-slate-900 border border-slate-700 text-teal-300 text-xs font-bold px-2 py-1.5 rounded-lg focus:outline-none"
+                    className="w-full bg-white border border-slate-300 text-xs font-semibold px-2 py-1 rounded-md focus:outline-none"
                   >
                     <option value={0}>0% (ไม่มี Vat)</option>
                     <option value={7}>7% (Vat ปกติ)</option>
                   </select>
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-slate-400 block mb-1">หัก ณ ที่จ่าย %</label>
+                  <label className="text-[11px] text-slate-500 block mb-1">หัก ณ ที่จ่าย %</label>
                   <select
                     value={calcWhtPercent}
                     onChange={(e) => setCalcWhtPercent(Number(e.target.value))}
-                    className="w-full bg-slate-900 border border-slate-700 text-amber-300 text-xs font-bold px-2 py-1.5 rounded-lg focus:outline-none"
+                    className="w-full bg-white border border-slate-300 text-xs font-semibold px-2 py-1 rounded-md focus:outline-none"
                   >
                     <option value={0}>0% (ไม่หัก)</option>
                     <option value={1}>1% (ค่าขนส่ง)</option>
@@ -591,63 +567,59 @@ export function ReportsDashboardClient({
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-center">
+              <div className="grid grid-cols-3 gap-2 bg-white p-2.5 rounded-md border border-slate-200 text-center">
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 block">VAT 7%</span>
-                  <span className="text-xs font-black text-teal-400">+{money(calcResults.vatVal)}</span>
+                  <span className="text-[11px] text-slate-400 block">VAT 7%</span>
+                  <span className="font-bold text-slate-900">+{money(calcResults.vatVal)}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 block">หัก ณ ที่จ่าย</span>
-                  <span className="text-xs font-black text-amber-400">-{money(calcResults.whtVal)}</span>
+                  <span className="text-[11px] text-slate-400 block">หัก ณ ที่จ่าย</span>
+                  <span className="font-bold text-amber-600">-{money(calcResults.whtVal)}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-slate-300 block">ยอดโอนจริงสุทธิ</span>
-                  <span className="text-xs font-black text-emerald-400">{money(calcResults.netPayment)}</span>
+                  <span className="text-[11px] text-slate-400 block">ยอดโอนจริงสุทธิ</span>
+                  <span className="font-bold text-emerald-700">{money(calcResults.netPayment)}</span>
                 </div>
               </div>
             </div>
 
-            {/* Calc 2: Project Burn Rate & Margin Estimator */}
-            <div className="bg-slate-800/90 rounded-xl p-3 border border-slate-700 flex flex-col justify-between">
-              <span className="text-xs font-extrabold text-teal-300 mb-2 flex items-center gap-1.5">
-                <Wallet size={14} />
-                <span>2. เครื่องมือคำนวณ Burn Rate & ประมาณการกำไรโครงการ</span>
-              </span>
-
-              <div className="flex items-center gap-2 mb-3">
+            {/* Burn Rate & Margin Estimator */}
+            <div className="border border-slate-200 rounded-md p-3 bg-slate-50/50 space-y-3">
+              <span className="font-bold text-slate-700 block">2. คำนวณ Burn Rate & ประมาณการกำไรโครงการ</span>
+              <div className="flex items-center gap-2">
                 <div className="flex-1">
-                  <label className="text-[10px] font-bold text-slate-400 block mb-1">มูลค่าสัญญาโครงการ (บาท)</label>
+                  <label className="text-[11px] text-slate-500 block mb-1">มูลค่าสัญญาโครงการ (บาท)</label>
                   <input
                     type="number"
                     value={calcContractValue}
                     onChange={(e) => setCalcContractValue(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg focus:outline-none focus:border-teal-400"
+                    className="w-full bg-white border border-slate-300 text-xs font-semibold px-2.5 py-1 rounded-md focus:outline-none focus:border-slate-500"
                   />
                 </div>
                 <div className="flex-1">
-                  <label className="text-[10px] font-bold text-slate-400 block mb-1">เบิกจ่ายจริงแล้วสะสม</label>
-                  <div className="w-full bg-slate-950 border border-slate-800 text-emerald-400 text-xs font-black px-2.5 py-1.5 rounded-lg">
+                  <label className="text-[11px] text-slate-500 block mb-1">เบิกจ่ายจริงแล้วสะสม</label>
+                  <div className="w-full bg-white border border-slate-200 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-md">
                     {money(projectMarginResults.spent)}
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-center">
+              <div className="grid grid-cols-3 gap-2 bg-white p-2.5 rounded-md border border-slate-200 text-center">
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 block">งบประมาณคงเหลือ</span>
-                  <span className={`text-xs font-black ${projectMarginResults.remaining >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                  <span className="text-[11px] text-slate-400 block">งบประมาณคงเหลือ</span>
+                  <span className={`font-bold ${projectMarginResults.remaining >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
                     {money(projectMarginResults.remaining)}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 block">อัตราใช้งบ (Burn Rate)</span>
-                  <span className={`text-xs font-black ${projectMarginResults.burnRate > 90 ? "text-rose-400" : "text-amber-300"}`}>
+                  <span className="text-[11px] text-slate-400 block">อัตราใช้งบ (Burn Rate)</span>
+                  <span className={`font-bold ${projectMarginResults.burnRate > 90 ? "text-rose-600" : "text-slate-800"}`}>
                     {projectMarginResults.burnRate.toFixed(1)}%
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-slate-300 block">ประมาณการกำไร</span>
-                  <span className={`text-xs font-black ${projectMarginResults.estimatedMargin >= 0 ? "text-teal-400" : "text-rose-400"}`}>
+                  <span className="text-[11px] text-slate-400 block">ประมาณการกำไร</span>
+                  <span className={`font-bold ${projectMarginResults.estimatedMargin >= 0 ? "text-indigo-700" : "text-rose-600"}`}>
                     {projectMarginResults.estimatedMargin.toFixed(1)}%
                   </span>
                 </div>
@@ -658,16 +630,15 @@ export function ReportsDashboardClient({
       )}
 
       {/* 3. CONTROL TOOLBAR & FILTERS */}
-      <div className="bg-white rounded-2xl p-3 border border-slate-200 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
-        {/* Project Selector */}
+      <div className="border border-slate-200 rounded-md p-3 bg-white flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <FolderKanban size={15} className="text-indigo-600 shrink-0" />
+          <span className="font-semibold text-slate-700">โครงการ:</span>
           <select
             value={selectedProjectId}
             onChange={(e) => setSelectedProjectId(e.target.value)}
-            className="bg-slate-50 border border-slate-200 font-extrabold text-xs text-slate-900 px-3 py-1.5 rounded-lg focus:outline-none w-full sm:w-64"
+            className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none w-full sm:w-64"
           >
-            <option value="all">📁 ทุกโครงการ ({projectsList.length} โครงการ)</option>
+            <option value="all">ทุกโครงการ ({projectsList.length} โครงการ)</option>
             {projectsList.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.label}
@@ -676,7 +647,6 @@ export function ReportsDashboardClient({
           </select>
         </div>
 
-        {/* Search Box */}
         <div className="relative flex items-center w-full sm:w-72">
           <Search size={14} className="absolute left-2.5 text-slate-400" />
           <input
@@ -684,121 +654,124 @@ export function ReportsDashboardClient({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="ค้นหาร้านค้า, ผู้รับเหมา, รายการ..."
-            className="w-full bg-slate-50 border border-slate-200 text-xs font-semibold pl-7 pr-6 py-1.5 rounded-lg focus:outline-none"
+            className="w-full bg-white border border-slate-300 text-xs pl-8 pr-7 py-1 rounded-md focus:outline-none focus:border-slate-500"
           />
           {searchTerm && (
-            <button type="button" onClick={() => setSearchTerm("")} className="absolute right-2 text-slate-400">
+            <button type="button" onClick={() => setSearchTerm("")} className="absolute right-2 text-slate-400 hover:text-slate-600">
               <X size={14} />
             </button>
           )}
         </div>
       </div>
 
-      {/* 4. HIGH-DENSITY 6-TAB CONTROLS */}
-      <div className="bg-slate-100 p-1 rounded-xl flex flex-wrap items-center gap-1 border border-slate-200">
+      {/* 4. WORKSPACE TABS */}
+      <div className="flex items-center gap-1 border-b border-slate-200 text-xs font-semibold">
         <button
           type="button"
           onClick={() => setActiveTab("material")}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-extrabold text-xs transition cursor-pointer ${
-            activeTab === "material" ? "bg-emerald-600 text-white shadow-xs" : "text-slate-700 hover:bg-slate-200/80"
+          className={`px-3 py-2 border-b-2 transition ${
+            activeTab === "material"
+              ? "border-slate-900 text-slate-900 font-bold"
+              : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
-          <Package size={14} />
-          <span>สรุปค่าของ ({materialMetrics.count})</span>
+          สรุปค่าของ ({materialMetrics.count})
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab("product_category")}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-extrabold text-xs transition cursor-pointer ${
-            activeTab === "product_category" ? "bg-teal-600 text-white shadow-xs" : "text-slate-700 hover:bg-slate-200/80"
+          className={`px-3 py-2 border-b-2 transition ${
+            activeTab === "product_category"
+              ? "border-slate-900 text-slate-900 font-bold"
+              : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
-          <Boxes size={14} />
-          <span>สรุปประเภทสินค้า (18 สินค้า)</span>
+          สรุปประเภทสินค้า (18 สินค้า)
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab("labor")}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-extrabold text-xs transition cursor-pointer ${
-            activeTab === "labor" ? "bg-indigo-600 text-white shadow-xs" : "text-slate-700 hover:bg-slate-200/80"
+          className={`px-3 py-2 border-b-2 transition ${
+            activeTab === "labor"
+              ? "border-slate-900 text-slate-900 font-bold"
+              : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
-          <HardHat size={14} />
-          <span>สรุปค่าแรง ({laborMetrics.count})</span>
+          สรุปค่าแรง ({laborMetrics.count})
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab("category")}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-extrabold text-xs transition cursor-pointer ${
-            activeTab === "category" ? "bg-purple-600 text-white shadow-xs" : "text-slate-700 hover:bg-slate-200/80"
+          className={`px-3 py-2 border-b-2 transition ${
+            activeTab === "category"
+              ? "border-slate-900 text-slate-900 font-bold"
+              : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
-          <Tag size={14} />
-          <span>สรุปประเภท (8 หมวด)</span>
+          สรุปประเภท (8 หมวด)
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab("contractor")}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-extrabold text-xs transition cursor-pointer ${
-            activeTab === "contractor" ? "bg-amber-600 text-white shadow-xs" : "text-slate-700 hover:bg-slate-200/80"
+          className={`px-3 py-2 border-b-2 transition ${
+            activeTab === "contractor"
+              ? "border-slate-900 text-slate-900 font-bold"
+              : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
-          <Users size={14} />
-          <span>ค่าแรง (ต่อคน) ({contractorMetrics.count})</span>
+          ค่าแรง (ต่อคน) ({contractorMetrics.count})
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab("store")}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-extrabold text-xs transition cursor-pointer ${
-            activeTab === "store" ? "bg-sky-600 text-white shadow-xs" : "text-slate-700 hover:bg-slate-200/80"
+          className={`px-3 py-2 border-b-2 transition ${
+            activeTab === "store"
+              ? "border-slate-900 text-slate-900 font-bold"
+              : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
-          <Store size={14} />
-          <span>ค่าของ (ต่อร้าน) ({storeMetrics.count})</span>
+          ค่าของ (ต่อร้าน) ({storeMetrics.count})
         </button>
       </div>
 
+
       {/* 5. TAB 1: สรุปค่าของ (MATERIAL & EXPENSES) */}
       {activeTab === "material" && (
-        <div className="space-y-3">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-            <div className="p-3 border-b border-slate-200 bg-emerald-50 flex items-center justify-between">
-              <h2 className="text-xs font-black text-emerald-950 uppercase tracking-wider flex items-center gap-2">
-                <Package size={15} />
-                <span>สรุปค่าของ (Material & Expenses Breakdown)</span>
-              </h2>
-              <span className="text-xs font-black text-emerald-950 bg-emerald-100 px-3 py-1 rounded-lg border border-emerald-200">
-                โอนรวมสุทธิ: {money(materialMetrics.totalTransfer)}
-              </span>
-            </div>
+        <div className="border border-slate-200 rounded-md bg-white overflow-hidden">
+          <div className="px-3 py-2 border-b border-slate-200 bg-slate-50 flex items-center justify-between text-xs">
+            <h2 className="font-bold text-slate-700">สรุปค่าของ (Material & Expenses Breakdown)</h2>
+            <span className="font-bold text-emerald-700">
+              โอนรวมสุทธิ: {money(materialMetrics.totalTransfer)}
+            </span>
+          </div>
 
-            <div className="overflow-auto max-h-[calc(100vh-210px)] min-h-[420px] relative scrollbar-thin">
-              <table className="w-full text-left text-xs text-slate-700 border-collapse font-sans">
-                <thead className="sticky top-0 z-20 bg-slate-900 text-white font-extrabold text-[11px] uppercase tracking-wider">
-                  <tr>
-                    <th className="py-2.5 px-3 border-r border-slate-800">ลำดับ</th>
-                    <th className="py-2.5 px-3 border-r border-slate-800">ผู้เบิก</th>
-                    <th className="py-2.5 px-3 border-r border-slate-800">บิล</th>
-                    <th className="py-2.5 px-3 border-r border-slate-800">ชื่อร้านค้า/ผู้รับเหมา</th>
-                    <th className="py-2.5 px-3 border-r border-slate-800">รายละเอียดงาน</th>
-                    <th className="py-2.5 px-3 border-r border-slate-800">รายการ</th>
-                    <th className="py-2.5 px-3 border-r border-slate-800">ประเภท</th>
-                    <th className="py-2.5 px-3 text-right border-r border-slate-800">ค่าของ</th>
-                    <th className="py-2.5 px-3 text-right border-r border-slate-800">VAT</th>
-                    <th className="py-2.5 px-3 text-right border-r border-slate-800">น้ำมัน</th>
-                    <th className="py-2.5 px-3 text-right border-r border-slate-800">ซ่อมรถ</th>
-                    <th className="py-2.5 px-3 text-right border-r border-slate-800">เครื่องจักร</th>
-                    <th className="py-2.5 px-3 text-right border-r border-slate-800">เครื่องมือ</th>
-                    <th className="py-2.5 px-3 text-right border-r border-slate-800">อื่นๆ</th>
-                    <th className="py-2.5 px-3 text-right bg-emerald-900 text-emerald-100 font-black border-r border-emerald-800">โอนเงิน</th>
-                    <th className="py-2.5 px-3">ว/ด/ป</th>
-                  </tr>
-                </thead>
+          <div className="overflow-auto max-h-[calc(100vh-210px)] relative">
+            <table className="w-full text-left text-xs text-slate-700 border-collapse font-sans">
+              <thead className="sticky top-0 z-20 bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
+                <tr>
+                  <th className="py-2 px-3 border-r border-slate-200">ลำดับ</th>
+                  <th className="py-2 px-3 border-r border-slate-200">ผู้เบิก</th>
+                  <th className="py-2 px-3 border-r border-slate-200">บิล</th>
+                  <th className="py-2 px-3 border-r border-slate-200">ชื่อร้านค้า/ผู้รับเหมา</th>
+                  <th className="py-2 px-3 border-r border-slate-200">รายละเอียดงาน</th>
+                  <th className="py-2 px-3 border-r border-slate-200">รายการ</th>
+                  <th className="py-2 px-3 border-r border-slate-200">ประเภท</th>
+                  <th className="py-2 px-3 text-right border-r border-slate-200">ค่าของ</th>
+                  <th className="py-2 px-3 text-right border-r border-slate-200">VAT</th>
+                  <th className="py-2 px-3 text-right border-r border-slate-200">น้ำมัน</th>
+                  <th className="py-2 px-3 text-right border-r border-slate-200">ซ่อมรถ</th>
+                  <th className="py-2 px-3 text-right border-r border-slate-200">เครื่องจักร</th>
+                  <th className="py-2 px-3 text-right border-r border-slate-200">เครื่องมือ</th>
+                  <th className="py-2 px-3 text-right border-r border-slate-200">อื่นๆ</th>
+                  <th className="py-2 px-3 text-right border-r border-slate-200 text-slate-900">โอนเงิน</th>
+                  <th className="py-2 px-3">ว/ด/ป</th>
+                </tr>
+              </thead>
                 <tbody className="divide-y divide-slate-100">
                   {materialRows.length === 0 ? (
                     <tr>
@@ -894,16 +867,10 @@ export function ReportsDashboardClient({
                       >
                         {money(materialMetrics.catOther)}
                       </td>
-                      <td
-                        style={{ color: "#ffffff", backgroundColor: "#059669" }}
-                        className="py-2.5 px-3 text-right font-black text-sm border-r border-emerald-700 shadow-inner"
-                      >
+                      <td className="py-2 px-3 text-right font-bold text-emerald-800 bg-emerald-100 border-r border-emerald-300">
                         {money(materialMetrics.totalTransfer)}
                       </td>
-                      <td
-                        style={{ color: "#475569", backgroundColor: "#e2e8f0" }}
-                        className="py-2.5 px-3 border-r border-slate-300 text-center text-xs font-bold"
-                      >
+                      <td className="py-2 px-3 text-center text-xs font-bold border-r border-slate-300">
                         -
                       </td>
                     </tr>
@@ -912,22 +879,20 @@ export function ReportsDashboardClient({
               </table>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* 6. TAB 2: สรุปแยกตามประเภทสินค้า (18 สินค้า) */}
       {activeTab === "product_category" && (
         <div className="space-y-3">
-          <div className="bg-white rounded-2xl p-3 border border-teal-200/80 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="border border-slate-200 rounded-md p-3 bg-white flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2">
-              <Boxes className="text-teal-600" size={16} />
-              <span className="text-xs font-black text-slate-800">เลือกประเภทสินค้า:</span>
+              <span className="font-semibold text-slate-700">เลือกประเภทสินค้า:</span>
               <select
                 value={selectedProductCategory}
                 onChange={(e) => setSelectedProductCategory(e.target.value)}
-                className="bg-teal-50 border border-teal-200 font-extrabold text-xs text-teal-900 px-2.5 py-1 rounded-lg focus:outline-none"
+                className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none"
               >
-                <option value="all">📦 แสดงสินค้าทุกประเภท ({PRODUCT_CATEGORIES_LIST.length} รหัสสินค้า)</option>
+                <option value="all">แสดงสินค้าทุกประเภท ({PRODUCT_CATEGORIES_LIST.length} รหัสสินค้า)</option>
                 {PRODUCT_CATEGORIES_LIST.map((c) => (
                   <option key={c.code} value={c.code}>
                     {c.label}
@@ -936,8 +901,8 @@ export function ReportsDashboardClient({
               </select>
             </div>
 
-            <div className="text-xs font-black text-slate-700">
-              ยอดโอนรวมสินค้า: <span className="text-teal-700">{money(productCategoryMetrics.grandTotal)}</span>
+            <div className="font-bold text-slate-700">
+              ยอดโอนรวมสินค้า: <span className="text-emerald-700">{money(productCategoryMetrics.grandTotal)}</span>
             </div>
           </div>
 
@@ -948,40 +913,40 @@ export function ReportsDashboardClient({
                 <div
                   key={cat.code}
                   onClick={() => setSelectedProductCategory(isSelected ? "all" : cat.code)}
-                  className={`bg-white rounded-xl p-2 border transition cursor-pointer shadow-2xs flex flex-col justify-between ${
-                    isSelected ? "border-teal-600 ring-2 ring-teal-600/20 bg-teal-50/20" : "border-slate-200 hover:border-teal-300"
+                  className={`bg-white rounded-md p-2 border transition cursor-pointer flex flex-col justify-between ${
+                    isSelected ? "border-slate-800 bg-slate-50 font-bold" : "border-slate-200 hover:border-slate-300"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-1">
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-teal-50 text-teal-900 border border-teal-200 truncate">
+                    <span className="text-[10px] font-medium text-slate-600 truncate">
                       {cat.label}
                     </span>
-                    <span className="text-[9px] font-semibold text-slate-400">{cat.count} รายการ</span>
+                    <span className="text-[9px] text-slate-400">{cat.count} รายการ</span>
                   </div>
 
-                  <div className="mt-1.5 flex items-baseline justify-between">
-                    <div className="text-xs font-black text-slate-900">{money(cat.transfer)}</div>
-                    <span className="text-[9px] font-black text-teal-700">{cat.percent.toFixed(1)}%</span>
+                  <div className="mt-1.5 flex items-baseline justify-between text-xs">
+                    <div className="font-bold text-slate-900">{money(cat.transfer)}</div>
+                    <span className="text-[10px] text-slate-500">{cat.percent.toFixed(1)}%</span>
                   </div>
                 </div>
               );
             })}
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-            <div className="overflow-auto max-h-[calc(100vh-210px)] min-h-[420px] relative scrollbar-thin">
+          <div className="border border-slate-200 rounded-md bg-white overflow-hidden">
+            <div className="overflow-auto max-h-[calc(100vh-210px)] relative">
               <table className="w-full text-left text-xs text-slate-700 border-collapse font-sans">
-                <thead className="sticky top-0 z-20 bg-slate-900 text-white font-extrabold text-[11px] uppercase tracking-wider">
+                <thead className="sticky top-0 z-20 bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
                   <tr>
-                    <th className="py-2.5 px-3 border-r border-slate-800">ลำดับ</th>
-                    <th className="py-2.5 px-3 border-r border-slate-800">ผู้เบิก</th>
-                    <th className="py-2.5 px-3 border-r border-slate-800">บิล</th>
-                    <th className="py-2.5 px-3 border-r border-slate-800">ชื่อร้านค้า/ผู้รับเหมา</th>
-                    <th className="py-2.5 px-3 border-r border-slate-800">รายละเอียดงาน / รายการ</th>
-                    <th className="py-2.5 px-3 border-r border-slate-800">ประเภท</th>
-                    <th className="py-2.5 px-3 text-right border-r border-slate-800">ยอดเงินบิล</th>
-                    <th className="py-2.5 px-3 text-right bg-teal-900 text-teal-100 font-black border-r border-teal-800">โอนเงิน</th>
-                    <th className="py-2.5 px-3">ว/ด/ป</th>
+                    <th className="py-2 px-3 border-r border-slate-200">ลำดับ</th>
+                    <th className="py-2 px-3 border-r border-slate-200">ผู้เบิก</th>
+                    <th className="py-2 px-3 border-r border-slate-200">บิล</th>
+                    <th className="py-2 px-3 border-r border-slate-200">ชื่อร้านค้า/ผู้รับเหมา</th>
+                    <th className="py-2 px-3 border-r border-slate-200">รายละเอียดงาน / รายการ</th>
+                    <th className="py-2 px-3 border-r border-slate-200">ประเภท</th>
+                    <th className="py-2 px-3 text-right border-r border-slate-200">ยอดเงินบิล</th>
+                    <th className="py-2 px-3 text-right border-r border-slate-200 text-slate-900">โอนเงิน</th>
+                    <th className="py-2 px-3">ว/ด/ป</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -1042,101 +1007,75 @@ export function ReportsDashboardClient({
 
       {/* 7. TAB 3: สรุปค่าแรง (LABOR BREAKDOWN) */}
       {activeTab === "labor" && (
-        <div className="space-y-3">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-            <div className="p-3 border-b border-slate-200 bg-indigo-50 flex items-center justify-between">
-              <h2 className="text-xs font-black text-indigo-950 uppercase tracking-wider flex items-center gap-2">
-                <HardHat size={15} />
-                <span>สรุปค่าแรงงานและผู้รับเหมา (Labor Expenses Breakdown)</span>
-              </h2>
-              <span className="text-xs font-black text-indigo-950 bg-indigo-100 px-3 py-1 rounded-lg border border-indigo-200">
-                โอนรวมสุทธิ: {money(laborMetrics.totalTransfer)}
-              </span>
-            </div>
+        <div className="border border-slate-200 rounded-md bg-white overflow-hidden">
+          <div className="px-3 py-2 border-b border-slate-200 bg-slate-50 flex items-center justify-between text-xs font-bold text-slate-700">
+            <span>สรุปค่าแรงงานและผู้รับเหมา (Labor Expenses Breakdown)</span>
+            <span className="text-emerald-700">
+              โอนรวมสุทธิ: {money(laborMetrics.totalTransfer)}
+            </span>
+          </div>
 
-            <div className="overflow-auto max-h-[calc(100vh-210px)] min-h-[420px] relative scrollbar-thin">
-              <table className="w-full text-left text-xs text-slate-700 border-collapse font-sans">
-                <thead className="sticky top-0 z-20 bg-slate-900 text-white font-extrabold text-[11px] uppercase tracking-wider">
-                  <tr>
-                    <th className="py-2.5 px-3 border-r border-slate-800">ลำดับ</th>
-                    <th className="py-2.5 px-3 border-r border-slate-800">ผู้เบิก</th>
-                    <th className="py-2.5 px-3 border-r border-slate-800">บิล</th>
-                    <th className="py-2.5 px-3 border-r border-slate-800">ชื่อผู้รับเหมา/ช่าง</th>
-                    <th className="py-2.5 px-3 border-r border-slate-800">รายละเอียดงาน</th>
-                    <th className="py-2.5 px-3 text-right border-r border-slate-800">เปิดจ้าง</th>
-                    <th className="py-2.5 px-3 text-right border-r border-slate-800">ค่าแรง</th>
-                    <th className="py-2.5 px-3 text-right border-r border-slate-800">จ่ายสะสม</th>
-                    <th className="py-2.5 px-3 text-right bg-indigo-900 text-indigo-100 font-black border-r border-indigo-800">โอนเงิน</th>
-                    <th className="py-2.5 px-3">ว/ด/ป</th>
+          <div className="overflow-auto max-h-[calc(100vh-210px)] relative">
+            <table className="w-full text-left text-xs text-slate-700 border-collapse font-sans">
+              <thead className="sticky top-0 z-20 bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
+                <tr>
+                  <th className="py-2 px-3 border-r border-slate-200">ลำดับ</th>
+                  <th className="py-2 px-3 border-r border-slate-200">ผู้เบิก</th>
+                  <th className="py-2 px-3 border-r border-slate-200">บิล</th>
+                  <th className="py-2 px-3 border-r border-slate-200">ชื่อผู้รับเหมา/ช่าง</th>
+                  <th className="py-2 px-3 border-r border-slate-200">รายละเอียดงาน</th>
+                  <th className="py-2 px-3 text-right border-r border-slate-200">เปิดจ้าง</th>
+                  <th className="py-2 px-3 text-right border-r border-slate-200">ค่าแรง</th>
+                  <th className="py-2 px-3 text-right border-r border-slate-200">จ่ายสะสม</th>
+                  <th className="py-2 px-3 text-right border-r border-slate-200 text-slate-900">โอนเงิน</th>
+                  <th className="py-2 px-3">ว/ด/ป</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {laborRows.map((r, i) => (
+                  <tr key={i} className="hover:bg-slate-50 transition">
+                    <td className="py-2 px-3 font-semibold text-slate-500">{r["ลำดับ"] || i + 1}</td>
+                    <td className="py-2 px-3 font-bold text-slate-900">{getRequesterDisplayName(r["ผู้เบิก"])}</td>
+                    <td className="py-2 px-3 font-medium">{r["บิล"] || "-"}</td>
+                    <td className="py-2 px-3 font-bold text-slate-900">
+                      {r["ชื่อผู้รับเหมา"] || r["ผู้รับเหมา"] || r["ร้าน/บุคคล"] || "-"}
+                    </td>
+                    <td className="py-2 px-3">{r["รายละเอียดงาน"] || r["สินค้า/ทำงาน"] || "-"}</td>
+                    <td className="py-2 px-3 text-right font-semibold">{money(toNumber(r["เปิดจ้าง"]))}</td>
+                    <td className="py-2 px-3 text-right font-bold text-slate-900">
+                      {money(toNumber(r["ค่าแรง"]) || getRowAmount(r))}
+                    </td>
+                    <td className="py-2 px-3 text-right font-semibold">{money(toNumber(r["จ่ายสะสม"]))}</td>
+                    <td className="py-2 px-3 text-right font-bold text-emerald-700 bg-emerald-50/40">
+                      {money(getRowTransferAmount(r))}
+                    </td>
+                    <td className="py-2 px-3 text-slate-600 font-semibold whitespace-nowrap">{formatDateThai(r["ว/ด/ป"] || r["วันที่"])}</td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {laborRows.map((r, i) => (
-                    <tr key={i} className="hover:bg-slate-50 transition">
-                      <td className="py-2 px-3 font-semibold text-slate-500">{r["ลำดับ"] || i + 1}</td>
-                      <td className="py-2 px-3 font-bold text-slate-900">{getRequesterDisplayName(r["ผู้เบิก"])}</td>
-                      <td className="py-2 px-3 font-medium">{r["บิล"] || "-"}</td>
-                      <td className="py-2 px-3 font-bold text-slate-900">
-                        {r["ชื่อผู้รับเหมา"] || r["ผู้รับเหมา"] || r["ร้าน/บุคคล"] || "-"}
-                      </td>
-                      <td className="py-2 px-3">{r["รายละเอียดงาน"] || r["สินค้า/ทำงาน"] || "-"}</td>
-                      <td className="py-2 px-3 text-right font-semibold">{money(toNumber(r["เปิดจ้าง"]))}</td>
-                      <td className="py-2 px-3 text-right font-bold text-slate-900">
-                        {money(toNumber(r["ค่าแรง"]) || getRowAmount(r))}
-                      </td>
-                      <td className="py-2 px-3 text-right font-semibold">{money(toNumber(r["จ่ายสะสม"]))}</td>
-                      <td className="py-2 px-3 text-right font-black text-indigo-700 bg-indigo-50/60">
-                        {money(getRowTransferAmount(r))}
-                      </td>
-                      <td className="py-2 px-3 text-slate-600 font-semibold whitespace-nowrap">{formatDateThai(r["ว/ด/ป"] || r["วันที่"])}</td>
-                    </tr>
-                  ))}
-                </tbody>
-                {laborRows.length > 0 && (
-                  <tfoot className="sticky bottom-0 z-20 shadow-md border-t-2 border-slate-400">
-                    <tr className="font-extrabold text-xs">
-                      <td
-                        colSpan={5}
-                        style={{ color: "#0f172a", backgroundColor: "#e2e8f0" }}
-                        className="py-2.5 px-3 font-black text-slate-900 border-r border-slate-300 tracking-wider text-xs"
-                      >
-                        รวมสุทธิค่าแรง ({laborRows.length} รายการ)
-                      </td>
-                      <td
-                        style={{ color: "#312e81", backgroundColor: "#e0e7ff" }}
-                        className="py-2.5 px-3 text-right font-black border-r border-indigo-200 text-xs"
-                      >
-                        {money(laborMetrics.totalOpenHire)}
-                      </td>
-                      <td
-                        style={{ color: "#0f172a", backgroundColor: "#f1f5f9" }}
-                        className="py-2.5 px-3 text-right font-black border-r border-slate-300 text-xs"
-                      >
-                        {money(laborMetrics.totalLabor)}
-                      </td>
-                      <td
-                        style={{ color: "#581c87", backgroundColor: "#f3e8ff" }}
-                        className="py-2.5 px-3 text-right font-black border-r border-purple-200 text-xs"
-                      >
-                        {money(laborMetrics.totalAccumPaid)}
-                      </td>
-                      <td
-                        style={{ color: "#ffffff", backgroundColor: "#4f46e5" }}
-                        className="py-2.5 px-3 text-right font-black text-sm border-r border-indigo-700"
-                      >
-                        {money(laborMetrics.totalTransfer)}
-                      </td>
-                      <td
-                        style={{ color: "#475569", backgroundColor: "#e2e8f0" }}
-                        className="py-2.5 px-3 border-r border-slate-300 text-center text-xs font-bold"
-                      >
-                        -
-                      </td>
-                    </tr>
-                  </tfoot>
-                )}
-              </table>
-            </div>
+                ))}
+              </tbody>
+              {laborRows.length > 0 && (
+                <tfoot className="sticky bottom-0 z-20 border-t-2 border-slate-300 bg-slate-100 font-bold text-xs">
+                  <tr>
+                    <td colSpan={5} className="py-2 px-3 font-bold text-slate-900 border-r border-slate-300">
+                      รวมสุทธิค่าแรง ({laborRows.length} รายการ)
+                    </td>
+                    <td className="py-2 px-3 text-right font-bold border-r border-slate-300">
+                      {money(laborMetrics.totalOpenHire)}
+                    </td>
+                    <td className="py-2 px-3 text-right font-bold border-r border-slate-300">
+                      {money(laborMetrics.totalLabor)}
+                    </td>
+                    <td className="py-2 px-3 text-right font-bold border-r border-slate-300">
+                      {money(laborMetrics.totalAccumPaid)}
+                    </td>
+                    <td className="py-2 px-3 text-right font-bold text-emerald-800 bg-emerald-100 border-r border-emerald-300">
+                      {money(laborMetrics.totalTransfer)}
+                    </td>
+                    <td className="py-2 px-3 border-r border-slate-300 text-center">-</td>
+                  </tr>
+                </tfoot>
+              )}
+            </table>
           </div>
         </div>
       )}
@@ -1149,33 +1088,33 @@ export function ReportsDashboardClient({
               <div
                 key={cat.key}
                 onClick={() => setSelectedCategory(selectedCategory === cat.key ? "all" : cat.key)}
-                className={`p-3 rounded-xl border transition cursor-pointer ${
-                  selectedCategory === cat.key ? "ring-2 ring-purple-600 bg-purple-50" : cat.color
+                className={`p-2.5 rounded-md border transition cursor-pointer flex flex-col justify-between ${
+                  selectedCategory === cat.key ? "border-slate-800 bg-slate-50 font-bold" : "border-slate-200 hover:border-slate-300 bg-white"
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <span className="font-extrabold text-xs">{cat.label}</span>
-                  <span className="text-[10px] font-bold opacity-75">{cat.count} รายการ</span>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-slate-800">{cat.label}</span>
+                  <span className="text-[10px] text-slate-400">{cat.count} รายการ</span>
                 </div>
-                <div className="text-sm font-black mt-1">{money(cat.transfer)}</div>
+                <div className="text-xs font-bold text-slate-900 mt-1">{money(cat.transfer)}</div>
               </div>
             ))}
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-            <div className="overflow-auto max-h-[calc(100vh-210px)] min-h-[420px] relative scrollbar-thin">
+          <div className="border border-slate-200 rounded-md bg-white overflow-hidden">
+            <div className="overflow-auto max-h-[calc(100vh-210px)] relative">
               <table className="w-full text-left text-xs text-slate-700 border-collapse font-sans">
-                <thead className="sticky top-0 z-20 bg-slate-900 text-white font-extrabold text-[11px] uppercase tracking-wider">
+                <thead className="sticky top-0 z-20 bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
                   <tr>
-                    <th className="py-2.5 px-3 border-r border-slate-800">ลำดับ</th>
-                    <th className="py-2.5 px-3 border-r border-slate-800">ผู้เบิก</th>
-                    <th className="py-2.5 px-3 border-r border-slate-800">บิล</th>
-                    <th className="py-2.5 px-3 border-r border-slate-800">ร้านค้า/ผู้รับเหมา</th>
-                    <th className="py-2.5 px-3 border-r border-slate-800">รายละเอียดงาน</th>
-                    <th className="py-2.5 px-3 border-r border-slate-800">หมวดหมู่</th>
-                    <th className="py-2.5 px-3 text-right border-r border-slate-800">ยอดเงินบิล</th>
-                    <th className="py-2.5 px-3 text-right bg-purple-900 text-purple-100 font-black border-r border-purple-800">โอนเงิน</th>
-                    <th className="py-2.5 px-3">ว/ด/ป</th>
+                    <th className="py-2 px-3 border-r border-slate-200">ลำดับ</th>
+                    <th className="py-2 px-3 border-r border-slate-200">ผู้เบิก</th>
+                    <th className="py-2 px-3 border-r border-slate-200">บิล</th>
+                    <th className="py-2 px-3 border-r border-slate-200">ร้านค้า/ผู้รับเหมา</th>
+                    <th className="py-2 px-3 border-r border-slate-200">รายละเอียดงาน</th>
+                    <th className="py-2 px-3 border-r border-slate-200">หมวดหมู่</th>
+                    <th className="py-2 px-3 text-right border-r border-slate-200">ยอดเงินบิล</th>
+                    <th className="py-2 px-3 text-right border-r border-slate-200 text-slate-900">โอนเงิน</th>
+                    <th className="py-2 px-3">ว/ด/ป</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -1198,33 +1137,18 @@ export function ReportsDashboardClient({
                   ))}
                 </tbody>
                 {categoryFilteredRows.length > 0 && (
-                  <tfoot className="sticky bottom-0 z-20 shadow-md border-t-2 border-slate-400">
-                    <tr className="font-extrabold text-xs">
-                      <td
-                        colSpan={6}
-                        style={{ color: "#0f172a", backgroundColor: "#e2e8f0" }}
-                        className="py-2.5 px-3 font-black text-slate-900 border-r border-slate-300 tracking-wider text-xs"
-                      >
+                  <tfoot className="sticky bottom-0 z-20 border-t-2 border-slate-300 bg-slate-100 font-bold text-xs">
+                    <tr>
+                      <td colSpan={6} className="py-2 px-3 font-bold text-slate-900 border-r border-slate-300">
                         รวมสุทธิประเภท ({categoryFilteredRows.length} รายการ)
                       </td>
-                      <td
-                        style={{ color: "#0f172a", backgroundColor: "#f1f5f9" }}
-                        className="py-2.5 px-3 text-right font-black border-r border-slate-300 text-xs"
-                      >
+                      <td className="py-2 px-3 text-right font-bold border-r border-slate-300">
                         {money(categoryFilteredBillTotal)}
                       </td>
-                      <td
-                        style={{ color: "#ffffff", backgroundColor: "#9333ea" }}
-                        className="py-2.5 px-3 text-right font-black text-sm border-r border-purple-700"
-                      >
+                      <td className="py-2 px-3 text-right font-bold text-emerald-800 bg-emerald-100 border-r border-emerald-300">
                         {money(categoryFilteredTransferTotal)}
                       </td>
-                      <td
-                        style={{ color: "#475569", backgroundColor: "#e2e8f0" }}
-                        className="py-2.5 px-3 border-r border-slate-300 text-center text-xs font-bold"
-                      >
-                        -
-                      </td>
+                      <td className="py-2 px-3 border-r border-slate-300 text-center">-</td>
                     </tr>
                   </tfoot>
                 )}
@@ -1237,16 +1161,15 @@ export function ReportsDashboardClient({
       {/* 9. TAB 5: ค่าแรงต่อคน (CONTRACTOR DETAIL) */}
       {activeTab === "contractor" && (
         <div className="space-y-3">
-          <div className="bg-white rounded-2xl p-3 border border-amber-200 shadow-2xs flex items-center justify-between gap-3">
+          <div className="border border-slate-200 rounded-md p-3 bg-white flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2">
-              <Users className="text-amber-600" size={16} />
-              <span className="text-xs font-black text-slate-800">เลือกผู้รับเหมา/ช่าง:</span>
+              <span className="font-semibold text-slate-700">เลือกผู้รับเหมา/ช่าง:</span>
               <select
                 value={selectedContractor}
                 onChange={(e) => setSelectedContractor(e.target.value)}
-                className="bg-amber-50 border border-amber-200 font-extrabold text-xs text-amber-950 px-3 py-1 rounded-lg focus:outline-none"
+                className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none"
               >
-                <option value="all">👷 ผู้รับเหมาทุกคน ({contractorsList.length} คน)</option>
+                <option value="all">ผู้รับเหมาทุกคน ({contractorsList.length} คน)</option>
                 {contractorsList.map((c) => (
                   <option key={c} value={c}>
                     {c}
@@ -1255,23 +1178,23 @@ export function ReportsDashboardClient({
               </select>
             </div>
 
-            <span className="text-xs font-black text-amber-900 bg-amber-100 px-3 py-1 rounded-lg">
-              โอนรวมผู้รับเหมา: {money(contractorMetrics.totalTransfer)}
+            <span className="font-bold text-slate-700">
+              โอนรวมผู้รับเหมา: <span className="text-emerald-700">{money(contractorMetrics.totalTransfer)}</span>
             </span>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-            <div className="overflow-auto max-h-[calc(100vh-210px)] min-h-[420px] relative scrollbar-thin">
+          <div className="border border-slate-200 rounded-md bg-white overflow-hidden">
+            <div className="overflow-auto max-h-[calc(100vh-210px)] relative">
               <table className="w-full text-left text-xs text-slate-700 border-collapse font-sans">
-                <thead className="sticky top-0 z-20 bg-slate-900 text-white font-extrabold text-[11px] uppercase tracking-wider">
+                <thead className="sticky top-0 z-20 bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
                   <tr>
-                    <th className="py-2.5 px-3 border-r border-slate-800">ลำดับ</th>
-                    <th className="py-2.5 px-3 border-r border-slate-800">ชื่อผู้รับเหมา</th>
-                    <th className="py-2.5 px-3 border-r border-slate-800">รายละเอียดงาน</th>
-                    <th className="py-2.5 px-3 text-right border-r border-slate-800">เปิดจ้าง</th>
-                    <th className="py-2.5 px-3 text-right border-r border-slate-800">ค่าแรง</th>
-                    <th className="py-2.5 px-3 text-right bg-amber-900 text-amber-100 font-black border-r border-amber-800">โอนเงิน</th>
-                    <th className="py-2.5 px-3">ว/ด/ป</th>
+                    <th className="py-2 px-3 border-r border-slate-200">ลำดับ</th>
+                    <th className="py-2 px-3 border-r border-slate-200">ชื่อผู้รับเหมา</th>
+                    <th className="py-2 px-3 border-r border-slate-200">รายละเอียดงาน</th>
+                    <th className="py-2 px-3 text-right border-r border-slate-200">เปิดจ้าง</th>
+                    <th className="py-2 px-3 text-right border-r border-slate-200">ค่าแรง</th>
+                    <th className="py-2 px-3 text-right border-r border-slate-200 text-slate-900">โอนเงิน</th>
+                    <th className="py-2 px-3">ว/ด/ป</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -1284,7 +1207,7 @@ export function ReportsDashboardClient({
                       <td className="py-2 px-3">{r["รายละเอียดงาน"] || r["สินค้า/ทำงาน"] || "-"}</td>
                       <td className="py-2 px-3 text-right font-semibold">{money(toNumber(r["เปิดจ้าง"]))}</td>
                       <td className="py-2 px-3 text-right font-bold text-slate-900">{money(toNumber(r["ค่าแรง"]) || getRowAmount(r))}</td>
-                      <td className="py-2 px-3 text-right font-black text-amber-800 bg-amber-50/60">
+                      <td className="py-2 px-3 text-right font-bold text-emerald-700 bg-emerald-50/40">
                         {money(getRowTransferAmount(r))}
                       </td>
                       <td className="py-2 px-3 text-slate-600 font-semibold whitespace-nowrap">{formatDateThai(r["ว/ด/ป"] || r["วันที่"])}</td>
@@ -1292,39 +1215,21 @@ export function ReportsDashboardClient({
                   ))}
                 </tbody>
                 {contractorRows.length > 0 && (
-                  <tfoot className="sticky bottom-0 z-20 shadow-md border-t-2 border-slate-400">
-                    <tr className="font-extrabold text-xs">
-                      <td
-                        colSpan={3}
-                        style={{ color: "#0f172a", backgroundColor: "#e2e8f0" }}
-                        className="py-2.5 px-3 font-black text-slate-900 border-r border-slate-300 tracking-wider text-xs"
-                      >
+                  <tfoot className="sticky bottom-0 z-20 border-t-2 border-slate-300 bg-slate-100 font-bold text-xs">
+                    <tr>
+                      <td colSpan={3} className="py-2 px-3 font-bold text-slate-900 border-r border-slate-300">
                         รวมสุทธิผู้รับเหมา ({contractorRows.length} รายการ)
                       </td>
-                      <td
-                        style={{ color: "#78350f", backgroundColor: "#fef3c7" }}
-                        className="py-2.5 px-3 text-right font-black border-r border-amber-200 text-xs"
-                      >
+                      <td className="py-2 px-3 text-right font-bold border-r border-slate-300">
                         {money(contractorMetrics.totalOpenHire)}
                       </td>
-                      <td
-                        style={{ color: "#0f172a", backgroundColor: "#f1f5f9" }}
-                        className="py-2.5 px-3 text-right font-black border-r border-slate-300 text-xs"
-                      >
+                      <td className="py-2 px-3 text-right font-bold border-r border-slate-300">
                         {money(contractorMetrics.totalLabor)}
                       </td>
-                      <td
-                        style={{ color: "#ffffff", backgroundColor: "#d97706" }}
-                        className="py-2.5 px-3 text-right font-black text-sm border-r border-amber-700"
-                      >
+                      <td className="py-2 px-3 text-right font-bold text-emerald-800 bg-emerald-100 border-r border-emerald-300">
                         {money(contractorMetrics.totalTransfer)}
                       </td>
-                      <td
-                        style={{ color: "#475569", backgroundColor: "#e2e8f0" }}
-                        className="py-2.5 px-3 border-r border-slate-300 text-center text-xs font-bold"
-                      >
-                        -
-                      </td>
+                      <td className="py-2 px-3 border-r border-slate-300 text-center">-</td>
                     </tr>
                   </tfoot>
                 )}
@@ -1337,16 +1242,15 @@ export function ReportsDashboardClient({
       {/* 10. TAB 6: ค่าของต่อร้าน (STORE DETAIL) */}
       {activeTab === "store" && (
         <div className="space-y-3">
-          <div className="bg-white rounded-2xl p-3 border border-sky-200 shadow-2xs flex items-center justify-between gap-3">
+          <div className="border border-slate-200 rounded-md p-3 bg-white flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2">
-              <Store className="text-sky-600" size={16} />
-              <span className="text-xs font-black text-slate-800">เลือกร้านค้า:</span>
+              <span className="font-semibold text-slate-700">เลือกร้านค้า:</span>
               <select
                 value={selectedStore}
                 onChange={(e) => setSelectedStore(e.target.value)}
-                className="bg-sky-50 border border-sky-200 font-extrabold text-xs text-sky-950 px-3 py-1 rounded-lg focus:outline-none"
+                className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none"
               >
-                <option value="all">🏪 ร้านค้าทั้งหมด ({storesList.length} ร้าน)</option>
+                <option value="all">ร้านค้าทั้งหมด ({storesList.length} ร้าน)</option>
                 {storesList.map((s) => (
                   <option key={s} value={s}>
                     {s}
@@ -1355,22 +1259,22 @@ export function ReportsDashboardClient({
               </select>
             </div>
 
-            <span className="text-xs font-black text-sky-900 bg-sky-100 px-3 py-1 rounded-lg">
-              โอนรวมร้านค้า: {money(storeMetrics.totalTransfer)}
+            <span className="font-bold text-slate-700">
+              โอนรวมร้านค้า: <span className="text-emerald-700">{money(storeMetrics.totalTransfer)}</span>
             </span>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-            <div className="overflow-auto max-h-[calc(100vh-210px)] min-h-[420px] relative scrollbar-thin">
+          <div className="border border-slate-200 rounded-md bg-white overflow-hidden">
+            <div className="overflow-auto max-h-[calc(100vh-210px)] relative">
               <table className="w-full text-left text-xs text-slate-700 border-collapse font-sans">
-                <thead className="sticky top-0 z-20 bg-slate-900 text-white font-extrabold text-[11px] uppercase tracking-wider">
+                <thead className="sticky top-0 z-20 bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
                   <tr>
-                    <th className="py-2.5 px-3 border-r border-slate-800">ลำดับ</th>
-                    <th className="py-2.5 px-3 border-r border-slate-800">ชื่อร้านค้า</th>
-                    <th className="py-2.5 px-3 border-r border-slate-800">รายละเอียดงาน / สินค้า</th>
-                    <th className="py-2.5 px-3 text-right border-r border-slate-800">ยอดเงินบิล</th>
-                    <th className="py-2.5 px-3 text-right bg-sky-900 text-sky-100 font-black border-r border-sky-800">โอนเงิน</th>
-                    <th className="py-2.5 px-3">ว/ด/ป</th>
+                    <th className="py-2 px-3 border-r border-slate-200">ลำดับ</th>
+                    <th className="py-2 px-3 border-r border-slate-200">ชื่อร้านค้า</th>
+                    <th className="py-2 px-3 border-r border-slate-200">รายละเอียดงาน / สินค้า</th>
+                    <th className="py-2 px-3 text-right border-r border-slate-200">ยอดเงินบิล</th>
+                    <th className="py-2 px-3 text-right border-r border-slate-200 text-slate-900">โอนเงิน</th>
+                    <th className="py-2 px-3">ว/ด/ป</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -1382,7 +1286,7 @@ export function ReportsDashboardClient({
                       </td>
                       <td className="py-2 px-3">{r["สินค้า/ทำงาน"] || r["รายละเอียดงาน"] || "-"}</td>
                       <td className="py-2 px-3 text-right font-bold text-slate-900">{money(getRowAmount(r))}</td>
-                      <td className="py-2 px-3 text-right font-black text-sky-800 bg-sky-50/60">
+                      <td className="py-2 px-3 text-right font-bold text-emerald-700 bg-emerald-50/40">
                         {money(getRowTransferAmount(r))}
                       </td>
                       <td className="py-2 px-3 text-slate-600 font-semibold whitespace-nowrap">{formatDateThai(r["ว/ด/ป"] || r["วันที่"])}</td>
@@ -1390,33 +1294,18 @@ export function ReportsDashboardClient({
                   ))}
                 </tbody>
                 {storeRows.length > 0 && (
-                  <tfoot className="sticky bottom-0 z-20 shadow-md border-t-2 border-slate-400">
-                    <tr className="font-extrabold text-xs">
-                      <td
-                        colSpan={3}
-                        style={{ color: "#0f172a", backgroundColor: "#e2e8f0" }}
-                        className="py-2.5 px-3 font-black text-slate-900 border-r border-slate-300 tracking-wider text-xs"
-                      >
+                  <tfoot className="sticky bottom-0 z-20 border-t-2 border-slate-300 bg-slate-100 font-bold text-xs">
+                    <tr>
+                      <td colSpan={3} className="py-2 px-3 font-bold text-slate-900 border-r border-slate-300">
                         รวมสุทธิร้านค้า ({storeRows.length} รายการ)
                       </td>
-                      <td
-                        style={{ color: "#0f172a", backgroundColor: "#f1f5f9" }}
-                        className="py-2.5 px-3 text-right font-black border-r border-slate-300 text-xs"
-                      >
+                      <td className="py-2 px-3 text-right font-bold border-r border-slate-300">
                         {money(storeMetrics.totalAmount)}
                       </td>
-                      <td
-                        style={{ color: "#ffffff", backgroundColor: "#0284c7" }}
-                        className="py-2.5 px-3 text-right font-black text-sm border-r border-sky-700"
-                      >
+                      <td className="py-2 px-3 text-right font-bold text-emerald-800 bg-emerald-100 border-r border-emerald-300">
                         {money(storeMetrics.totalTransfer)}
                       </td>
-                      <td
-                        style={{ color: "#475569", backgroundColor: "#e2e8f0" }}
-                        className="py-2.5 px-3 border-r border-slate-300 text-center text-xs font-bold"
-                      >
-                        -
-                      </td>
+                      <td className="py-2 px-3 border-r border-slate-300 text-center">-</td>
                     </tr>
                   </tfoot>
                 )}
@@ -1428,3 +1317,4 @@ export function ReportsDashboardClient({
     </div>
   );
 }
+

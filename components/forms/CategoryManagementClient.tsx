@@ -123,27 +123,22 @@ export function CategoryManagementClient({ initialOptions }: CategoryManagementC
   }
 
   return (
-    <div className="w-full flex-1 flex flex-col bg-slate-50 overflow-y-auto">
-      {/* Top Banner Header */}
-      <div className="bg-slate-900 text-white px-6 py-5 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 shadow-md">
-        <div className="flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-2xl bg-indigo-600/30 border border-indigo-400/40 text-indigo-400 flex items-center justify-center shadow-inner">
-            <Layers size={22} strokeWidth={2.2} />
-          </div>
-          <div>
-            <h1 className="text-lg font-extrabold text-white tracking-wide flex items-center gap-2">
-              จัดการประเภทและกลุ่มประเภทสำหรับสร้างบิล
-            </h1>
-            <p className="text-xs text-slate-400 mt-0.5">
-              กำหนดรายการประเภททั้งหมด และจัดกลุ่มประเภทเพื่อใช้กำหนดตัวเลือกในฟอร์มสร้างบิล
-            </p>
-          </div>
+    <div className="w-full flex-1 flex flex-col bg-white font-sans text-xs text-slate-800">
+      {/* Top Header */}
+      <div className="px-5 py-4 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white">
+        <div>
+          <h1 className="text-base font-bold text-slate-900">
+            จัดการประเภทและกลุ่มประเภทสำหรับสร้างบิล
+          </h1>
+          <p className="text-xs text-slate-500 mt-0.5">
+            กำหนดรายการประเภททั้งหมด และจัดกลุ่มประเภทเพื่อใช้กำหนดตัวเลือกในฟอร์มสร้างบิล
+          </p>
         </div>
 
         <div className="flex items-center gap-3">
           {savedSuccess && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold rounded-xl animate-fade-in">
-              <Check size={15} />
+            <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-md">
+              <Check size={14} />
               <span>บันทึกเรียบร้อยแล้ว</span>
             </div>
           )}
@@ -151,80 +146,75 @@ export function CategoryManagementClient({ initialOptions }: CategoryManagementC
             type="button"
             onClick={handleSaveAll}
             disabled={saving}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow-md disabled:opacity-50 cursor-pointer"
+            className="flex items-center gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold px-4 py-1.5 rounded-md transition disabled:opacity-50 cursor-pointer shrink-0"
           >
-            <Save size={16} />
+            <Save size={15} />
             <span>{saving ? "กำลังบันทึก..." : "บันทึกการเปลี่ยนแปลง"}</span>
           </button>
         </div>
       </div>
 
       {error && (
-        <div className="mx-6 mt-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold rounded-xl flex items-center justify-between">
+        <div className="mx-5 mt-3 p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-md flex items-center justify-between">
           <span>{error}</span>
-          <button type="button" onClick={() => setError("")} className="text-rose-500 hover:text-rose-800">
+          <button type="button" onClick={() => setError("")} className="text-rose-500 hover:text-rose-800 font-bold">
             ✕
           </button>
         </div>
       )}
 
       {/* Main Content Grid */}
-      <div className="p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
-        {/* LEFT COLUMN: รายการประเภททั้งหมด (Master Categories List - 5 Columns) */}
-        <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 flex flex-col">
-          <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
-            <div className="flex items-center gap-2">
-              <span className="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-xs">
-                1
-              </span>
-              <div>
-                <h2 className="text-sm font-extrabold text-slate-800">รายการประเภททั้งหมด</h2>
-                <p className="text-[11px] text-slate-400">มาสเตอร์ประเภทสินค้า/ค่าใช้จ่ายทั้งหมดในระบบ</p>
-              </div>
+      <div className="p-5 grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1">
+        {/* LEFT COLUMN: รายการประเภททั้งหมด (Master Categories List) */}
+        <div className="lg:col-span-5 bg-white rounded-md border border-slate-200 p-4 flex flex-col">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+            <div>
+              <h2 className="text-xs font-bold text-slate-800">1. รายการประเภททั้งหมด</h2>
+              <p className="text-[11px] text-slate-500">มาสเตอร์ประเภทสินค้า/ค่าใช้จ่ายทั้งหมดในระบบ</p>
             </div>
-            <span className="px-2.5 py-0.5 bg-slate-100 text-slate-700 text-xs font-bold rounded-full border border-slate-200">
+            <span className="px-2 py-0.5 bg-slate-100 text-slate-700 text-[11px] font-semibold rounded border border-slate-200">
               {masterCategories.length} รายการ
             </span>
           </div>
 
           {/* Add New Category Form */}
-          <div className="mt-4 flex items-center gap-2">
+          <div className="mt-3 flex items-center gap-2">
             <input
               type="text"
               value={newCatInput}
               onChange={(e) => setNewCatInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddMasterCategory())}
               placeholder="เพิ่มชื่อประเภทใหม่ เช่น 9.ค่าขนส่ง..."
-              className="flex-1 bg-slate-50 border border-slate-200 text-slate-800 text-xs font-semibold px-3 py-2 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-300 transition-all placeholder:text-slate-400"
+              className="flex-1 bg-white border border-slate-300 text-slate-800 text-xs px-3 py-1 rounded-md focus:outline-none focus:border-slate-500 placeholder:text-slate-400"
             />
             <button
               type="button"
               onClick={handleAddMasterCategory}
-              className="flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-all shadow-2xs cursor-pointer"
+              className="flex items-center gap-1 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-3 py-1 rounded-md transition cursor-pointer"
             >
-              <Plus size={15} />
+              <Plus size={14} />
               <span>เพิ่ม</span>
             </button>
           </div>
 
           {/* Master Categories Badge Container */}
-          <div className="mt-4 flex-1 overflow-y-auto space-y-2 max-h-[500px] pr-1">
+          <div className="mt-3 flex-1 overflow-y-auto space-y-1.5 max-h-[500px] pr-1">
             {masterCategories.map((cat, idx) => (
               <div
                 key={cat}
-                className="flex items-center justify-between bg-slate-50 hover:bg-slate-100/80 border border-slate-200/80 px-3.5 py-2.5 rounded-xl transition-all group"
+                className="flex items-center justify-between bg-slate-50 border border-slate-200 px-3 py-2 rounded-md transition group"
               >
-                <div className="flex items-center gap-2.5">
-                  <span className="w-5 h-5 rounded-md bg-white border border-slate-200 text-slate-500 flex items-center justify-center text-[10px] font-bold">
+                <div className="flex items-center gap-2">
+                  <span className="w-4 h-4 rounded bg-white border border-slate-200 text-slate-500 flex items-center justify-center text-[10px] font-semibold">
                     {idx + 1}
                   </span>
-                  <span className="text-xs font-bold text-slate-800">{cat}</span>
+                  <span className="text-xs font-semibold text-slate-800">{cat}</span>
                 </div>
 
                 <button
                   type="button"
                   onClick={() => handleRemoveMasterCategory(cat)}
-                  className="w-6 h-6 rounded-full bg-rose-50 text-rose-500 hover:bg-rose-600 hover:text-white flex items-center justify-center transition-all shadow-2xs cursor-pointer opacity-80 group-hover:opacity-100"
+                  className="w-5 h-5 rounded bg-white border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-300 flex items-center justify-center transition cursor-pointer text-xs"
                   title={`ลบประเภท ${cat}`}
                 >
                   ✕
@@ -234,34 +224,24 @@ export function CategoryManagementClient({ initialOptions }: CategoryManagementC
           </div>
         </div>
 
-        {/* RIGHT COLUMN: การจัดกลุ่มประเภทสำหรับสร้างบิล (Bill Category Groups - 7 Columns) */}
-        <div className="lg:col-span-7 space-y-5">
-          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5">
-            <div className="flex items-center gap-2 pb-3.5 border-b border-slate-100">
-              <span className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-xs">
-                2
-              </span>
-              <div>
-                <h2 className="text-sm font-extrabold text-slate-800">จัดกลุ่มประเภทสำหรับสร้างบิล</h2>
-                <p className="text-[11px] text-slate-400">เลือกประเภทที่จะให้แสดงเป็นตัวเลือกในฟอร์มสร้างบิลแต่ละรูปแบบ</p>
-              </div>
+        {/* RIGHT COLUMN: การจัดกลุ่มประเภทสำหรับสร้างบิล (Bill Category Groups) */}
+        <div className="lg:col-span-7 space-y-4">
+          <div className="bg-white rounded-md border border-slate-200 p-4">
+            <div className="pb-3 border-b border-slate-200">
+              <h2 className="text-xs font-bold text-slate-800">2. จัดกลุ่มประเภทสำหรับสร้างบิล</h2>
+              <p className="text-[11px] text-slate-500">เลือกประเภทที่จะให้แสดงเป็นตัวเลือกในฟอร์มสร้างบิลแต่ละรูปแบบ</p>
             </div>
 
             {/* 3 GROUP CARDS */}
-            <div className="mt-4 space-y-4">
+            <div className="mt-3 space-y-3">
               {/* GROUP 1: ผู้รับเหมา */}
-              <div className="p-4 rounded-xl border border-blue-100 bg-blue-50/30 space-y-3">
+              <div className="p-3.5 rounded-md border border-slate-200 bg-slate-50/50 space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center">
-                      <Users size={15} />
-                    </div>
-                    <div>
-                      <h3 className="text-xs font-extrabold text-slate-900">กลุ่มประเภท (ผู้รับเหมา)</h3>
-                      <p className="text-[10px] text-slate-500">แสดงในฟอร์มบิลเมื่อเลือกร้านค้าประเภทผู้รับเหมา</p>
-                    </div>
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-800">กลุ่มประเภท (ผู้รับเหมา)</h3>
+                    <p className="text-[11px] text-slate-500">แสดงในฟอร์มบิลเมื่อเลือกร้านค้าประเภทผู้รับเหมา</p>
                   </div>
-                  <span className="text-[11px] font-bold px-2 py-0.5 bg-blue-100 text-blue-800 rounded-lg">
+                  <span className="text-[11px] font-semibold px-2 py-0.5 bg-slate-200 text-slate-700 rounded">
                     {contractorGroup.length} เลือกแล้ว
                   </span>
                 </div>
@@ -274,13 +254,13 @@ export function CategoryManagementClient({ initialOptions }: CategoryManagementC
                         key={cat}
                         type="button"
                         onClick={() => toggleCategoryInGroup("contractor", cat)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border ${
+                        className={`px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1 transition cursor-pointer border ${
                           isSelected
-                            ? "bg-blue-600 text-white border-blue-600 shadow-2xs"
-                            : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                            ? "bg-slate-900 text-white border-slate-900"
+                            : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"
                         }`}
                       >
-                        {isSelected && <Check size={13} strokeWidth={2.5} />}
+                        {isSelected && <Check size={12} />}
                         <span>{cat}</span>
                       </button>
                     );
@@ -289,18 +269,13 @@ export function CategoryManagementClient({ initialOptions }: CategoryManagementC
               </div>
 
               {/* GROUP 2: ร้านค้า */}
-              <div className="p-4 rounded-xl border border-emerald-100 bg-emerald-50/30 space-y-3">
+              <div className="p-3.5 rounded-md border border-slate-200 bg-slate-50/50 space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center">
-                      <Store size={15} />
-                    </div>
-                    <div>
-                      <h3 className="text-xs font-extrabold text-slate-900">กลุ่มประเภท (ร้านค้าทั่วไป)</h3>
-                      <p className="text-[10px] text-slate-500">แสดงในฟอร์มบิลเมื่อเลือกร้านค้าทั่วไป</p>
-                    </div>
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-800">กลุ่มประเภท (ร้านค้าทั่วไป)</h3>
+                    <p className="text-[11px] text-slate-500">แสดงในฟอร์มบิลเมื่อเลือกร้านค้าทั่วไป</p>
                   </div>
-                  <span className="text-[11px] font-bold px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-lg">
+                  <span className="text-[11px] font-semibold px-2 py-0.5 bg-slate-200 text-slate-700 rounded">
                     {storeGroup.length} เลือกแล้ว
                   </span>
                 </div>
@@ -313,13 +288,13 @@ export function CategoryManagementClient({ initialOptions }: CategoryManagementC
                         key={cat}
                         type="button"
                         onClick={() => toggleCategoryInGroup("store", cat)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border ${
+                        className={`px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1 transition cursor-pointer border ${
                           isSelected
-                            ? "bg-emerald-600 text-white border-emerald-600 shadow-2xs"
-                            : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                            ? "bg-slate-900 text-white border-slate-900"
+                            : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"
                         }`}
                       >
-                        {isSelected && <Check size={13} strokeWidth={2.5} />}
+                        {isSelected && <Check size={12} />}
                         <span>{cat}</span>
                       </button>
                     );
@@ -328,18 +303,13 @@ export function CategoryManagementClient({ initialOptions }: CategoryManagementC
               </div>
 
               {/* GROUP 3: ร้านค้า+เลือกสินค้า */}
-              <div className="p-4 rounded-xl border border-purple-100 bg-purple-50/30 space-y-3">
+              <div className="p-3.5 rounded-md border border-slate-200 bg-slate-50/50 space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-purple-600 text-white flex items-center justify-center">
-                      <Package size={15} />
-                    </div>
-                    <div>
-                      <h3 className="text-xs font-extrabold text-slate-900">กลุ่มประเภท (ร้านค้า + เลือกสินค้า)</h3>
-                      <p className="text-[10px] text-slate-500">แสดงเมื่อมีการกรอกเลือกรายละเอียดสินค้าเฉพาะเจาะจง</p>
-                    </div>
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-800">กลุ่มประเภท (ร้านค้า + เลือกสินค้า)</h3>
+                    <p className="text-[11px] text-slate-500">แสดงเมื่อมีการกรอกเลือกรายละเอียดสินค้าเฉพาะเจาะจง</p>
                   </div>
-                  <span className="text-[11px] font-bold px-2 py-0.5 bg-purple-100 text-purple-800 rounded-lg">
+                  <span className="text-[11px] font-semibold px-2 py-0.5 bg-slate-200 text-slate-700 rounded">
                     {storeItemGroup.length} เลือกแล้ว
                   </span>
                 </div>
@@ -352,13 +322,13 @@ export function CategoryManagementClient({ initialOptions }: CategoryManagementC
                         key={cat}
                         type="button"
                         onClick={() => toggleCategoryInGroup("storeItem", cat)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border ${
+                        className={`px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1 transition cursor-pointer border ${
                           isSelected
-                            ? "bg-purple-600 text-white border-purple-600 shadow-2xs"
-                            : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                            ? "bg-slate-900 text-white border-slate-900"
+                            : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"
                         }`}
                       >
-                        {isSelected && <Check size={13} strokeWidth={2.5} />}
+                        {isSelected && <Check size={12} />}
                         <span>{cat}</span>
                       </button>
                     );
@@ -372,3 +342,4 @@ export function CategoryManagementClient({ initialOptions }: CategoryManagementC
     </div>
   );
 }
+

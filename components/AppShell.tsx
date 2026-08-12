@@ -140,15 +140,15 @@ export function AppShell({ children, peopleRows = [], currentUser = null }: { ch
 
   const mobileAddEvent =
     activeView.id === "bill-entry" ? "open-bill-form" :
-    activeView.id === "contract-open" ? "open-contract-form" :
-    "";
+      activeView.id === "contract-open" ? "open-contract-form" :
+        "";
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 text-slate-800 antialiased">
+    <div className="min-h-screen flex flex-col md:flex-row bg-slate-200 text-slate-800 antialiased">
       {/* Mobile Navigation Header & Drawer (Hidden on Desktop) */}
       <div className="md:hidden block">
-        {/* Topbar */}
-        <header className="h-14 bg-white border-b border-slate-200 px-4 flex items-center justify-between sticky top-0 z-20 shadow-xs">
+        {/* Topbar - Fixed at top */}
+        <header className="h-14 bg-white border-b border-slate-200 px-4 flex items-center justify-between fixed top-0 inset-x-0 z-30 shadow-xs">
           <button
             type="button"
             className="w-10 h-10 flex items-center justify-center rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
@@ -163,7 +163,7 @@ export function AppShell({ children, peopleRows = [], currentUser = null }: { ch
               <input
                 ref={mobileSearchInputRef}
                 type="search"
-                className="w-full h-9 px-3 text-sm bg-slate-100 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white"
+                className="w-full h-9 px-3 text-sm bg-slate-100 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:bg-white"
                 aria-label="ค้นหา"
                 placeholder="ค้นหา..."
                 enterKeyHint="search"
@@ -177,12 +177,12 @@ export function AppShell({ children, peopleRows = [], currentUser = null }: { ch
                   if (event.key === "Escape") closeMobileSearch();
                 }}
               />
-              <button type="submit" className="w-9 h-9 flex items-center justify-center rounded-lg bg-indigo-600 text-white shrink-0" aria-label="ค้นหา">
+              <button type="submit" className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-900 text-white shrink-0" aria-label="ค้นหา">
                 <Search size={16} />
               </button>
             </form>
           ) : (
-            <span className="font-semibold text-slate-900 truncate max-w-[200px] text-center">{activeView.name}</span>
+            <span className="font-bold text-slate-900 truncate max-w-[200px] text-center text-sm">{activeView.name}</span>
           )}
           <div className="flex items-center gap-1">
             {mobileSearchOpen ? (
@@ -190,7 +190,7 @@ export function AppShell({ children, peopleRows = [], currentUser = null }: { ch
             ) : (
               <>
                 {mobileAddEvent ? (
-                  <button type="button" className="w-9 h-9 flex items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 font-medium hover:bg-indigo-100" aria-label="เพิ่มข้อมูล" onClick={() => window.dispatchEvent(new CustomEvent(mobileAddEvent))}><Plus size={20} /></button>
+                  <button type="button" className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-100 text-slate-800 font-medium hover:bg-slate-200 border border-slate-300" aria-label="เพิ่มข้อมูล" onClick={() => window.dispatchEvent(new CustomEvent(mobileAddEvent))}><Plus size={20} /></button>
                 ) : null}
                 <button type="button" className="w-9 h-9 flex items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100" aria-label="ค้นหา" onClick={() => setMobileSearchOpen(true)}><Search size={20} /></button>
                 <button type="button" className="w-9 h-9 flex items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100" aria-label="รีเฟรช" onClick={handleGlobalRefresh} disabled={refreshing}><RefreshCw size={19} className={refreshing ? "animate-spin" : ""} /></button>
@@ -210,10 +210,10 @@ export function AppShell({ children, peopleRows = [], currentUser = null }: { ch
         <aside className={`fixed inset-y-0 left-0 w-72 bg-white z-50 shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`} aria-label="เมนูเพิ่มเติม">
           <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-900 text-white">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center font-bold text-white text-xs">CT</div>
+              <div className="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-white text-xs">CC</div>
               <div>
-                <strong className="block text-sm font-semibold leading-none">Cost Test</strong>
-                <span className="text-xs text-slate-300">Costcode</span>
+                <strong className="block text-sm font-semibold leading-none">CostCode App</strong>
+                <span className="text-xs text-slate-300">Executive Management</span>
               </div>
             </div>
             <button type="button" className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-300 hover:text-white hover:bg-slate-800" aria-label="ปิดเมนู" onClick={() => setMobileMenuOpen(false)}>
@@ -230,11 +230,10 @@ export function AppShell({ children, peopleRows = [], currentUser = null }: { ch
                   key={view.id}
                   href={href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    active ? "bg-indigo-50 text-indigo-700 font-semibold" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                  }`}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${active ? "bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-800" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                    }`}
                 >
-                  <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${active ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-500"}`}>
+                  <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${active ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-500"}`}>
                     {Icon ? <Icon size={16} strokeWidth={2.1} /> : view.name.slice(0, 1)}
                   </span>
                   <span className="truncate">{view.name}</span>
@@ -247,8 +246,8 @@ export function AppShell({ children, peopleRows = [], currentUser = null }: { ch
           </div>
         </aside>
 
-        {/* Mobile Bottom Navigation Bar */}
-        <nav className="fixed bottom-0 inset-x-0 h-16 bg-white border-t border-slate-200/90 flex items-center justify-around z-30 shadow-lg px-1">
+        {/* Mobile Bottom Navigation Bar - Fixed at bottom */}
+        <nav className="fixed bottom-0 inset-x-0 h-16 bg-white border-t border-slate-200 flex items-center justify-around z-30 shadow-lg px-1">
           {mobileViews.map(view => {
             const href = hrefFor(view);
             const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -257,11 +256,10 @@ export function AppShell({ children, peopleRows = [], currentUser = null }: { ch
               <Link
                 key={view.id}
                 href={href}
-                className={`flex flex-col items-center justify-center w-full h-full py-1 text-xs font-medium transition-colors ${
-                  active ? "text-indigo-600" : "text-slate-500 hover:text-slate-800"
-                }`}
+                className={`flex flex-col items-center justify-center w-full h-full py-1 text-xs font-medium transition-colors ${active ? "text-slate-900 font-bold" : "text-slate-500 hover:text-slate-800"
+                  }`}
               >
-                <span className={`p-1 rounded-lg ${active ? "bg-indigo-50" : ""}`}>
+                <span className={`p-1 rounded-lg ${active ? "bg-slate-100 text-slate-900" : ""}`}>
                   {Icon ? <Icon size={20} strokeWidth={active ? 2.3 : 1.8} /> : null}
                 </span>
                 <small className="mt-0.5 text-[10px] leading-none truncate max-w-[64px]">{view.name}</small>
@@ -278,10 +276,11 @@ export function AppShell({ children, peopleRows = [], currentUser = null }: { ch
         currentUser={currentUser}
       />
 
-      {/* Main Workspace Area */}
-      <main className={`flex-1 min-w-0 min-h-screen pb-20 md:pb-0 relative transition-all duration-300 ${collapsed ? "md:pl-[68px]" : "md:pl-[316px]"}`}>
+      {/* Main Workspace Area (With padding for fixed Mobile Header & Footer) */}
+      <main className={`flex-1 min-w-0 min-h-screen pt-14 pb-16 md:pt-0 md:pb-0 relative transition-all duration-300 ${collapsed ? "md:pl-[68px]" : "md:pl-[316px]"}`}>
         {children}
       </main>
     </div>
   );
 }
+

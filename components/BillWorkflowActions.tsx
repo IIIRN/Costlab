@@ -125,3 +125,4 @@ export function BillWorkflowActions({ row, compact = false, allowEdit = false, r
     </div>
   );
 }
+

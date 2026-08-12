@@ -2,25 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  Banknote,
-  BriefcaseBusiness,
-  Building2,
-  Calendar,
-  CheckCircle2,
-  ChevronDown,
-  ChevronLeft,
-  Clock3,
-  CreditCard,
-  FileText,
-  Images,
-  Receipt,
-  ReceiptText,
-  User,
-  Wallet,
-  WalletCards,
-} from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { BillImageThumbnail } from "@/components/BillImageThumbnail";
 import { BillWorkflowActions } from "@/components/BillWorkflowActions";
 import { DataTable } from "@/components/tables/DataTable";
@@ -95,219 +77,142 @@ export function BillDetailClient({
   }, [bill, requester, requesterLink]);
 
   return (
-    <div className="w-full flex flex-col gap-5 p-4 sm:p-6 max-w-[1600px] mx-auto font-sans">
-      {/* 1. TOP NAVBAR / WORKFLOW HEADER */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="w-full flex flex-col gap-4 p-4 sm:p-5 max-w-[1400px] mx-auto font-sans text-sm text-slate-800">
+      {/* 1. HEADER ROW */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
         <div className="flex items-center gap-3">
           <Link
             href="/bills"
-            className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition border border-slate-200"
-            title="ย้อนกลับไปรายการบิล"
+            className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 transition"
           >
-            <ChevronLeft size={18} />
+            <ArrowLeft size={14} />
+            <span>รายการบิล</span>
           </Link>
-
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-extrabold text-slate-900">
-                บิล #{billKey(bill) || decodedBillId}
-              </h1>
-              <span
-                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-extrabold ${
-                  isPaid
-                    ? "bg-slate-100 text-slate-700 border border-slate-200"
-                    : isApproved
-                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                    : "bg-amber-50 text-amber-700 border border-amber-200"
-                }`}
-              >
-                {status}
-              </span>
-            </div>
-            <p className="text-xs font-semibold text-slate-500 mt-0.5">{projectName}</p>
-          </div>
+          <span className="text-slate-300">/</span>
+          <span className="text-xs font-bold text-slate-700">บิล #{billKey(bill) || decodedBillId}</span>
+          <span
+            className={`px-2 py-0.5 rounded text-[11px] font-semibold ${
+              isPaid
+                ? "bg-slate-100 text-slate-600 border border-slate-200"
+                : isApproved
+                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                : "bg-amber-50 text-amber-700 border border-amber-200"
+            }`}
+          >
+            {status}
+          </span>
         </div>
 
-        {/* Workflow Action Buttons Bar */}
         <div className="flex items-center gap-2">
-          <BillWorkflowActions row={bill} redirectAfterDelete="/bills" />
+          <BillWorkflowActions row={bill} allowEdit redirectAfterDelete="/bills" />
         </div>
       </div>
 
-      {/* 2. TOP SUMMARY DASHBOARD (2 COLUMNS) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Financial Metrics Summary Card */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs space-y-4 flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">สรุปยอดทางการเงิน</span>
-            <span className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
-              <Wallet size={18} />
-            </span>
-          </div>
+      {/* 2. TITLE & META */}
+      <div>
+        <h1 className="text-lg font-bold text-slate-900">{projectName}</h1>
+        <p className="text-xs text-slate-500 mt-0.5">
+          คู่ค้า: <span className="font-semibold text-slate-700">{vendor}</span> · ผู้เบิก: <span className="font-semibold text-slate-700">{requester}</span> · วันที่: <span className="font-semibold text-slate-700">{billDate}</span>
+        </p>
+      </div>
 
-          <div className="grid grid-cols-3 gap-3 bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/80">
-            <div>
-              <span className="text-[11px] font-bold text-slate-400 block">ยอดเงินรวม</span>
-              <strong className="text-lg font-extrabold text-slate-900">{money(total)}</strong>
-            </div>
-
-            <div>
-              <span className="text-[11px] font-bold text-indigo-500 block">ยอดโอนแล้ว</span>
-              <strong className="text-lg font-extrabold text-indigo-700">{money(transfer)}</strong>
-            </div>
-
-            <div>
-              <span className="text-[11px] font-bold text-emerald-600 block">ยอดคงเหลือ</span>
-              <strong className={`text-lg font-extrabold ${remaining > 0 ? "text-amber-600" : "text-emerald-700"}`}>
-                {money(remaining)}
-              </strong>
-            </div>
-          </div>
+      {/* 3. FINANCIAL METRICS */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="border border-slate-200 rounded-md p-3 bg-white">
+          <div className="text-[11px] text-slate-400 font-medium mb-1">ยอดเงินรวม</div>
+          <div className="text-base font-bold text-slate-900">{money(total)}</div>
         </div>
-
-        {/* Bill Metadata Overview Card */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">ข้อมูลโครงการ & คู่ค้า</span>
-            <span className="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center font-bold">
-              <BriefcaseBusiness size={18} />
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-            <div className="space-y-0.5 min-w-0">
-              <span className="text-[11px] font-bold text-slate-400">โครงการ (Project):</span>
-              {projectId ? (
-                <Link
-                  href={`/work-status/${encodeURIComponent(projectId)}`}
-                  className="font-bold text-indigo-600 hover:underline block truncate"
-                  title={`#${projectId} - ${projectName}`}
-                >
-                  #{projectId} - {projectName}
-                </Link>
-              ) : (
-                <span className="font-bold text-slate-800 block truncate">{projectName}</span>
-              )}
-            </div>
-
-            <div className="space-y-0.5 min-w-0">
-              <span className="text-[11px] font-bold text-slate-400">ร้านค้า / คู่ค้า:</span>
-              {vendorLink ? (
-                <Link
-                  href={vendorLink}
-                  className="font-bold text-indigo-600 hover:underline block truncate"
-                  title={vendor}
-                >
-                  {vendor}
-                </Link>
-              ) : (
-                <span className="font-bold text-slate-800 block truncate">{vendor}</span>
-              )}
-            </div>
-
-            <div className="space-y-0.5 min-w-0">
-              <span className="text-[11px] font-bold text-slate-400">ผู้เบิกเงิน:</span>
-              {requesterLink ? (
-                <Link
-                  href={requesterLink}
-                  className="font-bold text-indigo-600 hover:underline block truncate"
-                  title={requester}
-                >
-                  {requester}
-                </Link>
-              ) : (
-                <span className="font-semibold text-slate-700 block truncate">{requester}</span>
-              )}
-            </div>
-
-            <div className="space-y-0.5 min-w-0">
-              <span className="text-[11px] font-bold text-slate-400">วันที่บิล:</span>
-              <span className="font-semibold text-slate-700 block truncate">{billDate}</span>
-            </div>
+        <div className="border border-slate-200 rounded-md p-3 bg-white">
+          <div className="text-[11px] text-slate-400 font-medium mb-1">ยอดโอนแล้ว</div>
+          <div className="text-base font-bold text-indigo-700">{money(transfer)}</div>
+        </div>
+        <div className="border border-slate-200 rounded-md p-3 bg-white">
+          <div className="text-[11px] text-slate-400 font-medium mb-1">ยอดคงเหลือ</div>
+          <div className={`text-base font-bold ${remaining > 0 ? "text-amber-600" : "text-emerald-700"}`}>
+            {money(remaining)}
           </div>
         </div>
       </div>
 
-      {/* 3. WORKSPACE SECTIONS GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Expense Items Breakdown Card */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs space-y-4">
-          <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-            <ReceiptText size={16} className="text-indigo-600" />
-            <span>รายการค่าใช้จ่าย (EXPENSE ITEMS)</span>
-          </h2>
-
+      {/* 4. DETAILS SECTION */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        {/* Left: Expense Breakdown */}
+        <div className="lg:col-span-6 border border-slate-200 rounded-md bg-white overflow-hidden">
+          <div className="px-3 py-2 border-b border-slate-200 bg-slate-50">
+            <h2 className="text-xs font-bold text-slate-700">รายการค่าใช้จ่าย</h2>
+          </div>
           {expenseItems.length > 0 ? (
-            <div className="divide-y divide-slate-100 border border-slate-100 rounded-xl overflow-hidden text-xs">
-              {expenseItems.map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 bg-white hover:bg-slate-50/60">
-                  <span className="font-bold text-slate-600">{item.label}</span>
-                  <span className={`font-semibold ${item.isAmount ? "text-slate-900 font-extrabold" : "text-slate-700"}`}>
-                    {item.isAmount ? money(item.value) : String(item.value)}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <table className="w-full text-xs">
+              <tbody className="divide-y divide-slate-100">
+                {expenseItems.map((item, idx) => (
+                  <tr key={idx}>
+                    <td className="px-3 py-2 text-slate-500 font-medium whitespace-nowrap w-[40%]">{item.label}</td>
+                    <td className={`px-3 py-2 font-semibold ${item.isAmount ? "text-slate-900" : "text-slate-800"}`}>
+                      {item.isAmount ? money(item.value) : String(item.value)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           ) : (
-            <div className="p-8 text-center text-slate-400 text-xs">ไม่มีรายละเอียดค่าใช้จ่ายเพิ่มเติม</div>
+            <div className="p-4 text-center text-slate-400 text-xs">ไม่มีรายละเอียดค่าใช้จ่ายเพิ่มเติม</div>
           )}
         </div>
 
-
-        {/* Payment Terms & Tax Details Card */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs space-y-4">
-          <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-            <CreditCard size={16} className="text-indigo-600" />
-            <span>เงื่อนไขการชำระเงิน & ภาษี (PAYMENT & TAX)</span>
-          </h2>
-
-          {paymentItems.length ? (
-            <div className="divide-y divide-slate-100 border border-slate-100 rounded-xl overflow-hidden text-xs">
-              {paymentItems.map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 bg-white hover:bg-slate-50/60">
-                  <span className="font-bold text-slate-600">{item.label}</span>
-                  {item.link ? (
-                    <Link href={item.link} className="font-bold text-indigo-600 hover:underline">
-                      {String(item.value)}
-                    </Link>
-                  ) : (
-                    <span className={`font-semibold ${item.isAmount ? "text-slate-900 font-extrabold" : "text-slate-700"}`}>
-                      {item.isAmount ? money(item.value) : String(item.value)}
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
+        {/* Right: Payment & Tax Details */}
+        <div className="lg:col-span-6 border border-slate-200 rounded-md bg-white overflow-hidden">
+          <div className="px-3 py-2 border-b border-slate-200 bg-slate-50">
+            <h2 className="text-xs font-bold text-slate-700">เงื่อนไขการชำระเงิน & ภาษี</h2>
+          </div>
+          {paymentItems.length > 0 ? (
+            <table className="w-full text-xs">
+              <tbody className="divide-y divide-slate-100">
+                {paymentItems.map((item, idx) => (
+                  <tr key={idx}>
+                    <td className="px-3 py-2 text-slate-500 font-medium whitespace-nowrap w-[40%]">{item.label}</td>
+                    <td className="px-3 py-2 font-semibold text-slate-800">
+                      {item.link ? (
+                        <Link href={item.link} className="text-indigo-600 hover:underline">
+                          {String(item.value)}
+                        </Link>
+                      ) : item.isAmount ? (
+                        money(item.value)
+                      ) : (
+                        String(item.value)
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           ) : (
-            <div className="p-8 text-center text-slate-400 text-xs">ไม่มีเงื่อนไขชำระเงินเพิ่มเติม</div>
+            <div className="p-4 text-center text-slate-400 text-xs">ไม่มีเงื่อนไขชำระเงินเพิ่มเติม</div>
           )}
         </div>
       </div>
 
-      {/* 4. RECEIPT PHOTO / IMAGE PREVIEW */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs space-y-3">
-        <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-          <Images size={16} className="text-indigo-600" />
-          <span>รูปถ่ายบิล & เอกสารประกอบ</span>
-        </h2>
-
-        <div className="p-4 bg-slate-50/80 rounded-xl border border-slate-200/80">
+      {/* 5. ATTACHMENT / BILL IMAGE */}
+      <div className="border border-slate-200 rounded-md bg-white overflow-hidden">
+        <div className="px-3 py-2 border-b border-slate-200 bg-slate-50">
+          <h2 className="text-xs font-bold text-slate-700">รูปถ่ายบิล & เอกสารประกอบ</h2>
+        </div>
+        <div className="p-3">
           {hasValue(imageValue) ? (
             <BillImageThumbnail value={imageValue} />
           ) : (
-            <span className="text-xs font-medium text-slate-400">ไม่มีรูปถ่ายบิลแนบในระบบ</span>
+            <span className="text-xs text-slate-400">ไม่มีรูปถ่ายบิลแนบในระบบ</span>
           )}
         </div>
       </div>
 
-      {/* 5. RELATED DATA TABLES (PROJECT & OPEN CONTRACTS) */}
+      {/* 6. RELATED TABLES */}
       <div className="space-y-4">
         {project.length > 0 && (
-          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+          <div className="border border-slate-200 rounded-md bg-white overflow-hidden">
             <DataTable
               columns={["ID Project", "ชื่อ Project", "ยอดงาน", "ยอดรวม vat", "งบไม่เกิน", "วันที่", "รับผิดชอบ"]}
               rows={project}
-              title="โครงการที่เกี่ยวข้อง (Related Project)"
+              title="โครงการที่เกี่ยวข้อง"
               rowLabel="รายการ"
               limit={10}
               detailBasePath="/work-status"
@@ -318,11 +223,11 @@ export function BillDetailClient({
         )}
 
         {contract.length > 0 && (
-          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+          <div className="border border-slate-200 rounded-md bg-white overflow-hidden">
             <DataTable
               columns={["id_Conwork", "id_Contractor", "ยอดเงินจ้าง", "ยอดเงินจ่าย", "ค่าแรงคงเหลือ", "รายละเอียดงาน", "วันที่"]}
               rows={contract}
-              title="เปิดจ้างที่เกี่ยวข้อง (Related Contracts)"
+              title="เปิดจ้างที่เกี่ยวข้อง"
               rowLabel="รายการ"
               limit={10}
               detailBasePath="/contract-open"
@@ -363,3 +268,4 @@ function hasValue(value: unknown) {
 function billKey(row: SheetRow) {
   return text(row["ลำดับ"]) || text(row._sheetRow);
 }
+

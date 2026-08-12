@@ -149,13 +149,12 @@ export function UserManagementDashboardClient() {
   const activeCount = users.filter((u) => u.status === "Active").length;
 
   return (
-    <div className="space-y-4 font-sans text-xs">
+    <div className="space-y-3.5 font-sans text-xs text-slate-800">
       {/* Compact Header */}
-      <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+      <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
         <div className="flex items-center gap-2">
-          <Users size={20} className="text-sky-600 shrink-0" />
-          <h1 className="font-extrabold text-base text-slate-900 tracking-tight">จัดการผู้ใช้ระบบ</h1>
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-800 border border-sky-200">
+          <h1 className="font-bold text-base text-slate-900 tracking-tight">จัดการผู้ใช้ระบบ</h1>
+          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
             {users.length} บัญชี
           </span>
         </div>
@@ -163,7 +162,7 @@ export function UserManagementDashboardClient() {
         <button
           type="button"
           onClick={handleOpenCreateModal}
-          className="px-3.5 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-extrabold transition shadow-sm flex items-center gap-1.5 cursor-pointer shrink-0"
+          className="px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold rounded-md transition flex items-center gap-1.5 cursor-pointer shrink-0 text-xs"
         >
           <Plus size={14} />
           <span>เพิ่มผู้ใช้ใหม่</span>
@@ -172,15 +171,15 @@ export function UserManagementDashboardClient() {
 
       {saveResult && (
         <div
-          className={`px-3 py-2 rounded-lg border font-bold flex items-center justify-between gap-2 animate-in fade-in ${
-            saveResult.success ? "bg-emerald-50 border-emerald-200 text-emerald-900" : "bg-rose-50 border-rose-200 text-rose-900"
+          className={`px-3 py-2 rounded-md border font-semibold flex items-center justify-between gap-2 animate-in fade-in ${
+            saveResult.success ? "bg-emerald-50 border-emerald-200 text-emerald-800" : "bg-rose-50 border-rose-200 text-rose-800"
           }`}
         >
           <div className="flex items-center gap-1.5">
             {saveResult.success ? <CheckCircle2 size={15} /> : <ShieldAlert size={15} />}
             <span>{saveResult.message}</span>
           </div>
-          <button type="button" onClick={() => setSaveResult(null)} className="text-slate-400 hover:text-slate-600">
+          <button type="button" onClick={() => setSaveResult(null)} className="text-slate-400 hover:text-slate-600 font-bold">
             ✕
           </button>
         </div>
@@ -188,51 +187,51 @@ export function UserManagementDashboardClient() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
-        <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 shrink-0">
-            <Users size={16} />
+        <div className="bg-white p-3 rounded-md border border-slate-200 flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 shrink-0">
+            <Users size={15} />
           </div>
           <div className="min-w-0">
-            <div className="text-[10px] font-bold text-slate-400 uppercase">ผู้ใช้ทั้งหมด</div>
-            <div className="font-extrabold text-slate-900 truncate">{users.length} บัญชี</div>
+            <div className="text-[10px] font-bold text-slate-500 uppercase">ผู้ใช้ทั้งหมด</div>
+            <div className="font-bold text-slate-900 truncate">{users.length} บัญชี</div>
           </div>
         </div>
 
-        <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
-            <Shield size={16} />
+        <div className="bg-white p-3 rounded-md border border-slate-200 flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 shrink-0">
+            <Shield size={15} />
           </div>
           <div className="min-w-0">
-            <div className="text-[10px] font-bold text-slate-400 uppercase">Admin</div>
-            <div className="font-extrabold text-slate-900 truncate">{adminCount} บัญชี</div>
+            <div className="text-[10px] font-bold text-slate-500 uppercase">Admin</div>
+            <div className="font-bold text-slate-900 truncate">{adminCount} บัญชี</div>
           </div>
         </div>
 
-        <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shrink-0">
-            <UserCheck size={16} />
+        <div className="bg-white p-3 rounded-md border border-slate-200 flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 shrink-0">
+            <UserCheck size={15} />
           </div>
           <div className="min-w-0">
-            <div className="text-[10px] font-bold text-slate-400 uppercase">Manager</div>
-            <div className="font-extrabold text-slate-900 truncate">{managerCount} บัญชี</div>
+            <div className="text-[10px] font-bold text-slate-500 uppercase">Manager</div>
+            <div className="font-bold text-slate-900 truncate">{managerCount} บัญชี</div>
           </div>
         </div>
 
-        <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-            <CheckCircle2 size={16} />
+        <div className="bg-white p-3 rounded-md border border-slate-200 flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 shrink-0">
+            <CheckCircle2 size={15} />
           </div>
           <div className="min-w-0">
-            <div className="text-[10px] font-bold text-slate-400 uppercase">ใช้งานได้</div>
-            <div className="font-extrabold text-slate-900 truncate">{activeCount} บัญชี</div>
+            <div className="text-[10px] font-bold text-slate-500 uppercase">ใช้งานได้</div>
+            <div className="font-bold text-slate-900 truncate">{activeCount} บัญชี</div>
           </div>
         </div>
       </div>
 
       {/* Table Section */}
-      <div className="bg-white rounded-lg border border-slate-200 shadow-2xs overflow-hidden">
+      <div className="bg-white rounded-md border border-slate-200 overflow-hidden">
         {/* Table Topbar */}
-        <div className="p-3 border-b border-slate-100 flex items-center justify-between gap-2 bg-slate-50/50">
+        <div className="p-3 border-b border-slate-200 flex items-center justify-between gap-2 bg-white">
           <div className="relative flex-1 max-w-xs">
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
@@ -240,7 +239,7 @@ export function UserManagementDashboardClient() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="ค้นหาชื่อผู้ใช้, Username หรือ เบอร์โทร..."
-              className="w-full bg-white border border-slate-200 rounded-lg pl-8 pr-3 py-1 text-slate-800 focus:outline-none focus:border-sky-500 font-medium"
+              className="w-full bg-white border border-slate-300 rounded px-8 py-1 text-slate-800 focus:outline-none focus:border-slate-500 font-normal text-xs"
             />
           </div>
 
@@ -248,7 +247,7 @@ export function UserManagementDashboardClient() {
             type="button"
             onClick={fetchUsers}
             disabled={loading}
-            className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold transition flex items-center gap-1 cursor-pointer"
+            className="px-2.5 py-1 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold transition flex items-center gap-1 cursor-pointer text-xs"
           >
             <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
             <span>รีเฟรช</span>
@@ -257,22 +256,22 @@ export function UserManagementDashboardClient() {
 
         {/* User Accounts Table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-slate-100/90 text-slate-600 font-extrabold border-b border-slate-200 uppercase tracking-wider text-[10px]">
-                <th className="py-2 px-3 w-28">Username</th>
-                <th className="py-2 px-3 min-w-[150px]">ชื่อผู้ใช้งาน</th>
-                <th className="py-2 px-3 min-w-[130px]">เบอร์โทรศัพท์</th>
-                <th className="py-2 px-3 w-28">สิทธิ์ (Role)</th>
-                <th className="py-2 px-3 w-24">สถานะ</th>
-                <th className="py-2 px-3 w-20 text-center">จัดการ</th>
+              <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-200 text-xs">
+                <th className="py-2.5 px-3 border-r border-slate-200 w-28">Username</th>
+                <th className="py-2.5 px-3 border-r border-slate-200 min-w-[150px]">ชื่อผู้ใช้งาน</th>
+                <th className="py-2.5 px-3 border-r border-slate-200 min-w-[130px]">เบอร์โทรศัพท์</th>
+                <th className="py-2.5 px-3 border-r border-slate-200 w-28">สิทธิ์ (Role)</th>
+                <th className="py-2.5 px-3 border-r border-slate-200 w-24">สถานะ</th>
+                <th className="py-2.5 px-3 text-center">จัดการ</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 font-medium text-[11px]">
+            <tbody className="divide-y divide-slate-100 font-normal">
               {loading ? (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-slate-400">
-                    <RefreshCw size={18} className="animate-spin mx-auto mb-2 text-sky-600" />
+                    <RefreshCw size={18} className="animate-spin mx-auto mb-2 text-slate-600" />
                     <span>กำลังโหลด...</span>
                   </td>
                 </tr>
@@ -285,9 +284,9 @@ export function UserManagementDashboardClient() {
               ) : (
                 filteredUsers.map((u, idx) => (
                   <tr key={u.id || idx} className="hover:bg-slate-50 transition-colors">
-                    <td className="py-2 px-3 font-mono font-bold text-slate-800">{u.username}</td>
-                    <td className="py-2 px-3 font-bold text-slate-800">{u.displayName}</td>
-                    <td className="py-2 px-3 text-slate-600 font-mono text-[10px]">
+                    <td className="py-2 px-3 border-r border-slate-100 font-mono font-bold text-slate-800">{u.username}</td>
+                    <td className="py-2 px-3 border-r border-slate-100 font-bold text-slate-900">{u.displayName}</td>
+                    <td className="py-2 px-3 border-r border-slate-100 text-slate-600 font-mono text-xs">
                       {u.phone ? (
                         <span className="inline-flex items-center gap-1">
                           <Phone size={11} className="text-slate-400" />
@@ -297,47 +296,19 @@ export function UserManagementDashboardClient() {
                         "-"
                       )}
                     </td>
-                    <td className="py-2 px-3">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-                          u.role === "Admin"
-                            ? "bg-purple-100 text-purple-700 border border-purple-200"
-                            : u.role === "Manager"
-                            ? "bg-amber-100 text-amber-700 border border-amber-200"
-                            : "bg-sky-100 text-sky-700 border border-sky-200"
-                        }`}
-                      >
-                        {u.role === "Admin" ? (
-                          <>
-                            <Shield size={11} className="text-purple-600 shrink-0" />
-                            <span>Admin</span>
-                          </>
-                        ) : u.role === "Manager" ? (
-                          <>
-                            <UserCheck size={11} className="text-amber-600 shrink-0" />
-                            <span>Manager</span>
-                          </>
-                        ) : (
-                          <>
-                            <User size={11} className="text-sky-600 shrink-0" />
-                            <span>User</span>
-                          </>
-                        )}
+                    <td className="py-2 px-3 border-r border-slate-100">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-800 border border-slate-200">
+                        {u.role}
                       </span>
                     </td>
-                    <td className="py-2 px-3">
+                    <td className="py-2 px-3 border-r border-slate-100">
                       <span
-                        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold ${
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border ${
                           u.status === "Active"
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                            : "bg-rose-50 text-rose-700 border border-rose-200"
+                            ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                            : "bg-rose-50 text-rose-800 border-rose-200"
                         }`}
                       >
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            u.status === "Active" ? "bg-emerald-500 animate-pulse" : "bg-rose-500"
-                          }`}
-                        />
                         <span>{u.status === "Active" ? "ใช้งานได้" : "ระงับ"}</span>
                       </span>
                     </td>
@@ -346,7 +317,7 @@ export function UserManagementDashboardClient() {
                         <button
                           type="button"
                           onClick={() => handleOpenEditModal(idx)}
-                          className="w-6 h-6 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition cursor-pointer"
+                          className="w-6 h-6 rounded border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 flex items-center justify-center transition cursor-pointer"
                           title="แก้ไขผู้ใช้"
                         >
                           <Pencil size={12} />
@@ -354,7 +325,7 @@ export function UserManagementDashboardClient() {
                         <button
                           type="button"
                           onClick={() => handleDeleteUser(idx)}
-                          className="w-6 h-6 rounded bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition cursor-pointer"
+                          className="w-6 h-6 rounded border border-rose-300 bg-white text-rose-700 hover:bg-rose-50 flex items-center justify-center transition cursor-pointer"
                           title="ลบบัญชีผู้ใช้"
                         >
                           <Trash2 size={12} />
@@ -371,17 +342,17 @@ export function UserManagementDashboardClient() {
 
       {/* Add / Edit User Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-3">
-          <div className="bg-white rounded-lg border border-slate-200 shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in">
-            <div className="p-3 border-b border-slate-100 flex items-center justify-between bg-slate-900 text-white">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-3">
+          <div className="bg-white rounded-md border border-slate-200 shadow-xl w-full max-w-sm overflow-hidden">
+            <div className="p-3 border-b border-slate-200 flex items-center justify-between bg-white text-slate-900">
               <h3 className="font-bold text-xs flex items-center gap-1.5">
-                <Users size={14} className="text-sky-400" />
+                <Users size={14} className="text-slate-600" />
                 <span>{editingIndex !== null ? "แก้ไขผู้ใช้งาน" : "เพิ่มผู้ใช้งานใหม่"}</span>
               </h3>
               <button
                 type="button"
                 onClick={() => setModalOpen(false)}
-                className="text-slate-400 hover:text-white transition"
+                className="text-slate-400 hover:text-slate-600 transition"
               >
                 <X size={16} />
               </button>
@@ -389,47 +360,47 @@ export function UserManagementDashboardClient() {
 
             <form onSubmit={handleFormSubmit} className="p-4 space-y-3">
               <div className="space-y-1">
-                <label className="font-bold text-slate-700 block">Username / รหัส *</label>
+                <label className="font-semibold text-slate-700 block">Username / รหัส *</label>
                 <input
                   type="text"
                   required
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                   placeholder="เช่น PT101"
-                  className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 font-mono text-slate-800 focus:outline-none focus:border-sky-500"
+                  className="w-full border border-slate-300 rounded px-2.5 py-1 font-mono text-slate-800 focus:outline-none focus:border-slate-500 text-xs"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="font-bold text-slate-700 block">ชื่อผู้ใช้งาน *</label>
+                <label className="font-semibold text-slate-700 block">ชื่อผู้ใช้งาน *</label>
                 <input
                   type="text"
                   required
                   value={formData.displayName}
                   onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
                   placeholder="เช่น คุณแมน"
-                  className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-800 focus:outline-none focus:border-sky-500"
+                  className="w-full border border-slate-300 rounded px-2.5 py-1 text-slate-800 focus:outline-none focus:border-slate-500 text-xs"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="font-bold text-slate-700 block">เบอร์โทรศัพท์</label>
+                <label className="font-semibold text-slate-700 block">เบอร์โทรศัพท์</label>
                 <input
                   type="tel"
                   value={formData.phone || ""}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   placeholder="081-234-5678"
-                  className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 font-mono text-slate-800 focus:outline-none focus:border-sky-500"
+                  className="w-full border border-slate-300 rounded px-2.5 py-1 font-mono text-slate-800 focus:outline-none focus:border-slate-500 text-xs"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-700 block">สิทธิ์การใช้งาน</label>
+                  <label className="font-semibold text-slate-700 block">สิทธิ์การใช้งาน</label>
                   <select
                     value={formData.role}
                     onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
-                    className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-slate-800 focus:outline-none focus:border-sky-500"
+                    className="w-full border border-slate-300 rounded px-2 py-1 text-slate-800 focus:outline-none focus:border-slate-500 text-xs"
                   >
                     <option value="Admin">Admin</option>
                     <option value="Manager">Manager</option>
@@ -438,11 +409,11 @@ export function UserManagementDashboardClient() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-700 block">สถานะ</label>
+                  <label className="font-semibold text-slate-700 block">สถานะ</label>
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                    className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-slate-800 focus:outline-none focus:border-sky-500"
+                    className="w-full border border-slate-300 rounded px-2 py-1 text-slate-800 focus:outline-none focus:border-slate-500 text-xs"
                   >
                     <option value="Active">ใช้งานได้</option>
                     <option value="Inactive">ระงับใช้งาน</option>
@@ -450,18 +421,18 @@ export function UserManagementDashboardClient() {
                 </div>
               </div>
 
-              <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+              <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition"
+                  className="px-3 py-1 rounded border border-slate-300 text-slate-700 font-semibold hover:bg-slate-100 transition text-xs"
                 >
                   ยกเลิก
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-3.5 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-extrabold transition flex items-center gap-1"
+                  className="px-3 py-1 rounded bg-slate-900 hover:bg-slate-800 text-white font-semibold transition flex items-center gap-1 text-xs cursor-pointer"
                 >
                   {saving ? <RefreshCw size={13} className="animate-spin" /> : <Save size={13} />}
                   <span>บันทึก</span>
@@ -474,3 +445,4 @@ export function UserManagementDashboardClient() {
     </div>
   );
 }
+

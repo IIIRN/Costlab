@@ -129,35 +129,35 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
   }
 
   return (
-    <div className="w-full flex flex-col gap-5 p-4 sm:p-6 max-w-[1600px] mx-auto font-sans">
+    <div className="w-full flex flex-col gap-4 p-4 sm:p-5 max-w-[1600px] mx-auto font-sans text-sm text-slate-800">
       {/* 1. EXECUTIVE SUMMARY KPI CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white rounded-2xl p-4.5 border border-slate-200/90 shadow-2xs space-y-1">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">รายการตั้งเบิกคงเหลือ</span>
-          <div className="text-xl font-extrabold text-slate-900">{displayRows.length} รายการ</div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="bg-white rounded-md p-3 border border-slate-200">
+          <span className="text-xs font-semibold text-slate-500">รายการตั้งเบิกคงเหลือ</span>
+          <div className="text-lg font-bold text-slate-900 mt-1">{displayRows.length} รายการ</div>
         </div>
 
-        <div className="bg-white rounded-2xl p-4.5 border border-slate-200/90 shadow-2xs space-y-1">
-          <span className="text-[11px] font-bold text-indigo-500 uppercase tracking-wider">รวมยอดยังไม่เบิก</span>
-          <div className="text-xl font-extrabold text-indigo-900">{money(amount)}</div>
+        <div className="bg-white rounded-md p-3 border border-slate-200">
+          <span className="text-xs font-semibold text-slate-500">รวมยอดยังไม่เบิก</span>
+          <div className="text-lg font-bold text-slate-900 mt-1">{money(amount)}</div>
         </div>
 
-        <div className="bg-white rounded-2xl p-4.5 border border-slate-200/90 shadow-2xs space-y-1">
-          <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">ยอดโอนยังไม่เบิก</span>
-          <div className="text-xl font-extrabold text-emerald-700">{money(transfer)}</div>
+        <div className="bg-white rounded-md p-3 border border-slate-200">
+          <span className="text-xs font-semibold text-slate-500">ยอดโอนยังไม่เบิก</span>
+          <div className="text-lg font-bold text-emerald-700 mt-1">{money(transfer)}</div>
         </div>
       </div>
 
       {/* 2. FILTER TOOLBAR */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3 text-xs flex-1">
+      <div className="border border-slate-200 rounded-md p-3 bg-white flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+        <div className="flex flex-wrap items-center gap-3 flex-1">
           {/* Requester dropdown */}
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-600 whitespace-nowrap">ผู้เบิก:</span>
+            <span className="font-semibold text-slate-700 whitespace-nowrap">ผู้เบิก:</span>
             <select
               value={filters.requester}
               onChange={event => updateFilter("requester", event.target.value)}
-              className="bg-slate-50 hover:bg-slate-100/90 text-slate-800 text-xs font-semibold px-3 py-2 h-9 rounded-xl border border-slate-200 focus:bg-white focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
+              className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none cursor-pointer"
             >
               <option value="">ทั้งหมด</option>
               {peopleRows.map(row => {
@@ -170,22 +170,22 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
 
           {/* Date Picker */}
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-600 whitespace-nowrap">วันที่:</span>
+            <span className="font-semibold text-slate-700 whitespace-nowrap">วันที่:</span>
             <input
               type="date"
               value={filters.date}
               onChange={event => updateFilter("date", event.target.value)}
-              className="bg-slate-50 hover:bg-slate-100/90 text-slate-800 text-xs font-semibold px-3 py-1.5 h-9 rounded-xl border border-slate-200 focus:bg-white focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
+              className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none cursor-pointer"
             />
           </div>
 
           {/* Bill Type */}
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-600 whitespace-nowrap">ประเภทบิล:</span>
+            <span className="font-semibold text-slate-700 whitespace-nowrap">ประเภทบิล:</span>
             <select
               value={filters.bill}
               onChange={event => updateFilter("bill", event.target.value)}
-              className="bg-slate-50 hover:bg-slate-100/90 text-slate-800 text-xs font-semibold px-3 py-2 h-9 rounded-xl border border-slate-200 focus:bg-white focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
+              className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none cursor-pointer"
             >
               <option value="">ทั้งหมด</option>
               <option value="หลัก">หลัก</option>
@@ -194,18 +194,17 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
           </div>
 
           {/* Live Search */}
-          <div className="relative flex items-center h-9 flex-1 min-w-[220px] max-w-md">
-            <Search size={15} className="absolute left-3 text-slate-400 pointer-events-none z-10" />
+          <div className="relative flex items-center flex-1 min-w-[220px] max-w-md">
+            <Search size={14} className="absolute left-2.5 text-slate-400 pointer-events-none" />
             <input
               type="text"
               placeholder="ค้นหา Project, ร้านค้า, รายการ..."
               value={filters.search}
               onChange={event => updateFilter("search", event.target.value)}
-              style={{ paddingLeft: "36px", paddingRight: "30px" }}
-              className="w-full h-full bg-slate-50 hover:bg-slate-100/90 focus:bg-white text-slate-800 text-xs font-medium rounded-xl border border-slate-200 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all placeholder:text-slate-400"
+              className="w-full bg-white text-slate-800 text-xs pl-8 pr-7 py-1 rounded-md border border-slate-300 focus:outline-none focus:border-slate-500 placeholder:text-slate-400"
             />
             {filters.search && (
-              <X size={14} className="absolute right-2.5 text-slate-400 cursor-pointer hover:text-slate-700 z-10" onClick={() => updateFilter("search", "")} />
+              <X size={14} className="absolute right-2 text-slate-400 cursor-pointer hover:text-slate-600" onClick={() => updateFilter("search", "")} />
             )}
           </div>
         </div>
@@ -216,12 +215,12 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
             type="button"
             onClick={approveSelected}
             disabled={isBatchApproving}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold rounded-xl transition shadow-2xs flex items-center gap-2"
+            className="px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-md transition cursor-pointer flex items-center gap-1.5 shrink-0"
           >
             {isBatchApproving ? (
-              <><LoaderCircle className="spin" size={15} /> กำลังอัพเดท...</>
+              <><LoaderCircle className="spin" size={14} /> กำลังอัพเดท...</>
             ) : (
-              <><Check size={15} /> อัพเดทที่เลือก ({selectedRows.size})</>
+              <><Check size={14} /> อัพเดทที่เลือก ({selectedRows.size})</>
             )}
           </button>
         )}
@@ -229,8 +228,8 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
 
       {actionError ? <div className="p-3 bg-rose-50 text-rose-700 rounded-xl border border-rose-200 text-xs font-bold">{actionError}</div> : null}
 
-      {/* 3. PRO WORK TABLE */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+      {/* 3. WORK TABLE */}
+      <div className="border border-slate-200 rounded-md bg-white overflow-hidden">
         <WithdrawTable
           approvingRow={approvingRow}
           columns={columns}
@@ -319,14 +318,14 @@ function WithdrawTable({
   onSelectRow: (rowId: number) => void;
   onSelectAll: (rowIds: number[]) => void;
 }) {
-  if (!rows.length) return <div className="p-10 text-center text-slate-400 text-xs font-medium">ไม่พบรายการตั้งเบิก</div>;
+  if (!rows.length) return <div className="p-8 text-center text-slate-400 text-xs font-medium">ไม่พบรายการตั้งเบิก</div>;
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-left text-xs text-slate-700 border-collapse">
+      <table className="w-full text-left text-xs text-slate-700 border-collapse font-sans">
         <thead>
-          <tr className="bg-slate-100/90 text-slate-600 font-bold border-b border-slate-200 uppercase tracking-wider text-[11px]">
-            <th className="py-3 px-3.5 w-10 text-center">
+          <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-200 text-xs">
+            <th className="py-2.5 px-3 w-10 text-center border-r border-slate-200">
               <input 
                 type="checkbox" 
                 checked={rows.length > 0 && rows.every(r => selectedRows.has(Number(r._sheetRow)))}
@@ -334,11 +333,11 @@ function WithdrawTable({
                   if (e.target.checked) onSelectAll(rows.map(r => Number(r._sheetRow)));
                   else onSelectAll([]);
                 }}
-                className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                className="rounded border-slate-300 text-slate-900 focus:ring-slate-500 cursor-pointer"
               />
             </th>
             {columns.map(column => (
-              <th key={column} className={`py-3 px-3.5 ${isAmountColumn(column) ? "text-right" : ""}`}>
+              <th key={column} className={`py-2.5 px-3 border-r border-slate-200 ${isAmountColumn(column) ? "text-right" : ""}`}>
                 {column}
               </th>
             ))}
@@ -350,35 +349,35 @@ function WithdrawTable({
             const isSelected = selectedRows.has(sheetRowId);
 
             return (
-              <tr key={`${sheetRowId}-${index}`} className="hover:bg-slate-50/80 transition-colors group">
-                <td className="py-2.5 px-3.5 text-center">
+              <tr key={`${sheetRowId}-${index}`} className="hover:bg-slate-50 transition-colors">
+                <td className="py-2 px-3 text-center border-r border-slate-100">
                   <input 
                     type="checkbox" 
                     checked={isSelected}
                     onChange={() => onSelectRow(sheetRowId)}
-                    className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                    className="rounded border-slate-300 text-slate-900 focus:ring-slate-500 cursor-pointer"
                   />
                 </td>
 
                 {columns.map(column => (
-                  <td key={column} className={`py-2.5 px-3.5 ${isAmountColumn(column) ? "text-right font-extrabold text-slate-900" : ""}`}>
+                  <td key={column} className={`py-2 px-3 border-r border-slate-100 ${isAmountColumn(column) ? "text-right font-bold text-slate-900" : ""}`}>
                     {column === "จัดการ" ? (
                       <button
                         type="button"
                         disabled={approvingRow === sheetRowId}
                         onClick={() => onApprove(row)}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition ${
+                        className={`px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1 transition cursor-pointer ${
                           normalizedStatus(row["สถานะ"]) === "อนุมัติ"
-                            ? "bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200"
-                            : "bg-slate-900 hover:bg-slate-800 text-white"
+                            ? "bg-slate-100 text-slate-700 border border-slate-300 hover:bg-slate-200"
+                            : "bg-emerald-700 hover:bg-emerald-800 text-white"
                         }`}
                       >
                         {approvingRow === sheetRowId ? (
-                          <LoaderCircle className="spin" size={14} />
+                          <LoaderCircle className="spin" size={13} />
                         ) : normalizedStatus(row["สถานะ"]) === "อนุมัติ" ? (
-                          <Banknote size={14} />
+                          <Banknote size={13} />
                         ) : (
-                          <Check size={14} />
+                          <Check size={13} />
                         )}
                         <span>
                           {normalizedStatus(row["สถานะ"]) === "อนุมัติ" ? "เบิกแล้ว" : "อนุมัติ"}
@@ -427,22 +426,22 @@ function WithdrawPagination({
   visibleStart: number;
 }) {
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-slate-200/90 text-xs text-slate-500 bg-slate-50/50">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 border-t border-slate-200 text-xs text-slate-600 bg-slate-50">
       <div>
         แสดง {visibleStart}-{visibleEnd} จาก {totalRows} รายการ
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         {/* Rows per page */}
-        <div className="flex items-center gap-1.5">
-          <span className="text-slate-400 font-semibold">แสดงต่อหน้า:</span>
+        <div className="flex items-center gap-1">
+          <span className="text-slate-500 font-medium">แสดงต่อหน้า:</span>
           {PAGE_SIZE_OPTIONS.map(opt => (
             <button
               key={opt}
               type="button"
               onClick={() => onPageSizeChange(opt)}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
-                opt === pageSize ? "bg-slate-900 text-white" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-100"
+              className={`px-2 py-0.5 rounded text-xs font-semibold transition cursor-pointer ${
+                opt === pageSize ? "bg-slate-900 text-white" : "bg-white border border-slate-300 text-slate-700 hover:bg-slate-100"
               }`}
             >
               {opt}
@@ -456,20 +455,20 @@ function WithdrawPagination({
             type="button"
             disabled={currentPage <= 1}
             onClick={() => onPageChange(currentPage - 1)}
-            className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 transition"
+            className="p-1 rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 transition cursor-pointer text-slate-700"
           >
-            <ChevronLeft size={16} />
+            <ChevronLeft size={15} />
           </button>
-          <span className="font-bold text-slate-800 px-2">
+          <span className="font-semibold text-slate-800 px-1">
             {currentPage} / {totalPages}
           </span>
           <button
             type="button"
             disabled={currentPage >= totalPages}
             onClick={() => onPageChange(currentPage + 1)}
-            className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 transition"
+            className="p-1 rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 transition cursor-pointer text-slate-700"
           >
-            <ChevronRight size={16} />
+            <ChevronRight size={15} />
           </button>
         </div>
       </div>
@@ -534,3 +533,4 @@ function formatWithdrawCell(column: string, value: unknown, requesterNames: Reco
   }
   return String(value) || "-";
 }
+

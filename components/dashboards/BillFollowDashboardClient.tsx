@@ -2,16 +2,25 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
+  AlertCircle,
   Building2,
   Calendar,
+  Check,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Clock,
+  Copy,
   Eye,
   FileCheck,
+  Loader2,
+  MessageSquare,
   Receipt,
+  RotateCw,
   Search,
+  Upload,
   X,
 } from "lucide-react";
 import { money, toNumber } from "@/lib/numbers";
@@ -29,6 +38,17 @@ type BillFollowDashboardClientProps = {
   peopleRows?: SheetRow[];
 };
 
+function calculateDaysElapsed(dateVal: unknown): number {
+  if (!dateVal) return 0;
+  const iso = normalizeDateToIso(dateVal);
+  if (!iso) return 0;
+  const billDate = new Date(iso);
+  if (isNaN(billDate.getTime())) return 0;
+  const today = new Date();
+  const diffTime = Math.max(0, today.getTime() - billDate.getTime());
+  return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+}
+
 export function BillFollowDashboardClient({
   vatRows,
   naturalDeductRows,
@@ -37,12 +57,24 @@ export function BillFollowDashboardClient({
   requesterNames,
   peopleRows = [],
 }: BillFollowDashboardClientProps) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<"all" | "vat" | "natural" | "company" | "credit">("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRequester, setSelectedRequester] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [pageSize, setPageSize] = useState(20);
   const [page, setPage] = useState(1);
+
+  // Quick Action & Notification States
+  const [savingRowId, setSavingRowId] = useState<string | null>(null);
+  const [completedRowIds, setCompletedRowIds] = useState<Set<string>>(new Set());
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  function showToast(msg: string) {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  }
 
   // Combine rows according to active tab
   const allPendingRows = useMemo(() => {
@@ -118,95 +150,215 @@ export function BillFollowDashboardClient({
     setPage(1);
   };
 
+  // Quick Action: Mark Received / Completed
+  async function handleMarkReceived(row: SheetRow, targetType: "vat" | "deduct" | "credit" | "all") {
+    const sheetRow = row._sheetRow ?? row.id ?? row["ลำดับ"];
+    const rowId = String(row["ลำดับ"] || row._sheetRow || "");
+    if (!sheetRow) return;
+
+    const todayStr = new Date().toISOString().split("T")[0];
+    const updateValues: SheetRow = {};
+
+    if (targetType === "vat" || (targetType === "all" && row.vat && !row["วันได้บิล"])) {
+      updateValues["วันได้บิล"] = todayStr;
+    }
+    if (targetType === "deduct" || (targetType === "all" && row["หัก"] && !row["วันออก 3%"])) {
+      updateValues["วันออก 3%"] = todayStr;
+    }
+    if (targetType === "credit" || (targetType === "all" && row["เครดิต"] && !row["วันจ่าย"])) {
+      updateValues["วันจ่าย"] = todayStr;
+    }
+
+    if (!Object.keys(updateValues).length) {
+      updateValues["วันได้บิล"] = todayStr;
+    }
+    if (rowId) {
+      updateValues["ลำดับ"] = rowId;
+    }
+
+    setSavingRowId(rowId);
+    try {
+      const res = await fetch("/api/rows", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tableName: "Data",
+          sheetRow,
+          values: updateValues,
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Update failed");
+
+      setCompletedRowIds((prev) => new Set(prev).add(rowId));
+      showToast(`บันทึกได้รับบิลรายการ #${rowId} เรียบร้อยแล้ว`);
+      router.refresh();
+    } catch (err: any) {
+      alert(`เกิดข้อผิดพลาดในการบันทึกสถานะบิล: ${err?.message || "กรุณาลองใหม่อีกครั้ง"}`);
+    } finally {
+      setSavingRowId(null);
+    }
+  }
+
+  // Generate LINE follow-up message text
+  function generateLineText(row: SheetRow) {
+    const billId = String(row["ลำดับ"] || row._sheetRow || "");
+    const vendor = String(row["ร้าน/บุคคล"] || "-");
+    const project = String(row["ชื่อ Project"] || "-");
+    const item = String(row["สินค้า/ทำงาน"] || row["รายการ"] || "-");
+    const date = formatDateDisplay(row["ว/ด/ป"]);
+    const requesterCode = String(row["ผู้เบิก"] || "").trim();
+    const requesterName = requesterNames[requesterCode] || requesterCode || "ผู้เบิก";
+    const amount = money(toNumber(row["ยอดเงิน"]));
+    const days = calculateDaysElapsed(row["ว/ด/ป"]);
+
+    const conditions = [];
+    if (row.vat && !row["วันได้บิล"]) conditions.push(`ใบกำกับภาษี VAT ${row.vat}`);
+    if (row["หัก"] && !row["วันออก 3%"]) conditions.push(`หนังสือหัก ณ ที่จ่าย ${row["หัก"]}%`);
+    if (row["เครดิต"] && !row["วันจ่าย"]) conditions.push(`บิลเครดิต ${row["เครดิต"]} วัน`);
+    const condStr = conditions.join(" / ") || "บิลสินค้า";
+
+    return `📢 แจ้งติดตามเอกสารบิล/ใบเสร็จรับเงิน
+----------------------------------
+👤 ผู้เบิก: ${requesterName}
+🏗️ โครงการ: ${project}
+🏪 ร้าน/บุคคล: ${vendor}
+📄 เลขที่บิล/ลำดับ: #${billId}
+📝 รายการ: ${item}
+💰 ยอดเงิน: ${amount} บาท
+📅 วันที่รายการ: ${date}
+⏳ ค้างเอกสารมาแล้ว: ${days} วัน
+📌 เอกสารที่ต้องส่ง: ${condStr}
+----------------------------------
+รบกวนนำส่งเอกสารต้นฉบับให้ฝ่ายบัญชีด้วยครับ/ค่ะ 🙏`;
+  }
+
+  function copyLineText(row: SheetRow) {
+    const billId = String(row["ลำดับ"] || row._sheetRow || "");
+    const text = generateLineText(row);
+    navigator.clipboard.writeText(text);
+    setCopiedId(billId);
+    showToast(`คัดลอกข้อความติดตามบิล #${billId} สำหรับส่ง LINE แล้ว!`);
+    setTimeout(() => setCopiedId(null), 2500);
+  }
+
+  // Copy batch summary for selected requester
+  function copyRequesterBatchText() {
+    if (!selectedRequester || !filteredRows.length) return;
+    const reqName = requesterNames[selectedRequester] || selectedRequester;
+    let text = `📢 สรุปรายการตามบิลค้างส่งของคุณ ${reqName} (${filteredRows.length} รายการ)\n----------------------------------\n`;
+
+    filteredRows.forEach((r, idx) => {
+      const bId = String(r["ลำดับ"] || r._sheetRow || idx + 1);
+      const prj = String(r["ชื่อ Project"] || "-");
+      const vdr = String(r["ร้าน/บุคคล"] || "-");
+      const amt = money(toNumber(r["ยอดเงิน"]));
+      const days = calculateDaysElapsed(r["ว/ด/ป"]);
+      text += `${idx + 1}. #${bId} - ${prj} (${vdr}) ยอด ${amt} บ. [ค้าง ${days} วัน]\n`;
+    });
+
+    text += `----------------------------------\nรบกวนตรวจสอบและส่งเอกสารให้ฝ่ายบัญชีด้วยนะครับ/ค่ะ 🙏`;
+    navigator.clipboard.writeText(text);
+    showToast(`คัดลอกสรุปรายการตามบิลของคุณ ${reqName} แล้ว!`);
+  }
+
   return (
-    <div className="w-full flex flex-col gap-5 p-4 sm:p-6 max-w-[1600px] mx-auto font-sans">
+    <div className="w-full flex flex-col gap-4 p-4 sm:p-5 max-w-[1600px] mx-auto font-sans text-sm text-slate-800 relative">
+      {/* Toast Notification Banner */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white border border-slate-700 px-4 py-3 rounded-md shadow-lg flex items-center gap-3 animate-in fade-in duration-200">
+          <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+          <span className="text-xs font-semibold">{toastMessage}</span>
+          <button type="button" onClick={() => setToastMessage(null)} className="text-slate-400 hover:text-white ml-2">
+            <X size={15} />
+          </button>
+        </div>
+      )}
+
       {/* 1. EXECUTIVE SUMMARY KPI CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Vat Card */}
         <div
           onClick={() => handleTabChange("vat")}
-          className={`bg-white rounded-2xl p-4.5 border transition-all cursor-pointer shadow-2xs ${
-            activeTab === "vat" ? "border-amber-400 ring-2 ring-amber-100" : "border-slate-200/90 hover:border-amber-300"
+          className={`bg-white rounded-md p-3 border transition cursor-pointer ${
+            activeTab === "vat" ? "border-slate-900 bg-slate-50 font-bold" : "border-slate-200 hover:border-slate-300"
           }`}
         >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-amber-600 uppercase tracking-wider">ตาม VAT (ยังไม่ได้บิล)</span>
-            <span className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
-              <FileCheck size={18} />
-            </span>
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-semibold text-slate-700">ตาม VAT (ยังไม่ได้บิล)</span>
+            <span className="text-slate-400">{vatRows.length} รายการ</span>
           </div>
-          <div className="text-xl font-extrabold text-slate-900 mt-2">{vatRows.length} รายการ</div>
-          <div className="text-xs font-semibold text-amber-700 mt-1">{money(vatTotal)}</div>
+          <div className="flex items-baseline justify-between mt-2">
+            <span className="text-sm font-bold text-slate-900">{money(vatTotal)}</span>
+          </div>
         </div>
 
         {/* Natural Deduct 3% Card */}
         <div
           onClick={() => handleTabChange("natural")}
-          className={`bg-white rounded-2xl p-4.5 border transition-all cursor-pointer shadow-2xs ${
-            activeTab === "natural" ? "border-indigo-400 ring-2 ring-indigo-100" : "border-slate-200/90 hover:border-indigo-300"
+          className={`bg-white rounded-md p-3 border transition cursor-pointer ${
+            activeTab === "natural" ? "border-slate-900 bg-slate-50 font-bold" : "border-slate-200 hover:border-slate-300"
           }`}
         >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-indigo-600 uppercase tracking-wider">ตาม หัก 3% (บุคคล)</span>
-            <span className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
-              <Receipt size={18} />
-            </span>
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-semibold text-slate-700">ตาม หัก 3% (บุคคล)</span>
+            <span className="text-slate-400">{naturalDeductRows.length} รายการ</span>
           </div>
-          <div className="text-xl font-extrabold text-slate-900 mt-2">{naturalDeductRows.length} รายการ</div>
-          <div className="text-xs font-semibold text-indigo-700 mt-1">{money(naturalTotal)}</div>
+          <div className="flex items-baseline justify-between mt-2">
+            <span className="text-sm font-bold text-slate-900">{money(naturalTotal)}</span>
+          </div>
         </div>
 
         {/* Company Deduct 3% Card */}
         <div
           onClick={() => handleTabChange("company")}
-          className={`bg-white rounded-2xl p-4.5 border transition-all cursor-pointer shadow-2xs ${
-            activeTab === "company" ? "border-emerald-400 ring-2 ring-emerald-100" : "border-slate-200/90 hover:border-emerald-300"
+          className={`bg-white rounded-md p-3 border transition cursor-pointer ${
+            activeTab === "company" ? "border-slate-900 bg-slate-50 font-bold" : "border-slate-200 hover:border-slate-300"
           }`}
         >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">ตาม หัก 3% (บริษัท)</span>
-            <span className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-              <Building2 size={18} />
-            </span>
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-semibold text-slate-700">ตาม หัก 3% (บริษัท)</span>
+            <span className="text-slate-400">{companyDeductRows.length} รายการ</span>
           </div>
-          <div className="text-xl font-extrabold text-slate-900 mt-2">{companyDeductRows.length} รายการ</div>
-          <div className="text-xs font-semibold text-emerald-700 mt-1">{money(companyTotal)}</div>
+          <div className="flex items-baseline justify-between mt-2">
+            <span className="text-sm font-bold text-slate-900">{money(companyTotal)}</span>
+          </div>
         </div>
 
         {/* Credit Card */}
         <div
           onClick={() => handleTabChange("credit")}
-          className={`bg-white rounded-2xl p-4.5 border transition-all cursor-pointer shadow-2xs ${
-            activeTab === "credit" ? "border-rose-400 ring-2 ring-rose-100" : "border-slate-200/90 hover:border-rose-300"
+          className={`bg-white rounded-md p-3 border transition cursor-pointer ${
+            activeTab === "credit" ? "border-slate-900 bg-slate-50 font-bold" : "border-slate-200 hover:border-slate-300"
           }`}
         >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-rose-600 uppercase tracking-wider">ตาม เครดิต (รอจ่าย)</span>
-            <span className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
-              <Clock size={18} />
-            </span>
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-semibold text-slate-700">ตาม เครดิต (รอจ่าย)</span>
+            <span className="text-slate-400">{creditRows.length} รายการ</span>
           </div>
-          <div className="text-xl font-extrabold text-slate-900 mt-2">{creditRows.length} รายการ</div>
-          <div className="text-xs font-semibold text-rose-700 mt-1">{money(creditTotal)}</div>
+          <div className="flex items-baseline justify-between mt-2">
+            <span className="text-sm font-bold text-slate-900">{money(creditTotal)}</span>
+          </div>
         </div>
       </div>
 
-      {/* 2. FILTER & ACTION TOOLBAR (MATCHING WITHDRAW DASHBOARD) */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+      {/* 2. FILTER & ACTION TOOLBAR */}
+      <div className="border border-slate-200 rounded-md p-3 bg-white flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
         {/* Left Filters */}
-        <div className="flex flex-wrap items-center gap-3 text-xs flex-1">
+        <div className="flex flex-wrap items-center gap-3 flex-1">
           {/* Requester dropdown */}
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-600 whitespace-nowrap">ผู้เบิก:</span>
+            <span className="font-semibold text-slate-700 whitespace-nowrap">ผู้เบิก:</span>
             <select
               value={selectedRequester}
               onChange={(e) => {
                 setSelectedRequester(e.target.value);
                 setPage(1);
               }}
-              className="bg-slate-50 hover:bg-slate-100/90 text-slate-800 text-xs font-semibold px-3 py-2 h-9 rounded-xl border border-slate-200 focus:bg-white focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
+              className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none cursor-pointer"
             >
-              <option value="">ทั้งหมด</option>
+              <option value="">ทั้งหมด ({allPendingRows.length} รายการ)</option>
               {peopleRows.map((row) => {
                 const key = String(row["รหัสพนักงาน"] || row["ชื่อเล่น"] || row._sheetRow || "").trim();
                 const label = row["ชื่อเล่น"] ? `${key} - ${row["ชื่อเล่น"]}` : key;
@@ -221,7 +373,7 @@ export function BillFollowDashboardClient({
 
           {/* Date Picker */}
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-600 whitespace-nowrap">วันที่:</span>
+            <span className="font-semibold text-slate-700 whitespace-nowrap">วันที่:</span>
             <input
               type="date"
               value={selectedDate}
@@ -229,13 +381,13 @@ export function BillFollowDashboardClient({
                 setSelectedDate(e.target.value);
                 setPage(1);
               }}
-              className="bg-slate-50 hover:bg-slate-100/90 text-slate-800 text-xs font-semibold px-3 py-1.5 h-9 rounded-xl border border-slate-200 focus:bg-white focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
+              className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none cursor-pointer"
             />
           </div>
 
           {/* Live Search */}
-          <div className="relative flex items-center h-9 flex-1 min-w-[220px] max-w-md">
-            <Search size={15} className="absolute left-3 text-slate-400 pointer-events-none z-10" />
+          <div className="relative flex items-center flex-1 min-w-[220px] max-w-md">
+            <Search size={14} className="absolute left-2.5 text-slate-400 pointer-events-none" />
             <input
               type="text"
               placeholder="ค้นหาลำดับ, ร้านค้า, Project, รายการ..."
@@ -244,13 +396,12 @@ export function BillFollowDashboardClient({
                 setSearchTerm(e.target.value);
                 setPage(1);
               }}
-              style={{ paddingLeft: "36px", paddingRight: "30px" }}
-              className="w-full h-full bg-slate-50 hover:bg-slate-100/90 focus:bg-white text-slate-800 text-xs font-medium rounded-xl border border-slate-200 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all placeholder:text-slate-400"
+              className="w-full bg-white text-slate-800 text-xs pl-8 pr-7 py-1 rounded-md border border-slate-300 focus:outline-none focus:border-slate-500 placeholder:text-slate-400"
             />
             {searchTerm && (
               <X
                 size={14}
-                className="absolute right-2.5 text-slate-400 cursor-pointer hover:text-slate-700 z-10"
+                className="absolute right-2 text-slate-400 cursor-pointer hover:text-slate-600"
                 onClick={() => {
                   setSearchTerm("");
                   setPage(1);
@@ -258,15 +409,27 @@ export function BillFollowDashboardClient({
               />
             )}
           </div>
+
+          {/* Batch Copy Button for Selected Requester */}
+          {selectedRequester && filteredRows.length > 0 && (
+            <button
+              type="button"
+              onClick={copyRequesterBatchText}
+              className="px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs rounded-md transition cursor-pointer shrink-0"
+              title="คัดลอกข้อความสรุปบิลค้างทั้งหมดของผู้เบิกรายนี้"
+            >
+              คัดลอกส่ง LINE ({filteredRows.length} รายการ)
+            </button>
+          )}
         </div>
 
         {/* Category Filter Tabs */}
-        <div className="flex flex-wrap items-center gap-1.5 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100">
+        <div className="flex flex-wrap items-center gap-1 border-b sm:border-b-0 border-slate-200">
           <button
             type="button"
             onClick={() => handleTabChange("all")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-              activeTab === "all" ? "bg-slate-900 text-white shadow-2xs" : "text-slate-600 hover:bg-slate-100"
+            className={`px-2.5 py-1 rounded-md text-xs font-semibold transition cursor-pointer ${
+              activeTab === "all" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"
             }`}
           >
             ทั้งหมด ({allPendingRows.length})
@@ -274,8 +437,8 @@ export function BillFollowDashboardClient({
           <button
             type="button"
             onClick={() => handleTabChange("vat")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-              activeTab === "vat" ? "bg-amber-600 text-white shadow-2xs" : "text-amber-700 hover:bg-amber-50"
+            className={`px-2.5 py-1 rounded-md text-xs font-semibold transition cursor-pointer ${
+              activeTab === "vat" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"
             }`}
           >
             ตาม VAT ({vatRows.length})
@@ -283,8 +446,8 @@ export function BillFollowDashboardClient({
           <button
             type="button"
             onClick={() => handleTabChange("natural")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-              activeTab === "natural" ? "bg-indigo-600 text-white shadow-2xs" : "text-indigo-700 hover:bg-indigo-50"
+            className={`px-2.5 py-1 rounded-md text-xs font-semibold transition cursor-pointer ${
+              activeTab === "natural" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"
             }`}
           >
             หัก 3% บุคคล ({naturalDeductRows.length})
@@ -292,8 +455,8 @@ export function BillFollowDashboardClient({
           <button
             type="button"
             onClick={() => handleTabChange("company")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-              activeTab === "company" ? "bg-emerald-600 text-white shadow-2xs" : "text-emerald-700 hover:bg-emerald-50"
+            className={`px-2.5 py-1 rounded-md text-xs font-semibold transition cursor-pointer ${
+              activeTab === "company" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"
             }`}
           >
             หัก 3% บริษัท ({companyDeductRows.length})
@@ -301,8 +464,8 @@ export function BillFollowDashboardClient({
           <button
             type="button"
             onClick={() => handleTabChange("credit")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-              activeTab === "credit" ? "bg-rose-600 text-white shadow-2xs" : "text-rose-700 hover:bg-rose-50"
+            className={`px-2.5 py-1 rounded-md text-xs font-semibold transition cursor-pointer ${
+              activeTab === "credit" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"
             }`}
           >
             เครดิต ({creditRows.length})
@@ -310,21 +473,22 @@ export function BillFollowDashboardClient({
         </div>
       </div>
 
-      {/* 3. PRO HIGH-DENSITY TABLE (MATCHING WITHDRAW DASHBOARD) */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+      {/* 3. HIGH-DENSITY TABLE */}
+      <div className="border border-slate-200 rounded-md bg-white overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-700 border-collapse">
+          <table className="w-full text-left text-xs text-slate-700 border-collapse font-sans">
             <thead>
-              <tr className="bg-slate-200 text-slate-900 font-extrabold border-b-2 border-slate-300 uppercase tracking-wider text-[11px]">
-                <th className="py-1 px-2.5 w-12 text-center bg-slate-200 text-slate-900">ดู</th>
-                <th className="py-1 px-2.5 w-20 bg-slate-200 text-slate-900">ลำดับ</th>
-                <th className="py-1 px-2.5 min-w-[150px] bg-slate-200 text-slate-900">ร้าน/บุคคล</th>
-                <th className="py-1 px-2.5 min-w-[160px] bg-slate-200 text-slate-900">Project</th>
-                <th className="py-1 px-2.5 min-w-[180px] bg-slate-200 text-slate-900">สินค้า/ทำงาน</th>
-                <th className="py-1 px-2.5 w-28 bg-slate-200 text-slate-900">วันที่</th>
-                <th className="py-1 px-2.5 w-28 bg-slate-200 text-slate-900">ผู้เบิก</th>
-                <th className="py-1 px-2.5 text-right w-32 bg-slate-200 text-slate-900">ยอดเงิน</th>
-                <th className="py-1 px-2.5 text-center min-w-[150px] bg-slate-200 text-slate-900">เงื่อนไขการตามบิล</th>
+              <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-200 text-xs">
+                <th className="py-2.5 px-3 border-r border-slate-200">ลำดับ</th>
+                <th className="py-2.5 px-3 border-r border-slate-200">ร้าน/บุคคล</th>
+                <th className="py-2.5 px-3 border-r border-slate-200">Project</th>
+                <th className="py-2.5 px-3 border-r border-slate-200">สินค้า/ทำงาน</th>
+                <th className="py-2.5 px-3 border-r border-slate-200">วันที่</th>
+                <th className="py-2.5 px-3 border-r border-slate-200 text-center">ค้างเอกสาร</th>
+                <th className="py-2.5 px-3 border-r border-slate-200">ผู้เบิก</th>
+                <th className="py-2.5 px-3 border-r border-slate-200 text-right">ยอดเงิน</th>
+                <th className="py-2.5 px-3 border-r border-slate-200 text-center">เงื่อนไข</th>
+                <th className="py-2.5 px-3 text-center">จัดการตามบิล</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -337,75 +501,124 @@ export function BillFollowDashboardClient({
                 const requesterCode = String(row["ผู้เบิก"] || "").trim();
                 const requesterName = requesterNames[requesterCode] || requesterCode || "-";
                 const amount = toNumber(row["ยอดเงิน"]);
+                const daysElapsed = calculateDaysElapsed(row["ว/ด/ป"]);
 
-                const hasVat = toNumber(row.vat) > 0 && !row["วันได้บิล"];
-                const hasDeduct = toNumber(row["หัก"]) > 0 && !row["วันออก 3%"];
+                const hasVat = toNumber(row.vat) > 0;
+                const hasDeduct = toNumber(row["หัก"]) > 0;
                 const isCompany = String(row["statusค่าแรง"] || "").trim() === "บริษัท";
-                const hasCredit = Boolean(row["เครดิต"]) && !row["วันจ่าย"];
+                const hasCredit = Boolean(row["เครดิต"]);
+
+                const isSaving = savingRowId === billId;
+                const isCopied = copiedId === billId;
 
                 return (
-                  <tr key={`${billId}-${index}`} className="hover:bg-slate-50/80 transition-colors group">
-                    <td className="py-2.5 px-3.5 text-center">
+                  <tr key={`${billId}-${index}`} className="hover:bg-slate-50 transition-colors">
+                    {/* Sequence */}
+                    <td className="py-2 px-3 font-semibold text-slate-800 border-r border-slate-100">
                       <Link
                         href={`/bills/${encodeURIComponent(billId)}`}
-                        className="w-7 h-7 rounded-lg bg-slate-100 group-hover:bg-indigo-600 text-slate-600 group-hover:text-white flex items-center justify-center transition mx-auto shadow-2xs"
+                        className="text-slate-900 font-bold hover:underline"
                         title="ดูรายละเอียดบิล"
                       >
-                        <Eye size={15} />
+                        #{billId}
                       </Link>
                     </td>
 
-                    <td className="py-2.5 px-3.5 font-mono font-bold text-slate-800">
-                      #{billId}
-                    </td>
-
-                    <td className="py-2.5 px-3.5 font-bold text-slate-900">
+                    {/* Vendor */}
+                    <td className="py-2 px-3 font-bold text-slate-900 border-r border-slate-100">
                       {vendor}
                     </td>
 
-                    <td className="py-2.5 px-3.5 text-slate-600">
+                    {/* Project */}
+                    <td className="py-2 px-3 text-slate-700 border-r border-slate-100">
                       {project}
                     </td>
 
-                    <td className="py-2.5 px-3.5 text-slate-600">
+                    {/* Item */}
+                    <td className="py-2 px-3 text-slate-700 border-r border-slate-100">
                       {item}
                     </td>
 
-                    <td className="py-2.5 px-3.5 text-slate-500 font-mono">
+                    {/* Date */}
+                    <td className="py-2 px-3 text-slate-500 border-r border-slate-100 whitespace-nowrap">
                       {date}
                     </td>
 
-                    <td className="py-2.5 px-3.5 text-slate-600">
+                    {/* Days Elapsed Aging */}
+                    <td className="py-2 px-3 text-center border-r border-slate-100">
+                      <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                        daysElapsed >= 15
+                          ? "bg-rose-50 text-rose-700 border border-rose-200"
+                          : daysElapsed >= 8
+                          ? "bg-amber-50 text-amber-700 border border-amber-200"
+                          : "bg-slate-100 text-slate-700 border border-slate-200"
+                      }`}>
+                        {daysElapsed} วัน
+                      </span>
+                    </td>
+
+                    {/* Requester */}
+                    <td className="py-2 px-3 text-slate-700 font-medium border-r border-slate-100">
                       {requesterName}
                     </td>
 
-                    <td className="py-2.5 px-3.5 text-right font-extrabold text-slate-900">
+                    {/* Amount */}
+                    <td className="py-2 px-3 text-right font-bold text-slate-900 border-r border-slate-100">
                       {money(amount)}
                     </td>
 
-                    <td className="py-2.5 px-3.5 text-center">
+                    {/* Conditions */}
+                    <td className="py-2 px-3 text-center border-r border-slate-100">
                       <div className="flex flex-wrap items-center justify-center gap-1">
                         {hasVat && (
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
                             vat {row.vat}
                           </span>
                         )}
                         {hasDeduct && (
-                          <span
-                            className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
-                              isCompany
-                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                : "bg-indigo-50 text-indigo-700 border border-indigo-200"
-                            }`}
-                          >
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
                             หัก {row["หัก"]}% {isCompany ? "(บ.)" : "(บุคคล)"}
                           </span>
                         )}
                         {hasCredit && (
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
                             เครดิต {row["เครดิต"]} วัน
                           </span>
                         )}
+                      </div>
+                    </td>
+
+                    {/* Actions: Mark Received & LINE Copy */}
+                    <td className="py-2 px-3 text-center">
+                      <div className="flex items-center justify-center gap-1.5">
+                        {completedRowIds.has(billId) || (toNumber(row.vat) > 0 && Boolean(row["วันได้บิล"])) || (toNumber(row["หัก"]) > 0 && Boolean(row["วันออก 3%"])) || (Boolean(row["เครดิต"]) && Boolean(row["วันจ่าย"])) ? (
+                          <span className="px-2 py-1 bg-slate-100 text-slate-500 font-semibold text-[11px] rounded border border-slate-200 cursor-not-allowed">
+                            ได้บิลแล้ว
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={isSaving}
+                            onClick={() => handleMarkReceived(row, (activeTab === "natural" || activeTab === "company") ? "deduct" : activeTab)}
+                            className="px-2 py-1 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-[11px] rounded transition cursor-pointer disabled:opacity-50"
+                            title="กดเพื่อบันทึกว่าได้รับบิลแล้ว"
+                          >
+                            {isSaving ? "บันทึก..." : "ได้บิลแล้ว"}
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => copyLineText(row)}
+                          className={`p-1 rounded text-[11px] transition border cursor-pointer ${
+                            isCopied
+                              ? "bg-slate-900 text-white border-slate-900"
+                              : "bg-white text-slate-600 hover:bg-slate-50 border-slate-300"
+                          }`}
+                          title="คัดลอกข้อความส่ง LINE ติดตาม"
+                        >
+                          <MessageSquare size={13} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -414,7 +627,7 @@ export function BillFollowDashboardClient({
 
               {!paginatedRows.length && (
                 <tr>
-                  <td colSpan={9} className="py-10 text-center text-slate-400 text-xs font-medium">
+                  <td colSpan={10} className="py-8 text-center text-slate-400 text-xs font-medium">
                     ไม่พบรายการตามบิลที่ค้นหา
                   </td>
                 </tr>
@@ -423,16 +636,16 @@ export function BillFollowDashboardClient({
           </table>
         </div>
 
-        {/* 4. PRO PAGINATION TOOLBAR (EXACT MATCH WITHDRAW DASHBOARD) */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-slate-200/90 text-xs text-slate-500 bg-slate-50/50">
+        {/* 4. PAGINATION TOOLBAR */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 border-t border-slate-200 text-xs text-slate-600 bg-slate-50">
           <div>
             แสดง {visibleStart}-{visibleEnd} จาก {filteredRows.length} รายการ
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {/* Rows per page */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-slate-400 font-semibold">แสดงต่อหน้า:</span>
+            <div className="flex items-center gap-1">
+              <span className="text-slate-500 font-medium">แสดงต่อหน้า:</span>
               {PAGE_SIZE_OPTIONS.map((opt) => (
                 <button
                   key={opt}
@@ -441,8 +654,8 @@ export function BillFollowDashboardClient({
                     setPageSize(opt);
                     setPage(1);
                   }}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
-                    opt === pageSize ? "bg-slate-900 text-white" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-100"
+                  className={`px-2 py-0.5 rounded text-xs font-semibold transition cursor-pointer ${
+                    opt === pageSize ? "bg-slate-900 text-white" : "bg-white border border-slate-300 text-slate-700 hover:bg-slate-100"
                   }`}
                 >
                   {opt}
@@ -456,20 +669,20 @@ export function BillFollowDashboardClient({
                 type="button"
                 disabled={currentPage <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 transition"
+                className="p-1 rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 transition cursor-pointer text-slate-700"
               >
-                <ChevronLeft size={16} />
+                <ChevronLeft size={15} />
               </button>
-              <span className="font-bold text-slate-800 px-2">
+              <span className="font-semibold text-slate-800 px-1">
                 {currentPage} / {totalPages}
               </span>
               <button
                 type="button"
                 disabled={currentPage >= totalPages}
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 transition"
+                className="p-1 rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 transition cursor-pointer text-slate-700"
               >
-                <ChevronRight size={16} />
+                <ChevronRight size={15} />
               </button>
             </div>
           </div>

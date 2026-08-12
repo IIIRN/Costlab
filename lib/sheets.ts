@@ -20,33 +20,28 @@ export type AuditEntry = {
   details?: Record<string, unknown>;
 };
 
-export async function getRows(tableName: string, ttlMs = 300_000, maxRows = 10_000): Promise<SheetRow[]> {
-  return cached(`rows:${tableName}`, ttlMs, async () => {
-    try {
-      const rows = await getRowsFromSupabase(tableName, maxRows);
-      if (rows !== null && rows !== undefined) return rows;
-      return [];
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      console.warn(`Supabase fetch failed for ${tableName}: ${msg}`);
-      return [];
-    }
-  });
+export async function getRows(tableName: string, _ttlMs?: number, maxRows = 10_000): Promise<SheetRow[]> {
+  try {
+    const rows = await getRowsFromSupabase(tableName, maxRows);
+    if (rows !== null && rows !== undefined) return rows;
+    return [];
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.warn(`Supabase fetch failed for ${tableName}: ${msg}`);
+    return [];
+  }
 }
 
 export async function getHeaders(tableName: string): Promise<string[]> {
-  const rows = await cached(`headers:${tableName}`, 300_000, async () => {
-    try {
-      const data = await getRows(tableName);
-      if (data.length) {
-        return Object.keys(data[0]).filter(col => !col.startsWith("_"));
-      }
-      return [];
-    } catch (e) {
-      return [];
+  try {
+    const data = await getRows(tableName);
+    if (data.length) {
+      return Object.keys(data[0]).filter(col => !col.startsWith("_"));
     }
-  });
-  return rows;
+    return [];
+  } catch (e) {
+    return [];
+  }
 }
 
 export async function listRefOptions(tableName: string, options: {

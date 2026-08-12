@@ -5,6 +5,7 @@ import { ArrowDownWideNarrow, ArrowUpWideNarrow, ChevronLeft, ChevronRight, Eye,
 import { FormModal } from "@/components/FormModal";
 import { BillWorkflowActions } from "@/components/BillWorkflowActions";
 import { BillDetailDrawer } from "@/components/BillDetailDrawer";
+import { BillImageThumbnail } from "@/components/BillImageThumbnail";
 import { FORM_SCHEMAS } from "@/lib/schemas";
 import { formatDateDisplay, normalizeDateToIso, parseDateStrict } from "@/lib/dates";
 import { money, toNumber } from "@/lib/numbers";
@@ -114,40 +115,40 @@ export function BillsDashboardClient({
   }
 
   return (
-    <div className="w-full flex flex-col gap-5 p-4 sm:p-6 max-w-[1600px] mx-auto font-sans">
+    <div className="w-full flex flex-col gap-4 p-4 sm:p-5 max-w-[1600px] mx-auto font-sans text-sm text-slate-800">
       {/* 1. EXECUTIVE SUMMARY KPI CARDS */}
-      <div className="hidden md:grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <div className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs space-y-1">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">รายการบิลทั้งหมด</span>
-          <div className="text-xl font-extrabold text-slate-900">{filteredRows.length} รายการ</div>
+      <div className="hidden md:grid grid-cols-1 sm:grid-cols-4 gap-3">
+        <div className="bg-white rounded-md p-3 border border-slate-200">
+          <span className="text-xs font-semibold text-slate-500">รายการบิลทั้งหมด</span>
+          <div className="text-lg font-bold text-slate-900 mt-1">{filteredRows.length} รายการ</div>
         </div>
 
-        <div className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs space-y-1">
-          <span className="text-[11px] font-bold text-indigo-500 uppercase tracking-wider">รวมยอดเงินบิล</span>
-          <div className="text-xl font-extrabold text-indigo-900">{money(totalAmount)}</div>
+        <div className="bg-white rounded-md p-3 border border-slate-200">
+          <span className="text-xs font-semibold text-slate-500">รวมยอดเงินบิล</span>
+          <div className="text-lg font-bold text-slate-900 mt-1">{money(totalAmount)}</div>
         </div>
 
-        <div className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs space-y-1">
-          <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">ยอดอนุมัติ/เบิกแล้ว</span>
-          <div className="text-xl font-extrabold text-emerald-700">{money(approvedAmount)}</div>
+        <div className="bg-white rounded-md p-3 border border-slate-200">
+          <span className="text-xs font-semibold text-slate-500">ยอดอนุมัติ/เบิกแล้ว</span>
+          <div className="text-lg font-bold text-emerald-700 mt-1">{money(approvedAmount)}</div>
         </div>
 
-        <div className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs space-y-1">
-          <span className="text-[11px] font-bold text-amber-500 uppercase tracking-wider">ยอดรออนุมัติ</span>
-          <div className="text-xl font-extrabold text-amber-700">{money(pendingAmount)}</div>
+        <div className="bg-white rounded-md p-3 border border-slate-200">
+          <span className="text-xs font-semibold text-slate-500">ยอดรออนุมัติ</span>
+          <div className="text-lg font-bold text-amber-700 mt-1">{money(pendingAmount)}</div>
         </div>
       </div>
 
-      {/* 2. PRO FILTER TOOLBAR */}
-      <div className="hidden md:flex bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs flex-col md:flex-row md:items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3 text-xs flex-1">
+      {/* 2. FILTER TOOLBAR */}
+      <div className="hidden md:flex border border-slate-200 rounded-md p-3 bg-white flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+        <div className="flex flex-wrap items-center gap-3 flex-1">
           {/* Requester Filter */}
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-600 whitespace-nowrap">ผู้เบิก:</span>
+            <span className="font-semibold text-slate-700 whitespace-nowrap">ผู้เบิก:</span>
             <select
               value={filters.requester}
               onChange={event => updateFilter("requester", event.target.value)}
-              className="bg-slate-50 hover:bg-slate-100/90 text-slate-800 text-xs font-semibold px-3 py-2 h-9 rounded-xl border border-slate-200 focus:bg-white focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
+              className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none cursor-pointer"
             >
               <option value="">ทั้งหมด</option>
               {peopleRows.map(row => {
@@ -160,22 +161,22 @@ export function BillsDashboardClient({
 
           {/* Date Filter */}
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-600 whitespace-nowrap">วันที่:</span>
+            <span className="font-semibold text-slate-700 whitespace-nowrap">วันที่:</span>
             <input
               type="date"
               value={filters.date}
               onChange={event => updateFilter("date", event.target.value)}
-              className="bg-slate-50 hover:bg-slate-100/90 text-slate-800 text-xs font-semibold px-3 py-1.5 h-9 rounded-xl border border-slate-200 focus:bg-white focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
+              className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none cursor-pointer"
             />
           </div>
 
           {/* Bill Type Filter */}
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-600 whitespace-nowrap">ประเภทบิล:</span>
+            <span className="font-semibold text-slate-700 whitespace-nowrap">ประเภทบิล:</span>
             <select
               value={filters.bill}
               onChange={event => updateFilter("bill", event.target.value)}
-              className="bg-slate-50 hover:bg-slate-100/90 text-slate-800 text-xs font-semibold px-3 py-2 h-9 rounded-xl border border-slate-200 focus:bg-white focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
+              className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none cursor-pointer"
             >
               <option value="">ทั้งหมด</option>
               <option value="หลัก">หลัก</option>
@@ -185,11 +186,11 @@ export function BillsDashboardClient({
 
           {/* Status Filter */}
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-600 whitespace-nowrap">สถานะ:</span>
+            <span className="font-semibold text-slate-700 whitespace-nowrap">สถานะ:</span>
             <select
               value={filters.status}
               onChange={event => updateFilter("status", event.target.value)}
-              className="bg-slate-50 hover:bg-slate-100/90 text-slate-800 text-xs font-semibold px-3 py-2 h-9 rounded-xl border border-slate-200 focus:bg-white focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
+              className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none cursor-pointer"
             >
               <option value="">ทั้งหมด</option>
               <option value="รออนุมัติ">รออนุมัติ</option>
@@ -200,18 +201,17 @@ export function BillsDashboardClient({
           </div>
 
           {/* Search Input */}
-          <div className="relative flex items-center h-9 flex-1 min-w-[220px] max-w-md">
-            <Search size={15} className="absolute left-3 text-slate-400 pointer-events-none z-10" />
+          <div className="relative flex items-center flex-1 min-w-[220px] max-w-md">
+            <Search size={14} className="absolute left-2.5 text-slate-400 pointer-events-none" />
             <input
               type="text"
               placeholder="ค้นหา Project, ร้านค้า, รายการ..."
               value={filters.search}
               onChange={event => updateFilter("search", event.target.value)}
-              style={{ paddingLeft: "36px", paddingRight: "30px" }}
-              className="w-full h-full bg-slate-50 hover:bg-slate-100/90 focus:bg-white text-slate-800 text-xs font-medium rounded-xl border border-slate-200 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all placeholder:text-slate-400"
+              className="w-full bg-white text-slate-800 text-xs pl-8 pr-7 py-1 rounded-md border border-slate-300 focus:outline-none focus:border-slate-500 placeholder:text-slate-400"
             />
             {filters.search && (
-              <X size={14} className="absolute right-2.5 text-slate-400 cursor-pointer hover:text-slate-700 z-10" onClick={() => updateFilter("search", "")} />
+              <X size={14} className="absolute right-2 text-slate-400 cursor-pointer hover:text-slate-600" onClick={() => updateFilter("search", "")} />
             )}
           </div>
         </div>
@@ -221,10 +221,10 @@ export function BillsDashboardClient({
           <button
             type="button"
             onClick={() => setSortDesc(cur => !cur)}
-            className="h-9 px-3.5 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-extrabold inline-flex items-center justify-center gap-1.5 transition shadow-2xs whitespace-nowrap cursor-pointer"
+            className="px-3 py-1 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-md text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
             title="สลับการเรียงลำดับ"
           >
-            {sortDesc ? <ArrowDownWideNarrow size={14} className="text-indigo-600" /> : <ArrowUpWideNarrow size={14} className="text-indigo-600" />}
+            {sortDesc ? <ArrowDownWideNarrow size={14} className="text-slate-600" /> : <ArrowUpWideNarrow size={14} className="text-slate-600" />}
             <span>{sortDesc ? "ล่าสุดก่อน" : "เก่าสุดก่อน"}</span>
           </button>
 
@@ -258,31 +258,31 @@ export function BillsDashboardClient({
         hideLauncher
       />
 
-      {/* 3. PRO WORK TABLE */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+      {/* 3. WORK TABLE */}
+      <div className="border border-slate-200 rounded-md bg-white overflow-hidden">
         {!visibleRows.length ? (
-          <div className="p-10 text-center text-slate-400 text-xs font-medium">ไม่พบรายการบิล</div>
+          <div className="p-8 text-center text-slate-400 text-xs font-medium">ไม่พบรายการบิล</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-700">
-              <thead className="bg-slate-50 border-b border-slate-200/90 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+            <table className="w-full text-left text-xs text-slate-700 border-collapse font-sans">
+              <thead className="bg-slate-100 text-slate-800 font-bold border-b border-slate-200 text-xs">
                 <tr>
-                  <th className="py-2 px-3 text-center">ลำดับ</th>
-                  <th className="py-2 px-3 text-center">ID Project</th>
-                  <th className="py-2 px-3">ชื่อ Project</th>
-                  <th className="py-2 px-3">ร้าน/บุคคล</th>
-                  <th className="py-2 px-3">สินค้า/ทำงาน</th>
-                  <th className="py-2 px-3 text-center">บิล</th>
-                  <th className="py-2 px-3 text-center">ประเภท</th>
-                  <th className="py-2 px-3 text-right">ยอดเงิน</th>
-                  <th className="py-2 px-3 text-center">เงื่อนไข</th>
-                  <th className="py-2 px-3 text-center">ผู้เบิก</th>
-                  <th className="py-2 px-3 text-center">ว/ด/ป</th>
-                  <th className="py-2 px-3 text-center">สถานะ</th>
-                  <th className="py-2 px-3 text-center">จัดการ</th>
+                  <th className="py-2.5 px-3 border-r border-slate-200 text-center">ลำดับ</th>
+                  <th className="py-2.5 px-3 border-r border-slate-200 text-center">ID Project</th>
+                  <th className="py-2.5 px-3 border-r border-slate-200">ชื่อ Project</th>
+                  <th className="py-2.5 px-3 border-r border-slate-200 text-center">รูปถ่ายบิล</th>
+                  <th className="py-2.5 px-3 border-r border-slate-200">ร้าน/บุคคล</th>
+                  <th className="py-2.5 px-3 border-r border-slate-200">สินค้า/ทำงาน</th>
+                  <th className="py-2.5 px-3 border-r border-slate-200 text-center">บิล</th>
+                  <th className="py-2.5 px-3 border-r border-slate-200 text-center">ประเภท</th>
+                  <th className="py-2.5 px-3 border-r border-slate-200 text-right">ยอดเงิน</th>
+                  <th className="py-2.5 px-3 border-r border-slate-200 text-center">เงื่อนไข</th>
+                  <th className="py-2.5 px-3 border-r border-slate-200 text-center">ผู้เบิก</th>
+                  <th className="py-2.5 px-3 border-r border-slate-200 text-center">ว/ด/ป</th>
+                  <th className="py-2.5 px-3 text-center">สถานะ</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
+              <tbody className="divide-y divide-slate-100">
                 {visibleRows.map((row, idx) => {
                   const seq = String(row["ลำดับ"] || row._sheetRow || row.id || idx + 1);
                   const statusStr = String(row["สถานะ"] || "รออนุมัติ").trim();
@@ -298,48 +298,38 @@ export function BillsDashboardClient({
                     <tr
                       key={`${seq}-${idx}`}
                       onClick={() => window.location.href = `/bills/${seq}`}
-                      className="hover:bg-slate-100/90 transition-colors cursor-pointer group"
+                      className="hover:bg-slate-50 transition-colors cursor-pointer"
                     >
-                      <td className="p-3 text-center font-bold text-slate-900">{seq}</td>
-                      <td className="p-3 text-center font-bold text-indigo-600 group-hover:underline">{String(row["ID Project"] || "-")}</td>
-                      <td className="p-3 font-extrabold text-slate-900 max-w-[200px] truncate" title={String(row["ชื่อ Project"] || "")}>
+                      <td className="py-2 px-3 text-center font-bold text-slate-900 border-r border-slate-100">{seq}</td>
+                      <td className="py-2 px-3 text-center font-bold text-slate-900 border-r border-slate-100">{String(row["ID Project"] || "-")}</td>
+                      <td className="py-2 px-3 font-bold text-slate-900 max-w-[200px] truncate border-r border-slate-100" title={String(row["ชื่อ Project"] || "")}>
                         {String(row["ชื่อ Project"] || "-")}
                       </td>
-                      <td className="p-3 font-semibold text-slate-800 max-w-[160px] truncate" title={String(row["ร้าน/บุคคล"] || "")}>
+                      <td className="py-2 px-3 text-center border-r border-slate-100" onClick={(e) => e.stopPropagation()}>
+                        <BillImageThumbnail value={row["รูปถ่ายบิล"]} />
+                      </td>
+                      <td className="py-2 px-3 font-semibold text-slate-800 max-w-[160px] truncate border-r border-slate-100" title={String(row["ร้าน/บุคคล"] || "")}>
                         {String(row["ร้าน/บุคคล"] || "-")}
                       </td>
-                      <td className="p-3 text-slate-600 max-w-[180px] truncate" title={String(row["สินค้า/ทำงาน"] || "")}>
+                      <td className="py-2 px-3 text-slate-700 max-w-[180px] truncate border-r border-slate-100" title={String(row["สินค้า/ทำงาน"] || "")}>
                         {String(row["สินค้า/ทำงาน"] || "-")}
                       </td>
-                      <td className="p-3 text-center font-bold text-indigo-600">{String(row["บิล"] || "-")}</td>
-                      <td className="p-3 text-center text-slate-600">{String(row["ประเภท"] || "-")}</td>
-                      <td className="p-3 text-right font-extrabold text-slate-900">{money(row["ยอดเงิน"])}</td>
-                      <td className="p-3 text-center text-[11px] text-slate-500">{conditions || "-"}</td>
-                      <td className="p-3 text-center font-semibold text-slate-700">{requesterName}</td>
-                      <td className="p-3 text-center font-semibold text-slate-600">{formatDateDisplay(row["ว/ด/ป"])}</td>
-                      <td className="p-3 text-center">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-extrabold ${
+                      <td className="py-2 px-3 text-center font-semibold text-slate-700 border-r border-slate-100">{String(row["บิล"] || "-")}</td>
+                      <td className="py-2 px-3 text-center text-slate-600 border-r border-slate-100">{String(row["ประเภท"] || "-")}</td>
+                      <td className="py-2 px-3 text-right font-bold text-slate-900 border-r border-slate-100">{money(row["ยอดเงิน"])}</td>
+                      <td className="py-2 px-3 text-center text-[11px] text-slate-500 border-r border-slate-100">{conditions || "-"}</td>
+                      <td className="py-2 px-3 text-center font-semibold text-slate-700 border-r border-slate-100">{requesterName}</td>
+                      <td className="py-2 px-3 text-center font-medium text-slate-600 border-r border-slate-100 whitespace-nowrap">{formatDateDisplay(row["ว/ด/ป"])}</td>
+                      <td className="py-2 px-3 text-center">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold ${
                           statusStr.includes("อนุมัติ")
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                            : statusStr.includes("เบิกแล้ว")
                             ? "bg-slate-100 text-slate-700 border border-slate-200"
+                            : statusStr.includes("เบิกแล้ว")
+                            ? "bg-slate-100 text-slate-600 border border-slate-200"
                             : "bg-amber-50 text-amber-700 border border-amber-200"
                         }`}>
                           {statusStr}
                         </span>
-                      </td>
-                      <td className="p-3 text-center" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => window.location.href = `/bills/${seq}`}
-                            className="w-7 h-7 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition"
-                            title="ดูรายละเอียดบิล"
-                          >
-                            <Eye size={14} />
-                          </button>
-                          <BillWorkflowActions row={row} compact allowEdit />
-                        </div>
                       </td>
                     </tr>
                   );
@@ -350,21 +340,21 @@ export function BillsDashboardClient({
         )}
 
         {/* PAGINATION */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-slate-200/90 text-xs text-slate-500 bg-slate-50/50">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 border-t border-slate-200 text-xs text-slate-600 bg-slate-50">
           <div>
             แสดง {visibleStart}-{visibleEnd} จาก {filteredRows.length} รายการ
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5">
-              <span className="text-slate-400 font-semibold">แสดงต่อหน้า:</span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              <span className="text-slate-500 font-medium">แสดงต่อหน้า:</span>
               {PAGE_SIZE_OPTIONS.map(opt => (
                 <button
                   key={opt}
                   type="button"
                   onClick={() => setPageSize(opt)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
-                    opt === pageSize ? "bg-slate-900 text-white" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-100"
+                  className={`px-2 py-0.5 rounded text-xs font-semibold transition cursor-pointer ${
+                    opt === pageSize ? "bg-slate-900 text-white" : "bg-white border border-slate-300 text-slate-700 hover:bg-slate-100"
                   }`}
                 >
                   {opt}
@@ -377,20 +367,20 @@ export function BillsDashboardClient({
                 type="button"
                 disabled={currentPage <= 1}
                 onClick={() => setPage(page - 1)}
-                className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 transition"
+                className="p-1 rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 transition cursor-pointer text-slate-700"
               >
-                <ChevronLeft size={16} />
+                <ChevronLeft size={15} />
               </button>
-              <span className="font-bold text-slate-800 px-2">
+              <span className="font-semibold text-slate-800 px-1">
                 {currentPage} / {totalPages}
               </span>
               <button
                 type="button"
                 disabled={currentPage >= totalPages}
                 onClick={() => setPage(page + 1)}
-                className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 transition"
+                className="p-1 rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 transition cursor-pointer text-slate-700"
               >
-                <ChevronRight size={16} />
+                <ChevronRight size={15} />
               </button>
             </div>
           </div>
@@ -435,3 +425,4 @@ export function BillsDashboardClient({
     </div>
   );
 }
+

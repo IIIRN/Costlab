@@ -1,4 +1,3 @@
-import { cached } from "@/lib/cache";
 import { TABLE_KEYS, TABLES } from "@/lib/config";
 import { hydrateContractRows } from "@/lib/formulas";
 import { getRows, getSystemOptions, listRefOptions } from "@/lib/sheets";
@@ -6,24 +5,22 @@ import { getFormSchema, getRefRowColumns } from "@/lib/schemas";
 import type { FieldSchema, RefOption, SheetRow } from "@/lib/types";
 
 export async function getFormPayload(tableName: string) {
-  return cached(`form_payload:${tableName}`, 60_000, async () => {
-    const schema = await getFormSchemaWithSheetOptions(tableName);
-    const refEntries = await Promise.all(
-      schema
-        .filter(column => column.type === "Ref" && column.refTable)
-        .map(async column => [
-          column.name,
-          await getRefOptions(column)
-        ] as const)
-    );
+  const schema = await getFormSchemaWithSheetOptions(tableName);
+  const refEntries = await Promise.all(
+    schema
+      .filter(column => column.type === "Ref" && column.refTable)
+      .map(async column => [
+        column.name,
+        await getRefOptions(column)
+      ] as const)
+  );
 
-    return {
-      tableName,
-      schema,
-      initialValues: await getInitialValues(tableName),
-      refOptions: Object.fromEntries(refEntries)
-    };
-  });
+  return {
+    tableName,
+    schema,
+    initialValues: await getInitialValues(tableName),
+    refOptions: Object.fromEntries(refEntries)
+  };
 }
 
 async function getRefOptions(column: FieldSchema) {
@@ -123,6 +120,28 @@ async function getFormSchemaWithSheetOptions(tableName: string): Promise<FieldSc
         ...field,
         values: combinedValues.length > 0 ? combinedValues : baseValues,
         dynamicOptionSets: billTypeOptionSets
+      };
+    }
+
+    if (field.name === "รายละเอียดงาน") {
+      const customOptions = systemOptions["รายละเอียดงาน"];
+      const defaultWorkDetails = [
+        "งานฐานราก/เสาเข็ม",
+        "งานโครงสร้าง/ผูกเหล็ก/เข้าแบบ",
+        "งานเทคอนกรีต",
+        "งานมุงหลังคา/กันสาด",
+        "งานก่ออิฐ/ฉาบปูน",
+        "งานปูกระเบื้อง/พื้น",
+        "งานระบบไฟฟ้า",
+        "งานระบบประปา/สุขาภิบาล",
+        "งานสีและเคมี",
+        "งานประตู/หน้าต่าง/กระจก",
+        "งานบิวท์อิน/ตกแต่ง"
+      ];
+      const baseValues = customOptions && customOptions.length > 0 ? customOptions : defaultWorkDetails;
+      return {
+        ...field,
+        values: unique([...baseValues, ...extractEnumListValues(rows, field.name)])
       };
     }
 

@@ -358,31 +358,30 @@ export function LineSystemDashboardClient() {
   }, [manualSearch, selectedCategory]);
 
   return (
-    <div className="space-y-4 font-sans text-xs">
+    <div className="space-y-3.5 font-sans text-xs text-slate-800">
       {/* Compact Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-2.5">
         <div className="flex items-center gap-2">
-          <MessageSquare size={20} className="text-emerald-600 shrink-0" />
-          <h1 className="font-extrabold text-base text-slate-900 tracking-tight">ระบบจัดการ LINE Bot & คู่มือคำสั่ง</h1>
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+          <h1 className="font-bold text-base text-slate-900 tracking-tight">ระบบจัดการ LINE Bot & คู่มือคำสั่ง</h1>
+          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
             63 คำสั่งพร้อมใช้งาน
           </span>
         </div>
 
         {/* Test Trigger Input */}
-        <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-lg border border-slate-200">
+        <div className="flex items-center gap-1.5 bg-white p-1 rounded-md border border-slate-300">
           <input
             type="text"
             value={testTargetId}
             onChange={(e) => setTestTargetId(e.target.value)}
             placeholder="Target ID สำหรับทดสอบ..."
-            className="px-2.5 py-1 bg-white border border-slate-200 rounded text-slate-800 font-mono text-[11px] focus:outline-none focus:border-emerald-500 w-44 sm:w-56"
+            className="px-2.5 py-1 bg-white border border-slate-200 rounded text-slate-800 font-mono text-xs focus:outline-none focus:border-slate-500 w-44 sm:w-56"
           />
           <button
             type="button"
             disabled={testing}
             onClick={handleTestNotification}
-            className="px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white font-extrabold rounded text-[11px] transition flex items-center gap-1 cursor-pointer disabled:opacity-50 shrink-0"
+            className="px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded text-xs transition flex items-center gap-1 cursor-pointer disabled:opacity-50 shrink-0"
           >
             {testing ? <RefreshCw size={12} className="animate-spin" /> : <Send size={12} />}
             <span>ทดสอบส่ง</span>
@@ -392,15 +391,15 @@ export function LineSystemDashboardClient() {
 
       {testResult && (
         <div
-          className={`px-3 py-2 rounded-lg border font-bold flex items-center justify-between gap-2 animate-in fade-in ${
-            testResult.success ? "bg-emerald-50 border-emerald-200 text-emerald-900" : "bg-rose-50 border-rose-200 text-rose-900"
+          className={`px-3 py-2 rounded-md border font-semibold flex items-center justify-between gap-2 animate-in fade-in ${
+            testResult.success ? "bg-emerald-50 border-emerald-200 text-emerald-800" : "bg-rose-50 border-rose-200 text-rose-800"
           }`}
         >
           <div className="flex items-center gap-1.5">
             {testResult.success ? <CheckCircle2 size={15} /> : <Zap size={15} />}
             <span>{testResult.message}</span>
           </div>
-          <button type="button" onClick={() => setTestResult(null)} className="text-slate-400 hover:text-slate-600">
+          <button type="button" onClick={() => setTestResult(null)} className="text-slate-400 hover:text-slate-600 font-bold">
             ✕
           </button>
         </div>
@@ -408,58 +407,58 @@ export function LineSystemDashboardClient() {
 
       {/* System Status Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
-        <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
-            <Server size={16} />
+        <div className="bg-white p-3 rounded-md border border-slate-200 flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 shrink-0">
+            <Server size={15} />
           </div>
           <div className="min-w-0">
-            <div className="text-[10px] font-bold text-slate-400 uppercase">Engine Status</div>
+            <div className="text-[10px] font-bold text-slate-500 uppercase">Engine Status</div>
             <div className="font-bold text-slate-900 truncate">Next.js Webhook</div>
           </div>
         </div>
 
-        <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-            <Database size={16} />
+        <div className="bg-white p-3 rounded-md border border-slate-200 flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 shrink-0">
+            <Database size={15} />
           </div>
           <div className="min-w-0">
-            <div className="text-[10px] font-bold text-slate-400 uppercase">Config Source</div>
+            <div className="text-[10px] font-bold text-slate-500 uppercase">Config Source</div>
             <div className="font-bold text-slate-900 truncate">{configSource === "supabase" ? "Supabase DB" : "Environment (.env)"}</div>
           </div>
         </div>
 
-        <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 shrink-0">
-            <ShieldCheck size={16} />
+        <div className="bg-white p-3 rounded-md border border-slate-200 flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 shrink-0">
+            <ShieldCheck size={15} />
           </div>
           <div className="min-w-0">
-            <div className="text-[10px] font-bold text-slate-400 uppercase">LINE Token</div>
+            <div className="text-[10px] font-bold text-slate-500 uppercase">LINE Token</div>
             <div className="font-bold text-slate-900 truncate">{formConfig.LINE_CHANNEL_ACCESS_TOKEN ? "พร้อมใช้งาน 100%" : "ยังไม่ได้ตั้งค่า"}</div>
           </div>
         </div>
 
-        <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shrink-0">
-            <Radio size={16} />
+        <div className="bg-white p-3 rounded-md border border-slate-200 flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 shrink-0">
+            <Radio size={15} />
           </div>
           <div className="min-w-0">
-            <div className="text-[10px] font-bold text-slate-400 uppercase">Target Groups</div>
+            <div className="text-[10px] font-bold text-slate-500 uppercase">Target Groups</div>
             <div className="font-bold text-slate-900 truncate">5 กลุ่มระบบหลัก</div>
           </div>
         </div>
       </div>
 
       {/* Webhook Configuration Section */}
-      <div className="bg-white p-3.5 rounded-lg border border-slate-200 shadow-2xs space-y-2">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-          <span className="font-extrabold text-slate-900 text-xs flex items-center gap-1.5">
-            <Terminal size={15} className="text-indigo-600" /> Webhook URL (LINE Console)
+      <div className="bg-white p-3.5 rounded-md border border-slate-200 space-y-2">
+        <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+          <span className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+            <Terminal size={15} className="text-slate-600" /> Webhook URL (LINE Console)
           </span>
           <a
             href="https://developers.line.biz"
             target="_blank"
             rel="noreferrer"
-            className="text-[11px] font-bold text-indigo-600 hover:underline flex items-center gap-1"
+            className="text-[11px] font-bold text-slate-700 hover:underline flex items-center gap-1"
           >
             <span>LINE Console</span> <ExternalLink size={12} />
           </a>
@@ -470,29 +469,29 @@ export function LineSystemDashboardClient() {
             type="text"
             readOnly
             value={webhookUrl}
-            className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 font-mono text-slate-800 focus:outline-none"
+            className="flex-1 bg-white border border-slate-300 rounded px-3 py-1 font-mono text-slate-800 focus:outline-none text-xs"
           />
           <button
             type="button"
             onClick={copyWebhook}
-            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-lg border border-slate-200 transition flex items-center gap-1 cursor-pointer shrink-0"
+            className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded border border-slate-300 transition flex items-center gap-1 cursor-pointer shrink-0 text-xs"
           >
-            {copied ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
+            {copied ? <Check size={13} className="text-emerald-700" /> : <Copy size={13} />}
             <span>{copied ? "คัดลอกแล้ว" : "คัดลอก URL"}</span>
           </button>
         </div>
       </div>
 
       {/* Form: Editable LINE Configurations */}
-      <form onSubmit={handleSaveConfig} className="bg-white p-4 rounded-lg border border-slate-200 shadow-2xs space-y-3">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-          <span className="font-extrabold text-slate-900 text-xs flex items-center gap-1.5">
-            <SlidersHorizontal size={15} className="text-emerald-600" /> ตั้งค่า Token & Group IDs (บันทึกใน Supabase)
+      <form onSubmit={handleSaveConfig} className="bg-white p-4 rounded-md border border-slate-200 space-y-3">
+        <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+          <span className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+            <SlidersHorizontal size={15} className="text-slate-600" /> ตั้งค่า Token & Group IDs (บันทึกใน Supabase)
           </span>
           <button
             type="submit"
             disabled={savingConfig || loadingConfig}
-            className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold rounded-lg transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            className="px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold rounded transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50 text-xs"
           >
             {savingConfig ? <RefreshCw size={13} className="animate-spin" /> : <Save size={13} />}
             <span>{savingConfig ? "บันทึก..." : "บันทึกข้อมูล"}</span>
@@ -501,15 +500,15 @@ export function LineSystemDashboardClient() {
 
         {saveResult && (
           <div
-            className={`px-3 py-2 rounded-lg border font-bold flex items-center justify-between gap-2 animate-in fade-in ${
-              saveResult.success ? "bg-emerald-50 border-emerald-200 text-emerald-900" : "bg-rose-50 border-rose-200 text-rose-900"
+            className={`px-3 py-2 rounded-md border font-semibold flex items-center justify-between gap-2 animate-in fade-in ${
+              saveResult.success ? "bg-emerald-50 border-emerald-200 text-emerald-800" : "bg-rose-50 border-rose-200 text-rose-800"
             }`}
           >
             <div className="flex items-center gap-1.5">
               {saveResult.success ? <CheckCircle2 size={15} /> : <Zap size={15} />}
               <span>{saveResult.message}</span>
             </div>
-            <button type="button" onClick={() => setSaveResult(null)} className="text-slate-400 hover:text-slate-600">
+            <button type="button" onClick={() => setSaveResult(null)} className="text-slate-400 hover:text-slate-600 font-bold">
               ✕
             </button>
           </div>
@@ -518,7 +517,7 @@ export function LineSystemDashboardClient() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           {/* Access Token */}
           <div className="sm:col-span-2 space-y-1">
-            <label className="font-bold text-slate-700 block">LINE Channel Access Token *</label>
+            <label className="font-semibold text-slate-700 block">LINE Channel Access Token *</label>
             <div className="relative flex items-center">
               <input
                 type={showToken ? "text" : "password"}
@@ -526,7 +525,7 @@ export function LineSystemDashboardClient() {
                 value={formConfig.LINE_CHANNEL_ACCESS_TOKEN}
                 onChange={(e) => setFormConfig({ ...formConfig, LINE_CHANNEL_ACCESS_TOKEN: e.target.value })}
                 placeholder="วาง Access Token..."
-                className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-3 pr-9 py-1.5 font-mono text-slate-800 focus:outline-none focus:border-emerald-500"
+                className="w-full bg-white border border-slate-300 rounded pl-3 pr-9 py-1 font-mono text-slate-800 focus:outline-none focus:border-slate-500 text-xs"
               />
               <button
                 type="button"
@@ -541,8 +540,8 @@ export function LineSystemDashboardClient() {
           {/* User IDs */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <label className="font-bold text-slate-700">USER_ID_OWN (คุณแมน)</label>
-              <button type="button" onClick={() => setTestTargetId(formConfig.LINE_USER_ID_OWN)} className="text-[10px] text-indigo-600 hover:underline">
+              <label className="font-semibold text-slate-700">USER_ID_OWN (คุณแมน)</label>
+              <button type="button" onClick={() => setTestTargetId(formConfig.LINE_USER_ID_OWN)} className="text-[10px] text-slate-600 hover:underline">
                 ใส่ช่องทดสอบ
               </button>
             </div>
@@ -551,14 +550,14 @@ export function LineSystemDashboardClient() {
               value={formConfig.LINE_USER_ID_OWN}
               onChange={(e) => setFormConfig({ ...formConfig, LINE_USER_ID_OWN: e.target.value })}
               placeholder="Uxxxxxxxx..."
-              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 font-mono text-slate-800 focus:outline-none focus:border-emerald-500"
+              className="w-full bg-white border border-slate-300 rounded px-3 py-1 font-mono text-slate-800 focus:outline-none focus:border-slate-500 text-xs"
             />
           </div>
 
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <label className="font-bold text-slate-700">USER_ID_APPROVER (คุณซ้อ)</label>
-              <button type="button" onClick={() => setTestTargetId(formConfig.LINE_USER_ID_APPROVER)} className="text-[10px] text-indigo-600 hover:underline">
+              <label className="font-semibold text-slate-700">USER_ID_APPROVER (คุณซ้อ)</label>
+              <button type="button" onClick={() => setTestTargetId(formConfig.LINE_USER_ID_APPROVER)} className="text-[10px] text-slate-600 hover:underline">
                 ใส่ช่องทดสอบ
               </button>
             </div>
@@ -567,15 +566,15 @@ export function LineSystemDashboardClient() {
               value={formConfig.LINE_USER_ID_APPROVER}
               onChange={(e) => setFormConfig({ ...formConfig, LINE_USER_ID_APPROVER: e.target.value })}
               placeholder="Uxxxxxxxx..."
-              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 font-mono text-slate-800 focus:outline-none focus:border-emerald-500"
+              className="w-full bg-white border border-slate-300 rounded px-3 py-1 font-mono text-slate-800 focus:outline-none focus:border-slate-500 text-xs"
             />
           </div>
 
           {/* Group IDs */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <label className="font-bold text-slate-700">GROUP_ID_TASK (แจ้งงาน)</label>
-              <button type="button" onClick={() => setTestTargetId(formConfig.LINE_GROUP_ID_TASK)} className="text-[10px] text-indigo-600 hover:underline">
+              <label className="font-semibold text-slate-700">GROUP_ID_TASK (แจ้งงาน)</label>
+              <button type="button" onClick={() => setTestTargetId(formConfig.LINE_GROUP_ID_TASK)} className="text-[10px] text-slate-600 hover:underline">
                 ใส่ช่องทดสอบ
               </button>
             </div>
@@ -584,14 +583,14 @@ export function LineSystemDashboardClient() {
               value={formConfig.LINE_GROUP_ID_TASK}
               onChange={(e) => setFormConfig({ ...formConfig, LINE_GROUP_ID_TASK: e.target.value })}
               placeholder="Cxxxxxxxx..."
-              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 font-mono text-slate-800 focus:outline-none focus:border-emerald-500"
+              className="w-full bg-white border border-slate-300 rounded px-3 py-1 font-mono text-slate-800 focus:outline-none focus:border-slate-500 text-xs"
             />
           </div>
 
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <label className="font-bold text-slate-700">GROUP_ID_FINANCE (การเงิน)</label>
-              <button type="button" onClick={() => setTestTargetId(formConfig.LINE_GROUP_ID_FINANCE)} className="text-[10px] text-indigo-600 hover:underline">
+              <label className="font-semibold text-slate-700">GROUP_ID_FINANCE (การเงิน)</label>
+              <button type="button" onClick={() => setTestTargetId(formConfig.LINE_GROUP_ID_FINANCE)} className="text-[10px] text-slate-600 hover:underline">
                 ใส่ช่องทดสอบ
               </button>
             </div>
@@ -600,18 +599,18 @@ export function LineSystemDashboardClient() {
               value={formConfig.LINE_GROUP_ID_FINANCE}
               onChange={(e) => setFormConfig({ ...formConfig, LINE_GROUP_ID_FINANCE: e.target.value })}
               placeholder="Cxxxxxxxx..."
-              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 font-mono text-slate-800 focus:outline-none focus:border-emerald-500"
+              className="w-full bg-white border border-slate-300 rounded px-3 py-1 font-mono text-slate-800 focus:outline-none focus:border-slate-500 text-xs"
             />
           </div>
         </div>
       </form>
 
       {/* Full Interactive Keyword Commands Manual Section */}
-      <div className="bg-white p-4.5 rounded-lg border border-slate-200 shadow-2xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+      <div className="bg-white p-4 rounded-md border border-slate-200 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
           <div>
-            <h2 className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
-              <BookOpen size={17} className="text-indigo-600" />
+            <h2 className="font-bold text-slate-900 text-xs flex items-center gap-2">
+              <BookOpen size={16} className="text-slate-600" />
               <span>คู่มือการใช้งานคีย์เวิร์ดคำสั่ง LINE Bot (LINE Commands Manual)</span>
             </h2>
             <p className="text-[11px] text-slate-500 mt-0.5">
@@ -627,7 +626,7 @@ export function LineSystemDashboardClient() {
               value={manualSearch}
               onChange={(e) => setManualSearch(e.target.value)}
               placeholder="ค้นหาคำสั่ง เช่น สรุป, งาน, อนุมัติ..."
-              className="pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg font-mono text-[11px] text-slate-800 focus:outline-none focus:border-indigo-500 w-full sm:w-64"
+              className="pl-8 pr-3 py-1 bg-white border border-slate-300 rounded font-mono text-xs text-slate-800 focus:outline-none focus:border-slate-500 w-full sm:w-64"
             />
           </div>
         </div>
@@ -636,26 +635,26 @@ export function LineSystemDashboardClient() {
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
           {[
             { id: "all", label: "คำสั่งทั้งหมด", count: ALL_LINE_COMMANDS.length },
-            { id: "withdraw", label: "📊 การเงิน & บิล", count: ALL_LINE_COMMANDS.filter((c) => c.category === "withdraw").length },
-            { id: "task", label: "🎯 สั่งงาน & ภารกิจ", count: ALL_LINE_COMMANDS.filter((c) => c.category === "task").length },
-            { id: "work", label: "👷‍♂️ มอบหมาย PW", count: ALL_LINE_COMMANDS.filter((c) => c.category === "work").length },
-            { id: "plan", label: "📐 แผนงาน & โครงการ", count: ALL_LINE_COMMANDS.filter((c) => c.category === "plan").length },
-            { id: "system", label: "⚙️ ระบบ & เช็คบอท", count: ALL_LINE_COMMANDS.filter((c) => c.category === "system").length },
+            { id: "withdraw", label: "การเงิน & บิล", count: ALL_LINE_COMMANDS.filter((c) => c.category === "withdraw").length },
+            { id: "task", label: "สั่งงาน & ภารกิจ", count: ALL_LINE_COMMANDS.filter((c) => c.category === "task").length },
+            { id: "work", label: "มอบหมาย PW", count: ALL_LINE_COMMANDS.filter((c) => c.category === "work").length },
+            { id: "plan", label: "แผนงาน & โครงการ", count: ALL_LINE_COMMANDS.filter((c) => c.category === "plan").length },
+            { id: "system", label: "ระบบ & เช็คบอท", count: ALL_LINE_COMMANDS.filter((c) => c.category === "system").length },
           ].map((tab) => (
             <button
               key={tab.id}
               type="button"
               onClick={() => setSelectedCategory(tab.id)}
-              className={`px-3 py-1.5 rounded-lg font-extrabold text-[11px] transition shrink-0 cursor-pointer flex items-center gap-1.5 ${
+              className={`px-2.5 py-1 rounded text-xs font-semibold transition shrink-0 cursor-pointer flex items-center gap-1.5 border ${
                 selectedCategory === tab.id
-                  ? "bg-indigo-600 text-white shadow-2xs"
-                  : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                  ? "bg-slate-900 text-white border-slate-900"
+                  : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"
               }`}
             >
               <span>{tab.label}</span>
               <span
-                className={`px-1.5 py-0.2 rounded-full text-[10px] ${
-                  selectedCategory === tab.id ? "bg-indigo-500 text-white" : "bg-slate-200 text-slate-600"
+                className={`px-1.5 py-0.2 rounded text-[10px] ${
+                  selectedCategory === tab.id ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-600"
                 }`}
               >
                 {tab.count}
@@ -665,54 +664,54 @@ export function LineSystemDashboardClient() {
         </div>
 
         {/* Command Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
           {filteredCommands.length > 0 ? (
             filteredCommands.map((cmd, idx) => (
-              <div key={idx} className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-slate-50 transition space-y-2.5 relative group">
-                <div className="flex items-start justify-between gap-2 border-b border-slate-200/60 pb-2">
+              <div key={idx} className="p-3 rounded-md border border-slate-200 bg-white hover:bg-slate-50 transition space-y-2 relative group">
+                <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-2">
                   <div>
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-0.5">
                       {cmd.categoryName}
                     </span>
-                    <span className="font-extrabold text-slate-900 text-xs font-mono bg-white px-2 py-0.5 rounded border border-slate-200 inline-block">
+                    <span className="font-bold text-slate-900 text-xs font-mono bg-slate-50 px-2 py-0.5 rounded border border-slate-200 inline-block">
                       {cmd.keyword}
                     </span>
                   </div>
                   <span
-                    className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold shrink-0 border ${
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold shrink-0 border ${
                       cmd.responseType === "LINE Flex Card"
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                        : "bg-sky-50 text-sky-700 border-sky-200"
+                        ? "bg-slate-100 text-slate-800 border-slate-200"
+                        : "bg-slate-50 text-slate-700 border-slate-200"
                     }`}
                   >
                     {cmd.responseType}
                   </span>
                 </div>
 
-                <p className="text-slate-700 leading-relaxed font-medium">{cmd.description}</p>
+                <p className="text-slate-700 leading-relaxed font-normal">{cmd.description}</p>
 
                 {cmd.syntax && (
-                  <div className="text-[11px] font-mono text-slate-600 bg-slate-100 p-2 rounded-lg border border-slate-200">
-                    <span className="text-slate-400 font-sans text-[10px] font-bold block mb-0.5">โครงสร้างไวยากรณ์ (Syntax):</span>
+                  <div className="text-[11px] font-mono text-slate-600 bg-slate-50 p-2 rounded border border-slate-200">
+                    <span className="text-slate-500 font-sans text-[10px] font-semibold block mb-0.5">โครงสร้างไวยากรณ์ (Syntax):</span>
                     <code className="text-slate-800 font-bold">{cmd.syntax}</code>
                   </div>
                 )}
 
                 <div className="flex items-center justify-between gap-2 pt-1">
                   <div className="min-w-0 flex-1">
-                    <span className="text-[10px] font-bold text-slate-400 block">ตัวอย่างพิมพ์ใน LINE:</span>
-                    <code className="text-indigo-700 font-mono font-bold truncate block">{cmd.example}</code>
+                    <span className="text-[10px] font-semibold text-slate-500 block">ตัวอย่างพิมพ์ใน LINE:</span>
+                    <code className="text-slate-900 font-mono font-bold truncate block">{cmd.example}</code>
                   </div>
 
                   <button
                     type="button"
                     onClick={() => copyTextSnippet(cmd.example)}
-                    className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 font-bold rounded-md border border-slate-200 text-[11px] transition flex items-center gap-1 shrink-0 cursor-pointer shadow-2xs"
+                    className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 font-semibold rounded border border-slate-300 text-[11px] transition flex items-center gap-1 shrink-0 cursor-pointer"
                   >
                     {copiedKeyword === cmd.example ? (
                       <>
-                        <Check size={12} className="text-emerald-600" />
-                        <span className="text-emerald-600">คัดลอกแล้ว</span>
+                        <Check size={12} className="text-emerald-700" />
+                        <span className="text-emerald-700">คัดลอกแล้ว</span>
                       </>
                     ) : (
                       <>
@@ -725,7 +724,7 @@ export function LineSystemDashboardClient() {
               </div>
             ))
           ) : (
-            <div className="col-span-full text-center py-8 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-slate-500 font-medium">
+            <div className="col-span-full text-center py-8 bg-slate-50 rounded-md border border-slate-200 text-slate-500 font-medium">
               ไม่พบคำสั่งที่ตรงกับคำค้นหา "{manualSearch}"
             </div>
           )}
@@ -734,3 +733,4 @@ export function LineSystemDashboardClient() {
     </div>
   );
 }
+

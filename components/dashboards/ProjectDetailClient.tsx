@@ -2,23 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  Building2,
-  Calendar,
-  CheckCircle2,
-  Clock3,
-  DollarSign,
-  FileText,
-  FolderKanban,
-  Layers,
-  MapPin,
-  PieChart,
-  Receipt,
-  User,
-  Users,
-  Wallet,
-} from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { DataTable } from "@/components/tables/DataTable";
 import { ProjectDetailEditor } from "@/components/ProjectDetailEditor";
 import { money, toNumber } from "@/lib/numbers";
@@ -74,174 +58,111 @@ export function ProjectDetailClient({
   const location = String(hydratedProject["สถานที่"] || "-");
 
   return (
-    <div className="w-full flex flex-col gap-5 p-4 sm:p-6 max-w-[1600px] mx-auto font-sans">
-      {/* 1. TOP NAVBAR */}
-      <div className="flex items-center justify-between gap-4 bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs">
+    <div className="w-full flex flex-col gap-4 p-4 sm:p-5 max-w-[1400px] mx-auto font-sans text-sm text-slate-800">
+      {/* 1. HEADER ROW */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
         <div className="flex items-center gap-3">
           <Link
             href="/work-status"
-            className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition"
-            title="ย้อนกลับไปหน้าสถานะงาน"
+            className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 transition"
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={14} />
+            <span>รายการสถานะงาน</span>
           </Link>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
-                #{projectId}
-              </span>
-              <span
-                className={`px-2.5 py-0.5 rounded-md text-[11px] font-extrabold flex items-center gap-1.5 ${
-                  isComplete
-                    ? "bg-slate-100 text-slate-700 border border-slate-200"
-                    : isRed
-                    ? "bg-rose-50 text-rose-700 border border-rose-200"
-                    : "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                }`}
-              >
-                <span
-                  className={`w-1.5 h-1.5 rounded-full ${
-                    isComplete ? "bg-slate-600" : isRed ? "bg-rose-600 animate-pulse" : "bg-emerald-600"
-                  }`}
-                />
-                {isComplete ? "เสร็จสิ้นแล้ว" : isRed ? "เร่งด่วน" : "กำลังทำอยู่"}
-              </span>
-            </div>
-            <h1 className="text-lg sm:text-xl font-bold text-slate-900 mt-0.5">{projectName}</h1>
-          </div>
+          <span className="text-slate-300">/</span>
+          <span className="text-xs font-bold text-slate-700">#{projectId}</span>
+          <span
+            className={`px-2 py-0.5 rounded text-[11px] font-semibold ${
+              isComplete
+                ? "bg-slate-100 text-slate-600 border border-slate-200"
+                : isRed
+                ? "bg-rose-50 text-rose-700 border border-rose-200"
+                : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+            }`}
+          >
+            {isComplete ? "เสร็จสิ้นแล้ว" : isRed ? "เร่งด่วน" : "กำลังทำอยู่"}
+          </span>
         </div>
       </div>
 
-      {/* 2. TOP SUMMARY GRID (SPLIT 2-COLUMNS: FINANCIAL KPI + PROJECT INFO) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Left: Financial Summary Box */}
-        <div className="lg:col-span-7 bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs flex flex-col justify-between gap-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h2 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Wallet size={15} className="text-indigo-600" />
-              สรุปงบประมาณและการใช้จ่าย
-            </h2>
-            <span className="text-xs font-bold text-slate-500">
-              บิลทั้งหมด <span className="text-slate-900 font-extrabold">{totals.billCount}</span> รายการ
-            </span>
-          </div>
+      {/* 2. TITLE & META */}
+      <div>
+        <h1 className="text-lg font-bold text-slate-900">{projectName}</h1>
+        <p className="text-xs text-slate-500 mt-0.5">
+          ลูกค้า: <span className="font-semibold text-slate-700">{customer}</span> · บริษัท: <span className="font-semibold text-slate-700">{company}</span> · ผู้รับผิดชอบ: <span className="font-semibold text-slate-700">{owner}</span>
+        </p>
+      </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            <div>
-              <span className="text-[11px] font-medium text-slate-400">งบไม่เกิน (งบประมาณ)</span>
-              <div className="text-lg font-extrabold text-indigo-900">{money(totals.budget)}</div>
-            </div>
-
-            <div>
-              <span className="text-[11px] font-medium text-slate-400">เบิกจ่ายรวม (รวม ALL)</span>
-              <div className="text-lg font-extrabold text-emerald-700">{money(totals.totalAll)}</div>
-            </div>
-
-            <div className="col-span-2 sm:col-span-1">
-              <span className="text-[11px] font-medium text-slate-400">ยอดคงเหลือ</span>
-              <div className={`text-lg font-extrabold ${totals.remaining < 0 ? "text-rose-600" : "text-emerald-700"}`}>
-                {money(totals.remaining)}
-              </div>
-            </div>
-          </div>
-
-          {/* Progress Bar */}
+      {/* 3. FINANCIAL SUMMARY */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="border border-slate-200 rounded-md p-3 bg-white">
+          <div className="text-[11px] text-slate-400 font-medium mb-1">งบประมาณ</div>
+          <div className="text-base font-bold text-slate-900">{money(totals.budget)}</div>
+        </div>
+        <div className="border border-slate-200 rounded-md p-3 bg-white">
+          <div className="text-[11px] text-slate-400 font-medium mb-1">เบิกจ่ายรวม</div>
+          <div className="text-base font-bold text-indigo-700">{money(totals.totalAll)}</div>
           {totals.budget > 0 && (
-            <div className="space-y-1.5 pt-2 border-t border-slate-100">
-              <div className="flex justify-between text-xs font-medium text-slate-500">
-                <span>ใช้วงเงินไปแล้ว</span>
-                <span className="font-extrabold text-slate-900">{percentUsed}%</span>
-              </div>
-              <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                <div
-                  className={`h-full transition-all duration-500 ${
-                    percentUsed > 90 ? "bg-rose-500" : percentUsed > 75 ? "bg-amber-500" : "bg-emerald-500"
-                  }`}
-                  style={{ width: `${percentUsed}%` }}
-                />
-              </div>
+            <div className="mt-1.5 w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+              <div
+                className={`h-full rounded-full ${
+                  percentUsed > 90 ? "bg-rose-500" : percentUsed > 75 ? "bg-amber-500" : "bg-emerald-500"
+                }`}
+                style={{ width: `${percentUsed}%` }}
+              />
             </div>
           )}
         </div>
-
-        {/* Right: Project Metadata Info Box */}
-        <div className="lg:col-span-5 bg-slate-900 text-white rounded-2xl p-5 border border-slate-800 shadow-2xs flex flex-col justify-between gap-3 overflow-hidden">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-2.5 text-xs text-slate-400 font-semibold">
-            <span>ข้อมูลโครงการ</span>
-            <span className="font-mono">ID: #{projectId}</span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-            <div className="min-w-0">
-              <div className="text-slate-400 text-[10px] flex items-center gap-1 font-semibold">
-                <User size={12} className="text-indigo-400 shrink-0" /> ลูกค้า
-              </div>
-              <div className="font-bold text-slate-100 truncate mt-0.5" title={customer}>{customer}</div>
-            </div>
-
-            <div className="min-w-0">
-              <div className="text-slate-400 text-[10px] flex items-center gap-1 font-semibold">
-                <Building2 size={12} className="text-indigo-400 shrink-0" /> บริษัท
-              </div>
-              <div className="font-bold text-slate-100 truncate mt-0.5" title={company}>{company}</div>
-            </div>
-
-            <div className="min-w-0">
-              <div className="text-slate-400 text-[10px] flex items-center gap-1 font-semibold">
-                <Users size={12} className="text-indigo-400 shrink-0" /> ผู้รับผิดชอบ
-              </div>
-              <div className="font-bold text-slate-100 truncate mt-0.5">{owner}</div>
-            </div>
-
-            <div className="min-w-0">
-              <div className="text-slate-400 text-[10px] flex items-center gap-1 font-semibold">
-                <Calendar size={12} className="text-indigo-400 shrink-0" /> วันที่
-              </div>
-              <div className="font-bold text-slate-100 truncate mt-0.5">{date}</div>
-            </div>
+        <div className="border border-slate-200 rounded-md p-3 bg-white">
+          <div className="text-[11px] text-slate-400 font-medium mb-1">ยอดคงเหลือ</div>
+          <div className={`text-base font-bold ${totals.remaining < 0 ? "text-rose-600" : "text-emerald-700"}`}>
+            {money(totals.remaining)}
           </div>
         </div>
       </div>
 
-      {/* 3. WORKSPACE TABS NAVBAR */}
-      <div className="bg-white rounded-2xl p-2 border border-slate-200/90 shadow-2xs flex items-center gap-2">
+      {/* 4. WORKSPACE TABS */}
+      <div className="flex items-center gap-1 border-b border-slate-200 text-xs font-semibold">
         <button
           type="button"
           onClick={() => setActiveTab("bills")}
-          className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
-            activeTab === "bills" ? "bg-slate-900 text-white shadow-2xs" : "text-slate-600 hover:bg-slate-50"
+          className={`px-3 py-2 border-b-2 transition ${
+            activeTab === "bills"
+              ? "border-slate-900 text-slate-900 font-bold"
+              : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
-          <Receipt size={15} />
-          <span>รายการบิลเบิกจ่าย ({totals.billCount})</span>
+          รายการบิลเบิกจ่าย ({totals.billCount})
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab("expenses")}
-          className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
-            activeTab === "expenses" ? "bg-slate-900 text-white shadow-2xs" : "text-slate-600 hover:bg-slate-50"
+          className={`px-3 py-2 border-b-2 transition ${
+            activeTab === "expenses"
+              ? "border-slate-900 text-slate-900 font-bold"
+              : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
-          <Layers size={15} />
-          <span>สรุปหมวดหมู่ค่าใช้จ่าย</span>
+          สรุปหมวดหมู่ค่าใช้จ่าย
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab("edit")}
-          className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
-            activeTab === "edit" ? "bg-slate-900 text-white shadow-2xs" : "text-slate-600 hover:bg-slate-50"
+          className={`px-3 py-2 border-b-2 transition ${
+            activeTab === "edit"
+              ? "border-slate-900 text-slate-900 font-bold"
+              : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
-          <FileText size={15} />
-          <span>รายละเอียด & แก้ไขข้อมูล</span>
+          รายละเอียด & แก้ไขข้อมูล
         </button>
       </div>
 
-      {/* 4. TABBED CONTENT PANELS */}
+      {/* 5. TABBED CONTENT PANELS */}
       {activeTab === "bills" && (
-        <div className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs">
+        <div className="border border-slate-200 rounded-md bg-white overflow-hidden">
           <DataTable
             columns={relatedColumns}
             rows={summaryRows}
@@ -260,18 +181,17 @@ export function ProjectDetailClient({
       )}
 
       {activeTab === "expenses" && (
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs space-y-4">
-          <h3 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-2">
-            ยอดสรุปค่าใช้จ่ายจำแนกตามประเภท
-          </h3>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+        <div className="border border-slate-200 rounded-md bg-white overflow-hidden">
+          <div className="px-3 py-2 border-b border-slate-200 bg-slate-50">
+            <h2 className="text-xs font-bold text-slate-700">ยอดสรุปค่าใช้จ่ายจำแนกตามประเภท</h2>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 text-xs">
             {expenseCategories.map((cat) => {
               const amount = expenseBreakdown[cat] || 0;
               return (
-                <div key={cat} className="p-3.5 bg-slate-50 rounded-xl border border-slate-100 space-y-1">
-                  <div className="text-slate-400 font-semibold text-[11px]">{cat}</div>
-                  <div className="font-extrabold text-slate-900 text-sm">{money(amount)}</div>
+                <div key={cat} className="p-3 bg-slate-50 rounded-md border border-slate-200">
+                  <div className="text-slate-400 font-medium text-[11px] mb-0.5">{cat}</div>
+                  <div className="font-bold text-slate-900 text-sm">{money(amount)}</div>
                 </div>
               );
             })}
@@ -280,7 +200,7 @@ export function ProjectDetailClient({
       )}
 
       {activeTab === "edit" && (
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs">
+        <div className="border border-slate-200 rounded-md bg-white p-4">
           <ProjectDetailEditor
             fields={detailFields}
             project={hydratedProject}
@@ -300,3 +220,4 @@ function formatDateThai(value: unknown): string {
   if (m) return `${m[3]}-${m[2]}-${m[1]}`;
   return str;
 }
+

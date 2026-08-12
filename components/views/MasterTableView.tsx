@@ -8,3 +8,4 @@ type MasterTableViewProps = {
 export async function MasterTableView({ viewId, searchParams }: MasterTableViewProps) {
   return await renderViewForId(viewId, searchParams);
 }
+

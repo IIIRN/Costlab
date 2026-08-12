@@ -171,7 +171,7 @@ export function ProjectDetailEditor({ fields, project, customerDisplay, companyD
         {fields.map(field => (
           <div key={field} className="p-3 bg-slate-50/60 rounded-lg border border-slate-100 flex flex-col justify-between">
             <dt className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">{field}</dt>
-            <dd className={`text-xs font-semibold text-slate-800 ${amountField(field) ? "text-right font-mono text-emerald-700 font-bold" : ""}`}>
+            <dd className={`text-xs font-semibold text-slate-800 ${amountField(field) ? "text-right text-emerald-700 font-bold" : ""}`}>
               {field === "ชื่อลูกค้า" || field === "ลูกค้า"
                 ? customerDisplay || formatDisplay(project[field], field) || "-"
                 : field === "บริษัท"
@@ -227,3 +227,4 @@ function formatDisplay(value: unknown, field: string) {
   if (isDateField(field)) return formatDateThai(value);
   return stringify(value);
 }
+

@@ -45,9 +45,8 @@ export function BillImageThumbnail({ value, compact = false }: BillImageThumbnai
   // Empty or Invalid Image State
   if (!rawValue || rawValue === "ไม่มี" || rawValue === "-" || !imageUrls.length || imgError) {
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-400 bg-slate-100/80 border border-slate-200/60 whitespace-nowrap select-none">
-        <ImageIcon size={13} className="text-slate-400" />
-        <span>ไม่มีรูปภาพ</span>
+      <span className="inline-flex items-center justify-center w-7 h-7 rounded-md text-slate-300 select-none" title="ไม่มีรูปภาพ">
+        <ImageIcon size={14} />
       </span>
     );
   }
@@ -61,35 +60,23 @@ export function BillImageThumbnail({ value, compact = false }: BillImageThumbnai
           setCurrentIndex(0);
           setOpen(true);
         }}
-        className="group relative inline-flex items-center gap-2 p-1 pl-1 pr-2.5 rounded-xl bg-white border border-slate-200 shadow-2xs hover:shadow-md hover:border-sky-500 transition-all duration-200 cursor-pointer select-none"
+        className="group relative inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:border-sky-500 hover:shadow-md transition-all duration-200 cursor-pointer select-none overflow-hidden"
         title="คลิกเพื่อขยายดูรูปภาพ"
+        style={{ width: 32, height: 32 }}
       >
-        {/* Mini Preview Image Box */}
-        <div className="relative w-7 h-7 rounded-lg overflow-hidden bg-slate-900 border border-slate-200 flex items-center justify-center shrink-0">
-          <img
-            src={firstImageUrl}
-            alt="รูปถ่าย"
-            loading="lazy"
-            onError={() => setImgError(true)}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-          />
-          <div className="absolute inset-0 bg-slate-900/10 group-hover:bg-transparent transition-colors" />
-        </div>
-
-        {/* Label & Multi-image Badge */}
-        <div className="flex items-center gap-1.5">
-          {imageUrls.length > 1 ? (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gradient-to-r from-sky-500 to-indigo-600 text-white text-[11px] font-bold shadow-2xs">
-              <Images size={12} />
-              <span>{imageUrls.length} รูป</span>
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 text-xs font-bold text-slate-700 group-hover:text-sky-600 transition-colors">
-              <ZoomIn size={13} className="text-sky-500" />
-              <span>ดูรูปภาพ</span>
-            </span>
-          )}
-        </div>
+        {/* Mini Preview Image */}
+        <img
+          src={firstImageUrl}
+          alt="รูปถ่าย"
+          loading="lazy"
+          onError={() => setImgError(true)}
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+        />
+        {imageUrls.length > 1 && (
+          <span className="absolute bottom-0 right-0 bg-sky-600 text-white text-[9px] font-bold leading-none px-0.5 py-0.5 rounded-tl">
+            {imageUrls.length}
+          </span>
+        )}
       </button>
 
       {/* Lightbox Gallery Modal */}
@@ -100,7 +87,7 @@ export function BillImageThumbnail({ value, compact = false }: BillImageThumbnai
           onClick={() => setOpen(false)}
         >
           <div
-            className="relative w-full max-w-3xl bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-slate-800 animate-in zoom-in-95 duration-200"
+            className="relative w-full max-w-3xl bg-slate-900 rounded-lg shadow-2xl overflow-hidden flex flex-col border border-slate-800 animate-in zoom-in-95 duration-200"
             role="dialog"
             aria-modal="true"
             onClick={(event) => event.stopPropagation()}
@@ -244,3 +231,4 @@ function previousIndex(current: number, length: number): number {
   if (length <= 0) return 0;
   return (current - 1 + length) % length;
 }
+

@@ -253,33 +253,31 @@ export function ManageTableClient({
   }
 
   return (
-    <div className="w-full flex flex-col gap-3 p-3 sm:p-5 max-w-[1600px] mx-auto font-sans text-xs">
+    <div className="w-full flex flex-col gap-3 p-3 sm:p-4 max-w-[1600px] mx-auto font-sans text-xs text-slate-800">
       {/* 1. COMPACT PAGE HEADER */}
-      <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
+      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
         <div className="flex items-center gap-2">
-          <List size={18} className="text-emerald-600 shrink-0" />
-          <h1 className="font-extrabold text-base text-slate-900 tracking-tight">{viewName}</h1>
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+          <h1 className="font-bold text-base text-slate-900 tracking-tight">{viewName}</h1>
+          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
             {filteredAndSortedRows.length} {rowLabel}
           </span>
         </div>
       </div>
 
       {/* 2. FILTER & ACTION TOOLBAR */}
-      <div className="bg-white rounded-lg p-3 sm:p-4 border border-slate-200/90 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="border border-slate-200 rounded-md p-3 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         {/* Live Search Input Box */}
-        <div className="relative flex items-center h-9 flex-1 min-w-[220px] max-w-md">
-          <Search size={15} className="absolute left-3 text-slate-400 pointer-events-none z-10" />
+        <div className="relative flex items-center flex-1 min-w-[220px] max-w-md">
+          <Search size={14} className="absolute left-2.5 text-slate-400 pointer-events-none" />
           <input
             type="text"
             placeholder="ค้นหา..."
             value={localSearch}
             onChange={e => setLocalSearch(e.target.value)}
-            style={{ paddingLeft: "36px", paddingRight: "30px" }}
-            className="w-full h-full bg-slate-50 hover:bg-slate-100/90 focus:bg-white text-slate-800 text-xs font-medium rounded-lg border border-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition-all placeholder:text-slate-400"
+            className="w-full bg-white text-slate-800 text-xs pl-8 pr-7 py-1 rounded-md border border-slate-300 focus:outline-none focus:border-slate-500 placeholder:text-slate-400"
           />
           {localSearch && (
-            <X size={14} className="absolute right-2.5 text-slate-400 cursor-pointer hover:text-slate-700 z-10" onClick={() => setLocalSearch("")} />
+            <X size={14} className="absolute right-2 text-slate-400 cursor-pointer hover:text-slate-600" onClick={() => setLocalSearch("")} />
           )}
         </div>
 
@@ -287,21 +285,21 @@ export function ManageTableClient({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            className="h-9 px-4 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold rounded-lg transition shadow-2xs flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+            className="px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-md transition cursor-pointer flex items-center gap-1.5 shrink-0"
             disabled={Boolean(busy)}
             onClick={openAddForm}
           >
-            <Plus size={15} strokeWidth={2.5} />
+            <Plus size={14} />
             <span>เพิ่มข้อมูล</span>
           </button>
 
           <button
             type="button"
             onClick={() => setSortDesc(!sortDesc)}
-            className="h-9 px-3 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold flex items-center gap-1.5 transition shadow-2xs whitespace-nowrap cursor-pointer"
+            className="px-2.5 py-1 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-md text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
             title="สลับการเรียงลำดับ"
           >
-            <ArrowDownUp size={14} className="text-indigo-600 shrink-0" />
+            <ArrowDownUp size={14} className="text-slate-600 shrink-0" />
             <span>{sortDesc ? "ล่าสุดก่อน" : "เก่าสุดก่อน"}</span>
           </button>
 
@@ -309,31 +307,31 @@ export function ManageTableClient({
             <>
               <button
                 type="button"
-                className="h-9 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition shadow-2xs cursor-pointer"
+                className="px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-md text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
                 disabled={busy === "edit"}
                 onClick={saveEdit}
               >
-                <Save size={15} />
+                <Save size={14} />
                 <span>บันทึก</span>
               </button>
               <button
                 type="button"
-                className="h-9 px-3 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+                className="px-2.5 py-1 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-md text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
                 disabled={Boolean(busy)}
                 onClick={cancelEdit}
               >
-                <X size={15} />
+                <X size={14} />
                 <span>ยกเลิก</span>
               </button>
             </>
           ) : editOpenEventName ? null : (
             <button
               type="button"
-              className="h-9 px-3 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+              className="px-2.5 py-1 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-md text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
               disabled={Boolean(busy) || !rows.length}
               onClick={beginEdit}
             >
-              <Pencil size={15} />
+              <Pencil size={14} />
               <span>แก้ไขด่วน</span>
             </button>
           )}
@@ -342,48 +340,48 @@ export function ManageTableClient({
             <>
               <button
                 type="button"
-                className="h-9 px-4 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition shadow-2xs cursor-pointer"
+                className="px-3 py-1 bg-rose-700 hover:bg-rose-800 text-white rounded-md text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
                 disabled={busy === "delete" || !selectedRows.length}
                 onClick={confirmDelete}
               >
-                <Trash2 size={15} />
+                <Trash2 size={14} />
                 <span>ยืนยันลบ ({selectedRows.length})</span>
               </button>
               <button
                 type="button"
-                className="h-9 px-3 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+                className="px-2.5 py-1 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-md text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
                 disabled={Boolean(busy)}
                 onClick={() => { setDeleteMode(false); setSelectedRows([]); }}
               >
-                <X size={15} />
+                <X size={14} />
                 <span>ยกเลิก</span>
               </button>
             </>
           ) : (
             <button
               type="button"
-              className="h-9 px-3 border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+              className="px-2.5 py-1 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-md text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
               disabled={Boolean(busy) || !rows.length}
               onClick={beginDelete}
             >
-              <Trash2 size={15} />
+              <Trash2 size={14} />
               <span>เลือกลบ</span>
             </button>
           )}
         </div>
       </div>
 
-      {error ? <div className="p-3 bg-rose-50 text-rose-700 rounded-lg border border-rose-200 text-xs font-bold">{error}</div> : null}
+      {error ? <div className="p-3 bg-rose-50 text-rose-700 rounded-md border border-rose-200 text-xs font-bold">{error}</div> : null}
 
-      {/* 3. PRO WORK TABLE CARD */}
-      <div className="bg-white rounded-lg border border-slate-200/90 shadow-2xs overflow-hidden">
+      {/* 3. WORK TABLE CARD */}
+      <div className="border border-slate-200 rounded-md bg-white overflow-hidden">
         {rows.length ? (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-700 border-collapse">
+            <table className="w-full text-left text-xs text-slate-700 border-collapse font-sans">
               <thead>
-                <tr className="bg-slate-100/90 text-slate-600 font-bold border-b border-slate-200 uppercase tracking-wider text-[11px]">
+                <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-200 text-xs">
                   {deleteMode ? (
-                    <th className="py-3 px-3.5 w-10 text-center">
+                    <th className="py-2.5 px-3 w-10 text-center border-r border-slate-200">
                       <input
                         type="checkbox"
                         checked={
@@ -403,7 +401,7 @@ export function ManageTableClient({
                           }
                         }}
                         title="เลือกทั้งหมด"
-                        className="cursor-pointer w-4 h-4 rounded border-slate-300 accent-slate-900"
+                        className="cursor-pointer rounded border-slate-300 accent-slate-900"
                       />
                     </th>
                   ) : null}
@@ -411,14 +409,14 @@ export function ManageTableClient({
                     <th
                       key={column}
                       data-label={column}
-                      className={`py-3 px-3.5 ${
+                      className={`py-2.5 px-3 border-r border-slate-200 ${
                         isAmountColumn(column) ? "text-right" : isCenterColumn(column) || isDateColumn(column) ? "text-center" : ""
                       }`}
                     >
                       {column}
                     </th>
                   ))}
-                  {!editing && !deleteMode ? <th className="py-3 px-3.5 text-center" data-label="จัดการ">จัดการ</th> : null}
+                  {!editing && !deleteMode ? <th className="py-2.5 px-3 text-center" data-label="จัดการ">จัดการ</th> : null}
                 </tr>
               </thead>
               <tbody>
@@ -444,14 +442,14 @@ export function ManageTableClient({
                       {visibleColumns.map(column => {
                         const draftValue = draftRows[id]?.[column] ?? stringify(row[column]);
                         const cellContent = renderDisplayCell(column, row[column], displayLookups);
-                        const isLinkColumn = column === visibleColumns[0] || column === "ชื่อร้าน" || column === "ชื่อร้านค้า" || column === "ร้านค้า" || column === "ชื่อ-นามสกุล" || column === "ชื่อบริษัท" || column === "ชื่อลูกค้า" || column === "id_store";
+                        const isLinkColumn = column === visibleColumns[0] || column === "ชื่อ Project" || column === "ชื่อร้าน" || column === "ชื่อร้านค้า" || column === "ร้านค้า" || column === "ชื่อ-นามสกุล" || column === "ชื่อบริษัท" || column === "ชื่อลูกค้า" || column === "id_store";
 
                         return (
                           <td
                             key={column}
                             className={[
-                              "py-2.5 px-3.5 text-xs",
-                              isAmountColumn(column) ? "text-right font-mono font-medium text-slate-900" : "",
+                              "py-2 px-3 text-xs border-r border-slate-100",
+                              isAmountColumn(column) ? "text-right font-bold text-slate-900" : "",
                               isCenterColumn(column) ? "text-center" : "",
                               isDateColumn(column) ? "text-center" : "",
                               editing ? "editing-cell" : ""
@@ -461,14 +459,14 @@ export function ManageTableClient({
                           >
                             {editing ? (
                               <input
-                                className="w-full px-2 py-1 text-xs border border-indigo-300 rounded bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                className="w-full px-2 py-0.5 text-xs border border-slate-300 rounded bg-white focus:outline-none focus:border-slate-500"
                                 value={draftValue}
                                 onChange={event => updateDraft(id, column, event.target.value)}
                               />
                             ) : detailBasePath && isLinkColumn ? (
                               <Link
                                 href={`${detailBasePath}/${encodeURIComponent(targetKey)}`}
-                                className="font-bold text-slate-900 hover:text-indigo-600 hover:underline transition-colors"
+                                className="font-bold text-slate-900 hover:underline"
                               >
                                 {cellContent}
                               </Link>
@@ -479,22 +477,22 @@ export function ManageTableClient({
                         );
                       })}
                       {!editing && !deleteMode ? (
-                        <td className="py-2.5 px-3.5 text-center w-24" data-label="จัดการ">
-                          <div className="flex items-center justify-center gap-1.5 min-w-[70px]">
+                        <td className="py-2 px-3 text-center w-24" data-label="จัดการ">
+                          <div className="flex items-center justify-center gap-1 min-w-[70px]">
                             {detailBasePath ? (
                               <Link
-                                className="inline-flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-indigo-600 hover:bg-slate-50 transition-colors shadow-2xs"
+                                className="inline-flex items-center justify-center w-6 h-6 rounded border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 transition"
                                 href={`${detailBasePath}/${encodeURIComponent(targetKey)}`}
                                 aria-label="ดูรายละเอียด"
                                 title="ดูรายละเอียด"
                               >
-                                <Eye size={13} strokeWidth={2} />
+                                <Eye size={13} />
                               </Link>
                             ) : null}
                             {editOpenEventName ? (
                               <button
                                 type="button"
-                                className="inline-flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-indigo-600 hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
+                                className="inline-flex items-center justify-center w-6 h-6 rounded border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 transition cursor-pointer"
                                 disabled={Boolean(busy)}
                                 onClick={() => {
                                   if (typeof window !== "undefined") {
@@ -504,29 +502,29 @@ export function ManageTableClient({
                                 aria-label="แก้ไข"
                                 title="แก้ไข"
                               >
-                                <Pencil size={13} strokeWidth={2} />
+                                <Pencil size={13} />
                               </button>
                             ) : (
                               <button
                                 type="button"
-                                className="inline-flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-indigo-600 hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
+                                className="inline-flex items-center justify-center w-6 h-6 rounded border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 transition cursor-pointer"
                                 disabled={Boolean(busy)}
                                 onClick={() => { setEditing(true); setDraftRows({ [id]: draftFromRow(row, visibleColumns) }); }}
                                 aria-label="แก้ไข"
                                 title="แก้ไข"
                               >
-                                <Pencil size={13} strokeWidth={2} />
+                                <Pencil size={13} />
                               </button>
                             )}
                             <button
                               type="button"
-                              className="inline-flex items-center justify-center w-7 h-7 rounded-lg border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors shadow-2xs cursor-pointer"
+                              className="inline-flex items-center justify-center w-6 h-6 rounded border border-rose-300 bg-white text-rose-700 hover:bg-rose-50 transition cursor-pointer"
                               disabled={Boolean(busy) || !sheetRow}
                               onClick={() => deleteSingleRow(sheetRow)}
                               aria-label="ลบ"
                               title="ลบ"
                             >
-                              <Trash2 size={13} strokeWidth={2} />
+                              <Trash2 size={13} />
                             </button>
                           </div>
                         </td>
@@ -538,7 +536,7 @@ export function ManageTableClient({
             </table>
           </div>
         ) : (
-          <div className="p-10 text-center text-slate-400 text-xs font-medium">ไม่พบข้อมูล</div>
+          <div className="p-8 text-center text-slate-400 text-xs font-medium">ไม่พบข้อมูล</div>
         )}
         {rows.length ? (
           <ManagePagination
@@ -558,59 +556,59 @@ export function ManageTableClient({
       {addOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" role="presentation">
           <form
-            className="w-full max-w-xl bg-white rounded-lg shadow-2xl overflow-hidden flex flex-col border border-slate-100"
+            className="w-full max-w-xl bg-white rounded-md shadow-xl overflow-hidden flex flex-col border border-slate-200"
             role="dialog"
             aria-modal="true"
             aria-labelledby="manage-add-title"
             onSubmit={submitAdd}
           >
-            <header className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white">
+            <header className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-white">
               <div>
-                <h3 id="manage-add-title" className="text-base font-extrabold text-slate-900 m-0">เพิ่มข้อมูล</h3>
-                <span className="text-xs text-slate-500 font-medium">{viewName}</span>
+                <h3 id="manage-add-title" className="text-sm font-bold text-slate-900 m-0">เพิ่มข้อมูล</h3>
+                <span className="text-xs text-slate-500 font-normal">{viewName}</span>
               </div>
               <button
                 type="button"
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+                className="p-1 rounded text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
                 aria-label="ปิด"
                 disabled={Boolean(busy)}
                 onClick={() => setAddOpen(false)}
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </header>
-            <div className="p-6 max-h-[70vh] overflow-y-auto space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="p-4 max-h-[70vh] overflow-y-auto space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {addColumns.map(column => (
-                  <label className="flex flex-col gap-1.5 text-xs" key={column}>
-                    <span className="font-bold text-slate-600">{column}</span>
+                  <label className="flex flex-col gap-1 text-xs" key={column}>
+                    <span className="font-semibold text-slate-700">{column}</span>
                     <input
                       name={column}
                       value={addValues[column] || ""}
                       disabled={Boolean(busy)}
                       onChange={event => setAddValues(current => ({ ...current, [column]: event.target.value }))}
-                      className="w-full h-9.5 px-3 bg-slate-50/70 hover:bg-slate-100/90 focus:bg-white border border-slate-300 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 rounded-lg text-xs font-semibold text-slate-900 placeholder:text-slate-400 transition-all shadow-2xs"
+                      className="w-full h-8 px-2.5 bg-white border border-slate-300 focus:border-slate-500 focus:outline-none rounded text-xs font-normal text-slate-900 placeholder:text-slate-400 transition"
                     />
                   </label>
                 ))}
               </div>
-              {error ? <div className="p-3 bg-rose-50 text-rose-600 rounded-lg text-xs font-medium border border-rose-200">{error}</div> : null}
+              {error ? <div className="p-2.5 bg-rose-50 text-rose-700 rounded text-xs font-medium border border-rose-200">{error}</div> : null}
             </div>
-            <footer className="flex items-center justify-end gap-2 px-6 py-3.5 bg-slate-50 border-t border-slate-100">
+            <footer className="flex items-center justify-end gap-2 px-4 py-3 bg-slate-50 border-t border-slate-200">
               <button
                 type="button"
                 disabled={Boolean(busy)}
                 onClick={() => setAddOpen(false)}
-                className="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-200/60 transition"
+                className="px-3 py-1 rounded text-xs font-semibold text-slate-700 hover:bg-slate-200 transition"
               >
                 ยกเลิก
               </button>
               <button
                 type="submit"
                 disabled={busy === "add"}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-extrabold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 transition shadow-xs"
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer"
               >
-                <Save size={16} />
+                <Save size={14} />
                 <span>บันทึก</span>
               </button>
             </footer>
@@ -648,23 +646,22 @@ function ManagePagination({
 }) {
   const pages = pageWindow(currentPage, totalPages);
   return (
-    <div className="sticky bottom-0 z-20 flex flex-wrap items-center justify-between gap-3 px-5 py-2.5 bg-slate-50 border-t border-slate-200" aria-label="pagination">
-      <div className="flex items-center gap-4 text-xs text-slate-600 font-medium">
+    <div className="sticky bottom-0 z-20 flex flex-wrap items-center justify-between gap-3 px-4 py-2 bg-slate-50 border-t border-slate-200 text-xs text-slate-600" aria-label="pagination">
+      <div className="flex items-center gap-3 font-medium">
         <span>แสดง {visibleStart}-{visibleEnd} จาก {totalRows} {rowLabel}</span>
-        <div className="flex items-center gap-1.5" aria-label="rows per page">
-          <span className="flex items-center gap-1 text-slate-500 font-semibold text-[11px]">
-            <List size={14} aria-hidden="true" />
-            <span>ต่อหน้า</span>
+        <div className="flex items-center gap-1" aria-label="rows per page">
+          <span className="flex items-center gap-1 text-slate-500 font-medium text-xs">
+            <span>ต่อหน้า:</span>
           </span>
           <div className="flex items-center gap-1">
             {PAGE_SIZE_OPTIONS.map(option => (
               <button
                 key={option}
                 type="button"
-                className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                className={`px-2 py-0.5 rounded text-xs font-semibold transition cursor-pointer ${
                   option === pageSize
-                    ? "bg-slate-900 text-white shadow-2xs font-extrabold"
-                    : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100"
+                    ? "bg-slate-900 text-white"
+                    : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-100"
                 }`}
                 aria-current={option === pageSize ? "true" : undefined}
                 onClick={() => onPageSizeChange(option)}
@@ -682,15 +679,15 @@ function ManagePagination({
         </PageButton>
         {pages.map((page, index) => (
           page === "ellipsis" ? (
-            <span className="px-1.5 text-xs text-slate-400 font-bold" key={`ellipsis-${index}`}>...</span>
+            <span className="px-1 text-xs text-slate-400 font-bold" key={`ellipsis-${index}`}>...</span>
           ) : (
             <button
               key={page}
               type="button"
-              className={`min-w-7 h-7 px-2 rounded-md text-xs font-semibold transition-all ${
+              className={`min-w-6 h-6 px-1.5 rounded text-xs font-semibold transition cursor-pointer ${
                 page === currentPage
-                  ? "bg-slate-900 text-white font-extrabold shadow-2xs"
-                  : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100"
+                  ? "bg-slate-900 text-white"
+                  : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-100"
               }`}
               aria-current={page === currentPage ? "page" : undefined}
               onClick={() => onPageChange(page)}
@@ -831,3 +828,4 @@ function getRowKey(row: SheetRow, defaultIndex: number, keyColumn?: string): str
   if (typeof val === "string" || typeof val === "number") return val;
   return defaultIndex + 2;
 }
+

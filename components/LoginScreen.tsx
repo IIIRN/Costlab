@@ -64,7 +64,7 @@ export function LoginScreen({ peopleRows }: { peopleRows: SheetRow[] }) {
       </div>
 
       <div className="mt-8 mx-auto w-full max-w-md">
-        <div className="bg-white py-8 px-6 shadow-xl shadow-green-900/5 rounded-2xl sm:px-10 border border-gray-100">
+        <div className="bg-white py-8 px-6 shadow-xl shadow-green-900/5 rounded-lg sm:px-10 border border-gray-100">
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="employeeId" className="block text-sm font-medium text-gray-700">
@@ -128,3 +128,4 @@ export function LoginScreen({ peopleRows }: { peopleRows: SheetRow[] }) {
     </div>
   );
 }
+

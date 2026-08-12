@@ -148,3 +148,4 @@ export function UserSwitcher({ currentUser, theme = "dark", isCollapsed = false,
     </div>
   );
 }
+

@@ -74,46 +74,45 @@ export async function renderRowDetailPage(id: string, rowKey: string) {
   return (
     <div className="w-full flex flex-col gap-3 font-sans text-xs">
       {/* COMPACT PAGE HEADER */}
-      <header className="p-3.5 sm:p-4 bg-white border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
+      <header className="p-3 sm:p-4 bg-white border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Link
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200/90 rounded-lg transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded transition cursor-pointer"
             href={`/views/${id}`}
           >
-            <ArrowLeft size={15} />
+            <ArrowLeft size={14} />
             <span>กลับ</span>
           </Link>
 
-          <div className="h-5 w-px bg-slate-200 mx-1 shrink-0" />
+          <div className="h-4 w-px bg-slate-200 mx-1 shrink-0" />
 
           <div className="flex items-center gap-2">
-            {getEntityIcon(id)}
-            <h1 className="font-extrabold text-base text-slate-900 tracking-tight">{title}</h1>
+            <h1 className="font-bold text-base text-slate-900 tracking-tight">{title}</h1>
             {primaryCode && primaryCode !== title ? (
-              <span className="font-mono text-[11px] font-bold bg-slate-900 text-white px-2.5 py-0.5 rounded-md">
+              <span className="font-mono text-[11px] font-bold bg-slate-900 text-white px-2 py-0.5 rounded">
                 {primaryCode}
               </span>
             ) : null}
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
               {view.name}
             </span>
           </div>
         </div>
       </header>
 
-      <section className="p-3 sm:p-5 max-w-[1600px] w-full mx-auto space-y-4">
+      <section className="p-3 sm:p-4 max-w-[1600px] w-full mx-auto space-y-4">
         {/* MAIN INFO CARD */}
-        <article className="bg-white border border-slate-200/90 rounded-lg shadow-2xs overflow-hidden divide-y divide-slate-100">
-          <header className="p-4 bg-slate-50/70 border-b border-slate-200/80 flex items-center justify-between">
+        <article className="bg-white border border-slate-200 rounded-md overflow-hidden">
+          <header className="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <FileText size={16} className="text-emerald-600 shrink-0" />
-              <h2 className="text-sm font-extrabold text-slate-900 tracking-tight m-0">ข้อมูลหลัก</h2>
+              <FileText size={15} className="text-slate-600 shrink-0" />
+              <h2 className="text-xs font-bold text-slate-800 tracking-tight m-0">ข้อมูลหลัก</h2>
             </div>
             <span className="text-[11px] font-semibold text-slate-500">{columns.length} ฟิลด์</span>
           </header>
 
-          <div className="p-4 sm:p-5">
-            <dl className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          <div className="p-3 sm:p-4">
+            <dl className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
               {columns.map(column => {
                 const val = row[column];
                 const isEmpty = val === null || val === undefined || String(val).trim() === "" || String(val).trim().toLowerCase() === "non";
@@ -121,15 +120,15 @@ export async function renderRowDetailPage(id: string, rowKey: string) {
                 const isCode = column.toLowerCase().includes("id") || column.includes("รหัส") || column.includes("เลข");
 
                 return (
-                  <div key={column} className="bg-slate-50/70 hover:bg-slate-100/60 p-3 rounded-lg border border-slate-200/70 transition-colors flex flex-col justify-between">
-                    <dt className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                  <div key={column} className="bg-white p-2.5 rounded border border-slate-200 flex flex-col justify-between">
+                    <dt className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
                       {column}
                     </dt>
                     <dd className="mt-0.5">
                       {isEmpty ? (
                         <span className="text-slate-400 font-normal text-xs">-</span>
                       ) : isAmount ? (
-                        <span className="text-sm font-mono font-bold text-emerald-700">
+                        <span className="text-xs font-mono font-bold text-slate-900">
                           {formatDetailValue(column, val)}
                         </span>
                       ) : isCode ? (
@@ -459,6 +458,9 @@ function usesSchemaForm(viewId: string) {
 }
 
 function detailBasePathForView(viewId: string) {
+  if (viewId === "project-all") {
+    return "/work-status";
+  }
   if (["stores", "contractors", "people", "banks", "cars", "customers", "companies"].includes(viewId)) {
     return `/views/${viewId}`;
   }
@@ -467,6 +469,7 @@ function detailBasePathForView(viewId: string) {
 
 function tableKeyColumn(viewId: string, tableName: string) {
   const keyByView: Record<string, string> = {
+    "project-all": "ID Project",
     banks: "id_bank",
     stores: "id_store",
     contractors: "id_Contractor",

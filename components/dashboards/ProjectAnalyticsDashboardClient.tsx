@@ -1,21 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  BarChart3,
-  Boxes,
-  Building2,
-  Download,
-  FileSpreadsheet,
-  Filter,
-  FolderKanban,
-  Layers,
-  Printer,
-  Search,
-  Sparkles,
-  Wallet,
-  X,
-} from "lucide-react";
+import { Search, X } from "lucide-react";
 import { money } from "@/lib/numbers";
 import type { SheetRow } from "@/lib/types";
 import {
@@ -360,112 +346,102 @@ export function ProjectAnalyticsDashboardClient({
   }, [filteredDataRows]);
 
   return (
-    <div className="w-full flex flex-col gap-3 p-3 sm:p-4 max-w-[1700px] mx-auto font-sans print:p-0">
-      {/* 1. COMPACT EXECUTIVE HEADER CARD */}
-      <div className="bg-slate-900 text-white rounded-2xl p-4 shadow-md border border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        {/* Left Title & Status */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center shrink-0">
-            <BarChart3 className="text-teal-400" size={20} />
-          </div>
-          <div>
-            <h1 className="text-lg font-black tracking-tight text-white flex items-center gap-2">
-              <span>ตารางวิเคราะห์ Pivot ทางการเงิน</span>
-              <span className="text-[10px] font-bold text-teal-400 bg-teal-950/80 px-2 py-0.5 rounded-md border border-teal-800/60 uppercase">
-                Pivot Live
-              </span>
-            </h1>
-            <p className="text-xs text-slate-400 font-medium">
-              วิเคราะห์ข้อมูลค่าใช้จ่ายโครงการ หมวดหมู่ สินค้า และร้านค้า
-            </p>
-          </div>
+    <div className="w-full flex flex-col gap-4 p-4 sm:p-5 max-w-[1700px] mx-auto font-sans text-sm text-slate-800 print:p-0">
+      {/* 1. HEADER ROW */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
+        <div>
+          <h1 className="text-lg font-bold text-slate-900">ตารางวิเคราะห์ Pivot ทางการเงิน</h1>
+          <p className="text-xs text-slate-500 mt-0.5">วิเคราะห์ข้อมูลค่าใช้จ่ายโครงการ หมวดหมู่ สินค้า และผู้รับเหมา</p>
         </div>
 
-        {/* Executive Quick Stats Strip */}
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          <div className="bg-slate-800/90 px-3 py-1.5 rounded-xl border border-slate-700">
-            <span className="text-[10px] font-bold text-slate-400 uppercase block">ยอดโอนสุทธิ</span>
-            <span className="text-sm font-black text-emerald-400">{money(totalTransferSum)}</span>
+        {/* Quick Stats Strip */}
+        <div className="flex flex-wrap items-center gap-4 text-xs">
+          <div className="border border-slate-200 rounded-md px-3 py-1.5 bg-white">
+            <span className="text-[11px] text-slate-400 block">ยอดโอนสุทธิ</span>
+            <span className="font-bold text-emerald-700">{money(totalTransferSum)}</span>
           </div>
-
-          <div className="bg-slate-800/90 px-3 py-1.5 rounded-xl border border-slate-700">
-            <span className="text-[10px] font-bold text-slate-400 uppercase block">ยอดเงินบิลรวม</span>
-            <span className="text-sm font-black text-white">{money(totalBillAmountSum)}</span>
+          <div className="border border-slate-200 rounded-md px-3 py-1.5 bg-white">
+            <span className="text-[11px] text-slate-400 block">ยอดเงินบิลรวม</span>
+            <span className="font-bold text-slate-900">{money(totalBillAmountSum)}</span>
           </div>
-
-          <div className="bg-slate-800/90 px-3 py-1.5 rounded-xl border border-slate-700">
-            <span className="text-[10px] font-bold text-slate-400 uppercase block">จำนวนบิลทั้งหมด</span>
-            <span className="text-sm font-black text-teal-300">{filteredDataRows.length.toLocaleString()} รายการ</span>
+          <div className="border border-slate-200 rounded-md px-3 py-1.5 bg-white">
+            <span className="text-[11px] text-slate-400 block">บิลทั้งหมด</span>
+            <span className="font-bold text-indigo-700">{filteredDataRows.length.toLocaleString()} รายการ</span>
           </div>
         </div>
       </div>
 
-      {/* 2. COMPACT SINGLE-ROW CONTROLS BAR */}
-      <div className="bg-white rounded-2xl p-3 border border-slate-200 shadow-2xs space-y-3">
-        {/* Preset Tabs Strip */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-xs font-black text-slate-400 uppercase tracking-wider mr-1">Pivot Presets:</span>
+      {/* 2. CONTROLS BAR */}
+      <div className="border border-slate-200 rounded-md p-3 bg-white space-y-3">
+        {/* Preset Tabs & Metric Selector */}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
+          <div className="flex flex-wrap items-center gap-1.5 text-xs">
+            <span className="text-slate-500 font-semibold mr-1">รูปแบบวิเคราะห์:</span>
             <button
               type="button"
               onClick={() => handleSelectPreset("proj_cat")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition cursor-pointer ${pivotPreset === "proj_cat"
-                  ? "bg-indigo-600 text-white shadow-xs"
-                  : "bg-slate-100 hover:bg-slate-200/80 text-slate-700"
-                }`}
+              className={`px-3 py-1 rounded-md transition font-medium cursor-pointer ${
+                pivotPreset === "proj_cat"
+                  ? "bg-slate-900 text-white font-bold"
+                  : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+              }`}
             >
-              📁 โครงการ × หมวดหมู่
+              โครงการ × หมวดหมู่
             </button>
             <button
               type="button"
               onClick={() => handleSelectPreset("proj_prod")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition cursor-pointer ${pivotPreset === "proj_prod"
-                  ? "bg-teal-600 text-white shadow-xs"
-                  : "bg-slate-100 hover:bg-slate-200/80 text-slate-700"
-                }`}
+              className={`px-3 py-1 rounded-md transition font-medium cursor-pointer ${
+                pivotPreset === "proj_prod"
+                  ? "bg-slate-900 text-white font-bold"
+                  : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+              }`}
             >
-              📦 โครงการ × ประเภทสินค้า
+              โครงการ × ประเภทสินค้า
             </button>
             <button
               type="button"
               onClick={() => handleSelectPreset("vendor_cat")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition cursor-pointer ${pivotPreset === "vendor_cat"
-                  ? "bg-amber-600 text-white shadow-xs"
-                  : "bg-slate-100 hover:bg-slate-200/80 text-slate-700"
-                }`}
+              className={`px-3 py-1 rounded-md transition font-medium cursor-pointer ${
+                pivotPreset === "vendor_cat"
+                  ? "bg-slate-900 text-white font-bold"
+                  : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+              }`}
             >
-              🏪 ร้านค้า/ผู้รับเหมา × หมวดหมู่
+              ร้านค้า/ผู้รับเหมา × หมวดหมู่
             </button>
             <button
               type="button"
               onClick={() => handleSelectPreset("month_proj")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition cursor-pointer ${pivotPreset === "month_proj"
-                  ? "bg-purple-600 text-white shadow-xs"
-                  : "bg-slate-100 hover:bg-slate-200/80 text-slate-700"
-                }`}
+              className={`px-3 py-1 rounded-md transition font-medium cursor-pointer ${
+                pivotPreset === "month_proj"
+                  ? "bg-slate-900 text-white font-bold"
+                  : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+              }`}
             >
-              📅 โครงการ × รายเดือน
+              โครงการ × รายเดือน
             </button>
             <button
               type="button"
               onClick={() => handleSelectPreset("custom")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition cursor-pointer ${pivotPreset === "custom"
-                  ? "bg-slate-900 text-white shadow-xs"
-                  : "bg-slate-100 hover:bg-slate-200/80 text-slate-700"
-                }`}
+              className={`px-3 py-1 rounded-md transition font-medium cursor-pointer ${
+                pivotPreset === "custom"
+                  ? "bg-slate-900 text-white font-bold"
+                  : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+              }`}
             >
-              🎛️ Custom
+              กำหนดเอง
             </button>
           </div>
 
           {/* Metric Selector */}
-          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
-            <span className="text-[11px] font-bold text-slate-500 px-2">ตัววัด (Metric):</span>
+          <div className="flex items-center gap-1 text-xs">
+            <span className="text-slate-500 font-semibold mr-1">แสดงผล:</span>
             <button
               type="button"
               onClick={() => setMetricType("transfer")}
-              className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition cursor-pointer ${
-                metricType === "transfer" ? "bg-emerald-600 text-white shadow-2xs" : "text-slate-600 hover:text-slate-900"
+              className={`px-2.5 py-1 rounded-md font-medium transition cursor-pointer ${
+                metricType === "transfer" ? "bg-slate-800 text-white font-bold" : "border border-slate-200 text-slate-700 hover:bg-slate-50"
               }`}
             >
               ยอดโอนสุทธิ
@@ -473,8 +449,8 @@ export function ProjectAnalyticsDashboardClient({
             <button
               type="button"
               onClick={() => setMetricType("amount")}
-              className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition cursor-pointer ${
-                metricType === "amount" ? "bg-slate-900 text-white shadow-2xs" : "text-slate-600 hover:text-slate-900"
+              className={`px-2.5 py-1 rounded-md font-medium transition cursor-pointer ${
+                metricType === "amount" ? "bg-slate-800 text-white font-bold" : "border border-slate-200 text-slate-700 hover:bg-slate-50"
               }`}
             >
               ยอดเงินบิล
@@ -482,8 +458,8 @@ export function ProjectAnalyticsDashboardClient({
             <button
               type="button"
               onClick={() => setMetricType("count")}
-              className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition cursor-pointer ${
-                metricType === "count" ? "bg-indigo-600 text-white shadow-2xs" : "text-slate-600 hover:text-slate-900"
+              className={`px-2.5 py-1 rounded-md font-medium transition cursor-pointer ${
+                metricType === "count" ? "bg-slate-800 text-white font-bold" : "border border-slate-200 text-slate-700 hover:bg-slate-50"
               }`}
             >
               จำนวนรายการ
@@ -492,57 +468,55 @@ export function ProjectAnalyticsDashboardClient({
         </div>
 
         {/* Dynamic Controls & Search Row */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
           {/* Dimension Selectors */}
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-extrabold text-slate-700">แถว (Row):</span>
+              <span className="font-semibold text-slate-700">แถว:</span>
               <select
                 value={rowDimension}
                 onChange={(e) => {
                   setRowDimension(e.target.value as RowDimension);
                   setPivotPreset("custom");
                 }}
-                className="bg-slate-50 border border-slate-200 font-extrabold text-xs text-slate-900 px-3 py-1.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-300"
+                className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none focus:border-slate-500"
               >
-                <option value="project">📁 โครงการ (Projects)</option>
-                <option value="vendor">🏪 ร้านค้า / ผู้รับเหมา (Vendors)</option>
-                <option value="category">🏷️ หมวดหมู่ค่าใช้จ่าย (Categories)</option>
-                <option value="product_category">📦 ประเภทสินค้า 18 รายการ</option>
-                <option value="requester">👤 ผู้เบิก (Requesters)</option>
-                <option value="month">📅 รายเดือน (Monthly)</option>
+                <option value="project">โครงการ (Projects)</option>
+                <option value="vendor">ร้านค้า / ผู้รับเหมา (Vendors)</option>
+                <option value="category">หมวดหมู่ค่าใช้จ่าย (Categories)</option>
+                <option value="product_category">ประเภทสินค้า 18 รายการ</option>
+                <option value="requester">ผู้เบิก (Requesters)</option>
+                <option value="month">รายเดือน (Monthly)</option>
               </select>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-xs font-extrabold text-slate-700">คอลัมน์ (Column):</span>
+              <span className="font-semibold text-slate-700">คอลัมน์:</span>
               <select
                 value={colDimension}
                 onChange={(e) => {
                   setColDimension(e.target.value as ColumnDimension);
                   setPivotPreset("custom");
                 }}
-                className="bg-slate-50 border border-slate-200 font-extrabold text-xs text-slate-900 px-3 py-1.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-300"
+                className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none focus:border-slate-500"
               >
-                <option value="category">🏷️ หมวดหมู่ค่าใช้จ่าย (Categories)</option>
-                <option value="product_category">📦 ประเภทสินค้า 18 รายการ</option>
-                <option value="project">📁 โครงการ (Projects)</option>
-                <option value="month">📅 รายเดือน (Monthly)</option>
+                <option value="category">หมวดหมู่ค่าใช้จ่าย (Categories)</option>
+                <option value="product_category">ประเภทสินค้า 18 รายการ</option>
+                <option value="project">โครงการ (Projects)</option>
+                <option value="month">รายเดือน (Monthly)</option>
               </select>
             </div>
           </div>
 
-          {/* Global Search & Filters */}
+          {/* Filter Project & Search */}
           <div className="flex flex-wrap items-center gap-3">
-            {/* Filter Project */}
             <div className="flex items-center gap-2">
-              <FolderKanban size={15} className="text-slate-500" />
               <select
                 value={selectedProjectId}
                 onChange={(e) => setSelectedProjectId(e.target.value)}
-                className="bg-slate-50 border border-slate-200 font-bold text-xs text-slate-800 px-3 py-1.5 rounded-xl focus:outline-none max-w-[220px]"
+                className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none max-w-[220px]"
               >
-                <option value="all">📁 ทุกโครงการ ({projectsList.length})</option>
+                <option value="all">ทุกโครงการ ({projectsList.length})</option>
                 {projectsList.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.label}
@@ -551,15 +525,14 @@ export function ProjectAnalyticsDashboardClient({
               </select>
             </div>
 
-            {/* Search Input */}
             <div className="relative flex items-center">
-              <Search size={14} className="absolute left-3 text-slate-400" />
+              <Search size={14} className="absolute left-2.5 text-slate-400" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="ค้นหารายการ..."
-                className="bg-slate-50 text-slate-800 text-xs font-semibold pl-8 pr-7 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-300 w-44 sm:w-56"
+                className="bg-white text-slate-800 text-xs pl-8 pr-7 py-1 rounded-md border border-slate-300 focus:outline-none focus:border-slate-500 w-44 sm:w-56"
               />
               {searchTerm && (
                 <button
@@ -576,32 +549,22 @@ export function ProjectAnalyticsDashboardClient({
       </div>
 
       {/* 3. DYNAMIC PIVOT MATRIX TABLE */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-        <div className="p-3 border-b border-slate-200 bg-slate-900 text-white flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Layers className="text-teal-400" size={17} />
-            <h2 className="text-xs font-extrabold text-white uppercase tracking-wider">
-              Matrix Analysis Grid: {rowDimension.toUpperCase()} × {colDimension.toUpperCase()}
-            </h2>
-          </div>
-
-          <div className="flex items-center gap-3 text-xs">
-            <span className="font-bold text-slate-300">
-              แถว: <strong className="text-white">{pivotMatrixData.rowKeys.length}</strong> | คอลัมน์:{" "}
-              <strong className="text-white">{pivotMatrixData.colKeys.length}</strong>
-            </span>
-            <span className="text-emerald-400 font-extrabold bg-slate-800 px-3 py-1 rounded-lg border border-slate-700">
-              รวมสุทธิ: {metricType === "count" ? `${grandTotalValue} รายการ` : money(grandTotalValue)}
-            </span>
-          </div>
+      <div className="border border-slate-200 rounded-md bg-white overflow-hidden flex flex-col">
+        <div className="px-3 py-2 border-b border-slate-200 bg-slate-50 flex items-center justify-between text-xs">
+          <span className="font-bold text-slate-700">
+            ตารางเมทริกซ์ ({pivotMatrixData.rowKeys.length} แถว × {pivotMatrixData.colKeys.length} คอลัมน์)
+          </span>
+          <span className="font-bold text-emerald-700">
+            รวมสุทธิ: {metricType === "count" ? `${grandTotalValue} รายการ` : money(grandTotalValue)}
+          </span>
         </div>
 
         {/* Scrollable Pivot Grid */}
-        <div className="overflow-auto max-h-[calc(100vh-210px)] min-h-[420px] relative scrollbar-thin">
+        <div className="overflow-auto max-h-[calc(100vh-210px)] relative">
           <table className="w-full text-left text-xs border-collapse font-sans">
-            <thead className="sticky top-0 z-20 bg-slate-900 text-slate-100 font-extrabold text-[11px] uppercase tracking-wider shadow-xs">
+            <thead className="sticky top-0 z-20 bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
               <tr>
-                <th className="py-2.5 px-3 border-r border-slate-800 min-w-[200px] sticky left-0 z-30 bg-slate-900">
+                <th className="py-2 px-3 border-r border-slate-200 min-w-[200px] sticky left-0 z-30 bg-slate-100">
                   {rowDimension === "project"
                     ? "โครงการ"
                     : rowDimension === "vendor"
@@ -615,11 +578,11 @@ export function ProjectAnalyticsDashboardClient({
                     : "มิติแถว"}
                 </th>
                 {pivotMatrixData.colKeys.map((cKey) => (
-                  <th key={cKey} className="py-2.5 px-3 text-right border-r border-slate-800 min-w-[120px]">
+                  <th key={cKey} className="py-2 px-3 text-right border-r border-slate-200 min-w-[120px]">
                     {cKey}
                   </th>
                 ))}
-                <th className="py-2.5 px-3 text-right bg-emerald-950 text-emerald-300 min-w-[130px] font-black border-l border-slate-800">
+                <th className="py-2 px-3 text-right bg-slate-200 text-slate-900 min-w-[130px] font-bold border-l border-slate-300">
                   รวมแถว
                 </th>
               </tr>
@@ -630,7 +593,7 @@ export function ProjectAnalyticsDashboardClient({
                 <tr>
                   <td
                     colSpan={pivotMatrixData.colKeys.length + 2}
-                    className="py-12 text-center text-slate-400 font-semibold"
+                    className="py-12 text-center text-slate-400 font-medium"
                   >
                     ไม่พบข้อมูลสำหรับเงื่อนไขที่เลือก
                   </td>
@@ -643,7 +606,7 @@ export function ProjectAnalyticsDashboardClient({
                   return (
                     <tr key={rKey} className="hover:bg-slate-50 transition-colors">
                       {/* Row Label (Sticky Left) */}
-                      <td className="py-2.5 px-3 font-bold text-slate-900 border-r border-slate-200 sticky left-0 z-10 bg-white shadow-xs">
+                      <td className="py-2 px-3 font-semibold text-slate-800 border-r border-slate-200 sticky left-0 z-10 bg-white">
                         <div className="text-xs">{rKey}</div>
                       </td>
 
@@ -658,12 +621,11 @@ export function ProjectAnalyticsDashboardClient({
                         const hasVal = val > 0;
                         const intensity = maxCellValue > 0 ? val / maxCellValue : 0;
 
-                        // Dynamic Heatmap Background Styling
                         let heatmapBg = "bg-white";
                         if (hasVal) {
-                          if (intensity > 0.6) heatmapBg = "bg-emerald-100/90 text-emerald-950 font-black";
-                          else if (intensity > 0.3) heatmapBg = "bg-emerald-50 text-emerald-900 font-extrabold";
-                          else heatmapBg = "bg-slate-50/90 text-slate-900 font-bold";
+                          if (intensity > 0.6) heatmapBg = "bg-emerald-50 text-emerald-900 font-bold";
+                          else if (intensity > 0.3) heatmapBg = "bg-slate-50 text-slate-900 font-semibold";
+                          else heatmapBg = "bg-white text-slate-800 font-medium";
                         }
 
                         return (
@@ -677,8 +639,9 @@ export function ProjectAnalyticsDashboardClient({
                                 });
                               }
                             }}
-                            className={`py-2.5 px-2.5 text-right border-r border-slate-100 transition ${heatmapBg} ${hasVal ? "cursor-pointer hover:ring-2 hover:ring-emerald-400/60" : "text-slate-300"
-                              }`}
+                            className={`py-2 px-2.5 text-right border-r border-slate-100 transition ${heatmapBg} ${
+                              hasVal ? "cursor-pointer hover:bg-emerald-100" : "text-slate-300"
+                            }`}
                           >
                             {hasVal ? (
                               metricType === "count" ? (
@@ -693,7 +656,7 @@ export function ProjectAnalyticsDashboardClient({
                         );
                       })}
 
-                      {/* Row Total (Rightmost) */}
+                      {/* Row Total */}
                       <td
                         onClick={() => {
                           if (allRowCellBills.length) {
@@ -703,7 +666,7 @@ export function ProjectAnalyticsDashboardClient({
                             });
                           }
                         }}
-                        className="py-2.5 px-3 text-right font-black text-emerald-950 bg-emerald-50 border-l border-emerald-200 cursor-pointer hover:bg-emerald-100 transition"
+                        className="py-2 px-3 text-right font-bold text-slate-900 bg-slate-50 border-l border-slate-200 cursor-pointer hover:bg-slate-100 transition"
                       >
                         {metricType === "count" ? `${rowSum} รายการ` : money(rowSum)}
                       </td>
@@ -715,12 +678,9 @@ export function ProjectAnalyticsDashboardClient({
 
             {/* Matrix Footer Totals (Column Summary) */}
             {pivotMatrixData.rowKeys.length > 0 && (
-              <tfoot className="sticky bottom-0 z-20 bg-slate-200 text-slate-900 font-extrabold text-xs shadow-md border-t-2 border-slate-400">
+              <tfoot className="sticky bottom-0 z-20 bg-slate-100 text-slate-900 font-bold text-xs border-t-2 border-slate-300">
                 <tr>
-                  <td
-                    style={{ color: "#020617", backgroundColor: "#e2e8f0" }}
-                    className="py-2.5 px-3 sticky left-0 z-30 font-black border-r border-slate-300 uppercase tracking-wider text-slate-950 text-xs"
-                  >
+                  <td className="py-2 px-3 sticky left-0 z-30 font-bold border-r border-slate-300 bg-slate-100">
                     รวมแนวตั้ง (Column Total)
                   </td>
                   {pivotMatrixData.colKeys.map((cKey) => {
@@ -738,8 +698,9 @@ export function ProjectAnalyticsDashboardClient({
                             });
                           }
                         }}
-                        style={hasVal ? { color: "#064e3b", backgroundColor: "#d1fae5" } : { color: "#64748b", backgroundColor: "#f1f5f9" }}
-                        className="py-2.5 px-2.5 text-right border-r border-slate-300 transition cursor-pointer font-black text-xs"
+                        className={`py-2 px-2.5 text-right border-r border-slate-300 transition font-bold ${
+                          hasVal ? "cursor-pointer text-emerald-800 bg-emerald-50 hover:bg-emerald-100" : "text-slate-400"
+                        }`}
                       >
                         {hasVal ? (
                           metricType === "count" ? (
@@ -754,8 +715,8 @@ export function ProjectAnalyticsDashboardClient({
                     );
                   })}
                   <td
-                    style={{ color: "#ffffff", backgroundColor: "#059669" }}
-                    className="py-2.5 px-3 text-right font-black border-l border-emerald-700 text-sm shadow-inner"
+                    style={{ color: "#020617", backgroundColor: "#a7f3d0" }}
+                    className="py-2.5 px-3 text-right font-black text-sm border-l border-emerald-400"
                   >
                     {metricType === "count" ? `${grandTotalValue} รายการ` : money(grandTotalValue)}
                   </td>
@@ -768,18 +729,15 @@ export function ProjectAnalyticsDashboardClient({
 
       {/* 4. CELL DRILLDOWN MODAL */}
       {drilldownModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-5xl w-full max-h-[85vh] flex flex-col shadow-xl border border-slate-200 overflow-hidden animate-in fade-in duration-150">
             {/* Modal Header */}
-            <div className="p-4 border-b border-slate-200 bg-slate-900 text-white flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FileSpreadsheet className="text-teal-400" size={18} />
-                <h3 className="text-xs font-black text-white">{drilldownModal.title}</h3>
-              </div>
+            <div className="px-4 py-3 border-b border-slate-200 bg-white flex items-center justify-between">
+              <h3 className="text-sm font-bold text-slate-900">{drilldownModal.title}</h3>
               <button
                 type="button"
                 onClick={() => setDrilldownModal(null)}
-                className="w-7 h-7 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition cursor-pointer"
+                className="w-7 h-7 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition cursor-pointer"
               >
                 <X size={15} />
               </button>
@@ -789,7 +747,7 @@ export function ProjectAnalyticsDashboardClient({
             <div className="p-3 overflow-y-auto flex-1">
               <table className="w-full text-left text-xs text-slate-700 border-collapse">
                 <thead>
-                  <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-200 uppercase text-[10px]">
+                  <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
                     <th className="py-2 px-2.5">ลำดับ</th>
                     <th className="py-2 px-2.5">ผู้เบิก</th>
                     <th className="py-2 px-2.5">บิล</th>
@@ -804,19 +762,19 @@ export function ProjectAnalyticsDashboardClient({
                 <tbody className="divide-y divide-slate-100">
                   {drilldownModal.rows.map((r, i) => (
                     <tr key={i} className="hover:bg-slate-50 transition">
-                      <td className="py-2 px-2.5 font-semibold text-slate-500">{r["ลำดับ"] || i + 1}</td>
-                      <td className="py-2 px-2.5 font-bold text-slate-900">{getRequesterDisplayName(r["ผู้เบิก"])}</td>
+                      <td className="py-2 px-2.5 font-medium text-slate-500">{r["ลำดับ"] || i + 1}</td>
+                      <td className="py-2 px-2.5 font-semibold text-slate-900">{getRequesterDisplayName(r["ผู้เบิก"])}</td>
                       <td className="py-2 px-2.5 font-medium">{r["บิล"] || "-"}</td>
-                      <td className="py-2 px-2.5 font-bold text-slate-900">
+                      <td className="py-2 px-2.5 font-semibold text-slate-900">
                         {r["ร้านค้า"] || r["ผู้รับเหมา"] || r["ร้าน/บุคคล"] || "-"}
                       </td>
                       <td className="py-2 px-2.5">{r["รายละเอียดงาน"] || r["สินค้า/ทำงาน"] || r["รายการ"] || "-"}</td>
-                      <td className="py-2 px-2.5 font-semibold text-indigo-600">{getRowCategory(r) || "-"}</td>
-                      <td className="py-2 px-2.5 text-right font-bold text-slate-900">{money(getRowAmount(r))}</td>
-                      <td className="py-2 px-2.5 text-right font-black text-emerald-700 bg-emerald-50/60">
+                      <td className="py-2 px-2.5 font-medium text-indigo-700">{getRowCategory(r) || "-"}</td>
+                      <td className="py-2 px-2.5 text-right font-semibold text-slate-900">{money(getRowAmount(r))}</td>
+                      <td className="py-2 px-2.5 text-right font-bold text-emerald-700 bg-emerald-50/40">
                         {money(getRowTransferAmount(r))}
                       </td>
-                      <td className="py-2 px-2.5 text-slate-600 font-semibold whitespace-nowrap">{formatDateThai(r["ว/ด/ป"] || r["วันที่"])}</td>
+                      <td className="py-2 px-2.5 text-slate-600 font-medium whitespace-nowrap">{formatDateThai(r["ว/ด/ป"] || r["วันที่"])}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -824,9 +782,9 @@ export function ProjectAnalyticsDashboardClient({
             </div>
 
             {/* Modal Footer */}
-            <div className="p-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between text-xs font-bold text-slate-600">
+            <div className="px-4 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between text-xs font-semibold text-slate-700">
               <span>รวม {drilldownModal.rows.length} รายการ</span>
-              <span className="text-emerald-700 font-black text-xs">
+              <span className="text-emerald-700 font-bold">
                 ยอดโอนรวมสุทธิ: {money(drilldownModal.rows.reduce((sum, r) => sum + getRowTransferAmount(r), 0))}
               </span>
             </div>
@@ -836,3 +794,4 @@ export function ProjectAnalyticsDashboardClient({
     </div>
   );
 }
+

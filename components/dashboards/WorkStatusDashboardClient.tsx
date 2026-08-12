@@ -71,7 +71,7 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
   return (
     <div className="w-full flex flex-col gap-5 p-4 sm:p-6 max-w-[1600px] mx-auto font-sans">
       {/* 1. EXECUTIVE SUMMARY STRIP */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div className="bg-white rounded-lg p-4 border border-slate-200/90 shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         {/* Left: Summary Metrics */}
         <div className="flex flex-wrap items-center gap-4 text-xs">
           <div className="flex items-center gap-2 pr-4 border-r border-slate-200">
@@ -149,7 +149,7 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
       </div>
 
       {/* 2. FILTER TABS & SEARCH TOOLBAR */}
-      <div className="bg-white rounded-2xl p-3.5 border border-slate-200/90 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="bg-white rounded-lg p-3.5 border border-slate-200/90 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         {/* Status Filter Tabs */}
         <div className="flex items-center gap-1.5">
           <button
@@ -204,7 +204,7 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
       {/* 3. MAIN WORKFLOW CONTENT (TABLE OR GRID) */}
       {viewMode === "table" ? (
         /* PROFESSIONAL HIGH-DENSITY WORK TABLE */
-        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+        <div className="bg-white rounded-lg border border-slate-200/90 shadow-2xs overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-700 border-collapse">
               <thead>
@@ -345,7 +345,7 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
               <Link
                 key={id}
                 href={`/work-status/${encodeURIComponent(id)}`}
-                className="bg-white rounded-2xl p-4 border border-slate-200/90 hover:border-indigo-400 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between gap-3 group cursor-pointer"
+                className="bg-white rounded-lg p-4 border border-slate-200/90 hover:border-indigo-400 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between gap-3 group cursor-pointer"
               >
                 <div className="flex items-center justify-between">
                   <span
@@ -385,7 +385,7 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
             );
           })}
           {!displayList.length && (
-            <div className="col-span-full bg-white rounded-2xl p-8 text-center text-slate-400 border border-slate-200/80 text-xs">
+            <div className="col-span-full bg-white rounded-lg p-8 text-center text-slate-400 border border-slate-200/80 text-xs">
               ไม่พบโครงการที่ค้นหา
             </div>
           )}
@@ -394,3 +394,4 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
     </div>
   );
 }
+

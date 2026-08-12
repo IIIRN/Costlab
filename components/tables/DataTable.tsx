@@ -77,37 +77,37 @@ export function DataTable({ columns, rows, limit = 80, title = "Data", subtitle,
   const cleanColumns = useMemo(() => columns.filter(col => Boolean(col && String(col).trim())), [columns]);
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-lg border border-slate-200/90 shadow-2xs overflow-hidden">
-      <div className="px-6 py-3.5 border-b border-slate-200/90 bg-slate-50/50 flex flex-wrap items-center justify-between gap-4 shrink-0">
+    <div className="flex flex-col h-full bg-white rounded-md border border-slate-200 overflow-hidden text-xs text-slate-800">
+      <div className="px-4 py-3 border-b border-slate-200 bg-white flex flex-wrap items-center justify-between gap-3 shrink-0">
         <div>
-          <h3 className="text-base font-extrabold text-slate-900 tracking-tight m-0">{title}</h3>
-          {subtitle ? <span className="text-xs text-slate-500 font-medium">{subtitle}</span> : null}
+          <h3 className="text-sm font-bold text-slate-900 tracking-tight m-0">{title}</h3>
+          {subtitle ? <span className="text-xs text-slate-500 font-normal">{subtitle}</span> : null}
         </div>
         <div className="flex items-center gap-2">
           {actionButton}
           {showSearch && (
-            <div className="flex items-center bg-slate-50 border border-slate-200 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 rounded-lg px-3 py-1 h-9 w-60 transition-all">
+            <div className="flex items-center bg-white border border-slate-300 focus-within:border-slate-500 rounded-md px-2.5 py-1 h-8 w-56 transition">
               <Search size={14} className="text-slate-400 shrink-0" />
               <input
                 type="text"
                 placeholder="ค้นหา..."
                 value={localSearch}
                 onChange={e => setLocalSearch(e.target.value)}
-                className="border-none bg-transparent outline-none px-2 text-xs font-medium w-full text-slate-800 placeholder:text-slate-400 min-h-0"
+                className="border-none bg-transparent outline-none px-2 text-xs font-normal w-full text-slate-800 placeholder:text-slate-400 min-h-0"
               />
               {localSearch && (
-                <X size={14} className="cursor-pointer text-slate-400 hover:text-slate-700 shrink-0" onClick={() => setLocalSearch("")} />
+                <X size={14} className="cursor-pointer text-slate-400 hover:text-slate-600 shrink-0" onClick={() => setLocalSearch("")} />
               )}
             </div>
           )}
           {sortToggle ? (
             <button
               type="button"
-              className="border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
+              className="border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
               onClick={() => setSortDesc(current => !current)}
               title="สลับการเรียงลำดับ"
             >
-              {sortDesc ? <ArrowDownWideNarrow size={14} className="text-indigo-600 shrink-0" /> : <ArrowUpWideNarrow size={14} className="text-indigo-600 shrink-0" />}
+              {sortDesc ? <ArrowDownWideNarrow size={14} className="text-slate-600 shrink-0" /> : <ArrowUpWideNarrow size={14} className="text-slate-600 shrink-0" />}
               <span className="text-slate-700 font-semibold">{sortDesc ? "ล่าสุดก่อน" : "เก่าสุดก่อน"}</span>
             </button>
           ) : null}
@@ -115,15 +115,15 @@ export function DataTable({ columns, rows, limit = 80, title = "Data", subtitle,
       </div>
       {visibleRows.length ? (
         <div className="flex-1 overflow-auto bg-white">
-          <table className="w-full text-left border-collapse text-xs text-slate-800">
+          <table className="w-full text-left border-collapse text-xs text-slate-800 font-sans">
             <thead>
-              <tr className="bg-slate-100/90 text-slate-600 font-bold border-b border-slate-200 text-[11px] uppercase tracking-wider">
+              <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-200 text-xs">
                 {cleanColumns.map(column => (
-                  <th key={column} className={`py-3 px-3.5 ${getColumnAlignmentClass(column)}`} data-column={column} data-label={column}>
+                  <th key={column} className={`py-2.5 px-3 border-r border-slate-200 ${getColumnAlignmentClass(column)}`} data-column={column} data-label={column}>
                     {column}
                   </th>
                 ))}
-                {detailBasePath && showDetailColumn ? <th className="py-3 px-3.5 text-center">จัดการ</th> : null}
+                {detailBasePath && showDetailColumn ? <th className="py-2.5 px-3 text-center">จัดการ</th> : null}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -131,13 +131,13 @@ export function DataTable({ columns, rows, limit = 80, title = "Data", subtitle,
                 const targetKey = String(row[detailKeyColumn || "ID Project" || cleanColumns[0]] || row["ID Project"] || row.id || "");
 
                 return (
-                  <tr key={`${String(row._sheetRow ?? row.id ?? row["ลำดับ"] ?? row[cleanColumns[0]] ?? "row")}-${index}`} className="hover:bg-slate-50/80 transition-colors">
+                  <tr key={`${String(row._sheetRow ?? row.id ?? row["ลำดับ"] ?? row[cleanColumns[0]] ?? "row")}-${index}`} className="hover:bg-slate-50 transition-colors">
                     {cleanColumns.map(column => (
-                      <td key={column} className={`py-2.5 px-3.5 ${getColumnAlignmentClass(column)}`} data-column={column} data-label={column}>
+                      <td key={column} className={`py-2 px-3 border-r border-slate-100 ${getColumnAlignmentClass(column)}`} data-column={column} data-label={column}>
                         {column === "ชื่อ Project" && detailBasePath && targetKey ? (
                           <Link
                             href={`${detailBasePath}/${encodeURIComponent(targetKey)}`}
-                            className="font-bold text-slate-900 hover:text-indigo-600 hover:underline transition-colors"
+                            className="font-bold text-slate-900 hover:underline"
                           >
                             {renderCell(column, row[column], row, cellFormatters)}
                           </Link>
@@ -147,9 +147,9 @@ export function DataTable({ columns, rows, limit = 80, title = "Data", subtitle,
                       </td>
                     ))}
                     {detailBasePath && showDetailColumn ? (
-                      <td className="py-2.5 px-3.5 text-center" data-label="จัดการ">
+                      <td className="py-2 px-3 text-center" data-label="จัดการ">
                         <Link
-                          className="inline-flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-indigo-600 hover:bg-slate-50 transition-colors shadow-2xs"
+                          className="inline-flex items-center justify-center w-6 h-6 rounded border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 transition"
                           href={`${detailBasePath}/${encodeURIComponent(targetKey)}`}
                           aria-label="ดูรายละเอียด"
                           title="ดูรายละเอียด"
@@ -165,7 +165,7 @@ export function DataTable({ columns, rows, limit = 80, title = "Data", subtitle,
           </table>
         </div>
       ) : (
-        <div className="flex-1 flex items-center justify-center p-12 text-slate-400 font-medium text-sm">ไม่พบข้อมูล</div>
+        <div className="flex-1 flex items-center justify-center p-10 text-slate-400 font-medium text-xs">ไม่พบข้อมูล</div>
       )}
       {pagination ? (
         <TablePagination
@@ -210,23 +210,22 @@ function TablePagination({
 }) {
   const pages = pageWindow(currentPage, totalPages);
   return (
-    <div className="sticky bottom-0 z-20 flex flex-wrap items-center justify-between gap-3 px-5 py-2.5 bg-slate-50 border-t border-slate-200/90" aria-label="pagination">
-      <div className="flex items-center gap-4 text-xs text-slate-600 font-medium">
+    <div className="sticky bottom-0 z-20 flex flex-wrap items-center justify-between gap-3 px-4 py-2 bg-slate-50 border-t border-slate-200 text-xs text-slate-600" aria-label="pagination">
+      <div className="flex items-center gap-3 font-medium">
         <span>แสดง {visibleStart}-{visibleEnd} จาก {totalRows} {rowLabel}</span>
-        <div className="flex items-center gap-1.5" aria-label="rows per page">
-          <span className="flex items-center gap-1 text-slate-500 font-semibold text-[11px]">
-            <List size={14} aria-hidden="true" />
-            <span>ต่อหน้า</span>
+        <div className="flex items-center gap-1" aria-label="rows per page">
+          <span className="flex items-center gap-1 text-slate-500 font-medium text-xs">
+            <span>ต่อหน้า:</span>
           </span>
           <div className="flex items-center gap-1">
             {pageSizeOptions.map(option => (
               <button
                 key={option}
                 type="button"
-                className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                className={`px-2 py-0.5 rounded text-xs font-semibold transition cursor-pointer ${
                   option === pageSize
-                    ? "bg-slate-900 text-white shadow-2xs font-extrabold"
-                    : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100"
+                    ? "bg-slate-900 text-white font-semibold"
+                    : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-100"
                 }`}
                 onClick={() => onPageSizeChange(option)}
               >
@@ -238,7 +237,7 @@ function TablePagination({
       </div>
       <nav className="flex items-center gap-1" aria-label="table pages">
         <button 
-          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-slate-300 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40 cursor-pointer transition"
           disabled={currentPage <= 1} 
           onClick={() => onPageChange(currentPage - 1)}
         >
@@ -247,15 +246,15 @@ function TablePagination({
         </button>
         {pages.map((page, index) => (
           page === "ellipsis" ? (
-            <span className="px-1.5 text-xs text-slate-400 font-bold" key={`ellipsis-${index}`}>...</span>
+            <span className="px-1 text-xs text-slate-400 font-bold" key={`ellipsis-${index}`}>...</span>
           ) : (
             <button
               key={page}
               type="button"
-              className={`min-w-7 h-7 px-2 rounded-md text-xs font-semibold transition-all ${
+              className={`min-w-6 h-6 px-1.5 rounded text-xs font-semibold transition cursor-pointer ${
                 page === currentPage
-                  ? "bg-slate-900 text-white font-extrabold shadow-2xs"
-                  : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100"
+                  ? "bg-slate-900 text-white"
+                  : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-100"
               }`}
               onClick={() => onPageChange(page)}
             >
@@ -264,7 +263,7 @@ function TablePagination({
           )
         ))}
         <button 
-          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-slate-300 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40 cursor-pointer transition"
           disabled={currentPage >= totalPages} 
           onClick={() => onPageChange(currentPage + 1)}
         >
@@ -359,3 +358,4 @@ function isCenterColumn(column: string): boolean {
     col === "color"
   );
 }
+

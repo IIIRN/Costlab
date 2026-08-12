@@ -23,6 +23,7 @@ import {
   PieChart,
   ReceiptText,
   Search,
+  Sliders,
   Store,
   Users,
   WalletCards,
@@ -142,26 +143,26 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
   const currentTab = filterText ? "all" : activeCategory;
 
   return (
-    <aside className={`hidden md:flex fixed top-0 bottom-0 left-0 h-screen select-none bg-slate-900 text-slate-100 border-r border-slate-800 z-30 transition-all duration-300 ${collapsed ? "w-[68px]" : "w-[316px]"}`}>
+    <aside className={`hidden md:flex fixed top-0 bottom-0 left-0 h-screen select-none bg-slate-800 text-slate-100 border-r border-slate-700/80 z-30 transition-all duration-300 ${collapsed ? "w-[68px]" : "w-[316px]"}`}>
       {/* 1. LEFT SLIM RAIL (Icon Rail - 68px) */}
-      <div className="w-[68px] flex-shrink-0 h-full border-r border-slate-800 flex flex-col items-center justify-between py-4 bg-slate-950">
+      <div className="w-[68px] flex-shrink-0 h-full border-r border-slate-700/70 flex flex-col items-center justify-between py-4 bg-slate-900">
         {/* Top Brand Logo Box */}
-        <div className="flex flex-col items-center gap-5">
+        <div className="flex flex-col items-center gap-4">
           <Link
             href="/"
             onClick={() => {
               if (collapsed) onToggleCollapse();
             }}
-            className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-700/80 text-white flex items-center justify-center shadow-md hover:border-emerald-400 hover:bg-slate-800 transition-all group overflow-hidden shrink-0"
+            className="w-10 h-10 rounded-lg bg-slate-800 border border-slate-700 text-white flex items-center justify-center hover:border-emerald-500 hover:bg-slate-700 transition group overflow-hidden shrink-0"
             title={companySettings.companyName || "CostCode Application"}
           >
             {companySettings.logoUrl ? (
               <img src={companySettings.logoUrl} alt="Logo" className="w-full h-full object-cover" />
             ) : (
               <div className="flex gap-0.5 items-center justify-center">
-                <span className="w-1 h-4 bg-emerald-400 rounded-full group-hover:h-5 transition-all" />
+                <span className="w-1 h-4 bg-emerald-400 rounded-full" />
                 <span className="w-1 h-5 bg-white rounded-full" />
-                <span className="w-1 h-3 bg-emerald-400 rounded-full group-hover:h-4 transition-all" />
+                <span className="w-1 h-3 bg-emerald-400 rounded-full" />
               </div>
             )}
           </Link>
@@ -176,13 +177,14 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
                 setFilterSearch("");
                 if (collapsed) onToggleCollapse();
               }}
-              className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${currentTab === "main" || (currentTab === "all" && !isSettingsActive && !pathname.startsWith("/views/"))
-                  ? "bg-emerald-500 text-white font-bold shadow-md shadow-emerald-500/30"
-                  : "text-slate-400 hover:text-white hover:bg-slate-800/80"
-                }`}
+              className={`w-10 h-10 rounded-lg flex items-center justify-center transition ${
+                currentTab === "main" || (currentTab === "all" && !isSettingsActive && !pathname.startsWith("/views/"))
+                  ? "bg-emerald-600 text-white font-bold shadow-sm"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800"
+              }`}
               title="เมนูหลัก (WORKPLACE)"
             >
-              <LayoutGrid size={20} strokeWidth={2.2} />
+              <LayoutGrid size={19} />
             </button>
 
             {/* Mode 2: Master Submenus (เมนูย่อย / ข้อมูลมาสเตอร์) */}
@@ -193,16 +195,17 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
                 setFilterSearch("");
                 if (collapsed) onToggleCollapse();
               }}
-              className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${currentTab === "master" || (currentTab === "all" && pathname.startsWith("/views/"))
-                  ? "bg-emerald-500 text-white font-bold shadow-md shadow-emerald-500/30"
-                  : "text-slate-400 hover:text-white hover:bg-slate-800/80"
-                }`}
+              className={`w-10 h-10 rounded-lg flex items-center justify-center transition ${
+                currentTab === "master" || (currentTab === "all" && pathname.startsWith("/views/"))
+                  ? "bg-sky-600 text-white font-bold shadow-sm"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800"
+              }`}
               title="เมนูย่อย / ข้อมูลมาสเตอร์ (MANAGEMENT)"
             >
-              <Layers size={20} strokeWidth={2.2} />
+              <Layers size={19} />
             </button>
 
-            <div className="w-6 h-px bg-slate-800 my-1" />
+            <div className="w-6 h-px bg-slate-700/60 my-1" />
 
             {/* Mode 3: System & Settings (ตั้งค่าระบบ) */}
             <button
@@ -212,36 +215,37 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
                 setFilterSearch("");
                 if (collapsed) onToggleCollapse();
               }}
-              className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isSettingsActive || currentTab === "system"
-                  ? "bg-amber-500 text-white font-bold shadow-md shadow-amber-500/30"
-                  : "text-amber-400/80 hover:text-amber-200 hover:bg-slate-800/80"
-                }`}
+              className={`w-10 h-10 rounded-lg flex items-center justify-center transition ${
+                isSettingsActive || currentTab === "system"
+                  ? "bg-amber-600 text-white font-bold shadow-sm"
+                  : "text-slate-400 hover:text-amber-300 hover:bg-slate-800"
+              }`}
               title="ตั้งค่าระบบ (SYSTEM)"
             >
-              <Database size={20} strokeWidth={2.2} />
+              <Database size={19} />
             </button>
           </nav>
         </div>
 
         {/* Bottom Rail Dock Tools */}
-        <div className="flex flex-col items-center gap-3">
+        <div className="flex flex-col items-center gap-2">
           {/* Toggle Expand/Collapse */}
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="w-9 h-9 rounded-xl border border-slate-800 bg-slate-900 text-slate-300 hover:text-white hover:bg-slate-800 flex items-center justify-center transition shadow-2xs cursor-pointer"
+            className="w-9 h-9 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 flex items-center justify-center transition cursor-pointer"
             title={collapsed ? "ขยายแถบข้าง" : "ย่อแถบข้าง"}
           >
-            {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+            {collapsed ? <ChevronRight size={17} /> : <ChevronLeft size={17} />}
           </button>
 
           {/* Notification Bell */}
           <button
             type="button"
-            className="relative w-9 h-9 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/80 flex items-center justify-center transition cursor-pointer"
+            className="relative w-9 h-9 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 flex items-center justify-center transition cursor-pointer"
             title="การแจ้งเตือน"
           >
-            <Bell size={19} />
+            <Bell size={18} />
             <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           </button>
 
@@ -254,47 +258,43 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
 
       {/* 2. RIGHT SECONDARY DRAWER PANEL (248px) */}
       {!collapsed && (
-        <div className="w-[248px] flex-shrink-0 flex flex-col h-full bg-slate-900 text-slate-100 overflow-hidden border-r border-slate-800">
+        <div className="w-[248px] flex-shrink-0 flex flex-col h-full bg-slate-800/95 text-slate-100 overflow-hidden border-r border-slate-700/60">
           {/* Top Brand & Search Overlay Panel */}
-          <div className="p-3.5 border-b border-slate-800/80 bg-slate-900/95 sticky top-0 z-10 space-y-2.5">
+          <div className="p-3 border-b border-slate-700/70 bg-slate-800 sticky top-0 z-10 space-y-2">
             {/* Expanded Company Brand Header (Text Only - Logo is on the Left Rail) */}
             <div className="px-1 py-0.5">
-              <div className="text-xs font-extrabold text-white truncate leading-tight">
+              <div className="text-xs font-bold text-white truncate leading-tight">
                 {companySettings.companyName || "CostLab Executive"}
               </div>
               {companySettings.companySubTitle && (
-                <div className="text-[10px] text-slate-400 font-medium truncate leading-tight mt-0.5">
+                <div className="text-[11px] text-slate-400 font-normal truncate leading-tight mt-0.5">
                   {companySettings.companySubTitle}
                 </div>
               )}
             </div>
 
             {/* Search Input Bar */}
-            <div className="relative flex items-center h-9">
-              <Search size={14} className="absolute left-3 text-slate-400 pointer-events-none z-10" />
+            <div className="relative flex items-center">
+              <Search size={14} className="absolute left-2.5 text-slate-400 pointer-events-none" />
               <input
                 type="text"
                 placeholder="ค้นหาเมนู..."
                 value={filterSearch}
                 onChange={(e) => setFilterSearch(e.target.value)}
                 autoComplete="off"
-                style={{ paddingLeft: "32px", paddingRight: "36px" }}
-                className="w-full h-full bg-slate-950 text-white text-xs font-medium rounded-xl border border-slate-800 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-slate-500 leading-normal"
+                className="w-full bg-slate-900 text-white text-xs pl-8 pr-3 py-1.5 rounded-md border border-slate-700 focus:border-slate-500 focus:outline-none placeholder:text-slate-500"
               />
-              <span className="absolute right-2 px-1.5 py-0.5 bg-slate-800 border border-slate-700/60 rounded text-[10px] font-mono text-slate-400 pointer-events-none">
-                ⌘K
-              </span>
             </div>
           </div>
 
           {/* Menu Items Container */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-5 text-xs font-medium scrollbar-thin">
+          <div className="flex-1 overflow-y-auto p-3 space-y-4 text-xs font-normal">
             {/* SECTION 1: เมนูหลัก (WORKPLACE) */}
             {(currentTab === "all" || currentTab === "main") && (
               <div className="space-y-1">
-                <div className="px-2 pb-1.5 flex items-center justify-between text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
+                <div className="px-2 pb-1 flex items-center justify-between text-[10px] font-bold tracking-wider text-slate-400 uppercase">
                   <span>เมนูหลัก (WORKPLACE)</span>
-                  <span className="text-[9px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded-md border border-slate-700/60 font-semibold">
+                  <span className="text-[10px] bg-slate-700 text-emerald-300 px-1.5 py-0.2 rounded border border-slate-600 font-semibold">
                     {filteredMainViews.length}
                   </span>
                 </div>
@@ -307,16 +307,18 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
                       <Link
                         key={view.id}
                         href={href}
-                        className={`flex items-center gap-2.5 px-2.5 py-2 rounded-xl transition-all ${active
-                            ? "bg-emerald-500 text-white font-extrabold shadow-md shadow-emerald-500/25"
-                            : "text-slate-200 hover:text-white hover:bg-slate-800/80 font-medium"
-                          }`}
+                        className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-md transition ${
+                          active
+                            ? "bg-slate-700 text-white font-bold border-l-2 border-emerald-400"
+                            : "text-slate-300 hover:text-white hover:bg-slate-700/60 font-normal"
+                        }`}
                       >
                         <span
-                          className={`w-6 h-6 rounded-lg flex items-center justify-center ${active ? "bg-emerald-400 text-emerald-950 font-bold" : "bg-slate-800 text-emerald-400"
-                            }`}
+                          className={`w-5 h-5 rounded flex items-center justify-center ${
+                            active ? "bg-emerald-600 text-white font-bold" : "bg-slate-700/80 text-emerald-400"
+                          }`}
                         >
-                          <Icon size={14} strokeWidth={2.2} />
+                          <Icon size={13} />
                         </span>
                         <span className="truncate">{view.name}</span>
                       </Link>
@@ -329,9 +331,9 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
             {/* SECTION 2: เมนูย่อย / ข้อมูลมาสเตอร์ (MANAGEMENT) */}
             {(currentTab === "all" || currentTab === "master") && (
               <div className="space-y-1">
-                <div className="px-2 pb-1.5 flex items-center justify-between text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
+                <div className="px-2 pb-1 flex items-center justify-between text-[10px] font-bold tracking-wider text-slate-400 uppercase">
                   <span>เมนูย่อย (MANAGEMENT)</span>
-                  <span className="text-[9px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded-md border border-slate-700/60 font-semibold">
+                  <span className="text-[10px] bg-slate-700 text-sky-300 px-1.5 py-0.2 rounded border border-slate-600 font-semibold">
                     {filteredMasterViews.length}
                   </span>
                 </div>
@@ -344,16 +346,18 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
                       <Link
                         key={view.id}
                         href={href}
-                        className={`flex items-center gap-2.5 px-2.5 py-2 rounded-xl transition-all ${active
-                            ? "bg-emerald-500 text-white font-extrabold shadow-md shadow-emerald-500/25"
-                            : "text-slate-200 hover:text-white hover:bg-slate-800/80 font-medium"
-                          }`}
+                        className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-md transition ${
+                          active
+                            ? "bg-slate-700 text-white font-bold border-l-2 border-sky-400"
+                            : "text-slate-300 hover:text-white hover:bg-slate-700/60 font-normal"
+                        }`}
                       >
                         <span
-                          className={`w-6 h-6 rounded-lg flex items-center justify-center ${active ? "bg-emerald-400 text-emerald-950 font-bold" : "bg-slate-800 text-emerald-400"
-                            }`}
+                          className={`w-5 h-5 rounded flex items-center justify-center ${
+                            active ? "bg-sky-600 text-white font-bold" : "bg-slate-700/80 text-sky-400"
+                          }`}
                         >
-                          <Icon size={14} strokeWidth={2.2} />
+                          <Icon size={13} />
                         </span>
                         <span className="truncate">{view.name}</span>
                       </Link>
@@ -366,70 +370,96 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
             {/* SECTION 3: ตั้งค่าระบบ (SYSTEM & ACCOUNT) */}
             {(currentTab === "all" || currentTab === "system") && (
               <div className="space-y-1">
-                <div className="px-2 pb-1.5 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
+                <div className="px-2 pb-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
                   ตั้งค่าระบบ (SYSTEM & ACCOUNT)
                 </div>
                 <div className="space-y-0.5">
                   <Link
                     href="/settings/general"
-                    className={`flex items-center gap-2.5 px-2.5 py-2 rounded-xl transition-all ${isGeneralSettingsActive
-                        ? "bg-emerald-600 text-white font-extrabold shadow-md shadow-emerald-600/25"
-                        : "text-slate-200 hover:text-white hover:bg-slate-800/80 font-medium"
-                      }`}
+                    className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-md transition ${
+                      isGeneralSettingsActive
+                        ? "bg-slate-700 text-white font-bold border-l-2 border-amber-400"
+                        : "text-slate-300 hover:text-white hover:bg-slate-700/60 font-normal"
+                    }`}
                   >
                     <span
-                      className={`w-6 h-6 rounded-lg flex items-center justify-center ${isGeneralSettingsActive ? "bg-emerald-200 text-emerald-950 font-bold" : "bg-slate-800 text-emerald-400"
-                        }`}
+                      className={`w-5 h-5 rounded flex items-center justify-center ${
+                        isGeneralSettingsActive ? "bg-amber-600 text-white font-bold" : "bg-slate-700/80 text-amber-400"
+                      }`}
                     >
-                      <Building2 size={14} strokeWidth={2.2} />
+                      <Building2 size={13} />
                     </span>
                     <span className="truncate">ตั้งค่าทั่วไป & โลโก้</span>
                   </Link>
 
                   <Link
                     href="/settings"
-                    className={`flex items-center gap-2.5 px-2.5 py-2 rounded-xl transition-all ${pathname === "/settings"
-                        ? "bg-amber-500 text-white font-extrabold shadow-md shadow-amber-500/25"
-                        : "text-slate-200 hover:text-white hover:bg-slate-800/80 font-medium"
-                      }`}
+                    className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-md transition ${
+                      pathname === "/settings"
+                        ? "bg-slate-700 text-white font-bold border-l-2 border-amber-400"
+                        : "text-slate-300 hover:text-white hover:bg-slate-700/60 font-normal"
+                    }`}
                   >
                     <span
-                      className={`w-6 h-6 rounded-lg flex items-center justify-center ${pathname === "/settings" ? "bg-amber-300 text-amber-950 font-bold" : "bg-slate-800 text-amber-400"
-                        }`}
+                      className={`w-5 h-5 rounded flex items-center justify-center ${
+                        pathname === "/settings" ? "bg-amber-600 text-white font-bold" : "bg-slate-700/80 text-amber-400"
+                      }`}
                     >
-                      <Database size={14} strokeWidth={2.2} />
+                      <Database size={13} />
                     </span>
                     <span className="truncate">สถานะ Supabase</span>
                   </Link>
 
                   <Link
-                    href="/settings/line-system"
-                    className={`flex items-center gap-2.5 px-2.5 py-2 rounded-xl transition-all ${pathname.startsWith("/settings/line-system") || pathname.startsWith("/line-system")
-                        ? "bg-emerald-500 text-white font-extrabold shadow-md shadow-emerald-500/25"
-                        : "text-slate-200 hover:text-white hover:bg-slate-800/80 font-medium"
-                      }`}
+                    href="/settings/options"
+                    className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-md transition ${
+                      pathname.startsWith("/settings/options")
+                        ? "bg-slate-700 text-white font-bold border-l-2 border-purple-400"
+                        : "text-slate-300 hover:text-white hover:bg-slate-700/60 font-normal"
+                    }`}
                   >
                     <span
-                      className={`w-6 h-6 rounded-lg flex items-center justify-center ${pathname.startsWith("/settings/line-system") || pathname.startsWith("/line-system") ? "bg-emerald-300 text-emerald-950 font-bold" : "bg-slate-800 text-emerald-400"
-                        }`}
+                      className={`w-5 h-5 rounded flex items-center justify-center ${
+                        pathname.startsWith("/settings/options") ? "bg-purple-600 text-white font-bold" : "bg-slate-700/80 text-purple-400"
+                      }`}
                     >
-                      <MessageSquare size={14} strokeWidth={2.2} />
+                      <Sliders size={13} />
+                    </span>
+                    <span className="truncate">ตั้งค่าตัวเลือกระบบ</span>
+                  </Link>
+
+                  <Link
+                    href="/settings/line-system"
+                    className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-md transition ${
+                      pathname.startsWith("/settings/line-system") || pathname.startsWith("/line-system")
+                        ? "bg-slate-700 text-white font-bold border-l-2 border-emerald-400"
+                        : "text-slate-300 hover:text-white hover:bg-slate-700/60 font-normal"
+                    }`}
+                  >
+                    <span
+                      className={`w-5 h-5 rounded flex items-center justify-center ${
+                        pathname.startsWith("/settings/line-system") || pathname.startsWith("/line-system") ? "bg-emerald-600 text-white font-bold" : "bg-slate-700/80 text-emerald-400"
+                      }`}
+                    >
+                      <MessageSquare size={13} />
                     </span>
                     <span className="truncate">ระบบ LINE Bot</span>
                   </Link>
 
                   <Link
                     href="/settings/users"
-                    className={`flex items-center gap-2.5 px-2.5 py-2 rounded-xl transition-all ${pathname.startsWith("/settings/users") || pathname.startsWith("/users")
-                        ? "bg-sky-500 text-white font-extrabold shadow-md shadow-sky-500/25"
-                        : "text-slate-200 hover:text-white hover:bg-slate-800/80 font-medium"
-                      }`}
+                    className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-md transition ${
+                      pathname.startsWith("/settings/users") || pathname.startsWith("/users")
+                        ? "bg-slate-700 text-white font-bold border-l-2 border-sky-400"
+                        : "text-slate-300 hover:text-white hover:bg-slate-700/60 font-normal"
+                    }`}
                   >
                     <span
-                      className={`w-6 h-6 rounded-lg flex items-center justify-center ${pathname.startsWith("/settings/users") || pathname.startsWith("/users") ? "bg-sky-300 text-sky-950 font-bold" : "bg-slate-800 text-sky-400"
-                        }`}
+                      className={`w-5 h-5 rounded flex items-center justify-center ${
+                        pathname.startsWith("/settings/users") || pathname.startsWith("/users") ? "bg-sky-600 text-white font-bold" : "bg-slate-700/80 text-sky-400"
+                      }`}
                     >
-                      <IdCard size={14} strokeWidth={2.2} />
+                      <IdCard size={13} />
                     </span>
                     <span className="truncate">จัดการผู้ใช้ระบบ</span>
                   </Link>
@@ -439,7 +469,7 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
           </div>
 
           {/* Right Panel Footer (User Switcher) */}
-          <div className="p-3 border-t border-slate-800/80 bg-slate-950">
+          <div className="p-3 border-t border-slate-700/80 bg-slate-900">
             <UserSwitcher currentUser={currentUser} compact theme="dark" />
           </div>
         </div>

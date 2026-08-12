@@ -1,6 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
 export { supabaseAdmin };
-import { cached } from "@/lib/cache";
 import { normalizeDateToIso } from "@/lib/dates";
 
 export type SheetRow = Record<string, any>;
@@ -292,6 +291,27 @@ export function mapSheetRowToSupabaseRow(tableName: string, row: Record<string, 
     const rawDate = row["ว/ด/ป"] ?? row.bill_date;
     if (hasValue(rawDate)) dbRow.bill_date = normalizeDateToIso(rawDate);
 
+    const rawBillReceived = row["วันได้บิล"] ?? row.bill_received_date;
+    if (hasValue(rawBillReceived)) {
+      const iso = normalizeDateToIso(rawBillReceived) || String(rawBillReceived).trim();
+      dbRow.bill_received_date = iso;
+      dbRow["วันได้บิล"] = iso;
+    }
+
+    const rawWhtIssued = row["วันออก 3%"] ?? row.wht_issued_date;
+    if (hasValue(rawWhtIssued)) {
+      const iso = normalizeDateToIso(rawWhtIssued) || String(rawWhtIssued).trim();
+      dbRow.wht_issued_date = iso;
+      dbRow["วันออก 3%"] = iso;
+    }
+
+    const rawPaidDate = row["วันจ่าย"] ?? row.paid_date;
+    if (hasValue(rawPaidDate)) {
+      const iso = normalizeDateToIso(rawPaidDate) || String(rawPaidDate).trim();
+      dbRow.paid_date = iso;
+      dbRow["วันจ่าย"] = iso;
+    }
+
     if (hasValue(row["ค่าของ"] ?? row.material_cost)) dbRow.material_cost = toNumber(row["ค่าของ"] ?? row.material_cost);
     if (hasValue(row["ค่าแรง"] ?? row.labor_cost)) dbRow.labor_cost = toNumber(row["ค่าแรง"] ?? row.labor_cost);
     if (hasValue(row["พนักงาน"] ?? row.staff_cost)) dbRow.staff_cost = toNumber(row["พนักงาน"] ?? row.staff_cost);
@@ -437,14 +457,61 @@ export async function saveEntityBankOption(entityId: string, bankVal: string) {
 
 export async function getEntityBankMapFromSupabase(): Promise<Record<string, string>> {
   if (!isSupabaseConfigured()) return {};
-  return cached("entity_banks_map", 300_000, async () => {
-    try {
-      const { data } = await supabaseAdmin.from("system_options").select("*").eq("id", "entity_banks").maybeSingle();
-      return (data?.data && typeof data.data === "object") ? data.data : {};
-    } catch (e) {
-      return {};
+  try {
+    const { data } = await supabaseAdmin.from("system_options").select("*").eq("id", "entity_banks").maybeSingle();
+    return (data?.data && typeof data.data === "object") ? data.data : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+export async function saveBillFollowDate(billId: string, patch: Record<string, any>) {
+  if (!isSupabaseConfigured() || !billId) return;
+  const followKeys = ["วันได้บิล", "วันออก 3%", "วันจ่าย"];
+  const datesToSave: Record<string, string> = {};
+  for (const k of followKeys) {
+    if (patch[k]) datesToSave[k] = String(patch[k]);
+  }
+  if (!Object.keys(datesToSave).length) return;
+
+  try {
+    const { data } = await supabaseAdmin.from("system_options").select("*").eq("id", "bill_follow_dates").maybeSingle();
+    const existingMap = (data?.data && typeof data.data === "object") ? { ...data.data } : {};
+    
+    const mainKey = String(billId).trim();
+    if (mainKey) {
+      existingMap[mainKey] = {
+        ...(existingMap[mainKey] || {}),
+        ...datesToSave
+      };
     }
-  });
+
+    const altSeq = String(patch["ลำดับ"] || patch.id || patch._sheetRow || "").trim();
+    if (altSeq && altSeq !== mainKey) {
+      existingMap[altSeq] = {
+        ...(existingMap[altSeq] || {}),
+        ...datesToSave
+      };
+    }
+
+    await supabaseAdmin.from("system_options").upsert({
+      id: "bill_follow_dates",
+      data: existingMap,
+      updated_at: new Date().toISOString()
+    });
+  } catch (e) {
+    console.warn("Failed to persist bill follow dates in system_options:", e);
+  }
+}
+
+export async function getBillFollowDatesFromSupabase(): Promise<Record<string, Record<string, string>>> {
+  if (!isSupabaseConfigured()) return {};
+  try {
+    const { data } = await supabaseAdmin.from("system_options").select("*").eq("id", "bill_follow_dates").maybeSingle();
+    return (data?.data && typeof data.data === "object") ? data.data : {};
+  } catch {
+    return {};
+  }
 }
 
 export async function updateRowInSupabase(tableName: string, keyColumn: string, keyValue: any, patch: Record<string, any>) {
@@ -462,6 +529,20 @@ export async function updateRowInSupabase(tableName: string, keyColumn: string, 
   const bankVal = patch["ธนาคาร"] || patch["bank_name"];
   if (bankVal && primaryVal) {
     saveEntityBankOption(String(primaryVal), String(bankVal));
+  }
+
+  const followKeys = ["วันได้บิล", "วันออก 3%", "วันจ่าย"];
+  if (followKeys.some(k => k in patch)) {
+    const targetBillId = String(patch["ลำดับ"] ?? patch.id ?? primaryVal ?? keyValue);
+    await saveBillFollowDate(targetBillId, patch);
+  }
+
+  try {
+    const { data: currentRecord } = await supabaseAdmin.from(dbTable).select("data").eq("id", primaryVal).maybeSingle();
+    const existingData = (currentRecord && currentRecord.data && typeof currentRecord.data === "object") ? currentRecord.data : {};
+    dbPatch.data = { ...existingData, ...patch };
+  } catch {
+    dbPatch.data = { ...patch };
   }
 
   try {
@@ -558,11 +639,14 @@ export async function getRowsFromSupabase(tableName: string, maxRows = 10_000): 
   try {
     const isAscending = dbTable !== "bills";
     const rangeEnd = Math.max(0, maxRows - 1);
-    const [mainResult, entityBankMap] = await Promise.all([
+    const [mainResult, entityBankMap, billFollowDatesMap] = await Promise.all([
       supabaseAdmin.from(dbTable).select("*").order("id", { ascending: isAscending }).range(0, rangeEnd),
       (dbTable === "stores" || dbTable === "contractors" || dbTable === "master_members")
         ? getEntityBankMapFromSupabase()
-        : Promise.resolve({} as Record<string, string>)
+        : Promise.resolve({} as Record<string, string>),
+      dbTable === "bills"
+        ? getBillFollowDatesFromSupabase()
+        : Promise.resolve({} as Record<string, Record<string, string>>)
     ]);
 
     const { data, error } = mainResult;
@@ -577,6 +661,17 @@ export async function getRowsFromSupabase(tableName: string, maxRows = 10_000): 
       if ((!res["ธนาคาร"] || res["ธนาคาร"] === "-") && entityId && entityBankMap[entityId]) {
         res["ธนาคาร"] = entityBankMap[entityId];
       }
+
+      if (dbTable === "bills") {
+        const bId = String(res["ลำดับ"] || res._sheetRow || res.id || "");
+        if (bId && billFollowDatesMap[bId]) {
+          const dates = billFollowDatesMap[bId];
+          if (dates["วันได้บิล"]) res["วันได้บิล"] = dates["วันได้บิล"];
+          if (dates["วันออก 3%"]) res["วันออก 3%"] = dates["วันออก 3%"];
+          if (dates["วันจ่าย"]) res["วันจ่าย"] = dates["วันจ่าย"];
+        }
+      }
+
       return res;
     });
 

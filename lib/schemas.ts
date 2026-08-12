@@ -136,10 +136,10 @@ export const FORM_SCHEMAS: Record<string, FieldSchema[]> = {
   [TABLES.CAR]: [
     { name: "id_car", type: "Text", key: true, initialValue: "nextCarId", required: true },
     { name: "หมายเลขทะเบียน", type: "Text", required: true },
-    { name: "ยี่ห้อรถ", type: "Text" },
+    { name: "ยี่ห้อรถ", type: "Enum", values: ["Toyota", "Isuzu", "Ford", "Mitsubishi", "Nissan", "Honda", "MG", "Mazda"], inputMode: "dropdown" },
     { name: "สี", type: "Text" },
     { name: "รับผิดชอบ", type: "Text" },
-    { name: "รถของ", type: "Text" }
+    { name: "รถของ", type: "Enum", values: ["รถบริษัท", "รถส่วนตัว", "รถเช่า"], inputMode: "buttons" }
   ],
   [TABLES.CUSTOMER]: [
     { name: "id_cus", type: "Text", key: true, initialValue: "nextCustomerId", required: true },
@@ -178,7 +178,7 @@ export const FORM_SCHEMAS: Record<string, FieldSchema[]> = {
         "สถานที่": "สถานที่"
       }
     },
-    { name: "ชื่อ Project", type: "Text", readonly: true },
+    { name: "ชื่อ Project", type: "Hidden" },
     {
       name: "id_Contractor",
       type: "Ref",
@@ -186,6 +186,7 @@ export const FORM_SCHEMAS: Record<string, FieldSchema[]> = {
       refKey: "id_Contractor",
       refLabel: "ชื่อเล่น",
       required: true,
+      initialValue: "",
       refFill: {
         "ชื่อเล่น": "ชื่อเล่น",
         "ชื่อ-นามสกุล": "ชื่อ-นามสกุล",
@@ -196,7 +197,7 @@ export const FORM_SCHEMAS: Record<string, FieldSchema[]> = {
         "ที่อยู่": "ที่อยู่"
       }
     },
-    { name: "ชื่อเล่น", type: "Text", readonly: true },
+    { name: "ชื่อเล่น", type: "Hidden" },
     { name: "ชื่อ-นามสกุล", type: "Text", readonly: true },
     { name: "เลขบัญชี", type: "Text", readonly: true },
     { name: "ธนาคาร", type: "Ref", refTable: TABLES.BANK, refKey: "id_bank", refLabel: "ชื่อธนาคาร", readonly: true },

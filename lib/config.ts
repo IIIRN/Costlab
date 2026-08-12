@@ -61,8 +61,7 @@ export const PRIMARY_VIEWS = [
   { id: "cars", name: "7. ทะเบียนรถ", type: "table", table: TABLES.CAR, position: "menu" },
   { id: "customers", name: "8. ลูกค้า", type: "table", table: TABLES.CUSTOMER, position: "menu" },
   { id: "companies", name: "9. บริษัท", type: "table", table: TABLES.COMPANY, position: "menu" },
-  { id: "loans", name: "10. ยืมเงิน", type: "table", table: TABLES.LOAN, position: "menu" },
-  { id: "products", name: "11. ประเภทสินค้า", type: "table", table: TABLES.PRODUCT, position: "menu" }
+  { id: "loans", name: "10. ยืมเงิน", type: "table", table: TABLES.LOAN, position: "menu" }
 ] as const;
 
 export const VIEW_COLUMNS: Record<string, string[]> = {
