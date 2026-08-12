@@ -116,88 +116,91 @@ export function BillsDashboardClient({
 
   return (
     <div className="w-full flex flex-col gap-4 p-4 sm:p-5 max-w-[1600px] mx-auto font-sans text-sm text-slate-800">
-      {/* 1. EXECUTIVE SUMMARY KPI CARDS */}
-      <div className="hidden md:grid grid-cols-1 sm:grid-cols-4 gap-3">
-        <div className="bg-white rounded-md p-3 border border-slate-200">
-          <span className="text-xs font-semibold text-slate-500">รายการบิลทั้งหมด</span>
-          <div className="text-lg font-bold text-slate-900 mt-1">{filteredRows.length} รายการ</div>
+      {/* 1. EXECUTIVE SUMMARY KPI CARDS (2x2 on Mobile, 4-col on Desktop) */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3">
+        <div className="bg-white rounded-md p-2.5 sm:p-3 border border-slate-200 shadow-2xs">
+          <span className="text-[11px] sm:text-xs font-semibold text-slate-500 block truncate">รายการบิลทั้งหมด</span>
+          <div className="text-base sm:text-lg font-bold text-slate-900 mt-0.5">{filteredRows.length} รายการ</div>
         </div>
 
-        <div className="bg-white rounded-md p-3 border border-slate-200">
-          <span className="text-xs font-semibold text-slate-500">รวมยอดเงินบิล</span>
-          <div className="text-lg font-bold text-slate-900 mt-1">{money(totalAmount)}</div>
+        <div className="bg-white rounded-md p-2.5 sm:p-3 border border-slate-200 shadow-2xs">
+          <span className="text-[11px] sm:text-xs font-semibold text-slate-500 block truncate">รวมยอดเงินบิล</span>
+          <div className="text-base sm:text-lg font-bold text-slate-900 mt-0.5">{money(totalAmount)}</div>
         </div>
 
-        <div className="bg-white rounded-md p-3 border border-slate-200">
-          <span className="text-xs font-semibold text-slate-500">ยอดอนุมัติ/เบิกแล้ว</span>
-          <div className="text-lg font-bold text-emerald-700 mt-1">{money(approvedAmount)}</div>
+        <div className="bg-white rounded-md p-2.5 sm:p-3 border border-slate-200 shadow-2xs">
+          <span className="text-[11px] sm:text-xs font-semibold text-slate-500 block truncate">ยอดอนุมัติ/เบิกแล้ว</span>
+          <div className="text-base sm:text-lg font-bold text-emerald-700 mt-0.5">{money(approvedAmount)}</div>
         </div>
 
-        <div className="bg-white rounded-md p-3 border border-slate-200">
-          <span className="text-xs font-semibold text-slate-500">ยอดรออนุมัติ</span>
-          <div className="text-lg font-bold text-amber-700 mt-1">{money(pendingAmount)}</div>
+        <div className="bg-white rounded-md p-2.5 sm:p-3 border border-slate-200 shadow-2xs">
+          <span className="text-[11px] sm:text-xs font-semibold text-slate-500 block truncate">ยอดรออนุมัติ</span>
+          <div className="text-base sm:text-lg font-bold text-amber-700 mt-0.5">{money(pendingAmount)}</div>
         </div>
       </div>
 
       {/* 2. FILTER TOOLBAR */}
-      <div className="hidden md:flex border border-slate-200 rounded-md p-3 bg-white flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+      <div className="flex border border-slate-200 rounded-md p-3 bg-white flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
         <div className="flex flex-wrap items-center gap-3 flex-1">
-          {/* Requester Filter */}
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-slate-700 whitespace-nowrap">ผู้เบิก:</span>
-            <select
-              value={filters.requester}
-              onChange={event => updateFilter("requester", event.target.value)}
-              className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none cursor-pointer"
-            >
-              <option value="">ทั้งหมด</option>
-              {peopleRows.map(row => {
-                const key = String(row["รหัสพนักงาน"] || row["ชื่อเล่น"] || row._sheetRow || "");
-                const label = row["ชื่อเล่น"] ? `${key} - ${row["ชื่อเล่น"]}` : key;
-                return key ? <option key={key} value={key}>{label}</option> : null;
-              })}
-            </select>
-          </div>
+          {/* Dropdown Filters (Hidden on Mobile as requested) */}
+          <div className="hidden md:flex flex-wrap items-center gap-3">
+            {/* Requester Filter */}
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-slate-700 whitespace-nowrap">ผู้เบิก:</span>
+              <select
+                value={filters.requester}
+                onChange={event => updateFilter("requester", event.target.value)}
+                className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none cursor-pointer"
+              >
+                <option value="">ทั้งหมด</option>
+                {peopleRows.map(row => {
+                  const key = String(row["รหัสพนักงาน"] || row["ชื่อเล่น"] || row._sheetRow || "");
+                  const label = row["ชื่อเล่น"] ? `${key} - ${row["ชื่อเล่น"]}` : key;
+                  return key ? <option key={key} value={key}>{label}</option> : null;
+                })}
+              </select>
+            </div>
 
-          {/* Date Filter */}
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-slate-700 whitespace-nowrap">วันที่:</span>
-            <input
-              type="date"
-              value={filters.date}
-              onChange={event => updateFilter("date", event.target.value)}
-              className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none cursor-pointer"
-            />
-          </div>
+            {/* Date Filter */}
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-slate-700 whitespace-nowrap">วันที่:</span>
+              <input
+                type="date"
+                value={filters.date}
+                onChange={event => updateFilter("date", event.target.value)}
+                className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none cursor-pointer"
+              />
+            </div>
 
-          {/* Bill Type Filter */}
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-slate-700 whitespace-nowrap">ประเภทบิล:</span>
-            <select
-              value={filters.bill}
-              onChange={event => updateFilter("bill", event.target.value)}
-              className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none cursor-pointer"
-            >
-              <option value="">ทั้งหมด</option>
-              <option value="หลัก">หลัก</option>
-              <option value="ย่อย">ย่อย</option>
-            </select>
-          </div>
+            {/* Bill Type Filter */}
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-slate-700 whitespace-nowrap">ประเภทบิล:</span>
+              <select
+                value={filters.bill}
+                onChange={event => updateFilter("bill", event.target.value)}
+                className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none cursor-pointer"
+              >
+                <option value="">ทั้งหมด</option>
+                <option value="หลัก">หลัก</option>
+                <option value="ย่อย">ย่อย</option>
+              </select>
+            </div>
 
-          {/* Status Filter */}
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-slate-700 whitespace-nowrap">สถานะ:</span>
-            <select
-              value={filters.status}
-              onChange={event => updateFilter("status", event.target.value)}
-              className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none cursor-pointer"
-            >
-              <option value="">ทั้งหมด</option>
-              <option value="รออนุมัติ">รออนุมัติ</option>
-              <option value="ตั้งเบิก">ตั้งเบิก</option>
-              <option value="อนุมัติ">อนุมัติ</option>
-              <option value="เบิกแล้ว">เบิกแล้ว</option>
-            </select>
+            {/* Status Filter */}
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-slate-700 whitespace-nowrap">สถานะ:</span>
+              <select
+                value={filters.status}
+                onChange={event => updateFilter("status", event.target.value)}
+                className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none cursor-pointer"
+              >
+                <option value="">ทั้งหมด</option>
+                <option value="รออนุมัติ">รออนุมัติ</option>
+                <option value="ตั้งเบิก">ตั้งเบิก</option>
+                <option value="อนุมัติ">อนุมัติ</option>
+                <option value="เบิกแล้ว">เบิกแล้ว</option>
+              </select>
+            </div>
           </div>
 
           {/* Search Input */}

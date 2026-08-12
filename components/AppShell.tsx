@@ -147,11 +147,11 @@ export function AppShell({ children, peopleRows = [], currentUser = null }: { ch
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-200 text-slate-800 antialiased">
       {/* Mobile Navigation Header & Drawer (Hidden on Desktop) */}
       <div className="md:hidden block">
-        {/* Topbar - Fixed at top */}
-        <header className="h-14 bg-white border-b border-slate-200 px-4 flex items-center justify-between fixed top-0 inset-x-0 z-30 shadow-xs">
+        {/* Topbar - Fixed at top with Slate-900 Dark Background */}
+        <header className="h-14 bg-slate-900 border-b border-slate-800 px-4 flex items-center justify-between fixed top-0 inset-x-0 z-30 shadow-md text-white">
           <button
             type="button"
-            className="w-10 h-10 flex items-center justify-center rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+            className="w-10 h-10 flex items-center justify-center rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
             aria-label="เปิดเมนู"
             aria-expanded={mobileMenuOpen}
             onClick={() => setMobileMenuOpen(true)}
@@ -163,7 +163,7 @@ export function AppShell({ children, peopleRows = [], currentUser = null }: { ch
               <input
                 ref={mobileSearchInputRef}
                 type="search"
-                className="w-full h-9 px-3 text-sm bg-slate-100 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:bg-white"
+                className="w-full h-9 px-3 text-sm bg-slate-800 border border-slate-700 text-white placeholder:text-slate-400 rounded-lg focus:outline-none focus:border-slate-500"
                 aria-label="ค้นหา"
                 placeholder="ค้นหา..."
                 enterKeyHint="search"
@@ -177,23 +177,23 @@ export function AppShell({ children, peopleRows = [], currentUser = null }: { ch
                   if (event.key === "Escape") closeMobileSearch();
                 }}
               />
-              <button type="submit" className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-900 text-white shrink-0" aria-label="ค้นหา">
+              <button type="submit" className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-800 border border-slate-700 text-white shrink-0" aria-label="ค้นหา">
                 <Search size={16} />
               </button>
             </form>
           ) : (
-            <span className="font-bold text-slate-900 truncate max-w-[200px] text-center text-sm">{activeView.name}</span>
+            <span className="font-bold text-white truncate max-w-[200px] text-center text-sm">{activeView.name}</span>
           )}
           <div className="flex items-center gap-1">
             {mobileSearchOpen ? (
-              <button type="button" className="w-9 h-9 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100" aria-label="ปิดค้นหา" onClick={closeMobileSearch}><X size={20} /></button>
+              <button type="button" className="w-9 h-9 flex items-center justify-center rounded-lg text-slate-300 hover:bg-slate-800" aria-label="ปิดค้นหา" onClick={closeMobileSearch}><X size={20} /></button>
             ) : (
               <>
                 {mobileAddEvent ? (
-                  <button type="button" className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-100 text-slate-800 font-medium hover:bg-slate-200 border border-slate-300" aria-label="เพิ่มข้อมูล" onClick={() => window.dispatchEvent(new CustomEvent(mobileAddEvent))}><Plus size={20} /></button>
+                  <button type="button" className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-800 text-white font-medium hover:bg-slate-700 border border-slate-700" aria-label="เพิ่มข้อมูล" onClick={() => window.dispatchEvent(new CustomEvent(mobileAddEvent))}><Plus size={20} /></button>
                 ) : null}
-                <button type="button" className="w-9 h-9 flex items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100" aria-label="ค้นหา" onClick={() => setMobileSearchOpen(true)}><Search size={20} /></button>
-                <button type="button" className="w-9 h-9 flex items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100" aria-label="รีเฟรช" onClick={handleGlobalRefresh} disabled={refreshing}><RefreshCw size={19} className={refreshing ? "animate-spin" : ""} /></button>
+                <button type="button" className="w-9 h-9 flex items-center justify-center rounded-lg text-slate-300 hover:bg-slate-800" aria-label="ค้นหา" onClick={() => setMobileSearchOpen(true)}><Search size={20} /></button>
+                <button type="button" className="w-9 h-9 flex items-center justify-center rounded-lg text-slate-300 hover:bg-slate-800" aria-label="รีเฟรช" onClick={handleGlobalRefresh} disabled={refreshing}><RefreshCw size={19} className={refreshing ? "animate-spin" : ""} /></button>
               </>
             )}
           </div>
@@ -201,7 +201,7 @@ export function AppShell({ children, peopleRows = [], currentUser = null }: { ch
 
         {/* Drawer Backdrop */}
         <div
-          className={`fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 transition-opacity duration-300 ${mobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+          className={`fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-40 transition-opacity duration-300 ${mobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
           aria-hidden="true"
           onClick={() => setMobileMenuOpen(false)}
         />
@@ -246,8 +246,8 @@ export function AppShell({ children, peopleRows = [], currentUser = null }: { ch
           </div>
         </aside>
 
-        {/* Mobile Bottom Navigation Bar - Fixed at bottom */}
-        <nav className="fixed bottom-0 inset-x-0 h-16 bg-white border-t border-slate-200 flex items-center justify-around z-30 shadow-lg px-1">
+        {/* Mobile Bottom Navigation Bar - Fixed at bottom with Slate-900 Dark Background */}
+        <nav className="fixed bottom-0 inset-x-0 h-16 bg-slate-900 border-t border-slate-800 flex items-center justify-around z-30 shadow-2xl px-1 text-white">
           {mobileViews.map(view => {
             const href = hrefFor(view);
             const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -256,10 +256,10 @@ export function AppShell({ children, peopleRows = [], currentUser = null }: { ch
               <Link
                 key={view.id}
                 href={href}
-                className={`flex flex-col items-center justify-center w-full h-full py-1 text-xs font-medium transition-colors ${active ? "text-slate-900 font-bold" : "text-slate-500 hover:text-slate-800"
+                className={`flex flex-col items-center justify-center w-full h-full py-1 text-xs font-medium transition-colors ${active ? "text-white font-extrabold" : "text-slate-400 hover:text-slate-200"
                   }`}
               >
-                <span className={`p-1 rounded-lg ${active ? "bg-slate-100 text-slate-900" : ""}`}>
+                <span className={`p-1 rounded-lg ${active ? "bg-slate-800 text-white border border-slate-700" : ""}`}>
                   {Icon ? <Icon size={20} strokeWidth={active ? 2.3 : 1.8} /> : null}
                 </span>
                 <small className="mt-0.5 text-[10px] leading-none truncate max-w-[64px]">{view.name}</small>
