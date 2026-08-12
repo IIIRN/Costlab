@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  --color-app-bg: #f3f6fa;
+  --color-app-bg: #e2e8f0;
   --color-app-panel: #ffffff;
   --color-app-line: #d9e0e8;
   --color-app-text: #17212b;
@@ -218,8 +218,8 @@ table th {
   position: sticky;
   top: 0;
   z-index: 10;
-  background-color: #e2e8f0 !important;
-  color: #0f172a !important;
+  background-color: #065f46 !important;
+  color: #ffffff !important;
   font-weight: 800 !important;
   font-size: 11px !important;
   text-transform: uppercase;
@@ -227,8 +227,8 @@ table th {
   padding: 4px 8px !important;
   height: 34px !important;
   line-height: 1.2 !important;
-  border-bottom: 2px solid #cbd5e1 !important;
-  border-right: 1px solid #cbd5e1 !important;
+  border-bottom: 2px solid #044e39 !important;
+  border-right: 1px solid #044e39 !important;
   white-space: nowrap !important;
 }
 
@@ -324,9 +324,10 @@ table td {
   position: sticky !important;
   right: 0 !important;
   z-index: 20 !important;
-  background-color: #e2e8f0 !important;
+  background-color: #065f46 !important;
+  color: #ffffff !important;
   box-shadow: -4px 0 10px rgba(0, 0, 0, 0.05) !important;
-  border-left: 1px solid #cbd5e1 !important;
+  border-left: 1px solid #044e39 !important;
   width: 90px !important;
   min-width: 90px !important;
   max-width: 90px !important;

@@ -23,6 +23,7 @@ export default async function BillsPage({ searchParams }: BillsPageProps) {
     "ลำดับ",
     "ID Project",
     "ชื่อ Project",
+    "รูปถ่ายบิล",
     "ร้าน/บุคคล",
     "สินค้า/ทำงาน",
     "บิล",
@@ -31,9 +32,7 @@ export default async function BillsPage({ searchParams }: BillsPageProps) {
     "เงื่อนไข",
     "ผู้เบิก",
     "ว/ด/ป",
-    "รูปถ่ายบิล",
-    "สถานะ",
-    "จัดการ"
+    "สถานะ"
   ];
 
   const cookieStore = await cookies();
@@ -150,3 +149,4 @@ function billsHref(search: string, pageSize: number, sort: SortDirection) {
   const query = params.toString();
   return query ? `/bills?${query}` : "/bills";
 }
+

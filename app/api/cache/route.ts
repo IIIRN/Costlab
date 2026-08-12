@@ -5,3 +5,4 @@ export async function POST() {
   clearCache();
   return NextResponse.json({ success: true });
 }
+

@@ -1,9 +1,11 @@
 import Link from "next/link";
-import { ArrowLeft, BriefcaseBusiness, Building2, CreditCard, DollarSign, FileText, Pencil, User } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import { ContractDetailEditButton } from "@/components/ContractDetailEditButton";
 import { DataTable } from "@/components/tables/DataTable";
 import { isCommittedBill } from "@/lib/bill-status";
 import { TABLES } from "@/lib/config";
 import { hydrateBillRows, hydrateContractRows } from "@/lib/formulas";
+import { getFormPayload } from "@/lib/form";
 import { getRows } from "@/lib/sheets";
 import { money } from "@/lib/numbers";
 import type { SheetRow } from "@/lib/types";
@@ -53,10 +55,11 @@ export default async function ContractDetailPage({ params }: ContractDetailPageP
   const { contractId } = await params;
   const decodedContractId = decodeURIComponent(contractId).trim();
 
-  const [contractRows, rawDataRows, contractorRows] = await Promise.all([
+  const [contractRows, rawDataRows, contractorRows, form] = await Promise.all([
     getRows(TABLES.CONTRACT_WORK, 15_000).then(rows => hydrateContractRows(rows)).catch(() => []),
     getRows(TABLES.DATA, 15_000).catch(() => []),
-    getRows(TABLES.CONTRACTOR, 15_000).catch(() => [])
+    getRows(TABLES.CONTRACTOR, 15_000).catch(() => []),
+    getFormPayload(TABLES.CONTRACT_WORK).catch(() => null)
   ]);
 
   const dataRows = await hydrateBillRows(rawDataRows);
@@ -85,121 +88,80 @@ export default async function ContractDetailPage({ params }: ContractDetailPageP
   const payPercent = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
 
   return (
-    <div className="w-full flex flex-col gap-6 p-4 sm:p-6 max-w-[1400px] mx-auto font-sans">
-      {/* 1. EXECUTIVE HEADER BANNER */}
-      <div className="bg-slate-900 text-white rounded-2xl p-6 border border-slate-800 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Link
-            href="/contract-open"
-            className="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition border border-slate-700"
-            title="กลับไปหน้าเปิดจ้าง"
-          >
-            <ArrowLeft size={20} />
-          </Link>
-          <div>
-            <div className="flex items-center gap-2 text-emerald-400 text-xs font-extrabold uppercase tracking-wider">
-              <BriefcaseBusiness size={15} /> Contract Work Detail · {decodedContractId}
-            </div>
-            <h1 className="text-xl sm:text-2xl font-extrabold mt-0.5">{displayName}</h1>
-            <p className="text-slate-400 text-xs mt-1 flex items-center gap-2">
-              <Building2 size={13} className="text-indigo-400" />
-              <span>โครงการ: <strong className="text-slate-200">{projectName}</strong></span>
-            </p>
-          </div>
-        </div>
+    <div className="w-full flex flex-col gap-4 p-4 sm:p-5 max-w-[1400px] mx-auto font-sans text-sm text-slate-800">
 
+      {/* HEADER ROW */}
+      <div className="flex items-center justify-between gap-3 border-b border-slate-200 pb-3">
         <div className="flex items-center gap-3">
           <Link
-            href={`/contract-open?search=${encodeURIComponent(decodedContractId)}`}
-            className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-extrabold rounded-xl transition shadow-lg shadow-indigo-600/30 flex items-center gap-2"
+            href="/contract-open"
+            className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 transition"
           >
-            <Pencil size={15} />
-            <span>แก้ไขสัญญา</span>
+            <ArrowLeft size={14} />
+            <span>รายการเปิดจ้าง</span>
           </Link>
+          <span className="text-slate-300">/</span>
+          <span className="text-xs font-bold text-slate-700">{decodedContractId}</span>
         </div>
+        <ContractDetailEditButton form={form} row={contract} />
       </div>
 
-      {/* 2. FINANCIAL METRICS SUMMARY CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Card 1: Total Contract */}
-        <div className="bg-white border border-slate-200/90 p-5 rounded-2xl shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
-            <span>ยอดเงินจ้างรวม</span>
-            <DollarSign size={16} className="text-slate-500" />
-          </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-mono">
-            {money(total)}
-          </div>
-          <p className="text-xs text-slate-400 font-medium">มูลค่าสัญญางานรับเหมาทั้งหมด</p>
-        </div>
+      {/* TITLE & META */}
+      <div>
+        <h1 className="text-lg font-bold text-slate-900">{displayName}</h1>
+        <p className="text-xs text-slate-500 mt-0.5">โครงการ: <span className="font-semibold text-slate-700">{projectName}</span></p>
+      </div>
 
-        {/* Card 2: Paid Amount */}
-        <div className="bg-white border border-slate-200/90 p-5 rounded-2xl shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
-            <span>ยอดเงินจ่ายแล้ว</span>
-            <CreditCard size={16} className="text-emerald-500" />
-          </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-emerald-600 font-mono">
-            {money(paid)}
-          </div>
-          <div className="flex items-center gap-2 text-xs text-emerald-700 font-bold">
-            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden flex-1">
-              <div
-                className="bg-emerald-500 h-full rounded-full transition-all duration-500"
-                style={{ width: `${payPercent}%` }}
-              />
-            </div>
-            <span>{payPercent}%</span>
+      {/* FINANCIAL SUMMARY */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="border border-slate-200 rounded-md p-3 bg-white">
+          <div className="text-[11px] text-slate-400 font-medium mb-1">ยอดเงินจ้างรวม</div>
+          <div className="text-base font-bold text-slate-900">{money(total)}</div>
+        </div>
+        <div className="border border-slate-200 rounded-md p-3 bg-white">
+          <div className="text-[11px] text-slate-400 font-medium mb-1">ยอดจ่ายแล้ว</div>
+          <div className="text-base font-bold text-emerald-700">{money(paid)}</div>
+          <div className="mt-1.5 w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+            <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${payPercent}%` }} />
           </div>
         </div>
-
-        {/* Card 3: Remaining Balance */}
-        <div className="bg-white border border-slate-200/90 p-5 rounded-2xl shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
-            <span>ค่าแรงคงเหลือ</span>
-            <FileText size={16} className={remaining < 0 ? "text-rose-500" : "text-amber-500"} />
-          </div>
-          <div className={`text-2xl sm:text-3xl font-extrabold font-mono ${remaining < 0 ? "text-rose-600" : "text-slate-900"}`}>
+        <div className="border border-slate-200 rounded-md p-3 bg-white">
+          <div className="text-[11px] text-slate-400 font-medium mb-1">ค่าแรงคงเหลือ</div>
+          <div className={`text-base font-bold ${remaining < 0 ? "text-rose-600" : "text-slate-900"}`}>
             {money(remaining)}
+            {remaining < 0 && <span className="text-[10px] text-rose-500 ml-1">จ่ายเกิน</span>}
           </div>
-          <p className="text-xs text-slate-400 font-medium">
-            {remaining < 0 ? "⚠️ จ่ายเกินสัญญาจ้าง" : "จำนวนเงินคงเหลือผูกมัด"}
-          </p>
         </div>
       </div>
 
-      {/* 3. DETAILS & RELATED DATA WORKSPACE */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        {/* Left Column: Contract Information Card */}
-        <div className="lg:col-span-5 bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
-              <User size={16} className="text-indigo-600" />
-              <span>ข้อมูลสัญญาและผู้รับเหมา</span>
-            </h3>
-            <span className="px-2.5 py-0.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-mono font-bold">
-              {decodedContractId}
-            </span>
-          </div>
+      {/* DETAIL + RELATED BILLS */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
 
-          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-            {DETAIL_FIELDS.map(field => {
-              const val = contract[field];
-              const isAmount = amountField(field);
-              return (
-                <div key={field} className="p-3 bg-slate-50/80 rounded-xl border border-slate-200/60 space-y-1">
-                  <dt className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">{field}</dt>
-                  <dd className={`font-bold ${isAmount ? "text-indigo-700 font-mono text-xs" : "text-slate-800"}`}>
-                    {formatDetailValue(field, val)}
-                  </dd>
-                </div>
-              );
-            })}
-          </dl>
+        {/* Left: Contract Info Table */}
+        <div className="lg:col-span-4 border border-slate-200 rounded-md bg-white overflow-hidden">
+          <div className="px-3 py-2 border-b border-slate-200 bg-slate-50">
+            <h2 className="text-xs font-bold text-slate-700">ข้อมูลสัญญาและผู้รับเหมา</h2>
+          </div>
+          <table className="w-full text-xs">
+            <tbody className="divide-y divide-slate-100">
+              {DETAIL_FIELDS.map(field => {
+                const val = contract[field];
+                const isAmount = amountField(field);
+                return (
+                  <tr key={field}>
+                    <td className="px-3 py-2 text-slate-500 font-medium whitespace-nowrap w-[38%]">{field}</td>
+                    <td className={`px-3 py-2 font-semibold ${isAmount ? "text-indigo-700" : "text-slate-800"}`}>
+                      {formatDetailValue(field, val)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
 
-        {/* Right Column: Related Disbursement Bills Table Directly Integrated */}
-        <div className="lg:col-span-7">
+        {/* Right: Related Bills */}
+        <div className="lg:col-span-8">
           <DataTable
             columns={RELATED_COLUMNS}
             rows={relatedRows}

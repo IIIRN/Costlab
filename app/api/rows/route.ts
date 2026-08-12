@@ -84,25 +84,29 @@ export async function PATCH(request: NextRequest) {
     if (!existing) throw new Error("ไม่พบข้อมูลที่ต้องการแก้ไข");
     const values = { ...existing, ...patch };
     const patchKeys = Object.keys(patch).filter(key => key !== "_sheetRow");
-    const statusOnly = tableName === TABLES.DATA && patchKeys.length > 0 && patchKeys.every(key => key === "สถานะ");
+    const isFollowUpOrStatusPatch = tableName === TABLES.DATA && patchKeys.length > 0 && patchKeys.every(key =>
+      ["สถานะ", "วันได้บิล", "วันออก 3%", "วันจ่าย", "รูปถ่ายบิล", "ลำดับ"].includes(key)
+    );
 
     if (tableName === TABLES.DATA) {
       ensureBillVendorType(values);
       validateBillPatch(existing, patch, values);
     }
 
-    if (!statusOnly) {
+    if (!isFollowUpOrStatusPatch) {
       sanitizeBySchema(values, tableName);
       validateRequiredBySchema(values, tableName);
       if (tableName === TABLES.DATA) await validateBillRelations(values);
     }
-    const output = tableName === TABLES.CONTRACT_WORK
-      ? await applyContractFormulas(values)
-      : tableName === TABLES.PROJECT
-        ? applyProjectFormulas(values)
-        : tableName === TABLES.DATA
-          ? await applyBillFormulas(values)
-          : values;
+    const output = isFollowUpOrStatusPatch
+      ? values
+      : tableName === TABLES.CONTRACT_WORK
+        ? await applyContractFormulas(values)
+        : tableName === TABLES.PROJECT
+          ? applyProjectFormulas(values)
+          : tableName === TABLES.DATA
+            ? await applyBillFormulas(values)
+            : values;
     const row = await updateRow(tableName, sheetRow, output);
     await appendAuditLog({
       action: tableName === TABLES.DATA && Object.keys(patch).every(key => key === "สถานะ") ? "STATUS" : "UPDATE",
@@ -326,3 +330,4 @@ function isFile(value: FormDataEntryValue): value is File {
     "size" in value
   );
 }
+

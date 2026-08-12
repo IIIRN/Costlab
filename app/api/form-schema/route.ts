@@ -6,3 +6,4 @@ export async function GET(request: NextRequest) {
   if (!tableName) return NextResponse.json({ error: "Missing tableName" }, { status: 400 });
   return NextResponse.json(await getFormPayload(tableName));
 }
+

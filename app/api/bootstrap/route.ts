@@ -10,3 +10,4 @@ export async function GET() {
     formSchemas: FORM_SCHEMAS
   });
 }
+

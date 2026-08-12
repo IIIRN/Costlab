@@ -490,3 +490,4 @@ function sequenceWithIndex(sequence: string, index: number, total: number) {
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Save bill failed";
 }
+

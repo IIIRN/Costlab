@@ -32,3 +32,4 @@ export async function DELETE() {
   cookieStore.delete("auth_role");
   return NextResponse.json({ success: true });
 }
+

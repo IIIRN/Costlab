@@ -89,25 +89,24 @@ export default function GeneralSettingsPage() {
   }
 
   return (
-    <div className="p-3 sm:p-5 max-w-5xl mx-auto space-y-4 font-sans text-xs">
+    <div className="p-3 sm:p-5 max-w-5xl mx-auto space-y-4 font-sans text-xs text-slate-800">
       {/* Compact Page Header Title */}
-      <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+      <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
         <div className="flex items-center gap-2">
-          <Building2 size={20} className="text-emerald-600 shrink-0" />
-          <h1 className="font-extrabold text-base text-slate-900 tracking-tight">ตั้งค่าทั่วไป & ข้อมูลบริษัท</h1>
+          <h1 className="font-bold text-base text-slate-900 tracking-tight">ตั้งค่าทั่วไป & ข้อมูลบริษัท</h1>
         </div>
       </div>
 
       {/* Notifications */}
       {successMsg && (
-        <div className="px-3.5 py-2 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-lg flex items-center gap-2 font-bold animate-in fade-in">
-          <CheckCircle2 size={16} className="text-emerald-600" />
+        <div className="px-3.5 py-2 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-md flex items-center gap-2 font-semibold">
+          <CheckCircle2 size={15} className="text-emerald-700" />
           <span>{successMsg}</span>
         </div>
       )}
       {errorMsg && (
-        <div className="px-3.5 py-2 bg-rose-50 border border-rose-200 text-rose-900 rounded-lg flex items-center gap-2 font-bold animate-in fade-in">
-          <ShieldCheck size={16} className="text-rose-600" />
+        <div className="px-3.5 py-2 bg-rose-50 border border-rose-200 text-rose-800 rounded-md flex items-center gap-2 font-semibold">
+          <ShieldCheck size={15} className="text-rose-700" />
           <span>{errorMsg}</span>
         </div>
       )}
@@ -117,26 +116,26 @@ export default function GeneralSettingsPage() {
         {/* Form Controls (2 cols) */}
         <div className="lg:col-span-2 space-y-3.5">
           {/* Section 1: Logo & Company Name */}
-          <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-2xs space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <span className="font-extrabold text-slate-900 text-xs flex items-center gap-1.5">
-                <Building2 size={15} className="text-emerald-600" /> ชื่อองค์กร & โลโก้
+          <div className="bg-white border border-slate-200 rounded-md p-4 space-y-3">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+              <span className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                <Building2 size={15} className="text-slate-600" /> ชื่อองค์กร & โลโก้
               </span>
             </div>
 
             {/* Logo Row */}
             <div className="flex items-center gap-3">
-              <div className="relative w-14 h-14 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0 group">
+              <div className="relative w-14 h-14 rounded-md border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0 group">
                 {settings.logoUrl ? (
                   <img src={settings.logoUrl} alt="Logo" className="w-full h-full object-contain p-1" />
                 ) : (
-                  <Building2 size={22} className="text-slate-400" />
+                  <Building2 size={20} className="text-slate-400" />
                 )}
                 {settings.logoUrl && (
                   <button
                     type="button"
                     onClick={() => setSettings({ ...settings, logoUrl: "" })}
-                    className="absolute inset-0 bg-slate-900/70 text-white font-bold opacity-0 group-hover:opacity-100 flex items-center justify-center transition"
+                    className="absolute inset-0 bg-slate-900/70 text-white font-semibold opacity-0 group-hover:opacity-100 flex items-center justify-center transition"
                     title="ลบโลโก้"
                   >
                     <X size={16} />
@@ -146,7 +145,7 @@ export default function GeneralSettingsPage() {
 
               <div className="flex-1 space-y-1.5 min-w-0">
                 <div className="flex items-center gap-2">
-                  <label className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold rounded-lg border border-slate-200 transition cursor-pointer flex items-center gap-1.5 shrink-0">
+                  <label className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded border border-slate-300 transition cursor-pointer flex items-center gap-1.5 shrink-0 text-xs">
                     <Upload size={13} />
                     <span>อัปโหลดรูป</span>
                     <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
@@ -156,7 +155,7 @@ export default function GeneralSettingsPage() {
                     value={settings.logoUrl}
                     onChange={(e) => setSettings({ ...settings, logoUrl: e.target.value })}
                     placeholder="URL รูปภาพโลโก้..."
-                    className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-mono focus:outline-none focus:border-emerald-500"
+                    className="flex-1 px-2.5 py-1 bg-white border border-slate-300 rounded text-slate-800 font-mono focus:outline-none focus:border-slate-500 text-xs"
                   />
                 </div>
               </div>
@@ -165,77 +164,77 @@ export default function GeneralSettingsPage() {
             {/* Name Inputs */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">ชื่อบริษัท / องค์กร</label>
+                <label className="font-semibold text-slate-700 block mb-1">ชื่อบริษัท / องค์กร</label>
                 <input
                   type="text"
                   value={settings.companyName}
                   onChange={(e) => setSettings({ ...settings, companyName: e.target.value })}
                   placeholder="ระบุชื่อบริษัท..."
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-semibold text-slate-900 focus:outline-none focus:border-emerald-500"
+                  className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded font-semibold text-slate-900 focus:outline-none focus:border-slate-500 text-xs"
                 />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">สโลแกน / แท็กไลน์</label>
+                <label className="font-semibold text-slate-700 block mb-1">สโลแกน / แท็กไลน์</label>
                 <input
                   type="text"
                   value={settings.companySubTitle}
                   onChange={(e) => setSettings({ ...settings, companySubTitle: e.target.value })}
                   placeholder="ระบุคำอธิบายย่อย..."
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-semibold text-slate-900 focus:outline-none focus:border-emerald-500"
+                  className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded font-semibold text-slate-900 focus:outline-none focus:border-slate-500 text-xs"
                 />
               </div>
             </div>
           </div>
 
           {/* Section 2: Contact & Tax Info */}
-          <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-2xs space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <span className="font-extrabold text-slate-900 text-xs flex items-center gap-1.5">
-                <Receipt size={15} className="text-amber-500" /> ข้อมูลติดต่อ & ออกบิล
+          <div className="bg-white border border-slate-200 rounded-md p-4 space-y-3">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+              <span className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                <Receipt size={15} className="text-slate-600" /> ข้อมูลติดต่อ & ออกบิล
               </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Tax ID</label>
+                <label className="font-semibold text-slate-700 block mb-1">Tax ID</label>
                 <input
                   type="text"
                   value={settings.taxId}
                   onChange={(e) => setSettings({ ...settings, taxId: e.target.value })}
                   placeholder="เลขผู้เสียภาษี..."
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-semibold text-slate-900 focus:outline-none focus:border-emerald-500"
+                  className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded font-semibold text-slate-900 focus:outline-none focus:border-slate-500 text-xs"
                 />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">เบอร์โทรศัพท์</label>
+                <label className="font-semibold text-slate-700 block mb-1">เบอร์โทรศัพท์</label>
                 <input
                   type="text"
                   value={settings.phone}
                   onChange={(e) => setSettings({ ...settings, phone: e.target.value })}
                   placeholder="เบอร์โทรศัพท์..."
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-semibold text-slate-900 focus:outline-none focus:border-emerald-500"
+                  className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded font-semibold text-slate-900 focus:outline-none focus:border-slate-500 text-xs"
                 />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">อีเมล</label>
+                <label className="font-semibold text-slate-700 block mb-1">อีเมล</label>
                 <input
                   type="email"
                   value={settings.email}
                   onChange={(e) => setSettings({ ...settings, email: e.target.value })}
                   placeholder="อีเมล..."
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-semibold text-slate-900 focus:outline-none focus:border-emerald-500"
+                  className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded font-semibold text-slate-900 focus:outline-none focus:border-slate-500 text-xs"
                 />
               </div>
             </div>
 
             <div>
-              <label className="font-bold text-slate-700 block mb-1">ที่อยู่บริษัท</label>
+              <label className="font-semibold text-slate-700 block mb-1">ที่อยู่บริษัท</label>
               <textarea
                 rows={2}
                 value={settings.address}
                 onChange={(e) => setSettings({ ...settings, address: e.target.value })}
                 placeholder="ที่อยู่บริษัท..."
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-semibold text-slate-900 focus:outline-none focus:border-emerald-500 resize-none"
+                className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded font-semibold text-slate-900 focus:outline-none focus:border-slate-500 resize-none text-xs"
               />
             </div>
           </div>
@@ -245,7 +244,7 @@ export default function GeneralSettingsPage() {
             <button
               type="submit"
               disabled={saving}
-              className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold rounded-lg transition shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              className="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-md transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50 text-xs"
             >
               {saving ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
               <span>{saving ? "กำลังบันทึก..." : "บันทึกข้อมูล"}</span>
@@ -255,35 +254,35 @@ export default function GeneralSettingsPage() {
 
         {/* Right Column: Live Sidebar Preview (1 col) */}
         <div>
-          <div className="bg-emerald-950 border border-emerald-900/80 rounded-lg p-4 text-slate-100 shadow-md space-y-3 sticky top-4">
-            <div className="text-[11px] font-extrabold uppercase text-emerald-400 flex items-center justify-between border-b border-emerald-900/80 pb-2">
+          <div className="bg-slate-900 border border-slate-800 rounded-md p-4 text-slate-100 space-y-3 sticky top-4">
+            <div className="text-[11px] font-bold uppercase text-slate-400 flex items-center justify-between border-b border-slate-800 pb-2">
               <span>Sidebar Live Preview</span>
-              <span className="text-[9px] bg-emerald-900 px-1.5 py-0.5 rounded text-emerald-300 border border-emerald-800 font-mono">
+              <span className="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-mono">
                 Live
               </span>
             </div>
 
             {/* Sidebar Preview Component */}
-            <div className="p-3 bg-emerald-900 rounded-lg border border-emerald-800 flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-emerald-950 border border-emerald-700/60 text-white flex items-center justify-center overflow-hidden shrink-0">
+            <div className="p-2.5 bg-slate-800/80 rounded border border-slate-700 flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded bg-slate-900 border border-slate-700 text-white flex items-center justify-center overflow-hidden shrink-0">
                 {settings.logoUrl ? (
                   <img src={settings.logoUrl} alt="Logo" className="w-full h-full object-cover" />
                 ) : (
-                  <Building2 size={16} />
+                  <Building2 size={15} />
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="font-extrabold text-white truncate leading-tight">
+                <div className="font-bold text-white truncate leading-tight">
                   {settings.companyName || "ชื่อบริษัท..."}
                 </div>
-                <div className="text-[10px] text-emerald-400/80 truncate leading-tight mt-0.5">
+                <div className="text-[10px] text-slate-400 truncate leading-tight mt-0.5">
                   {settings.companySubTitle || "คำอธิบายย่อย..."}
                 </div>
               </div>
             </div>
 
             {/* Header Document Preview */}
-            <div className="p-3 bg-white text-slate-900 rounded-lg border border-slate-200 space-y-1">
+            <div className="p-3 bg-white text-slate-900 rounded border border-slate-200 space-y-1">
               <div className="text-[9px] font-bold text-slate-400 uppercase">ตัวอย่างหัวรายงาน</div>
               <div className="flex items-center gap-2 pt-0.5">
                 <div className="w-6 h-6 rounded bg-slate-100 flex items-center justify-center shrink-0">
@@ -305,3 +304,4 @@ export default function GeneralSettingsPage() {
     </div>
   );
 }
+

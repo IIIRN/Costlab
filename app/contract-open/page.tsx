@@ -27,3 +27,4 @@ async function safeRows(tableName: string) {
     return [];
   }
 }
+

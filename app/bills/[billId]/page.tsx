@@ -52,28 +52,44 @@ export default async function BillDetailPage({ params }: BillDetailPageProps) {
       : rawRequester
     : "-";
 
-  const requesterSearchQuery = matchedPerson
-    ? text(matchedPerson["รหัสพนักงาน"] || matchedPerson["ชื่อเล่น"] || rawRequester)
+  const requesterKey = matchedPerson
+    ? text(matchedPerson["รหัสพนักงาน"] || matchedPerson["ชื่อเล่น"] || matchedPerson.id || rawRequester)
     : rawRequester;
-  const requesterLink = rawRequester ? `/views/people?search=${encodeURIComponent(requesterSearchQuery)}` : "";
+  const requesterLink = rawRequester ? `/views/people/${encodeURIComponent(requesterKey)}` : "";
 
   // Resolve Vendor / Store / Contractor Name & Link
   const rawVendor = text(bill["ร้านค้า"] || bill["ผู้รับเหมา"] || bill["ร้านค้า/ผู้รับเหมา"] || bill["ร้าน/บุคคล"]);
-  const isContractorMatched = rawVendor
-    ? contractorRows.some((c) => {
+  const matchedContractor = rawVendor
+    ? contractorRows.find((c) => {
         const code = text(c["id_Contractor"] || c.id).toLowerCase();
         const nickname = text(c["ชื่อเล่น"]).toLowerCase();
         const fullName = text(c["ชื่อ-นามสกุล"]).toLowerCase();
         const vLower = rawVendor.toLowerCase();
         return code === vLower || nickname === vLower || fullName === vLower || vLower.includes(nickname);
       })
-    : false;
+    : null;
+
+  const matchedStore = !matchedContractor && rawVendor
+    ? storeRows.find((s) => {
+        const code = text(s["id_store"] || s.id).toLowerCase();
+        const name = text(s["ชื่อร้านค้า"] || s["ชื่อเต็ม"]).toLowerCase();
+        const vLower = rawVendor.toLowerCase();
+        return code === vLower || name === vLower || vLower.includes(name);
+      })
+    : null;
 
   const vendorDisplay = rawVendor || "-";
+  const contractorKey = matchedContractor
+    ? text(matchedContractor["id_Contractor"] || matchedContractor["ชื่อเล่น"] || rawVendor)
+    : rawVendor;
+  const storeKey = matchedStore
+    ? text(matchedStore["id_store"] || matchedStore["ชื่อร้านค้า"] || rawVendor)
+    : rawVendor;
+
   const vendorLink = rawVendor
-    ? isContractorMatched
-      ? `/views/contractors?search=${encodeURIComponent(rawVendor)}`
-      : `/views/stores?search=${encodeURIComponent(rawVendor)}`
+    ? matchedContractor
+      ? `/views/contractors/${encodeURIComponent(contractorKey)}`
+      : `/views/stores/${encodeURIComponent(storeKey)}`
     : "";
 
   return (

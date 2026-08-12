@@ -10,3 +10,4 @@ export default async function ProjectAllPage({ searchParams }: PageProps) {
   const query = await searchParams;
   return <MasterTableView viewId="project-all" searchParams={query} />;
 }
+

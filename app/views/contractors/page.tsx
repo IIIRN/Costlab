@@ -10,3 +10,4 @@ export default async function ContractorsPage({ searchParams }: PageProps) {
   const query = await searchParams;
   return <MasterTableView viewId="contractors" searchParams={query} />;
 }
+
