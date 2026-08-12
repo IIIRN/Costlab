@@ -65,26 +65,26 @@ export function ContractOpenDashboardClient({
 
   return (
     <div className="w-full flex flex-col gap-4 p-4 sm:p-5 max-w-[1600px] mx-auto font-sans text-sm text-slate-800">
-      {/* 1. SUMMARY KPI CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-        <div className="bg-white rounded-md p-3 border border-slate-200">
-          <span className="text-xs font-semibold text-slate-500">สัญญาจ้างทั้งหมด</span>
-          <div className="text-lg font-bold text-slate-900 mt-1">{filteredRows.length} รายการ</div>
+      {/* 1. SUMMARY KPI CARDS (2x2 on Mobile, 4-col on Desktop) */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3">
+        <div className="bg-white rounded-md p-2.5 sm:p-3 border border-slate-200 shadow-2xs">
+          <span className="text-[11px] sm:text-xs font-semibold text-slate-500 block truncate">สัญญาจ้างทั้งหมด</span>
+          <div className="text-base sm:text-lg font-bold text-slate-900 mt-0.5">{filteredRows.length} รายการ</div>
         </div>
 
-        <div className="bg-white rounded-md p-3 border border-slate-200">
-          <span className="text-xs font-semibold text-slate-500">ยอดเงินจ้างรวม</span>
-          <div className="text-lg font-bold text-slate-900 mt-1">{money(totalHire)}</div>
+        <div className="bg-white rounded-md p-2.5 sm:p-3 border border-slate-200 shadow-2xs">
+          <span className="text-[11px] sm:text-xs font-semibold text-slate-500 block truncate">ยอดเงินจ้างรวม</span>
+          <div className="text-base sm:text-lg font-bold text-slate-900 mt-0.5">{money(totalHire)}</div>
         </div>
 
-        <div className="bg-white rounded-md p-3 border border-slate-200">
-          <span className="text-xs font-semibold text-slate-500">ยอดจ่ายแล้วรวม</span>
-          <div className="text-lg font-bold text-emerald-700 mt-1">{money(totalPaid)}</div>
+        <div className="bg-white rounded-md p-2.5 sm:p-3 border border-slate-200 shadow-2xs">
+          <span className="text-[11px] sm:text-xs font-semibold text-slate-500 block truncate">ยอดจ่ายแล้วรวม</span>
+          <div className="text-base sm:text-lg font-bold text-emerald-700 mt-0.5">{money(totalPaid)}</div>
         </div>
 
-        <div className="bg-white rounded-md p-3 border border-slate-200">
-          <span className="text-xs font-semibold text-slate-500">ค่าแรงคงเหลือรวม</span>
-          <div className="text-lg font-bold text-amber-700 mt-1">{money(totalRemaining)}</div>
+        <div className="bg-white rounded-md p-2.5 sm:p-3 border border-slate-200 shadow-2xs">
+          <span className="text-[11px] sm:text-xs font-semibold text-slate-500 block truncate">ค่าแรงคงเหลือรวม</span>
+          <div className="text-base sm:text-lg font-bold text-amber-700 mt-0.5">{money(totalRemaining)}</div>
         </div>
       </div>
 
@@ -120,7 +120,7 @@ export function ContractOpenDashboardClient({
           <FormModal
             key="form-modal-contract-open"
             form={activeForm}
-            buttonLabel="+ เปิดจ้างงาน"
+            buttonLabel="เปิดจ้างงาน"
             title="เปิดจ้างงานรับเหมา"
             submitPath="/api/rows"
             openEventName="open-contract-form"
@@ -195,9 +195,8 @@ export function ContractOpenDashboardClient({
                   key={opt}
                   type="button"
                   onClick={() => setPageSize(opt)}
-                  className={`px-2 py-0.5 rounded text-xs font-semibold transition cursor-pointer ${
-                    opt === pageSize ? "bg-slate-900 text-white" : "bg-white border border-slate-300 text-slate-700 hover:bg-slate-100"
-                  }`}
+                  className={`px-2 py-0.5 rounded text-xs font-semibold transition cursor-pointer ${opt === pageSize ? "bg-slate-900 text-white" : "bg-white border border-slate-300 text-slate-700 hover:bg-slate-100"
+                    }`}
                 >
                   {opt}
                 </button>

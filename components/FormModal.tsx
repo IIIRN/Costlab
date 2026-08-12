@@ -175,9 +175,9 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
         </div>
       ) : null}
       {open ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/40 backdrop-blur-[2px] animate-in fade-in" role="presentation">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-5 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150" role="presentation">
           <form
-            className={`w-full bg-white rounded-lg shadow-xl overflow-hidden flex flex-col border border-slate-200 max-h-[92vh] ${
+            className={`w-full bg-white rounded-lg shadow-2xl overflow-hidden flex flex-col border border-slate-200 max-h-[95vh] sm:max-h-[90vh] ${
               relaxed ? "max-w-6xl" : "max-w-4xl"
             }`}
             role="dialog"
@@ -186,24 +186,24 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
             aria-busy={saving}
             onSubmit={submitForm}
           >
-            <header className="flex items-center justify-between px-5 py-3 border-b border-slate-200 bg-white shrink-0">
+            <header className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-white shrink-0">
               <div>
                 <h3 id="form-modal-title" className="text-sm font-bold text-slate-900 m-0">
                   {isEditing ? title.replace(/^เพิ่ม/, "แก้ไข") : title}
                 </h3>
-                <span className="text-[11px] text-slate-400">{form.tableName}</span>
+                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{form.tableName}</span>
               </div>
               <button
                 type="button"
-                className="w-7 h-7 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
                 aria-label="ปิด"
                 disabled={saving}
                 onClick={() => { setOpen(false); setEditSheetRow(null); }}
               >
-                <X size={15} />
+                <X size={16} />
               </button>
             </header>
-            <div className="px-5 py-5 overflow-y-auto flex-1">
+            <div className="p-4 sm:p-5 overflow-y-auto flex-1 space-y-4">
               {saving ? (
                 <div className="absolute inset-0 z-20 bg-white/80 backdrop-blur-2xs flex items-center justify-center">
                   <LoadingState title="กำลังบันทึก" message="กำลังอัปโหลดและบันทึกข้อมูล" compact />
@@ -211,33 +211,44 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
               ) : null}
               <fieldset className="space-y-4 border-0 p-0 m-0" disabled={saving}>
                 {form.tableName === TABLES.DATA ? (
-                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-md flex items-center gap-8 text-xs">
-                    <div className="flex flex-col">
-                      <span className="text-slate-400">ยอดเงินรวม</span>
-                      <span className="text-sm font-bold text-emerald-700">
-                        {Number(values["ยอดเงิน"] || 0).toLocaleString("th-TH", { minimumFractionDigits: 2 })} ฝ
-                      </span>
-                    </div>
-                    {values["หัก"] ? (
-                      <div className="flex flex-col border-l border-slate-200 pl-4">
-                        <span className="text-slate-400">หัก ณ ที่จ่าย ({values["หัก"]}%)</span>
-                        <span className="font-semibold text-amber-600">
-                          - {Number(values["3เปอร์"] || values["จำนวนหัก"] || 0).toLocaleString("th-TH", { minimumFractionDigits: 2 })} ฝ
+                  <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-lg grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                    <div className="bg-white p-2.5 rounded-md border border-slate-200 shadow-2xs flex flex-col justify-center">
+                      <span className="text-slate-500 text-[11px] font-semibold">ยอดเงินรวม</span>
+                      <div className="flex items-baseline gap-1 mt-0.5">
+                        <span className="text-base font-extrabold text-slate-900">
+                          {Number(values["ยอดเงิน"] || 0).toLocaleString("th-TH", { minimumFractionDigits: 2 })}
                         </span>
+                        <span className="text-[10px] font-bold text-slate-400">บาท</span>
+                      </div>
+                    </div>
+
+                    {values["หัก"] ? (
+                      <div className="bg-white p-2.5 rounded-md border border-slate-200 shadow-2xs flex flex-col justify-center">
+                        <span className="text-slate-500 text-[11px] font-semibold">หัก ณ ที่จ่าย ({values["หัก"]}%)</span>
+                        <div className="flex items-baseline gap-1 mt-0.5">
+                          <span className="text-sm font-bold text-amber-700">
+                            - {Number(values["3เปอร์"] || values["จำนวนหัก"] || 0).toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+                          </span>
+                          <span className="text-[10px] font-bold text-slate-400">บาท</span>
+                        </div>
                       </div>
                     ) : null}
-                    <div className="flex flex-col border-l border-slate-200 pl-4">
-                      <span className="text-slate-400">ยอดโอนสุทธิ์</span>
-                      <span className="text-sm font-bold text-indigo-700">
-                        {Number(values["ยอดโอน"] || values["ยอดเงิน"] || 0).toLocaleString("th-TH", { minimumFractionDigits: 2 })} ฝ
-                      </span>
+
+                    <div className={`bg-white p-2.5 rounded-md border border-emerald-200 shadow-2xs flex flex-col justify-center ${values["หัก"] ? "" : "col-span-1"}`}>
+                      <span className="text-emerald-700 text-[11px] font-bold">ยอดโอนสุทธิ</span>
+                      <div className="flex items-baseline gap-1 mt-0.5">
+                        <span className="text-base font-extrabold text-emerald-700">
+                          {Number(values["ยอดโอน"] || values["ยอดเงิน"] || 0).toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+                        </span>
+                        <span className="text-[10px] font-bold text-emerald-600">บาท</span>
+                      </div>
                     </div>
                   </div>
                 ) : null}
-                <div className="grid grid-cols-3 gap-x-4 gap-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   {visibleFields.map(field => (
-                    <div className={`${getFieldClassName(field)} space-y-1`} key={field.name}>
-                      <label className="text-xs font-medium text-slate-800 block">{getFieldLabel(field)}{field.required ? <span className="text-rose-500 ml-0.5">*</span> : ""}</label>
+                    <div className={`${getFieldClassName(field)} space-y-1.5`} key={field.name}>
+                      <label className="text-xs font-semibold text-slate-700 block">{getFieldLabel(field)}{field.required ? <span className="text-rose-600 font-semibold ml-0.5">*</span> : ""}</label>
                       {renderField(
                         field,
                         form,
@@ -248,11 +259,11 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
                         enumListSearch[field.name] || "",
                         value => setEnumListSearch(current => ({ ...current, [field.name]: value }))
                       )}
-                      {field.description ? <small className="text-xs text-slate-500 block">{field.description}</small> : null}
+                      {field.description ? <small className="text-[11px] text-slate-500 block leading-tight font-normal">{field.description}</small> : null}
                     </div>
                   ))}
                 </div>
-                {error ? <div className="p-2.5 bg-rose-50 text-rose-600 rounded-md border border-rose-200 text-xs font-medium">{error}</div> : null}
+                {error ? <div className="p-3 bg-rose-50 text-rose-700 rounded-lg border border-rose-200 text-xs font-semibold">{error}</div> : null}
               </fieldset>
             </div>
             <footer className="flex items-center justify-end gap-2 px-4 py-3 bg-slate-50 border-t border-slate-200 shrink-0">
@@ -260,16 +271,16 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
                 type="button"
                 disabled={saving}
                 onClick={() => { setOpen(false); setEditSheetRow(null); }}
-                className="px-3 py-1.5 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-200/70 border border-slate-200 bg-white transition cursor-pointer"
+                className="px-4 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-200/70 border border-slate-300 bg-white transition cursor-pointer"
               >
                 ยกเลิก
               </button>
               <button
                 type={submitPath ? "submit" : "button"}
                 disabled={saving || !submitPath}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 transition cursor-pointer"
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer shadow-xs"
               >
-                <Save size={13} />
+                <Save size={14} />
                 <span>{saving ? "กำลังบันทึก" : "บันทึก"}</span>
               </button>
             </footer>
@@ -534,7 +545,7 @@ function renderField(
                 <label
                   className={`px-3 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer transition-all ${
                     checked
-                      ? "bg-indigo-600 text-white border-indigo-600 shadow-2xs"
+                      ? "bg-slate-900 text-white border-slate-900 shadow-2xs font-bold"
                       : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
                   }`}
                   key={`${optionValue}-${index}`}
@@ -600,7 +611,7 @@ function renderField(
         readOnly={readOnly}
         rows={3}
         onChange={event => onChange(event.target.value)}
-        className="w-full p-2.5 bg-white border border-slate-300 focus:border-slate-500 focus:outline-none rounded-md text-xs text-slate-800 placeholder:text-slate-400 transition-all resize-y"
+        className="w-full p-2.5 bg-white border border-slate-300 focus:border-slate-800 focus:outline-none rounded text-xs font-semibold text-slate-800 placeholder:text-slate-400 transition-all resize-y"
       />
     );
   }
@@ -615,7 +626,7 @@ function renderField(
       readOnly={readOnly}
       lang={billDateMode ? "th-TH" : undefined}
       onChange={event => onChange(billDateMode ? normalizeBillDateInput(event.target.value) : event.target.value)}
-      className="w-full h-9 px-2.5 bg-white border border-slate-300 focus:border-slate-500 focus:outline-none rounded-md text-xs text-slate-800 placeholder:text-slate-400 transition-all"
+      className="w-full h-9 px-2.5 bg-white border border-slate-300 focus:border-slate-800 focus:outline-none rounded text-xs font-semibold text-slate-800 placeholder:text-slate-400 transition-all"
     />
   );
 }
@@ -736,7 +747,7 @@ function SearchableRefSelect({
       <input type="hidden" name={name} value={value} />
       <input
         type="search"
-        className="w-full h-9.5 px-3 bg-slate-50/70 hover:bg-slate-100/90 focus:bg-white border border-slate-300 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 rounded-lg text-xs font-semibold text-slate-900 placeholder:text-slate-400 transition-all shadow-2xs"
+        className="w-full h-9 px-2.5 bg-white border border-slate-300 focus:border-slate-800 focus:outline-none rounded text-xs font-semibold text-slate-800 placeholder:text-slate-400 transition-all"
         value={query}
         readOnly={readOnly}
         placeholder={placeholder}

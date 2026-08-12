@@ -276,69 +276,69 @@ export function BillFollowDashboardClient({
         </div>
       )}
 
-      {/* 1. EXECUTIVE SUMMARY KPI CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* 1. EXECUTIVE SUMMARY KPI CARDS (2x2 on Mobile, 4-col on Desktop) */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
         {/* Vat Card */}
         <div
           onClick={() => handleTabChange("vat")}
-          className={`bg-white rounded-md p-3 border transition cursor-pointer ${
+          className={`bg-white rounded-md p-2.5 sm:p-3 border transition cursor-pointer shadow-2xs ${
             activeTab === "vat" ? "border-slate-900 bg-slate-50 font-bold" : "border-slate-200 hover:border-slate-300"
           }`}
         >
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-semibold text-slate-700">ตาม VAT (ยังไม่ได้บิล)</span>
-            <span className="text-slate-400">{vatRows.length} รายการ</span>
+          <div className="flex items-center justify-between text-[11px] sm:text-xs">
+            <span className="font-semibold text-slate-700 truncate">ตาม VAT (ยังไม่ได้บิล)</span>
+            <span className="text-slate-400 shrink-0 ml-1">{vatRows.length} รายการ</span>
           </div>
-          <div className="flex items-baseline justify-between mt-2">
-            <span className="text-sm font-bold text-slate-900">{money(vatTotal)}</span>
+          <div className="flex items-baseline justify-between mt-1.5 sm:mt-2">
+            <span className="text-sm sm:text-base font-bold text-slate-900">{money(vatTotal)}</span>
           </div>
         </div>
 
         {/* Natural Deduct 3% Card */}
         <div
           onClick={() => handleTabChange("natural")}
-          className={`bg-white rounded-md p-3 border transition cursor-pointer ${
+          className={`bg-white rounded-md p-2.5 sm:p-3 border transition cursor-pointer shadow-2xs ${
             activeTab === "natural" ? "border-slate-900 bg-slate-50 font-bold" : "border-slate-200 hover:border-slate-300"
           }`}
         >
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-semibold text-slate-700">ตาม หัก 3% (บุคคล)</span>
-            <span className="text-slate-400">{naturalDeductRows.length} รายการ</span>
+          <div className="flex items-center justify-between text-[11px] sm:text-xs">
+            <span className="font-semibold text-slate-700 truncate">ตาม หัก 3% (บุคคล)</span>
+            <span className="text-slate-400 shrink-0 ml-1">{naturalDeductRows.length} รายการ</span>
           </div>
-          <div className="flex items-baseline justify-between mt-2">
-            <span className="text-sm font-bold text-slate-900">{money(naturalTotal)}</span>
+          <div className="flex items-baseline justify-between mt-1.5 sm:mt-2">
+            <span className="text-sm sm:text-base font-bold text-slate-900">{money(naturalTotal)}</span>
           </div>
         </div>
 
         {/* Company Deduct 3% Card */}
         <div
           onClick={() => handleTabChange("company")}
-          className={`bg-white rounded-md p-3 border transition cursor-pointer ${
+          className={`bg-white rounded-md p-2.5 sm:p-3 border transition cursor-pointer shadow-2xs ${
             activeTab === "company" ? "border-slate-900 bg-slate-50 font-bold" : "border-slate-200 hover:border-slate-300"
           }`}
         >
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-semibold text-slate-700">ตาม หัก 3% (บริษัท)</span>
-            <span className="text-slate-400">{companyDeductRows.length} รายการ</span>
+          <div className="flex items-center justify-between text-[11px] sm:text-xs">
+            <span className="font-semibold text-slate-700 truncate">ตาม หัก 3% (บริษัท)</span>
+            <span className="text-slate-400 shrink-0 ml-1">{companyDeductRows.length} รายการ</span>
           </div>
-          <div className="flex items-baseline justify-between mt-2">
-            <span className="text-sm font-bold text-slate-900">{money(companyTotal)}</span>
+          <div className="flex items-baseline justify-between mt-1.5 sm:mt-2">
+            <span className="text-sm sm:text-base font-bold text-slate-900">{money(companyTotal)}</span>
           </div>
         </div>
 
         {/* Credit Card */}
         <div
           onClick={() => handleTabChange("credit")}
-          className={`bg-white rounded-md p-3 border transition cursor-pointer ${
+          className={`bg-white rounded-md p-2.5 sm:p-3 border transition cursor-pointer shadow-2xs ${
             activeTab === "credit" ? "border-slate-900 bg-slate-50 font-bold" : "border-slate-200 hover:border-slate-300"
           }`}
         >
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-semibold text-slate-700">ตาม เครดิต (รอจ่าย)</span>
-            <span className="text-slate-400">{creditRows.length} รายการ</span>
+          <div className="flex items-center justify-between text-[11px] sm:text-xs">
+            <span className="font-semibold text-slate-700 truncate">ตาม เครดิต (รอจ่าย)</span>
+            <span className="text-slate-400 shrink-0 ml-1">{creditRows.length} รายการ</span>
           </div>
-          <div className="flex items-baseline justify-between mt-2">
-            <span className="text-sm font-bold text-slate-900">{money(creditTotal)}</span>
+          <div className="flex items-baseline justify-between mt-1.5 sm:mt-2">
+            <span className="text-sm sm:text-base font-bold text-slate-900">{money(creditTotal)}</span>
           </div>
         </div>
       </div>

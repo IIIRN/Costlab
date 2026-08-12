@@ -60,7 +60,7 @@ export function BillImageThumbnail({ value, compact = false }: BillImageThumbnai
           setCurrentIndex(0);
           setOpen(true);
         }}
-        className="group relative inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:border-sky-500 hover:shadow-md transition-all duration-200 cursor-pointer select-none overflow-hidden"
+        className="group relative inline-flex items-center justify-center rounded border border-slate-300 bg-white hover:border-slate-800 transition duration-150 cursor-pointer select-none overflow-hidden shrink-0"
         title="คลิกเพื่อขยายดูรูปภาพ"
         style={{ width: 32, height: 32 }}
       >
@@ -70,11 +70,11 @@ export function BillImageThumbnail({ value, compact = false }: BillImageThumbnai
           alt="รูปถ่าย"
           loading="lazy"
           onError={() => setImgError(true)}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
         />
         {imageUrls.length > 1 && (
-          <span className="absolute bottom-0 right-0 bg-sky-600 text-white text-[9px] font-bold leading-none px-0.5 py-0.5 rounded-tl">
-            {imageUrls.length}
+          <span className="absolute bottom-0 right-0 bg-slate-900 text-white text-[9px] font-bold leading-none px-1 py-0.5 rounded-tl">
+            +{imageUrls.length - 1}
           </span>
         )}
       </button>
@@ -82,27 +82,27 @@ export function BillImageThumbnail({ value, compact = false }: BillImageThumbnai
       {/* Lightbox Gallery Modal */}
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-900/80 backdrop-blur-xs animate-in fade-in duration-150"
           role="presentation"
           onClick={() => setOpen(false)}
         >
           <div
-            className="relative w-full max-w-3xl bg-slate-900 rounded-lg shadow-2xl overflow-hidden flex flex-col border border-slate-800 animate-in zoom-in-95 duration-200"
+            className="relative w-full max-w-4xl bg-white rounded-md shadow-2xl overflow-hidden flex flex-col border border-slate-200 animate-in zoom-in-95 duration-150 text-slate-800"
             role="dialog"
             aria-modal="true"
             onClick={(event) => event.stopPropagation()}
           >
             {/* Modal Header */}
-            <header className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-slate-900/90 text-white">
-              <div className="flex items-center gap-2.5">
-                <span className="w-8 h-8 rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30 flex items-center justify-center font-bold text-xs">
-                  <ImageIcon size={18} />
+            <header className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-white text-slate-900">
+              <div className="flex items-center gap-2">
+                <span className="w-7 h-7 rounded bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center font-bold text-xs">
+                  <ImageIcon size={16} />
                 </span>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-100">
+                  <h3 className="text-xs font-bold text-slate-900">
                     รูปถ่ายเอกสาร / บิล {imageUrls.length > 1 ? `(${currentIndex + 1} / ${imageUrls.length})` : ""}
                   </h3>
-                  <p className="text-[11px] text-slate-400">คลิกที่รูป หรือกดปุ่มลูกศรเพื่อเลื่อนรูปภาพ</p>
+                  <p className="text-[10px] text-slate-500">กดปุ่มลูกศร หรือคลิกรูปย่อยด้านล่างเพื่อสลับรูปภาพ</p>
                 </div>
               </div>
 
@@ -112,27 +112,28 @@ export function BillImageThumbnail({ value, compact = false }: BillImageThumbnai
                   target="_blank"
                   rel="noreferrer"
                   title="เปิดรูปภาพขนาดใหญ่ในแท็บใหม่"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-semibold transition border border-slate-700"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition cursor-pointer"
                 >
-                  <ExternalLink size={14} />
+                  <ExternalLink size={13} />
                   <span>เปิดรูปจริง</span>
                 </a>
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white flex items-center justify-center transition border border-slate-700 cursor-pointer"
+                  className="w-7 h-7 rounded border border-slate-300 bg-white hover:bg-slate-100 text-slate-600 flex items-center justify-center transition cursor-pointer"
+                  title="ปิดหน้าต่าง"
                 >
-                  <X size={18} />
+                  <X size={16} />
                 </button>
               </div>
             </header>
 
             {/* Modal Main Image Stage */}
-            <div className="relative p-6 bg-slate-950 flex flex-col items-center justify-center min-h-[380px] max-h-[70vh] overflow-hidden select-none">
+            <div className="relative p-4 bg-slate-950 flex flex-col items-center justify-center min-h-[360px] max-h-[70vh] overflow-hidden select-none">
               <img
                 src={currentImageUrl}
                 alt={`รูปถ่ายที่ ${currentIndex + 1}`}
-                className="max-h-[60vh] max-w-full object-contain rounded-xl shadow-2xl transition-all duration-300"
+                className="max-h-[65vh] max-w-full object-contain rounded border border-slate-800 shadow-md transition-all duration-200"
               />
 
               {/* Navigation Arrows for Multi-images */}
@@ -141,19 +142,19 @@ export function BillImageThumbnail({ value, compact = false }: BillImageThumbnai
                   <button
                     type="button"
                     onClick={() => setCurrentIndex((index) => previousIndex(index, imageUrls.length))}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-slate-900/80 hover:bg-sky-600 text-white flex items-center justify-center shadow-lg transition border border-slate-700 cursor-pointer"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-slate-900/80 hover:bg-slate-800 text-white flex items-center justify-center shadow transition border border-slate-700 cursor-pointer"
                     title="รูปก่อนหน้า"
                   >
-                    <ChevronLeft size={20} />
+                    <ChevronLeft size={18} />
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setCurrentIndex((index) => nextIndex(index, imageUrls.length))}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-slate-900/80 hover:bg-sky-600 text-white flex items-center justify-center shadow-lg transition border border-slate-700 cursor-pointer"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-slate-900/80 hover:bg-slate-800 text-white flex items-center justify-center shadow transition border border-slate-700 cursor-pointer"
                     title="รูปถัดไป"
                   >
-                    <ChevronRight size={20} />
+                    <ChevronRight size={18} />
                   </button>
                 </>
               )}
@@ -161,16 +162,16 @@ export function BillImageThumbnail({ value, compact = false }: BillImageThumbnai
 
             {/* Multi-image Thumbnail Strip Footer */}
             {imageUrls.length > 1 && (
-              <footer className="p-3 bg-slate-900 border-t border-slate-800 flex items-center justify-center gap-2 overflow-x-auto">
+              <footer className="p-2.5 bg-slate-100 border-t border-slate-200 flex items-center justify-center gap-2 overflow-x-auto">
                 {imageUrls.map((url, idx) => (
                   <button
                     key={url + idx}
                     type="button"
                     onClick={() => setCurrentIndex(idx)}
-                    className={`relative w-12 h-12 rounded-xl overflow-hidden border-2 transition cursor-pointer shrink-0 ${
+                    className={`relative w-11 h-11 rounded overflow-hidden border-2 transition cursor-pointer shrink-0 ${
                       idx === currentIndex
-                        ? "border-sky-500 scale-105 shadow-md"
-                        : "border-slate-800 opacity-60 hover:opacity-100"
+                        ? "border-slate-900 scale-105"
+                        : "border-slate-300 opacity-60 hover:opacity-100"
                     }`}
                   >
                     <img src={url} alt={`รูปที่ ${idx + 1}`} className="w-full h-full object-cover" />
