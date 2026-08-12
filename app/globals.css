@@ -61,6 +61,16 @@
   }
 }
 
+/* Prevent Mobile Input Auto-Zoom on iOS Safari & Mobile Webviews when tapping fields */
+@media screen and (max-width: 768px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+    touch-action: manipulation;
+  }
+}
+
 /* AppShell Layout Alignment Fix (DualSidebar: Expanded 316px / Collapsed 68px) */
 .app-shell {
   min-height: 100vh;
