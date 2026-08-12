@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { Viewport } from "next";
 import { AppShell } from "@/components/AppShell";
 import { LoginScreen } from "@/components/LoginScreen";
+import { PreventZoom } from "@/components/PreventZoom";
 import { APP_NAME, TABLES } from "@/lib/config";
 import { getRows } from "@/lib/sheets";
 import { cookies } from "next/headers";
@@ -59,6 +60,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="th" suppressHydrationWarning>
       <body>
+        <PreventZoom />
         {!currentUser ? (
           <LoginScreen peopleRows={peopleRows} />
         ) : (
