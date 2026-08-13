@@ -23,6 +23,53 @@ export async function getDynamicAccessToken(): Promise<string> {
   return process.env.LINE_CHANNEL_ACCESS_TOKEN || LINE_CONFIG.CHANNEL_ACCESS_TOKEN || "";
 }
 
+export async function isLineApproverAuthorized(userId: string, targetId?: string): Promise<boolean> {
+  if (!userId) return false;
+
+  try {
+    const { data: configData } = await supabaseAdmin
+      .from("system_options")
+      .select("data")
+      .eq("id", "line_config")
+      .maybeSingle();
+
+    const cfg = configData?.data || {};
+    const allowedApprovers: string[] = [
+      String(cfg.LINE_USER_ID_APPROVER || "").trim(),
+      String(cfg.LINE_USER_ID_OWN || "").trim(),
+      String(process.env.LINE_USER_ID_APPROVER || "").trim(),
+      String(process.env.LINE_USER_ID_OWN || "").trim(),
+      String(LINE_CONFIG.USER_ID_APPROVER || "").trim(),
+      String(LINE_CONFIG.USER_ID_OWN || "").trim(),
+    ].filter(Boolean);
+
+    if (allowedApprovers.includes(userId) || (targetId && allowedApprovers.includes(targetId))) {
+      return true;
+    }
+
+    const { data: member } = await supabaseAdmin
+      .from("master_members")
+      .select("*")
+      .or(`line_user_id.eq.${userId},id.eq.${userId}`)
+      .maybeSingle();
+
+    if (member && (member.role === "Admin" || member["สิทธิ์การใช้งาน"] === "Admin")) {
+      return true;
+    }
+
+    if (allowedApprovers.length === 0) {
+      return true;
+    }
+  } catch (e) {
+    console.warn("⚠️ Warning checking LINE approver authorization:", e);
+  }
+
+  return (
+    userId === LINE_CONFIG.USER_ID_APPROVER ||
+    userId === LINE_CONFIG.USER_ID_OWN
+  );
+}
+
 export type LineSendResult = {
   success: boolean;
   error?: string;

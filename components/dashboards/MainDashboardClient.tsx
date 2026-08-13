@@ -20,6 +20,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { money, toNumber } from "@/lib/numbers";
+import { isCreditActive, isDeductActive, isVatActive } from "@/lib/project-summary";
 import type { SheetRow } from "@/lib/types";
 
 type MainDashboardClientProps = {
@@ -299,40 +300,40 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
                   <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-200 text-xs">
                     <th className="py-2.5 px-3 border-r border-slate-200">รายการ</th>
                     <th className="py-2.5 px-3 border-r border-slate-200 text-right">ก่อน VAT (บาท)</th>
-                    <th className="py-2.5 px-3 border-r border-slate-200 text-right">คำนวณ VAT (บาท)</th>
-                    <th className="py-2.5 px-3 text-right">ยอดดำเนินการ (บาท)</th>
+                    <th className="py-2.5 px-3 border-r border-slate-200 text-right">คำนวณ VAT / ภาษี (บาท)</th>
+                    <th className="py-2.5 px-3 text-right">ยอดรวมสุทธิ (บาท)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-normal">
                   <tr className="hover:bg-slate-50">
-                    <td className="py-2 px-3 border-r border-slate-100 font-bold text-slate-900">ค่าแรง</td>
+                    <td className="py-2 px-3 border-r border-slate-100 font-bold text-slate-900">ค่าแรงบริษัท</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main3.laborBeforeVat)}</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main3.laborVat)}</td>
-                    <td className="py-2 px-3 text-right font-medium">{money(0)}</td>
+                    <td className="py-2 px-3 text-right font-medium">{money(summary.main3.laborBeforeVat)}</td>
                   </tr>
                   <tr className="hover:bg-slate-50">
-                    <td className="py-2 px-3 border-r border-slate-100 font-bold text-slate-900">ค่าของ</td>
+                    <td className="py-2 px-3 border-r border-slate-100 font-bold text-slate-900">ค่าของ (มี VAT)</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main3.materialBeforeVat)}</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main3.materialVat)}</td>
-                    <td className="py-2 px-3 text-right font-medium">{money(summary.main4.operatingMaterial)}</td>
+                    <td className="py-2 px-3 text-right font-medium">{money(summary.main3.materialBeforeVat + summary.main3.materialVat)}</td>
                   </tr>
                   <tr className="hover:bg-slate-50">
-                    <td className="py-2 px-3 border-r border-slate-100 font-bold text-slate-900">น้ำมัน</td>
+                    <td className="py-2 px-3 border-r border-slate-100 font-bold text-slate-900">น้ำมัน (มี VAT)</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main3.fuelBeforeVat)}</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main3.fuelVat)}</td>
-                    <td className="py-2 px-3 text-right font-medium">{money(0)}</td>
+                    <td className="py-2 px-3 text-right font-medium">{money(summary.main3.fuelBeforeVat + summary.main3.fuelVat)}</td>
                   </tr>
                   <tr className="hover:bg-slate-50">
-                    <td className="py-2 px-3 border-r border-slate-100 font-bold text-slate-900">ซ่อมรถ</td>
+                    <td className="py-2 px-3 border-r border-slate-100 font-bold text-slate-900">ซ่อมรถ (มี VAT)</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main3.repairBeforeVat)}</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main3.repairVat)}</td>
-                    <td className="py-2 px-3 text-right font-medium">{money(0)}</td>
+                    <td className="py-2 px-3 text-right font-medium">{money(summary.main3.repairBeforeVat + summary.main3.repairVat)}</td>
                   </tr>
                   <tr className="bg-slate-50 font-bold text-slate-900 border-t border-slate-200">
                     <td className="py-2.5 px-3 border-r border-slate-200">รวมทั้งสิ้น</td>
-                    <td className="py-2.5 px-3 border-r border-slate-200 text-right">-</td>
-                    <td className="py-2.5 px-3 border-r border-slate-200 text-right text-slate-900 font-extrabold">{money(summary.main3Total)}</td>
-                    <td className="py-2.5 px-3 text-right">-</td>
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-right text-slate-900 font-extrabold">{money(summary.main3BeforeVatTotal)}</td>
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-right text-slate-900 font-extrabold">{money(summary.main3VatTotal)}</td>
+                    <td className="py-2.5 px-3 text-right text-slate-900 font-extrabold">{money(summary.main3GrandTotal)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -351,40 +352,47 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
                 <thead>
                   <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-200 text-xs">
                     <th className="py-2.5 px-3 border-r border-slate-200">รายการ</th>
-                    <th className="py-2.5 px-3 border-r border-slate-200 text-right">ก่อน VAT (บาท)</th>
-                    <th className="py-2.5 px-3 text-right">ยอดดำเนินการ (บาท)</th>
+                    <th className="py-2.5 px-3 border-r border-slate-200 text-right">ยอดรวมค่าใช้จ่าย (บาท)</th>
+                    <th className="py-2.5 px-3 border-r border-slate-200 text-right">หัก ณ ที่จ่าย (บาท)</th>
+                    <th className="py-2.5 px-3 text-right">ยอดโอนสุทธิ (บาท)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-normal">
                   <tr className="hover:bg-slate-50">
                     <td className="py-2 px-3 border-r border-slate-100 font-bold text-slate-900">ค่าแรง</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main4.naturalLabor)}</td>
-                    <td className="py-2 px-3 text-right font-medium">{money(summary.main4.operatingLabor)}</td>
+                    <td className="py-2 px-3 border-r border-slate-100 text-right font-medium text-amber-700">{money(summary.main4.naturalLaborDeduct)}</td>
+                    <td className="py-2 px-3 text-right font-medium">{money(summary.main4.naturalLabor - summary.main4.naturalLaborDeduct)}</td>
                   </tr>
                   <tr className="hover:bg-slate-50">
                     <td className="py-2 px-3 border-r border-slate-100 font-bold text-slate-900">พนักงาน</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main4.staff)}</td>
-                    <td className="py-2 px-3 text-right font-medium">{money(summary.main4.operatingStaff)}</td>
+                    <td className="py-2 px-3 border-r border-slate-100 text-right font-medium text-amber-700">{money(summary.main4.staffDeduct)}</td>
+                    <td className="py-2 px-3 text-right font-medium">{money(summary.main4.staff - summary.main4.staffDeduct)}</td>
                   </tr>
                   <tr className="hover:bg-slate-50">
                     <td className="py-2 px-3 border-r border-slate-100 font-bold text-slate-900">ค่าของ</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main4.material)}</td>
-                    <td className="py-2 px-3 text-right font-medium">{money(summary.main4.operatingMaterial)}</td>
+                    <td className="py-2 px-3 border-r border-slate-100 text-right font-medium text-amber-700">{money(summary.main4.materialDeduct)}</td>
+                    <td className="py-2 px-3 text-right font-medium">{money(summary.main4.material - summary.main4.materialDeduct)}</td>
                   </tr>
                   <tr className="hover:bg-slate-50">
                     <td className="py-2 px-3 border-r border-slate-100 font-bold text-slate-900">น้ำมัน</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main4.fuel)}</td>
-                    <td className="py-2 px-3 text-right font-medium">{money(summary.main4.operatingFuel)}</td>
+                    <td className="py-2 px-3 border-r border-slate-100 text-right font-medium text-amber-700">{money(summary.main4.fuelDeduct)}</td>
+                    <td className="py-2 px-3 text-right font-medium">{money(summary.main4.fuel - summary.main4.fuelDeduct)}</td>
                   </tr>
                   <tr className="hover:bg-slate-50">
                     <td className="py-2 px-3 border-r border-slate-100 font-bold text-slate-900">ซ่อมรถ</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main4.repair)}</td>
-                    <td className="py-2 px-3 text-right font-medium">{money(summary.main4.operatingRepair)}</td>
+                    <td className="py-2 px-3 border-r border-slate-100 text-right font-medium text-amber-700">{money(summary.main4.repairDeduct)}</td>
+                    <td className="py-2 px-3 text-right font-medium">{money(summary.main4.repair - summary.main4.repairDeduct)}</td>
                   </tr>
                   <tr className="bg-slate-50 font-bold text-slate-900 border-t border-slate-200">
                     <td className="py-2.5 px-3 border-r border-slate-200">รวมทั้งสิ้น</td>
                     <td className="py-2.5 px-3 border-r border-slate-200 text-right text-slate-900 font-extrabold">{money(summary.main4Total)}</td>
-                    <td className="py-2.5 px-3 text-right">-</td>
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-right text-amber-700 font-extrabold">{money(summary.main4DeductTotal)}</td>
+                    <td className="py-2.5 px-3 text-right text-slate-900 font-extrabold">{money(summary.main4NetTotal)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -429,15 +437,15 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
                   </tr>
                   <tr className="bg-slate-50 font-bold text-slate-900 border-t border-slate-200">
                     <td className="py-2.5 px-3 border-r border-slate-200">รวมก่อน VAT</td>
-                    <td className="py-2.5 px-3 text-right text-slate-900 font-extrabold" colSpan={3}>
-                      {money(summary.main5BeforeVatTotal)}
-                    </td>
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-right font-extrabold">{money(summary.main5BeforeVatTotal)}</td>
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-right font-extrabold">{money(summary.main5ToolBeforeVatTotal)}</td>
+                    <td className="py-2.5 px-3 text-right font-extrabold">{money(summary.main5OtherBeforeVatTotal)}</td>
                   </tr>
                   <tr className="bg-slate-50 font-bold text-slate-900 border-t border-slate-200">
                     <td className="py-2.5 px-3 border-r border-slate-200">รวมไม่มี VAT</td>
-                    <td className="py-2.5 px-3 text-right text-slate-900 font-extrabold" colSpan={3}>
-                      {money(summary.main5NoVatTotal)}
-                    </td>
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-right font-extrabold">{money(summary.main5NoVatTotal)}</td>
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-right font-extrabold">{money(summary.main5ToolNoVatTotal)}</td>
+                    <td className="py-2.5 px-3 text-right font-extrabold">{money(summary.main5OtherNoVatTotal)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -477,39 +485,64 @@ function sumCategoryRows(rows: SheetRow[], categoryKeyword: string): number {
   return rows.reduce((sum, row) => sum + getCategoryAmount(row, categoryKeyword), 0);
 }
 
+function getCategoryDeductAmount(row: SheetRow, categoryKeyword: string): number {
+  const amt = getCategoryAmount(row, categoryKeyword);
+  if (amt <= 0 || !isDeductActive(row["หัก"])) return 0;
+  const custom = toNumber(row["จำนวนหัก"]);
+  const billAmt = getBillAmount(row);
+  if (custom > 0 && billAmt > 0) {
+    return (custom * amt) / billAmt;
+  }
+  const rate = toNumber(row["หัก"]);
+  return (amt * rate) / 100;
+}
+
+function sumCategoryDeductRows(rows: SheetRow[], categoryKeyword: string): number {
+  return rows.reduce((sum, row) => sum + getCategoryDeductAmount(row, categoryKeyword), 0);
+}
+
 function buildMainSummary(dataRows: SheetRow[], projectRows: SheetRow[]) {
   const total = sumRowsTotal(dataRows);
-  const vatCount = dataRows.filter(row => (hasValue(row.vat) || toNumber(row.vat) > 0) && !hasValue(row["วันได้บิล"])).length;
-  const naturalDeductCount = dataRows.filter(row => (hasValue(row["หัก"]) || toNumber(row["หัก"]) > 0) && !hasValue(row["วันออก 3%"]) && !String(row["statusค่าแรง"] || "").includes("บริษัท")).length;
-  const companyDeductCount = dataRows.filter(row => (hasValue(row["หัก"]) || toNumber(row["หัก"]) > 0) && !hasValue(row["วันออก 3%"]) && String(row["statusค่าแรง"] || "").includes("บริษัท")).length;
-  const creditCount = dataRows.filter(row => hasValue(row["เครดิต"]) && !hasValue(row["วันจ่าย"])).length;
+  const vatCount = dataRows.filter(row => isVatActive(row.vat) && !hasValue(row["วันได้บิล"])).length;
+  const naturalDeductCount = dataRows.filter(row => isDeductActive(row["หัก"]) && !hasValue(row["วันออก 3%"]) && !String(row["statusค่าแรง"] || "").includes("บริษัท")).length;
+  const companyDeductCount = dataRows.filter(row => isDeductActive(row["หัก"]) && !hasValue(row["วันออก 3%"]) && String(row["statusค่าแรง"] || "").includes("บริษัท")).length;
+  const creditCount = dataRows.filter(row => isCreditActive(row["เครดิต"]) && !hasValue(row["วันจ่าย"])).length;
   const activeProjects = projectRows.filter(row => lower(row.color) === "red" || lower(row.color) === "green").length;
   const completeProjects = projectRows.filter(row => lower(row.color) === "black").length;
 
   const companyRows = dataRows.filter(row => String(row["statusค่าแรง"] || "").includes("บริษัท"));
   const naturalRows = dataRows.filter(row => !String(row["statusค่าแรง"] || "").includes("บริษัท"));
-  const vatRows = dataRows.filter(row => hasValue(row.vat) || toNumber(row.vat) > 0);
-  const noVatRows = dataRows.filter(row => !hasValue(row.vat) && toNumber(row.vat) === 0);
+  const vatRows = dataRows.filter(row => isVatActive(row.vat));
+  const noVatRows = dataRows.filter(row => !isVatActive(row.vat));
   const operatingRows = dataRows.filter(row => String(row["ชื่อ Project"] || "").includes("ดำเนินการ"));
+
+  const matVatTot = sumCategoryRows(vatRows, "ค่าของ");
+  const fuelVatTot = sumCategoryRows(vatRows, "น้ำมัน");
+  const repVatTot = sumCategoryRows(vatRows, "ซ่อมรถ");
 
   const main3 = {
     laborBeforeVat: sumCategoryRows(companyRows, "ค่าแรง"),
-    materialBeforeVat: sumCategoryRows(vatRows, "ค่าของ"),
-    fuelBeforeVat: sumCategoryRows(vatRows, "น้ำมัน"),
-    repairBeforeVat: sumCategoryRows(vatRows, "ซ่อมรถ"),
-    laborVat: sumCategoryRows(companyRows, "ค่าแรง") * 100 / 103,
-    materialVat: sumCategoryRows(vatRows, "ค่าของ") * 100 / 107,
-    fuelVat: sumCategoryRows(vatRows, "น้ำมัน") * 100 / 107,
-    repairVat: sumCategoryRows(vatRows, "ซ่อมรถ") * 100 / 107
+    materialBeforeVat: matVatTot > 0 ? matVatTot / 1.07 : 0,
+    fuelBeforeVat: fuelVatTot > 0 ? fuelVatTot / 1.07 : 0,
+    repairBeforeVat: repVatTot > 0 ? repVatTot / 1.07 : 0,
+    laborVat: sumCategoryRows(companyRows, "ค่าแรง") * 0.03,
+    materialVat: matVatTot > 0 ? matVatTot - (matVatTot / 1.07) : 0,
+    fuelVat: fuelVatTot > 0 ? fuelVatTot - (fuelVatTot / 1.07) : 0,
+    repairVat: repVatTot > 0 ? repVatTot - (repVatTot / 1.07) : 0
   };
   const main3Total = main3.laborVat + main3.materialVat + main3.fuelVat + main3.repairVat;
 
   const main4 = {
     naturalLabor: sumCategoryRows(naturalRows, "ค่าแรง"),
+    naturalLaborDeduct: sumCategoryDeductRows(naturalRows, "ค่าแรง"),
     staff: sumCategoryRows(dataRows, "พนักงาน"),
+    staffDeduct: sumCategoryDeductRows(dataRows, "พนักงาน"),
     material: sumCategoryRows(noVatRows, "ค่าของ"),
+    materialDeduct: sumCategoryDeductRows(noVatRows, "ค่าของ"),
     fuel: sumCategoryRows(noVatRows, "น้ำมัน"),
+    fuelDeduct: sumCategoryDeductRows(noVatRows, "น้ำมัน"),
     repair: sumCategoryRows(noVatRows, "ซ่อมรถ"),
+    repairDeduct: sumCategoryDeductRows(noVatRows, "ซ่อมรถ"),
     operatingLabor: sumCategoryRows(operatingRows, "ค่าแรง"),
     operatingStaff: sumCategoryRows(operatingRows, "พนักงาน"),
     operatingMaterial: sumCategoryRows(operatingRows, "ค่าของ"),
@@ -517,20 +550,41 @@ function buildMainSummary(dataRows: SheetRow[], projectRows: SheetRow[]) {
     operatingRepair: sumCategoryRows(operatingRows, "ซ่อมรถ")
   };
   const main4Total = main4.naturalLabor + main4.staff + main4.material + main4.fuel + main4.repair;
+  const main4DeductTotal = main4.naturalLaborDeduct + main4.staffDeduct + main4.materialDeduct + main4.fuelDeduct + main4.repairDeduct;
+  const main4NetTotal = main4Total - main4DeductTotal;
+
+  const machVatTot = sumCategoryRows(vatRows, "เครื่องจักร");
+  const toolVatTot = sumCategoryRows(vatRows, "เครื่องมือ");
+  const othVatTot = sumCategoryRows(vatRows, "อื่นๆ");
 
   const main5 = {
-    machineBeforeVat: sumCategoryRows(vatRows, "เครื่องจักร"),
-    toolBeforeVat: sumCategoryRows(vatRows, "เครื่องมือ"),
-    otherBeforeVat: sumCategoryRows(vatRows, "อื่นๆ"),
-    machineVat: sumCategoryRows(vatRows, "เครื่องจักร") * 100 / 107,
-    toolVat: sumCategoryRows(vatRows, "เครื่องมือ") * 100 / 107,
-    otherVat: sumCategoryRows(vatRows, "อื่นๆ") * 100 / 107,
+    machineBeforeVat: machVatTot > 0 ? machVatTot / 1.07 : 0,
+    toolBeforeVat: toolVatTot > 0 ? toolVatTot / 1.07 : 0,
+    otherBeforeVat: othVatTot > 0 ? othVatTot / 1.07 : 0,
+    machineVat: machVatTot > 0 ? machVatTot - (machVatTot / 1.07) : 0,
+    toolVat: toolVatTot > 0 ? toolVatTot - (toolVatTot / 1.07) : 0,
+    otherVat: othVatTot > 0 ? othVatTot - (othVatTot / 1.07) : 0,
     machineNoVat: sumCategoryRows(noVatRows, "เครื่องจักร"),
     toolNoVat: sumCategoryRows(noVatRows, "เครื่องมือ"),
     otherNoVat: sumCategoryRows(noVatRows, "อื่นๆ")
   };
-  const main5BeforeVatTotal = main5.machineVat + main5.toolVat + main5.otherVat;
+  const main3BeforeVatTotal = main3.laborBeforeVat + main3.materialBeforeVat + main3.fuelBeforeVat + main3.repairBeforeVat;
+  const main3VatTotal = main3.laborVat + main3.materialVat + main3.fuelVat + main3.repairVat;
+  const main3GrandTotal = main3BeforeVatTotal + main3VatTotal;
+
+  const main4OperatingTotal = main4.operatingLabor + main4.operatingStaff + main4.operatingMaterial + main4.operatingFuel + main4.operatingRepair;
+
+  const main5BeforeVatTotal = main5.machineBeforeVat + main5.toolBeforeVat + main5.otherBeforeVat;
   const main5NoVatTotal = main5.machineNoVat + main5.toolNoVat + main5.otherNoVat;
+  const main5MachineBeforeVatTotal = main5.machineBeforeVat;
+  const main5ToolBeforeVatTotal = main5.toolBeforeVat;
+  const main5OtherBeforeVatTotal = main5.otherBeforeVat;
+  const main5MachineNoVatTotal = main5.machineNoVat;
+  const main5ToolNoVatTotal = main5.toolNoVat;
+  const main5OtherNoVatTotal = main5.otherNoVat;
+  const main5MachineTotal = main5.machineBeforeVat + main5.machineVat + main5.machineNoVat;
+  const main5ToolTotal = main5.toolBeforeVat + main5.toolVat + main5.toolNoVat;
+  const main5OtherTotal = main5.otherBeforeVat + main5.otherVat + main5.otherNoVat;
 
   const revenue = sumColumns(projectRows, ["ยอดรวม vat", "ยอดงาน"]);
   const investment = total;
@@ -555,12 +609,27 @@ function buildMainSummary(dataRows: SheetRow[], projectRows: SheetRow[]) {
     profit,
     profitPercent,
     main3,
+    main3BeforeVatTotal,
+    main3VatTotal,
+    main3GrandTotal,
     main3Total,
     main4,
     main4Total,
+    main4DeductTotal,
+    main4NetTotal,
+    main4OperatingTotal,
     main5,
     main5BeforeVatTotal,
-    main5NoVatTotal
+    main5NoVatTotal,
+    main5MachineBeforeVatTotal,
+    main5ToolBeforeVatTotal,
+    main5OtherBeforeVatTotal,
+    main5MachineNoVatTotal,
+    main5ToolNoVatTotal,
+    main5OtherNoVatTotal,
+    main5MachineTotal,
+    main5ToolTotal,
+    main5OtherTotal
   };
 }
 

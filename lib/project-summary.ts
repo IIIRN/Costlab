@@ -33,7 +33,7 @@ export function hydrateDataRows(rows: SheetRow[]) {
   return rows.map(row => {
     const output = { ...row };
     if (!hasValue(output["ยอดเงิน"])) output["ยอดเงิน"] = sumColumns([output], AMOUNT_COLUMNS);
-    if (!hasValue(output["ยอดโอน"])) output["ยอดโอน"] = computeTransferAmount(output);
+    output["ยอดโอน"] = computeTransferAmount(output);
     if (!hasValue(output["ร้าน/บุคคล"])) output["ร้าน/บุคคล"] = valueOf(output, ["ร้านค้า", "ผู้รับเหมา", "ร้านค้า/ผู้รับเหมา"]);
     if (!hasValue(output["สินค้า/ทำงาน"])) output["สินค้า/ทำงาน"] = valueOf(output, ["สินค้า", "รายละเอียดงาน", "รายการ"]);
     return output;
@@ -104,31 +104,59 @@ export function hydrateProjectSummary(project: SheetRow, projectDataRows: SheetR
   };
 }
 
+export function isVatActive(vatValue: unknown): boolean {
+  if (vatValue === null || vatValue === undefined) return false;
+  const str = String(vatValue).trim();
+  return str !== "" && str !== "0" && str !== "0.00" && str !== "0%" && str !== "ไม่มี" && str !== "false";
+}
+
+export function isDeductActive(value: unknown): boolean {
+  if (value === null || value === undefined) return false;
+  const str = String(value).trim();
+  if (str === "" || str === "0" || str === "0.00" || str === "0%" || str === "ไม่มี" || str === "false") return false;
+  return toNumber(value) > 0;
+}
+
+export function isCreditActive(value: unknown): boolean {
+  if (value === null || value === undefined) return false;
+  const str = String(value).trim();
+  if (str === "" || str === "0" || str === "0.00" || str === "ไม่มี" || str === "false") return false;
+  return toNumber(value) > 0;
+}
+
 function computeTransferAmount(row: SheetRow) {
   const amount = hasValue(row["ยอดเงิน"]) ? toNumber(row["ยอดเงิน"]) : computeBillAmount(row);
-  const hasVat = hasValue(row.vat);
-  const hasDeduct = hasValue(row["หัก"]);
+  const hasVat = isVatActive(row.vat);
+  const hasDeduct = hasValue(row["หัก"]) && toNumber(row["หัก"]) > 0;
   const customDeduct = hasValue(row["จำนวนหัก"]) ? toNumber(row["จำนวนหัก"]) : null;
+
   if (!hasVat && !hasDeduct) return amount;
-  if (hasVat && hasDeduct) return customDeduct === null ? amount * 104 / 107 : amount - customDeduct;
-  if (hasVat) return amount;
-  if (hasDeduct && customDeduct !== null) {
-    return (isCompanyLabor(row) ? amount * 1.07 : amount) - customDeduct;
+
+  if (hasVat && hasDeduct) {
+    if (customDeduct !== null && customDeduct > 0) return amount - customDeduct;
+    const deductRate = toNumber(row["หัก"]);
+    const deductAmt = (amount / 1.07) * (deductRate / 100);
+    return amount - deductAmt;
   }
-  if (hasDeduct) return amount * computeBillDeductMultiplier(row);
-  return 0;
+
+  if (hasVat) return amount;
+
+  if (hasDeduct) {
+    if (customDeduct !== null && customDeduct > 0) return amount - customDeduct;
+    const deductRate = toNumber(row["หัก"]);
+    const deductAmt = (amount * deductRate) / 100;
+    return amount - deductAmt;
+  }
+
+  return amount;
 }
 
 export function computeBillDeductMultiplier(row: SheetRow) {
   const deduct = String(row["หัก"] || "").trim();
-  const status = String(row["statusค่าแรง"] || "").trim();
-  const company = status === "บริษัท";
-  if (deduct === "1") return company ? 1.06 : 0.99;
-  if (deduct === "3") return company ? 1.04 : 0.97;
-  if (deduct === "5") return company ? 1.02 : 0.95;
-  if (deduct === "8") return company ? 0.99 : 0.92;
-  const rate = toNumber(row["หัก"]);
-  return company ? 1.07 - rate / 100 : 1 - rate / 100;
+  const hasVat = isVatActive(row.vat);
+  const rate = toNumber(deduct);
+  if (rate <= 0) return 1;
+  return hasVat ? 1 - (rate / 100 / 1.07) : 1 - (rate / 100);
 }
 
 function isCompanyLabor(row: SheetRow) {

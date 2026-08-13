@@ -5,7 +5,8 @@ import {
   createWorkAssignmentFlex,
   createTaskSummaryFlex,
   createMemberTaskTableFlex,
-  createBillSearchResultFlex
+  createBillSearchResultFlex,
+  isLineApproverAuthorized
 } from "@/lib/line";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { insertRowToSupabase } from "@/lib/supabase-db";
@@ -209,16 +210,37 @@ export async function handleLineCommand(
         return true;
       }
 
-      const newStatus = isApprove ? "อนุมัติแล้ว" : "เบิกแล้ว";
-      const { error } = await supabaseAdmin
+      // Check LINE Approver Authorization
+      const isAuthorized = await isLineApproverAuthorized(userId, targetId);
+      if (!isAuthorized) {
+        await replyTextMessage(
+          replyToken,
+          `⛔ ขออภัยครับ บัญชี LINE ของคุณไม่มีสิทธิ์ในการ${isApprove ? "อนุมัติ" : "ปิดงาน"}บิล\n\n(สิทธิ์นี้สงวนไว้เฉพาะผู้ดูแลระบบ Admin หรือ ผู้อนุมัติที่ได้รับอนุญาตเท่านั้น)`
+        );
+        return true;
+      }
+
+      const newStatus = isApprove ? "อนุมัติ" : "เบิกแล้ว";
+      
+      // Update Supabase "data" table ("สถานะ")
+      const { error: dataErr } = await supabaseAdmin
+        .from("data")
+        .update({ "สถานะ": newStatus })
+        .or(`ผู้เบิก.eq.${targetNameOrId},ลำดับ.eq.${targetNameOrId}`);
+
+      // Also update "bills" table ("status") if exists
+      const { error: billErr } = await supabaseAdmin
         .from("bills")
-        .update({ status: newStatus })
+        .update({ status: isApprove ? "อนุมัติแล้ว" : "เบิกแล้ว" })
         .or(`requester.eq.${targetNameOrId},id.eq.${targetNameOrId}`);
 
-      if (error) {
-        await replyTextMessage(replyToken, `❌ ดำเนินการอัปเดตบิลไม่สำเร็จ: ${error.message}`);
+      if (dataErr && billErr) {
+        await replyTextMessage(replyToken, `❌ ดำเนินการอัปเดตบิลไม่สำเร็จ: ${dataErr.message || billErr.message}`);
       } else {
-        await replyTextMessage(replyToken, `✅ ${isApprove ? "อนุมัติ" : "ปิดงาน"}บิลของ "${targetNameOrId}" เป็นสถานะ [${newStatus}] เรียบร้อยแล้วครับ!`);
+        await replyTextMessage(
+          replyToken,
+          `✅ ${isApprove ? "อนุมัติ" : "ปิดงาน"}บิลของ "${targetNameOrId}" เป็นสถานะ [${newStatus}] เรียบร้อยแล้วครับ!\n\n👮‍♂️ ผู้ดำเนินการ: Admin/Approver (${userId ? userId.slice(-6) : "Web"})`
+        );
       }
       return true;
     }

@@ -1,6 +1,7 @@
 import { TABLES } from "@/lib/config";
 import { MainDashboardClient } from "@/components/dashboards/MainDashboardClient";
 import { isCommittedBill, isUnpaidBill } from "@/lib/bill-status";
+import { computeBillTransferAmount, isCreditActive, isDeductActive, isVatActive } from "@/lib/project-summary";
 import { WithdrawDashboardClient, type WithdrawFilters } from "@/components/dashboards/WithdrawDashboardClient";
 import { WorkStatusDashboardClient } from "@/components/dashboards/WorkStatusDashboardClient";
 import { BillFollowDashboardClient } from "@/components/dashboards/BillFollowDashboardClient";
@@ -40,18 +41,18 @@ export async function BillFollowDashboard() {
     return rightSeq - leftSeq;
   });
 
-  const vatRows = rows.filter(row => hasValue(row.vat) && !hasValue(row["วันได้บิล"]));
+  const vatRows = rows.filter(row => isVatActive(row.vat) && !hasValue(row["วันได้บิล"]));
   const naturalDeductRows = rows.filter(row =>
-    hasValue(row["หัก"]) &&
+    isDeductActive(row["หัก"]) &&
     !hasValue(row["วันออก 3%"]) &&
     !isCompanyLaborStatus(row["statusค่าแรง"])
   );
   const companyDeductRows = rows.filter(row =>
-    hasValue(row["หัก"]) &&
+    isDeductActive(row["หัก"]) &&
     !hasValue(row["วันออก 3%"]) &&
     isCompanyLaborStatus(row["statusค่าแรง"])
   );
-  const creditRows = rows.filter(row => hasValue(row["เครดิต"]) && !hasValue(row["วันจ่าย"]));
+  const creditRows = rows.filter(row => isCreditActive(row["เครดิต"]) && !hasValue(row["วันจ่าย"]));
 
   return (
     <BillFollowDashboardClient
@@ -341,7 +342,7 @@ function hydrateDataRows(rows: SheetRow[]) {
   return rows.map(row => {
     const output = { ...row };
     if (!hasValue(output["ยอดเงิน"])) output["ยอดเงิน"] = sumColumns([output], amountColumns);
-    if (!hasValue(output["ยอดโอน"])) output["ยอดโอน"] = computeTransferAmount(output);
+    output["ยอดโอน"] = computeBillTransferAmount(output);
     if (!hasValue(output["ร้าน/บุคคล"])) output["ร้าน/บุคคล"] = firstValue(output, ["ร้านค้า", "ผู้รับเหมา", "ร้านค้า/ผู้รับเหมา"]);
     if (!hasValue(output["สินค้า/ทำงาน"])) output["สินค้า/ทำงาน"] = firstValue(output, ["สินค้า", "รายละเอียดงาน", "รายการ"]);
     return output;
@@ -349,25 +350,7 @@ function hydrateDataRows(rows: SheetRow[]) {
 }
 
 function computeTransferAmount(row: SheetRow) {
-  const amount = toNumber(row["ยอดเงิน"]);
-  const hasVat = hasValue(row.vat);
-  const hasDeduct = hasValue(row["หัก"]);
-  if (!hasVat && !hasDeduct) return amount;
-  if (hasVat && hasDeduct) return amount * 104 / 107;
-  if (hasVat) return amount;
-  if (hasDeduct) return amount * computeDeductMultiplier(row);
-  return 0;
-}
-
-function computeDeductMultiplier(row: SheetRow) {
-  const deduct = String(row["หัก"] || "").trim();
-  const status = String(row["statusค่าแรง"] || "").trim();
-  const company = status === "บริษัท";
-  if (deduct === "1") return company ? 1.06 : 0.99;
-  if (deduct === "3") return company ? 1.04 : 0.97;
-  if (deduct === "5") return company ? 1.02 : 0.95;
-  if (deduct === "8") return company ? 0.99 : 0.92;
-  return 1;
+  return computeBillTransferAmount(row);
 }
 
 function hydrateProjectSummary(project: SheetRow, dataRows: SheetRow[]): SheetRow {

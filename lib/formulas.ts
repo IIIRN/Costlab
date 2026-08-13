@@ -1,6 +1,6 @@
 import { TABLES } from "@/lib/config";
 import { isCommittedBill } from "@/lib/bill-status";
-import { computeBillAmount, computeBillDeductMultiplier, computeBillTransferAmount } from "@/lib/project-summary";
+import { computeBillAmount, computeBillDeductMultiplier, computeBillTransferAmount, isVatActive } from "@/lib/project-summary";
 import { getRows } from "@/lib/db";
 import type { SheetRow } from "@/lib/types";
 
@@ -110,6 +110,10 @@ export function applyProjectFormulas(row: SheetRow) {
   return output;
 }
 
+export function hydrateProjectRows(rows: SheetRow[]): SheetRow[] {
+  return rows.map(row => applyProjectFormulas(row));
+}
+
 export async function hydrateContractRows(
   rows: SheetRow[],
   preloadedContext?: { projects?: SheetRow[]; contractors?: SheetRow[]; dataRows?: SheetRow[] }
@@ -121,49 +125,76 @@ export async function hydrateContractRows(
 async function getContractFormulaContext(preloadedContext?: { projects?: SheetRow[]; contractors?: SheetRow[]; dataRows?: SheetRow[] }) {
   const projects = preloadedContext?.projects || await getRows(TABLES.PROJECT, 30_000).catch(() => []);
   const contractors = preloadedContext?.contractors || await getRows(TABLES.CONTRACTOR, 30_000).catch(() => []);
-  const dataRows = preloadedContext?.dataRows || await getRows(TABLES.DATA, 15_000).catch(() => []);
-  return { projects, contractors, paidByContract: contractPaidAmounts(dataRows) };
+  const dataRows = preloadedContext?.dataRows || await getRows(TABLES.DATA, 120_000).catch(() => []);
+  return { projects, contractors, dataRows };
 }
 
 function applyContractFormulasWithContext(
   row: SheetRow,
-  context: { projects: SheetRow[]; contractors: SheetRow[]; paidByContract: Record<string, number> }
+  context: { projects: SheetRow[]; contractors: SheetRow[]; dataRows: SheetRow[] }
 ) {
-  const project = context.projects.find(item => String(item["ID Project"]) === String(row["ID Project"]));
+  const project = context.projects.find(item => String(item["ID Project"]).trim() === String(row["ID Project"]).trim());
   if (project) {
     row["ชื่อ Project"] = project["ชื่อ Project"] || row["ชื่อ Project"] || "";
   }
-  const contractor = context.contractors.find(item => String(item["id_Contractor"]) === String(row["id_Contractor"]));
+  const contractor = context.contractors.find(item => String(item["id_Contractor"]).trim() === String(row["id_Contractor"]).trim());
   if (contractor) {
     row["ชื่อเล่น"] = contractor["ชื่อเล่น"] || contractor["ชื่อ-นามสกุล"] || row["ชื่อเล่น"] || "";
     row["ผู้รับเหมา"] = contractor["ชื่อเล่น"] || contractor["ชื่อ-นามสกุล"] || row["ผู้รับเหมา"] || "";
   }
-  const key = contractPaymentKey(row);
-  const paid = key ? context.paidByContract[key] || 0 : 0;
+
+  const paid = computePaidForContract(row, context.dataRows);
   const hireAmount = toNumber(firstValue(row, ["ยอดเงินจ้าง"]));
   row["ยอดเงินจ่าย"] = paid;
   row["ค่าแรงคงเหลือ"] = hireAmount - paid;
   return row;
 }
 
-function contractPaidAmounts(rows: SheetRow[]) {
-  return rows.reduce<Record<string, number>>((totals, row) => {
-    if (!isCommittedBill(row)) return totals;
-    const key = contractPaymentKey(row);
-    if (!key) return totals;
-    const directAmount =
-      toNumber(firstValue(row, ["ค่าแรง"])) +
-      toNumber(firstValue(row, ["พนักงาน"])) +
-      toNumber(firstValue(row, ["อื่นๆ"]));
-    totals[key] = (totals[key] || 0) + directAmount;
-    return totals;
-  }, {});
-}
+function computePaidForContract(contractRow: SheetRow, dataRows: SheetRow[]): number {
+  const cConworkId = String(contractRow["id_Conwork"] || contractRow.id || "").trim();
+  const cProjectId = String(contractRow["ID Project"] || "").trim();
+  const cContractorId = String(contractRow["id_Contractor"] || "").trim();
+  const cName = String(contractRow["ชื่อเล่น"] || contractRow["ผู้รับเหมา"] || contractRow["ชื่อ-นามสกุล"] || "").trim();
 
-function contractPaymentKey(row: SheetRow) {
-  const projectId = String(row["ID Project"] || "").trim();
-  const contractId = String(firstValue(row, ["id_Conwork", "ผู้รับเหมา"]) || "").trim();
-  return projectId && contractId ? `${projectId}|${contractId}` : "";
+  let totalPaid = 0;
+
+  for (const b of dataRows) {
+    if (!isCommittedBill(b)) continue;
+
+    const bVendorType = String(b["ร้านค้า/ผู้รับเหมา"] || "").trim();
+    const bContractorRef = String(b["ผู้รับเหมา"] || b.contractor_id || b.conwork_id || "").trim();
+    const bVendorRef = String(b["ร้าน/บุคคล"] || "").trim();
+    const bProjectId = String(b["ID Project"] || "").trim();
+
+    const isContractorBill = bVendorType === "ผู้รับเหมา" || bContractorRef !== "" || bVendorRef.startsWith("CW");
+    if (!isContractorBill) continue;
+
+    let isMatch = false;
+
+    // 1. Match on id_Conwork ID (e.g. "CW1001")
+    if (cConworkId && (bContractorRef === cConworkId || bVendorRef === cConworkId || bContractorRef.includes(cConworkId) || bVendorRef.includes(cConworkId))) {
+      isMatch = true;
+    }
+    // 2. Match by Project ID + Contractor ID / Name
+    else if (cProjectId && bProjectId === cProjectId) {
+      if (cContractorId && (bContractorRef === cContractorId || bVendorRef === cContractorId)) {
+        isMatch = true;
+      } else if (cName && (bContractorRef === cName || bVendorRef === cName || bContractorRef.includes(cName) || bVendorRef.includes(cName))) {
+        isMatch = true;
+      }
+    }
+    // 3. Match by Contractor Name globally
+    else if (cName && (bContractorRef === cName || bVendorRef === cName)) {
+      isMatch = true;
+    }
+
+    if (isMatch) {
+      const amt = toNumber(b["ค่าแรง"]) || toNumber(b["ยอดเงิน"]) || toNumber(b["ยอดโอน"]);
+      totalPaid += amt;
+    }
+  }
+
+  return totalPaid;
 }
 
 function firstValue(row: SheetRow, columns: string[]) {
@@ -236,7 +267,7 @@ function applyBillFormulasFast(
   row["ยอดโอน(มีvat)"] = row["ยอดเงิน"];
   row["ยอดโอน(มีหัก)"] = hasValue(row["หัก"]) ? computeBillTransferAmount(row) : "";
   row["ยอดโอน(vat,หัก)"] = hasValue(row["vat"]) && hasValue(row["หัก"]) ? computeBillTransferAmount(row) : "";
-  row["ยอดโอน"] = hasValue(row["ยอดโอน"]) && toNumber(row["ยอดโอน"]) > 0 ? toNumber(row["ยอดโอน"]) : computeBillTransferAmount(row);
+  row["ยอดโอน"] = computeBillTransferAmount(row);
   row["ร้าน/บุคคล"] = vendorNameFast(row, context.storeMap, contract);
   const pFast = String(row["สินค้า"] || row.product || "").trim();
   const dFast = String(row["รายละเอียดงาน"] || row.work_details || "").trim();
@@ -289,7 +320,7 @@ function applyBillFormulasWithContext(
   row["ยอดโอน(มีvat)"] = row["ยอดเงิน"];
   row["ยอดโอน(มีหัก)"] = hasValue(row["หัก"]) ? computeBillTransferAmount(row) : "";
   row["ยอดโอน(vat,หัก)"] = hasValue(row["vat"]) && hasValue(row["หัก"]) ? computeBillTransferAmount(row) : "";
-  row["ยอดโอน"] = hasValue(row["ยอดโอน"]) && toNumber(row["ยอดโอน"]) > 0 ? toNumber(row["ยอดโอน"]) : computeBillTransferAmount(row);
+  row["ยอดโอน"] = computeBillTransferAmount(row);
   row["ร้าน/บุคคล"] = vendorName(row, context.stores, contract);
   const pVal = String(row["สินค้า"] || row.product || "").trim();
   const dVal = String(row["รายละเอียดงาน"] || row.work_details || "").trim();
@@ -308,7 +339,14 @@ function vendorName(row: SheetRow, stores: SheetRow[], contract?: SheetRow) {
 
 function deductAmount(row: SheetRow) {
   if (hasValue(row["จำนวนหัก"])) return toNumber(row["จำนวนหัก"]);
-  return toNumber(row["ค่าแรง+พนักงาน+อื่น"]) * toNumber(row["หัก"]) * 0.01;
+  const hasVat = isVatActive(row.vat);
+  const baseAmt = toNumber(row["ยอดเงิน"]) || toNumber(row["ค่าแรง+พนักงาน+อื่น"]);
+  const deductRate = toNumber(row["หัก"]);
+  if (deductRate <= 0 || baseAmt <= 0) return 0;
+  if (hasVat) {
+    return (baseAmt / 1.07) * (deductRate / 100);
+  }
+  return (baseAmt * deductRate) / 100;
 }
 
 function hasValue(value: unknown) {

@@ -41,7 +41,11 @@ async function getRefOptions(column: FieldSchema, preloadedRows?: Record<string,
 async function listHydratedContractOptions(column: FieldSchema, preloadedRows?: Record<string, SheetRow[]>): Promise<RefOption[]> {
   const [contractRows, contractorRows] = await Promise.all([
     preloadedRows?.[TABLES.CONTRACT_WORK]
-      ? hydrateContractRows(preloadedRows[TABLES.CONTRACT_WORK])
+      ? hydrateContractRows(preloadedRows[TABLES.CONTRACT_WORK], {
+          projects: preloadedRows[TABLES.PROJECT],
+          contractors: preloadedRows[TABLES.CONTRACTOR],
+          dataRows: preloadedRows[TABLES.DATA],
+        })
       : hydrateContractRows(await getRows(TABLES.CONTRACT_WORK, 120_000)),
     preloadedRows?.[TABLES.CONTRACTOR]
       ? Promise.resolve(preloadedRows[TABLES.CONTRACTOR])
@@ -70,11 +74,11 @@ async function listHydratedContractOptions(column: FieldSchema, preloadedRows?: 
 
       let displayLabel = idVal;
       if (contractorName && details) {
-        displayLabel = `${contractorName} (${idVal} - ${details})`;
+        displayLabel = `${contractorName} (${details})`;
       } else if (contractorName) {
-        displayLabel = `${contractorName} (${idVal})`;
+        displayLabel = contractorName;
       } else if (details) {
-        displayLabel = `${idVal} - ${details}`;
+        displayLabel = details;
       }
 
       const rowData = pick(row, rowColumns);

@@ -216,7 +216,12 @@ export function BillDetailClient({
               limit={10}
               detailBasePath="/work-status"
               detailKeyColumn="ID Project"
-              cellFormatters={{ "วันที่": (v) => formatDateThai(v) }}
+              cellFormatters={{
+                "วันที่": (v) => formatDateThai(v),
+                "ยอดงาน": (v) => money(v),
+                "ยอดรวม vat": (v) => money(v),
+                "งบไม่เกิน": (v) => money(v),
+              }}
             />
           </div>
         )}
@@ -231,7 +236,12 @@ export function BillDetailClient({
               limit={10}
               detailBasePath="/contract-open"
               detailKeyColumn="id_Conwork"
-              cellFormatters={{ "วันที่": (v) => formatDateThai(v) }}
+              cellFormatters={{
+                "วันที่": (v) => formatDateThai(v),
+                "ยอดเงินจ้าง": (v) => money(v),
+                "ยอดเงินจ่าย": (v) => money(v),
+                "ค่าแรงคงเหลือ": (v) => money(v),
+              }}
             />
           </div>
         )}

@@ -293,9 +293,14 @@ function clampPage(value: number, totalPages: number) {
 }
 
 function formatValue(value: unknown) {
-  if (value === null || value === undefined) return "";
+  if (value === null || value === undefined || String(value).trim() === "") return "";
   if (typeof value === "number") return value.toLocaleString("th-TH", { maximumFractionDigits: 2 });
-  return String(value);
+  const str = String(value).trim();
+  const rawNum = str.replace(/,/g, "");
+  if (rawNum !== "" && !isNaN(Number(rawNum))) {
+    return Number(rawNum).toLocaleString("th-TH", { maximumFractionDigits: 2 });
+  }
+  return str;
 }
 
 import { formatDateDisplay } from "@/lib/dates";

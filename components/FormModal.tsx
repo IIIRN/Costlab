@@ -3,7 +3,25 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { Plus, Save, Trash2, X } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowRight,
+  Building2,
+  Calculator,
+  CheckCircle2,
+  ClipboardList,
+  Coins,
+  CreditCard,
+  FileCheck,
+  FileText,
+  Plus,
+  Receipt,
+  Save,
+  Scissors,
+  Store,
+  Trash2,
+  X
+} from "lucide-react";
 import { LoadingState } from "@/components/LoadingState";
 import { TABLES } from "@/lib/config";
 import type { FieldSchema, RefOption, SheetRow } from "@/lib/types";
@@ -34,6 +52,53 @@ type OpenFormDetail = {
   sheetRow?: string | number;
 };
 
+const DATA_FORM_SECTIONS: { id: string; title: string; iconName: string; fields: string[] }[] = [
+  {
+    id: "basic",
+    title: "ข้อมูลหลัก & โครงการ",
+    iconName: "ClipboardList",
+    fields: ["ลำดับ", "ID Project", "บิล", "ผู้เบิก", "ว/ด/ป"]
+  },
+  {
+    id: "vendor",
+    title: "ร้านค้า / ผู้รับเหมา",
+    iconName: "Store",
+    fields: ["ร้านค้า/ผู้รับเหมา", "ร้านค้า", "ผู้รับเหมา", "รายละเอียดงาน", "สินค้า", "ประเภท"]
+  },
+  {
+    id: "expense",
+    title: "รายการค่าใช้จ่าย & ยอดเงิน",
+    iconName: "Coins",
+    fields: [
+      "ค่าของ", "ค่าแรง", "statusค่าแรง", "ค่าแรงคงเหลือ", "พนักงาน", "ชื่อพนักงาน",
+      "น้ำมัน", "ซ่อมรถ", "ทะเบียน", "เครื่องจักร", "เครื่องมือ", "ชื่อเครื่องมือ", "อื่นๆ", "รายการ"
+    ]
+  },
+  {
+    id: "tax",
+    title: "ภาษี & เงื่อนไขการชำระเงิน",
+    iconName: "Receipt",
+    fields: ["vat", "วันได้บิล", "เครดิต", "วันจ่าย", "หัก", "จำนวนหัก", "วันออก 3%"]
+  },
+  {
+    id: "attachment",
+    title: "หลักฐาน & เอกสารแนบ",
+    iconName: "FileCheck",
+    fields: ["รูปถ่ายบิล"]
+  }
+];
+
+function SectionHeaderIcon({ name }: { name: string }) {
+  switch (name) {
+    case "ClipboardList": return <ClipboardList size={16} className="text-emerald-700" />;
+    case "Store": return <Store size={16} className="text-indigo-700" />;
+    case "Coins": return <Coins size={16} className="text-amber-700" />;
+    case "Receipt": return <Receipt size={16} className="text-sky-700" />;
+    case "FileCheck": return <FileCheck size={16} className="text-teal-700" />;
+    default: return <FileText size={16} className="text-slate-700" />;
+  }
+}
+
 export function FormModal({ form, title = "เพิ่มข้อมูล", buttonLabel = "เพิ่มรายการ", relaxed = false, submitPath, openEventName, hideLauncher = false }: FormModalProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -43,6 +108,8 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const isEditing = editSheetRow !== null && editSheetRow !== undefined;
+  const isDataForm = form.tableName === TABLES.DATA || form.tableName === "Data";
+
   const visibleFields = form.schema.filter(field => {
     if (field.type === "Hidden") return false;
     if ((form.tableName === TABLES.PROJECT || form.tableName === "Project") && (field.name.startsWith("งบไม่เกิน") || field.name === "คุมงบประเภทงาน")) {
@@ -181,25 +248,37 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
     }
   }
 
+  // Pre-calculate contract & balance summary metrics for Data form
+  const baseAmt = toNumber(values["ยอดเงิน"]);
+  const deductVal = values["หัก"];
+  const deductAmt = toNumber(values["จำนวนหัก"] || values["3เปอร์"]);
+  const netTransferAmt = toNumber(values["ยอดโอน"] || values["ยอดเงิน"]);
+
+  const isContractorBill = values["ร้านค้า/ผู้รับเหมา"] === "ผู้รับเหมา";
+  const { originalBalance, hasContract } = parseContractRemainingLabor(values["ค่าแรงคงเหลือ"] || "");
+  const currentLaborClaim = toNumber(values["ค่าแรง"]);
+  const netBalanceAfter = originalBalance - currentLaborClaim;
+  const isOverContract = isContractorBill && hasContract && netBalanceAfter < 0;
+
   return (
     <>
       {!hideLauncher ? (
         <div className={open ? "hidden" : ""}>
           <button
             type="button"
-            className="inline-flex items-center justify-center gap-1.5 h-9 px-3.5 bg-[#d4f54e] hover:bg-[#c2e438] text-[#0b3531] font-extrabold text-xs rounded-lg border border-[#b8df28] shadow-2xs transition-all cursor-pointer whitespace-nowrap"
+            className="inline-flex items-center justify-center gap-1.5 h-9 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-lg shadow-xs transition-all cursor-pointer whitespace-nowrap"
             onClick={() => setOpen(true)}
           >
-            <Plus size={15} />
+            <Plus size={15} className="text-white" />
             <span>{buttonLabel}</span>
           </button>
         </div>
       ) : null}
       {open ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-5 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150" role="presentation">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150" role="presentation">
           <form
-            className={`w-full bg-white rounded-lg shadow-2xl overflow-hidden flex flex-col border border-slate-200 max-h-[95vh] sm:max-h-[90vh] ${
-              relaxed ? "max-w-6xl" : "max-w-4xl"
+            className={`w-full bg-white rounded-xl shadow-xl overflow-hidden flex flex-col border border-slate-300 max-h-[96vh] sm:max-h-[92vh] ${
+              relaxed ? "max-w-5xl" : "max-w-3xl"
             }`}
             role="dialog"
             aria-modal="true"
@@ -207,16 +286,16 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
             aria-busy={saving}
             onSubmit={submitForm}
           >
-            <header className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-white shrink-0">
+            {/* Clean Professional Header */}
+            <header className="flex items-center justify-between px-6 py-3.5 bg-white border-b border-slate-200 shrink-0">
               <div>
-                <h3 id="form-modal-title" className="text-sm font-bold text-slate-900 m-0">
+                <h3 id="form-modal-title" className="text-sm font-bold text-slate-900 m-0 tracking-tight">
                   {isEditing ? title.replace(/^เพิ่ม/, "แก้ไข") : title}
                 </h3>
-                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{form.tableName}</span>
               </div>
               <button
                 type="button"
-                className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
                 aria-label="ปิด"
                 disabled={saving}
                 onClick={() => { setOpen(false); setEditSheetRow(null); }}
@@ -224,94 +303,160 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
                 <X size={16} />
               </button>
             </header>
-            <div className="p-4 sm:p-5 overflow-y-auto flex-1 space-y-4">
+
+            {/* Form Content */}
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4 bg-slate-50/50">
               {saving ? (
                 <div className="absolute inset-0 z-20 bg-white/80 backdrop-blur-2xs flex items-center justify-center">
-                  <LoadingState title="กำลังบันทึก" message="กำลังอัปโหลดและบันทึกข้อมูล" compact />
+                  <LoadingState title="กำลังบันทึก" message="กำลังอัปโหลดและบันทึกข้อมูล..." compact />
                 </div>
               ) : null}
+
               <fieldset className="space-y-4 border-0 p-0 m-0" disabled={saving}>
-                {form.tableName === TABLES.DATA ? (
-                  <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-lg grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-                    <div className="bg-white p-2.5 rounded-md border border-slate-200 shadow-2xs flex flex-col justify-center">
-                      <span className="text-slate-500 text-[11px] font-semibold">ยอดเงินรวม</span>
-                      <div className="flex items-baseline gap-1 mt-0.5">
-                        <span className="text-base font-extrabold text-slate-900">
-                          {Number(values["ยอดเงิน"] || 0).toLocaleString("th-TH", { minimumFractionDigits: 2 })}
-                        </span>
-                        <span className="text-[10px] font-bold text-slate-400">บาท</span>
-                      </div>
-                    </div>
 
-                    {values["หัก"] ? (
-                      <div className="bg-white p-2.5 rounded-md border border-slate-200 shadow-2xs flex flex-col justify-center">
-                        <span className="text-slate-500 text-[11px] font-semibold">หัก ณ ที่จ่าย ({values["หัก"]}%)</span>
-                        <div className="flex items-baseline gap-1 mt-0.5">
-                          <span className="text-sm font-bold text-amber-700">
-                            - {Number(values["3เปอร์"] || values["จำนวนหัก"] || 0).toLocaleString("th-TH", { minimumFractionDigits: 2 })}
-                          </span>
-                          <span className="text-[10px] font-bold text-slate-400">บาท</span>
-                        </div>
-                      </div>
-                    ) : null}
-
-                    <div className={`bg-white p-2.5 rounded-md border border-emerald-200 shadow-2xs flex flex-col justify-center ${values["หัก"] ? "" : "col-span-1"}`}>
-                      <span className="text-emerald-700 text-[11px] font-bold">ยอดโอนสุทธิ</span>
-                      <div className="flex items-baseline gap-1 mt-0.5">
-                        <span className="text-base font-extrabold text-emerald-700">
-                          {Number(values["ยอดโอน"] || values["ยอดเงิน"] || 0).toLocaleString("th-TH", { minimumFractionDigits: 2 })}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-                {form.tableName === TABLES.DATA || form.tableName === "Data" ? (
+                {/* Bill Category Budget Guardrail */}
+                {isDataForm ? (
                   <BillCategoryBudgetGuardrail
                     values={values}
                     projectRows={(form.refOptions["ID Project"] || form.refOptions["ชื่อ Project"] || []).map(opt => opt.row).filter(Boolean) as SheetRow[]}
                   />
                 ) : null}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                  {visibleFields.map(field => (
-                    <div className={`${getFieldClassName(field)} space-y-1.5`} key={field.name}>
-                      <label className="text-xs font-semibold text-slate-700 block">{getFieldLabel(field)}{field.required ? <span className="text-rose-600 font-semibold ml-0.5">*</span> : ""}</label>
-                      {renderField(
-                        field,
-                        form,
-                        values[field.name] || "",
-                        values,
-                        isEditing,
-                        value => updateValue(field, value),
-                        enumListSearch[field.name] || "",
-                        value => setEnumListSearch(current => ({ ...current, [field.name]: value }))
-                      )}
-                      {field.description ? <small className="text-[11px] text-slate-500 block leading-tight font-normal">{field.description}</small> : null}
+
+                {/* Categorized Fields Rendering for DATA form */}
+                {isDataForm ? (
+                  <div className="space-y-4">
+                    {DATA_FORM_SECTIONS.map(section => {
+                      const sectionFields = visibleFields.filter(f => section.fields.includes(f.name));
+                      if (!sectionFields.length) return null;
+                      return (
+                        <div key={section.id} className="bg-white rounded-lg p-4 border border-slate-200 shadow-2xs space-y-3">
+                          <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+                            <SectionHeaderIcon name={section.iconName} />
+                            <h4 className="text-xs font-bold text-slate-900 m-0">{section.title}</h4>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                            {sectionFields.map(field => (
+                              <div className={`${getFieldClassName(field)} space-y-1`} key={field.name}>
+                                <label className="text-[11px] font-semibold text-slate-700 block">
+                                  {getFieldLabel(field)}
+                                  {field.required ? <span className="text-rose-600 font-bold ml-0.5">*</span> : ""}
+                                </label>
+                                {renderField(
+                                  field,
+                                  form,
+                                  values[field.name] || "",
+                                  values,
+                                  isEditing,
+                                  value => updateValue(field, value),
+                                  enumListSearch[field.name] || "",
+                                  value => setEnumListSearch(current => ({ ...current, [field.name]: value }))
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {/* Catch-all for any unsectioned fields */}
+                    {(() => {
+                      const assignedNames = new Set(DATA_FORM_SECTIONS.flatMap(s => s.fields));
+                      const unsectionedFields = visibleFields.filter(f => !assignedNames.has(f.name));
+                      if (!unsectionedFields.length) return null;
+                      return (
+                        <div className="bg-white rounded-lg p-4 border border-slate-200 shadow-2xs space-y-3">
+                          <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+                            <FileText size={16} className="text-slate-600" />
+                            <h4 className="text-xs font-bold text-slate-900 m-0">ข้อมูลเพิ่มเติม</h4>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                            {unsectionedFields.map(field => (
+                              <div className={`${getFieldClassName(field)} space-y-1`} key={field.name}>
+                                <label className="text-[11px] font-semibold text-slate-700 block">
+                                  {getFieldLabel(field)}
+                                  {field.required ? <span className="text-rose-600 font-bold ml-0.5">*</span> : ""}
+                                </label>
+                                {renderField(
+                                  field,
+                                  form,
+                                  values[field.name] || "",
+                                  values,
+                                  isEditing,
+                                  value => updateValue(field, value),
+                                  enumListSearch[field.name] || "",
+                                  value => setEnumListSearch(current => ({ ...current, [field.name]: value }))
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                ) : (
+                  /* Standard Grid for Non-Data forms */
+                  <div className="bg-white rounded-lg p-4 border border-slate-200 shadow-2xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                      {visibleFields.map(field => (
+                        <div className={`${getFieldClassName(field)} space-y-1.5`} key={field.name}>
+                          <label className="text-xs font-semibold text-slate-700 block">{getFieldLabel(field)}{field.required ? <span className="text-rose-600 font-semibold ml-0.5">*</span> : ""}</label>
+                          {renderField(
+                            field,
+                            form,
+                            values[field.name] || "",
+                            values,
+                            isEditing,
+                            value => updateValue(field, value),
+                            enumListSearch[field.name] || "",
+                            value => setEnumListSearch(current => ({ ...current, [field.name]: value }))
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                )}
+
                 {form.tableName === TABLES.PROJECT || form.tableName === "Project" ? (
                   <ProjectBudgetAllocator values={values} onChange={updateValueByName} />
                 ) : null}
-                {error ? <div className="p-3 bg-rose-50 text-rose-700 rounded-lg border border-rose-200 text-xs font-semibold">{error}</div> : null}
+
+                {error ? <div className="p-3 bg-rose-50 text-rose-700 rounded-lg border border-rose-200 text-xs font-bold">{error}</div> : null}
               </fieldset>
             </div>
-            <footer className="flex items-center justify-end gap-2 px-4 py-3 bg-slate-50 border-t border-slate-200 shrink-0">
-              <button
-                type="button"
-                disabled={saving}
-                onClick={() => { setOpen(false); setEditSheetRow(null); }}
-                className="px-4 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-200/70 border border-slate-300 bg-white transition cursor-pointer"
-              >
-                ยกเลิก
-              </button>
-              <button
-                type={submitPath ? "submit" : "button"}
-                disabled={saving || !submitPath}
-                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-xs font-extrabold text-white bg-[#0b3531] hover:bg-[#072724] disabled:opacity-50 transition cursor-pointer shadow-xs"
-              >
-                <Save size={14} />
-                <span>{saving ? "กำลังบันทึก" : "บันทึก"}</span>
-              </button>
+
+            {/* Professional Action Footer Bar */}
+            <footer className="flex flex-wrap items-center justify-between gap-3 px-6 py-3.5 bg-white border-t border-slate-200 shrink-0">
+              {isDataForm && baseAmt > 0 ? (
+                <div className="flex items-center gap-3 text-xs bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 font-sans">
+                  <span className="text-slate-500 font-medium">ยอดเงินรวม: <strong className="text-slate-900 font-bold">{baseAmt.toLocaleString("th-TH", { minimumFractionDigits: 2 })} ฿</strong></span>
+                  {deductAmt > 0 ? (
+                    <>
+                      <span className="text-slate-300">|</span>
+                      <span className="text-slate-500 font-medium">หัก {deductVal}%: <strong className="text-amber-700 font-bold">-{deductAmt.toLocaleString("th-TH", { minimumFractionDigits: 2 })} ฿</strong></span>
+                    </>
+                  ) : null}
+                  <span className="text-slate-300">|</span>
+                  <span className="text-slate-700 font-bold">ยอดโอนสุทธิ: <strong className="text-emerald-700 font-extrabold text-sm">{netTransferAmt.toLocaleString("th-TH", { minimumFractionDigits: 2 })} ฿</strong></span>
+                </div>
+              ) : <div />}
+
+              <div className="flex items-center gap-2.5 ml-auto">
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => { setOpen(false); setEditSheetRow(null); }}
+                  className="px-4 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100 border border-slate-300 bg-white transition cursor-pointer"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type={submitPath ? "submit" : "button"}
+                  disabled={saving || !submitPath}
+                  className="inline-flex items-center justify-center gap-1.5 px-5 py-2 rounded-lg text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer shadow-sm"
+                >
+                  <span>{saving ? "กำลังบันทึก..." : "บันทึกรายการบิล"}</span>
+                </button>
+              </div>
             </footer>
           </form>
         </div>
@@ -826,9 +971,20 @@ function DropdownOption({
   );
 }
 
+function cleanOptionLabel(rawLabel: string, value: string): string {
+  if (!rawLabel) return value || "";
+  const match = rawLabel.match(/^(?:[A-Za-z0-9_-]+\s*-\s*)(.+)$/);
+  if (match && match[1]) {
+    return match[1].trim();
+  }
+  return rawLabel;
+}
+
 function optionLabel(option: RefOption | undefined) {
   if (!option) return "";
-  return String(option.label || option.value || "");
+  const raw = String(option.label || option.value || "");
+  const val = String(option.value || "");
+  return cleanOptionLabel(raw, val);
 }
 
 function optionSearchText(option: RefOption) {
@@ -1027,9 +1183,24 @@ function applyLocalFormulas(values: Record<string, string>, tableName: string) {
   }
 }
 
+function parseContractRemainingLabor(rawVal: string): { originalBalance: number; hasContract: boolean } {
+  if (!rawVal) return { originalBalance: 0, hasContract: false };
+  const firstPart = rawVal.split("จาก")[0] || rawVal;
+  const num = toNumber(firstPart);
+  return { originalBalance: num, hasContract: true };
+}
+
+function isVatActive(vatValue: unknown): boolean {
+  if (vatValue === null || vatValue === undefined) return false;
+  const str = String(vatValue).trim();
+  return str !== "" && str !== "0" && str !== "0.00" && str !== "0%" && str !== "ไม่มี" && str !== "false";
+}
+
 function applyBillDeductAmount(values: Record<string, string>) {
-  const amountFields = ["ค่าแรง", "อื่นๆ", "ค่าของ", "พนักงาน", "น้ำมัน", "ซ่อมรถ", "เครื่องจักร", "เครื่องมือ", "ค่าแรงคงเหลือ"];
-  const baseAmount = amountFields.map(field => toNumber(values[field])).find(amount => amount > 0) || toNumber(values["ยอดเงิน"]);
+  // Sum up active expense breakdown categories (EXCLUDE "ค่าแรงคงเหลือ"!)
+  const expenseFields = ["ค่าของ", "ค่าแรง", "พนักงาน", "น้ำมัน", "ซ่อมรถ", "เครื่องจักร", "เครื่องมือ", "อื่นๆ"];
+  const totalExpense = expenseFields.reduce((sum, field) => sum + toNumber(values[field]), 0);
+  const baseAmount = totalExpense > 0 ? totalExpense : toNumber(values["ยอดเงิน"]);
 
   if (baseAmount > 0) {
     values["ยอดเงิน"] = String(baseAmount);
@@ -1037,24 +1208,40 @@ function applyBillDeductAmount(values: Record<string, string>) {
 
   const deductValue = values["หัก"];
   const deductPercent = toNumber(deductValue);
-  if (!hasValue(deductValue)) {
+  let deductAmount = 0;
+
+  const hasVat = isVatActive(values["vat"]);
+  const hasDeduct = hasValue(deductValue) && deductPercent > 0;
+
+  if (!hasDeduct) {
     values["จำนวนหัก"] = "";
+    values["3เปอร์"] = "";
+    deductAmount = 0;
   } else {
-    values["จำนวนหัก"] = deductPercent && baseAmount ? formatDecimal(baseAmount * deductPercent / 100) : "";
+    // If VAT is active (7% included in baseAmount), calculate deduction on pre-VAT amount
+    if (hasVat) {
+      const preVatAmount = baseAmount / 1.07;
+      deductAmount = (preVatAmount * deductPercent) / 100;
+    } else {
+      // If NO VAT selected, calculate deduction directly on baseAmount (e.g. 3% of baseAmount)
+      deductAmount = (baseAmount * deductPercent) / 100;
+    }
+    values["จำนวนหัก"] = deductAmount > 0 ? formatDecimal(deductAmount) : "";
+    values["3เปอร์"] = values["จำนวนหัก"];
   }
 
-  const vatValue = values["vat"];
-  const deductAmount = toNumber(values["จำนวนหัก"]);
+  let netTransfer = baseAmount;
 
-  if (!hasValue(vatValue) && !hasValue(deductValue)) {
-    values["ยอดโอน"] = baseAmount > 0 ? String(baseAmount) : values["ยอดเงิน"];
-  } else if (hasValue(vatValue) && hasValue(deductValue)) {
-    values["ยอดโอน"] = formatDecimal(baseAmount - deductAmount);
-  } else if (hasValue(vatValue)) {
-    values["ยอดโอน"] = String(baseAmount);
-  } else if (hasValue(deductValue)) {
-    values["ยอดโอน"] = formatDecimal(baseAmount - deductAmount);
+  if (hasVat && hasDeduct) {
+    netTransfer = baseAmount - deductAmount;
+  } else if (hasDeduct) {
+    // Withholding Tax without VAT: baseAmount - deductAmount (e.g. 20,000 - 600 = 19,400)
+    netTransfer = baseAmount - deductAmount;
+  } else {
+    netTransfer = baseAmount;
   }
+
+  values["ยอดโอน"] = netTransfer > 0 ? formatDecimal(netTransfer) : (baseAmount > 0 ? String(baseAmount) : "");
 }
 
 function applyRefFill(values: Record<string, string>, field: FieldSchema, form: FormPayload, value: string) {

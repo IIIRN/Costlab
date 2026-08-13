@@ -1,9 +1,8 @@
 import { cached, clearCache } from "@/lib/cache";
 import { TABLE_KEYS } from "@/lib/config";
-import type { RefOption, TableRow, SheetRow } from "@/lib/types";
+import type { RefOption, SheetRow } from "@/lib/types";
 import {
   deleteRowFromSupabase,
-  deleteRowsFromSupabase,
   getRowsFromSupabase,
   getSystemOptionsFromSupabase,
   insertAuditLogToSupabase,
@@ -21,10 +20,7 @@ export type AuditEntry = {
   details?: Record<string, unknown>;
 };
 
-/**
- * Fetch rows directly from Supabase PostgreSQL database
- */
-export async function getRows(tableName: string, _ttlMs?: number, maxRows = 10_000): Promise<TableRow[]> {
+export async function getRows(tableName: string, _ttlMs?: number, maxRows = 10_000): Promise<SheetRow[]> {
   try {
     const rows = await getRowsFromSupabase(tableName, maxRows);
     if (rows !== null && rows !== undefined) return rows;
@@ -36,11 +32,6 @@ export async function getRows(tableName: string, _ttlMs?: number, maxRows = 10_0
   }
 }
 
-export const fetchTableRows = getRows;
-
-/**
- * Get columns/headers for a Supabase table
- */
 export async function getHeaders(tableName: string): Promise<string[]> {
   try {
     const data = await getRows(tableName);
@@ -53,22 +44,18 @@ export async function getHeaders(tableName: string): Promise<string[]> {
   }
 }
 
-/**
- * Generate reference options for dropdowns from Supabase rows
- */
 export async function listRefOptions(tableName: string, options: {
   keyColumn?: string;
   labelColumn?: string;
   validIf?: string;
   rowColumns?: string[];
-  rows?: TableRow[];
 } = {}): Promise<RefOption[]> {
-  let rows = options.rows ? options.rows : await getRows(tableName, 120_000);
+  let rows = await getRows(tableName, 120_000);
   if (options.validIf === "activeProjects") {
     rows = rows.filter(row => row.color === "Red" || row.color === "Green");
   }
 
-  const keyColumn = options.keyColumn || TABLE_KEYS[tableName] || "id";
+  const keyColumn = options.keyColumn || TABLE_KEYS[tableName] || "_RowNumber";
   const labelColumn = options.labelColumn || keyColumn;
   const rowColumns = unique([keyColumn, labelColumn, "image", "image_url", ...(options.rowColumns || [])]);
 
@@ -79,14 +66,11 @@ export async function listRefOptions(tableName: string, options: {
       value: row[keyColumn],
       label: (tableName === "BANK" || tableName === "ธนาคาร" || tableName === "banks")
         ? String(row["ชื่อธนาคาร"] || row.name || row[labelColumn] || row[keyColumn])
-        : row[labelColumn] ? String(row[labelColumn]) : String(row[keyColumn]),
+        : row[labelColumn] ? `${row[keyColumn]} - ${row[labelColumn]}` : String(row[keyColumn]),
       row: pick(row, rowColumns)
     }));
 }
 
-/**
- * Get system options from Supabase
- */
 export async function getSystemOptions(): Promise<Record<string, string[]>> {
   try {
     const options = await getSystemOptionsFromSupabase();
@@ -97,10 +81,7 @@ export async function getSystemOptions(): Promise<Record<string, string[]>> {
   }
 }
 
-/**
- * Insert new row into Supabase
- */
-export async function appendRow(tableName: string, row: TableRow) {
+export async function appendRow(tableName: string, row: SheetRow) {
   try {
     await insertRowToSupabase(tableName, row);
   } catch (e) {
@@ -110,14 +91,9 @@ export async function appendRow(tableName: string, row: TableRow) {
   clearCache(`headers:${tableName}`);
 }
 
-export const createTableRow = appendRow;
-
-/**
- * Update an existing row in Supabase by primary key / ID
- */
-export async function updateRow(tableName: string, sheetRow: number, patch: TableRow) {
-  const keyColumn = TABLE_KEYS[tableName] || "id";
-  const keyValue = patch[keyColumn] || patch.id || patch._sheetRow || sheetRow;
+export async function updateRow(tableName: string, sheetRow: number, patch: SheetRow) {
+  const keyColumn = TABLE_KEYS[tableName] || "_sheetRow";
+  const keyValue = patch[keyColumn] || patch._sheetRow || patch.id || sheetRow;
 
   try {
     await updateRowInSupabase(tableName, keyColumn, keyValue, patch);
@@ -130,42 +106,23 @@ export async function updateRow(tableName: string, sheetRow: number, patch: Tabl
   return patch;
 }
 
-export const updateTableRow = updateRow;
-
-/**
- * Delete rows from Supabase in a single batch query
- */
-export async function deleteRows(tableName: string, targetKeys: (number | string)[], targetRows?: TableRow[]) {
-  const keys = [...new Set(targetKeys.map(r => String(r).trim()))];
-  if (!keys.length) throw new Error("No items selected for deletion.");
+export async function deleteRows(tableName: string, sheetRows: (number | string)[], targetRows?: SheetRow[]) {
+  const rows = [...new Set(sheetRows.map(r => String(r).trim()))];
+  if (!rows.length) throw new Error("No rows selected.");
 
   try {
     const keyColumn = TABLE_KEYS[tableName] || "id";
     const allRows = targetRows && targetRows.length ? targetRows : (await getRows(tableName).catch(() => []));
-    const idsToDelete = new Set<string | number>();
-
-    for (const itemKey of keys) {
+    for (const sheetRow of rows) {
       const foundRow = allRows.find(r =>
-        String(r._sheetRow) === itemKey ||
-        String(r[keyColumn]) === itemKey ||
-        String(r.id) === itemKey ||
-        String(r.id_store) === itemKey ||
-        String(r.id_bank) === itemKey ||
-        String(r.id_Contractor) === itemKey ||
-        String(r.id_car) === itemKey ||
-        String(r.id_cus) === itemKey ||
-        String(r.id_Company) === itemKey
+        String(r._sheetRow) === sheetRow ||
+        String(r[keyColumn]) === sheetRow ||
+        String(r.id) === sheetRow ||
+        String(r.id_store) === sheetRow ||
+        String(r.id_bank) === sheetRow ||
+        String(r.id_Contractor) === sheetRow
       );
-      const targetVal = foundRow?.id ?? foundRow?.[keyColumn] ?? foundRow?.id_bank ?? foundRow?.id_store ?? foundRow?.id_Contractor ?? foundRow?.id_cus ?? foundRow?.id_Company ?? foundRow?.id_car ?? itemKey;
-      if (typeof targetVal === "string" || typeof targetVal === "number") {
-        if (String(targetVal).trim() !== "") {
-          idsToDelete.add(targetVal);
-        }
-      }
-    }
-
-    if (idsToDelete.size > 0) {
-      await deleteRowsFromSupabase(tableName, Array.from(idsToDelete));
+      await deleteRowFromSupabase(tableName, keyColumn, sheetRow, foundRow);
     }
   } catch (e) {
     console.warn(`Supabase deleteRows failed for ${tableName}:`, e);
@@ -175,11 +132,6 @@ export async function deleteRows(tableName: string, targetKeys: (number | string
   clearCache(`headers:${tableName}`);
 }
 
-export const deleteTableRows = deleteRows;
-
-/**
- * Append audit log entry into Supabase audit_logs table
- */
 export async function appendAuditLog(entry: AuditEntry) {
   await insertAuditLogToSupabase(entry).catch(() => undefined);
 }
@@ -188,8 +140,8 @@ function unique(items: string[]) {
   return Array.from(new Set(items.filter(Boolean)));
 }
 
-function pick(row: TableRow, columns: string[]) {
-  const output: TableRow = {};
+function pick(row: SheetRow, columns: string[]) {
+  const output: SheetRow = {};
   columns.forEach(col => {
     if (col in row) output[col] = row[col];
   });
