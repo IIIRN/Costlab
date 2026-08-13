@@ -295,19 +295,21 @@ async function renderView(
     const page = parsePositiveInt(firstSearchParam(query?.page), 1);
     const pageSize = parsePositiveInt(firstSearchParam(query?.pageSize), 80);
     const sort = parseSort(firstSearchParam(query?.sort));
-    const [rawRows, headers, projectDataRows, companyRows, bankRows, projectRows, contractorRows] = await Promise.all([
+    const [rawRows, headers, projectDataRows, companyRows, bankRows, projectRows, contractorRows, customerRows] = await Promise.all([
       safeRows(view.table),
       getHeaders(view.table).catch(() => []),
       (view.id === "project-all" || view.id === "contract-open") ? safeRows(TABLES.DATA) : Promise.resolve([]),
       view.id === "project-all" ? safeRows(TABLES.COMPANY) : Promise.resolve([]),
       (view.id === "stores" || view.id === "contractors" || view.id === "people" || view.id === "bill-entry") ? safeRows(TABLES.BANK) : Promise.resolve([]),
       view.id === "contract-open" ? safeRows(TABLES.PROJECT) : Promise.resolve([]),
-      view.id === "contract-open" ? safeRows(TABLES.CONTRACTOR) : Promise.resolve([])
+      view.id === "contract-open" ? safeRows(TABLES.CONTRACTOR) : Promise.resolve([]),
+      view.id === "project-all" ? safeRows(TABLES.CUSTOMER) : Promise.resolve([])
     ]);
 
     const preloadedRows = {
       [TABLES.BANK]: bankRows,
       [TABLES.COMPANY]: companyRows,
+      [TABLES.CUSTOMER]: customerRows,
       [TABLES.DATA]: projectDataRows,
       [TABLES.PROJECT]: projectRows,
       [TABLES.CONTRACTOR]: contractorRows,
@@ -342,7 +344,10 @@ async function renderView(
             addOpenEventName={schemaAddEventName}
             editOpenEventName={schemaEditEventName}
             displayLookups={{
-              ...(view.id === "project-all" ? { "บริษัท": companyLookup(companyRows) } : {}),
+              ...(view.id === "project-all" ? {
+                "บริษัท": companyLookup(companyRows),
+                "ชื่อลูกค้า": customerLookup(customerRows)
+              } : {}),
               ...(bankRows.length ? { "ธนาคาร": bankLookup(bankRows) } : {})
             }}
           />
@@ -515,10 +520,33 @@ function hydrateProjectRowsForList(projectRows: Awaited<ReturnType<typeof getRow
   return projectRows.map(row => {
     const projectId = String(row["ID Project"] || "").trim();
     const output = { ...row };
-    if (!hasRowValue(output["รวม ALL"])) output["รวม ALL"] = totals[projectId] ?? 0;
-    if (!hasRowValue(output["ยอดรวม vat"]) && hasRowValue(output["ยอดงาน"])) {
-      output["ยอดรวม vat"] = toNumber(output["ยอดงาน"]) * 1.07;
+    
+    // Always compute "รวม ALL" dynamically from committed data rows
+    output["รวม ALL"] = totals[projectId] ?? 0;
+
+    const workAmount = toNumber(output["ยอดงาน"]);
+    const vatAmount = toNumber(output["ยอดรวม vat"]);
+    if (workAmount > 0 && (!hasRowValue(output["ยอดรวม vat"]) || vatAmount === 0)) {
+      output["ยอดรวม vat"] = Math.round(workAmount * 1.07);
+    } else if (vatAmount > 0 && (!hasRowValue(output["ยอดงาน"]) || workAmount === 0)) {
+      output["ยอดงาน"] = Math.round(vatAmount / 1.07);
     }
+
+    // Calculate "งบไม่เกิน" if missing or 0
+    const currentCap = toNumber(output["งบไม่เกิน"]);
+    if (currentCap === 0) {
+      const categorySum = Object.keys(output)
+        .filter(k => k.startsWith("งบไม่เกิน") && k !== "งบไม่เกิน")
+        .reduce((sum, k) => sum + toNumber(output[k]), 0);
+      if (categorySum > 0) {
+        output["งบไม่เกิน"] = categorySum;
+      } else if (workAmount > 0) {
+        output["งบไม่เกิน"] = workAmount;
+      } else if (vatAmount > 0) {
+        output["งบไม่เกิน"] = Math.round(vatAmount / 1.07);
+      }
+    }
+
     return output;
   });
 }
@@ -531,7 +559,22 @@ function companyLookup(companyRows: Awaited<ReturnType<typeof getRows>>) {
   return companyRows.reduce<Record<string, string>>((lookup, row) => {
     const key = String(row.id_Company || row["id_Company"] || "").trim();
     const name = String(row["ชื่อบริษัท"] || row["บริษัท"] || "").trim();
-    if (key && name) lookup[key] = name;
+    if (key) {
+      lookup[key] = name || key;
+      if (name) lookup[name] = name;
+    }
+    return lookup;
+  }, {});
+}
+
+function customerLookup(customerRows: Awaited<ReturnType<typeof getRows>>) {
+  return customerRows.reduce<Record<string, string>>((lookup, row) => {
+    const key = String(row.id_cus || row.id || row["id_cus"] || "").trim();
+    const name = String(row["ชื่อลูกค้า"] || row["ชื่อบริษัท"] || row["ชื่อ-นามสกุล"] || row.name || "").trim();
+    if (key) {
+      lookup[key] = name || key;
+      if (name) lookup[name] = name;
+    }
     return lookup;
   }, {});
 }

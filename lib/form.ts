@@ -129,6 +129,23 @@ async function getFormSchemaWithSheetOptions(tableName: string): Promise<FieldSc
       };
     }
 
+    if (field.dynamicValues === "productCategoryOptions") {
+      // Populated from /settings/product-categories → saved as "สินค้า" in system-options
+      const productOptions = systemOptions["สินค้า"];
+      const defaultProducts = [
+        "1 เหล็กเส้น", "2 เหล็กรูปพรรณ", "3 คอนกรีต", "4 ไม้แบบ",
+        "5 วัสดุมุง", "6 ฝ้าผนัง", "7 ปูพื้น", "8 กระจก",
+        "9 ไฟฟ้า", "10 ประปา", "11 อื่นๆ(วัสดุ)", "12 สีเคมี",
+        "13 สุขภัณฑ์", "14 บิวอิน", "15 แอร์", "16 ดิน",
+        "17 หินทราย", "18 เตรียมงาน", "101 น้ำมัน", "102 ค่าขนส่ง",
+        "103 เครื่องจักร", "200 ดำเนินการ(อื่นๆ)"
+      ];
+      return {
+        ...field,
+        values: productOptions && productOptions.length > 0 ? productOptions : defaultProducts
+      };
+    }
+
     if (field.name === "รายละเอียดงาน") {
       const customOptions = systemOptions["รายละเอียดงาน"];
       const defaultWorkDetails = [

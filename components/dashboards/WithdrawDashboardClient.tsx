@@ -45,8 +45,9 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
       const override = statusOverrides[Number(row._sheetRow)];
       return override ? { ...row, "สถานะ": override } : row;
     });
+    // แสดงเฉพาะบิลที่ "อนุมัติ" แล้ว (ยังไม่เบิก)
     return filterWithdrawRows(currentRows, filters)
-      .filter(row => normalizedStatus(row["สถานะ"]) !== "เบิกแล้ว")
+      .filter(row => normalizedStatus(row["สถานะ"]) === "อนุมัติ")
       .sort((a, b) => Number(b._sheetRow || 0) - Number(a._sheetRow || 0));
   }, [rows, filters, statusOverrides]);
 
@@ -57,6 +58,7 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
   const visibleStart = visibleRows.length ? pageStart + 1 : 0;
   const visibleEnd = pageStart + visibleRows.length;
   const amount = displayRows.reduce((sum, row) => sum + toNumber(row["ยอดเงิน"]), 0);
+  // ยอดโอน = รวมเฉพาะแถวที่อนุมัติแล้ว (ซึ่งคือทุกแถวใน displayRows อยู่แล้ว)
   const transfer = displayRows.reduce((sum, row) => sum + toNumber(row["ยอดโอน"]), 0);
   const requesterNames = useMemo(() => requesterNameMap(peopleRows), [peopleRows]);
 

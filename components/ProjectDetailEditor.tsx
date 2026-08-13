@@ -26,12 +26,12 @@ export function ProjectDetailEditor({ fields, project, customerDisplay, companyD
 
   const changedValues = useMemo(() => {
     return Object.fromEntries(
-      fields
+      Object.keys(draft)
         .filter(field => !readonlyField(field))
         .filter(field => stringify(project[field]) !== (draft[field] ?? ""))
         .map(field => [field, draft[field] ?? ""])
     );
-  }, [draft, fields, project]);
+  }, [draft, project]);
 
   function beginEdit() {
     setError("");
@@ -193,7 +193,8 @@ export function ProjectDetailEditor({ fields, project, customerDisplay, companyD
 }
 
 function draftFromProject(project: SheetRow, fields: string[]) {
-  return Object.fromEntries(fields.map(field => [field, stringify(project[field])]));
+  const allKeys = [...new Set([...fields, ...Object.keys(project).filter(k => !k.startsWith("_"))])];
+  return Object.fromEntries(allKeys.map(field => [field, stringify(project[field])]));
 }
 
 function stringify(value: unknown) {

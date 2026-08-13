@@ -34,17 +34,16 @@ export function BillDetailClient({
   const projectName = text(bill["ชื่อ Project"]) || "ไม่ระบุโครงการ";
   const imageValue = bill["รูปถ่ายบิล"];
   const total = toNumber(bill["ยอดเงิน"]);
-  const transfer = toNumber(bill["ยอดโอน"]);
-  const remaining = total - transfer;
   const status = text(bill["สถานะ"]) || "รออนุมัติ";
+  const isApproved = status === "อนุมัติ";
+  const isPaid = status === "เบิกแล้ว";
+  // ยอดโอนแล้ว = แสดงเฉพาะเมื่อสถานะ "เบิกแล้ว" เท่านั้น
+  const transfer = isPaid ? toNumber(bill["ยอดโอน"]) : 0;
+  const remaining = total - transfer;
   const vendor = vendorDisplay || firstText(bill, ["ร้านค้า", "ผู้รับเหมา", "ร้านค้า/ผู้รับเหมา", "ร้าน/บุคคล"]);
   const requester = requesterDisplay || text(bill["ผู้เบิก"]) || "-";
   const rawBillDate = firstText(bill, ["ว/ด/ป", "วันได้บิล"]);
   const billDate = formatDateThai(rawBillDate);
-
-  const isApproved = status === "อนุมัติ";
-  const isPaid = status === "เบิกแล้ว";
-
   const expenseItems = useMemo(() => {
     return [
       { label: "รายละเอียดงาน", value: bill["รายละเอียดงาน"] },

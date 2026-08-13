@@ -20,7 +20,9 @@ export async function WithdrawDashboard({ filters = {} }: { filters?: WithdrawFi
   const isAdmin = cookieStore.get("auth_role")?.value === "Admin";
   
   const rows = hydrateDataRows(dataRows).filter(row => {
-    if (!isUnpaidBill(row)) return false;
+    // แสดงเฉพาะบิลที่ "อนุมัติ" แล้ว รอเบิก
+    const status = String(row["สถานะ"] || "").trim();
+    if (status !== "อนุมัติ") return false;
     return hasValue(row["ลำดับ"]) || hasValue(row["ID Project"]) || hasValue(row["ร้าน/บุคคล"]) || hasValue(row["สินค้า/ทำงาน"]);
   });
   return <WithdrawDashboardClient rows={rows} peopleRows={peopleRows} initialFilters={filters} isAdmin={isAdmin} />;
@@ -64,8 +66,27 @@ export async function BillFollowDashboard() {
 }
 
 export async function WorkStatusDashboard() {
-  const [projectRows, dataRows] = await Promise.all([safeRows(TABLES.PROJECT), safeRows(TABLES.DATA)]);
+  const [projectRows, dataRows, customerRows, companyRows] = await Promise.all([
+    safeRows(TABLES.PROJECT),
+    safeRows(TABLES.DATA),
+    safeRows(TABLES.CUSTOMER),
+    safeRows(TABLES.COMPANY),
+  ]);
   const hydratedDataRows = hydrateDataRows(dataRows);
+
+  const customerMap = customerRows.reduce<Record<string, string>>((acc, row) => {
+    const id = String(row["id_cus"] || row["id"] || row["รหัสลูกค้า"] || "").trim();
+    const name = String(row["ชื่อลูกค้า"] || row["ชื่อบริษัท"] || row["ชื่อ-นามสกุล"] || row["name"] || "").trim();
+    if (id) acc[id.toLowerCase()] = name || id;
+    return acc;
+  }, {});
+
+  const companyMap = companyRows.reduce<Record<string, string>>((acc, row) => {
+    const id = String(row["id_Company"] || row["id"] || row["รหัสบริษัท"] || "").trim();
+    const name = String(row["ชื่อบริษัท"] || row["บริษัท"] || row["ชื่อย่อ"] || "").trim();
+    if (id) acc[id.toLowerCase()] = name || id;
+    return acc;
+  }, {});
 
   const rawRows: SheetRow[] = projectRows.map((row) => {
     const projectId = String(row["ID Project"] || row.id || "").trim();
@@ -77,8 +98,16 @@ export async function WorkStatusDashboard() {
     const workTotal = toNumber(row["ยอดงาน"]);
     const vatTotal = hasValue(row["ยอดรวม vat"]) ? toNumber(row["ยอดรวม vat"]) : workTotal * 1.07;
 
+    const rawCus = String(row["ชื่อลูกค้า"] || row["ลูกค้า"] || "").trim();
+    const cusName = customerMap[rawCus.toLowerCase()] || rawCus;
+
+    const rawComp = String(row["บริษัท"] || row["บริษัทรับงาน"] || "").trim();
+    const compName = companyMap[rawComp.toLowerCase()] || rawComp;
+
     return {
       ...row,
+      "ชื่อลูกค้า": cusName,
+      "บริษัท": compName,
       "รวม ALL": totalAll,
       "ยอดรวม vat": vatTotal,
     };

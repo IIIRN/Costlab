@@ -82,7 +82,29 @@ export async function applyContractFormulas(row: SheetRow) {
 export function applyProjectFormulas(row: SheetRow) {
   const output = { ...row };
   const workAmount = toNumber(output["ยอดงาน"]);
-  if (hasValue(output["ยอดงาน"])) output["ยอดรวม vat"] = workAmount * 1.07;
+  const vatAmount = toNumber(output["ยอดรวม vat"]);
+
+  if (workAmount > 0 && (!hasValue(output["ยอดรวม vat"]) || vatAmount === 0)) {
+    output["ยอดรวม vat"] = Math.round(workAmount * 1.07);
+  } else if (vatAmount > 0 && (!hasValue(output["ยอดงาน"]) || workAmount === 0)) {
+    output["ยอดงาน"] = Math.round(vatAmount / 1.07);
+  }
+
+  // Calculate overall budget cap "งบไม่เกิน" if empty or 0
+  const currentCap = toNumber(output["งบไม่เกิน"]);
+  if (currentCap === 0) {
+    const categorySum = Object.keys(output)
+      .filter(k => k.startsWith("งบไม่เกิน") && k !== "งบไม่เกิน")
+      .reduce((sum, k) => sum + toNumber(output[k]), 0);
+    if (categorySum > 0) {
+      output["งบไม่เกิน"] = categorySum;
+    } else if (workAmount > 0) {
+      output["งบไม่เกิน"] = workAmount;
+    } else if (vatAmount > 0) {
+      output["งบไม่เกิน"] = Math.round(vatAmount / 1.07);
+    }
+  }
+
   if (!hasValue(output["วันที่"])) output["วันที่"] = new Date().toISOString().slice(0, 10);
   if (!hasValue(output["color"])) output["color"] = "Red";
   return output;
