@@ -74,7 +74,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
 
   const projectName = displayValue(valueOf(hydratedProject, ["ชื่อ Project"])) || `Project ${decodedProjectId}`;
 
-  // Build Customer Display Code - Name (e.g. DN101 - บริษัท ออนเนอร์ จำกัด)
+  // Build Customer Display - Name only
   const rawCusId = String(hydratedProject["ชื่อลูกค้า"] || hydratedProject["ลูกค้า"] || "").trim();
   const matchedCus = customerRows.find(
     (c) => String(c["id_cus"] || c["id"] || c["รหัสลูกค้า"] || "").trim().toLowerCase() === rawCusId.toLowerCase()
@@ -82,13 +82,9 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
   const cusName = matchedCus
     ? String(matchedCus["ชื่อลูกค้า"] || matchedCus["ชื่อบริษัท"] || matchedCus["ชื่อ-นามสกุล"] || "").trim()
     : "";
-  const customerDisplay = rawCusId
-    ? cusName && !rawCusId.toLowerCase().includes(cusName.toLowerCase())
-      ? `${rawCusId} - ${cusName}`
-      : rawCusId
-    : "-";
+  const customerDisplay = cusName || rawCusId || "-";
 
-  // Build Company Display Code - Name (e.g. CO101 - บริษัท คอสคอส จำกัด)
+  // Build Company Display - Name only
   const rawCompId = String(hydratedProject["บริษัท"] || hydratedProject["บริษัทรับงาน"] || "").trim();
   const matchedComp = companyRows.find(
     (c) => String(c["id_Company"] || c["id"] || c["รหัสบริษัท"] || "").trim().toLowerCase() === rawCompId.toLowerCase()
@@ -96,11 +92,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
   const compName = matchedComp
     ? String(matchedComp["ชื่อบริษัท"] || matchedComp["ชื่อย่อ"] || "").trim()
     : "";
-  const companyDisplay = rawCompId
-    ? compName && !rawCompId.toLowerCase().includes(compName.toLowerCase())
-      ? `${rawCompId} - ${compName}`
-      : rawCompId
-    : "-";
+  const companyDisplay = compName || rawCompId || "-";
 
   return (
     <ProjectDetailClient
