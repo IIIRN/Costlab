@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { BillDetailClient } from "@/components/dashboards/BillDetailClient";
 import { TABLES } from "@/lib/config";
-import { hydrateBillRows, hydrateContractRows } from "@/lib/formulas";
+import { hydrateBillRows, hydrateContractRows, hydrateProjectRows } from "@/lib/formulas";
 import { getRows } from "@/lib/db";
 import type { SheetRow } from "@/lib/types";
 
@@ -14,7 +14,7 @@ type BillDetailPageProps = {
 export default async function BillDetailPage({ params }: BillDetailPageProps) {
   const { billId } = await params;
   const decodedBillId = decodeURIComponent(billId).trim();
-  const [rawDataRows, projectRows, rawContractRows, peopleRows, storeRows, contractorRows] = await Promise.all([
+  const [rawDataRows, rawProjectRows, rawContractRows, peopleRows, storeRows, contractorRows] = await Promise.all([
     getRows(TABLES.DATA).catch(() => []),
     getRows(TABLES.PROJECT).catch(() => []),
     getRows(TABLES.CONTRACT_WORK).catch(() => []),
@@ -24,6 +24,7 @@ export default async function BillDetailPage({ params }: BillDetailPageProps) {
   ]);
 
   const dataRows = await hydrateBillRows(rawDataRows);
+  const projectRows = hydrateProjectRows(rawProjectRows);
   const contractRows = await hydrateContractRows(rawContractRows);
   const bill = dataRows.find((row) => billKey(row) === decodedBillId || String(row._sheetRow || "") === decodedBillId);
   if (!bill) notFound();
