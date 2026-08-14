@@ -232,28 +232,66 @@ export async function handleLineCommand(
         return true;
       }
 
-      const newStatus = isApprove ? "อนุมัติ" : "เบิกแล้ว";
+      const newStatus = isApprove ? "อนุมัติแล้ว" : "เบิกแล้ว";
       
-      // Update Supabase "data" table ("สถานะ")
-      const { error: dataErr } = await supabaseAdmin
-        .from("data")
-        .update({ "สถานะ": newStatus })
-        .or(`ผู้เบิก.eq.${targetNameOrId},ลำดับ.eq.${targetNameOrId}`);
+      const { getRowsFromSupabase, updateRowInSupabase } = await import("@/lib/supabase-db");
+      const [rawBills, peopleRows] = await Promise.all([
+        getRowsFromSupabase("Data", 1000),
+        getRowsFromSupabase("master_members", 500).catch(() => []),
+      ]);
 
-      // Also update "bills" table ("status") if exists
-      const { error: billErr } = await supabaseAdmin
-        .from("bills")
-        .update({ status: isApprove ? "อนุมัติแล้ว" : "เบิกแล้ว" })
-        .or(`requester.eq.${targetNameOrId},id.eq.${targetNameOrId}`);
-
-      if (dataErr && billErr) {
-        await replyTextMessage(replyToken, `❌ ดำเนินการอัปเดตบิลไม่สำเร็จ: ${dataErr.message || billErr.message}`);
-      } else {
-        await replyTextMessage(
-          replyToken,
-          `✅ ${isApprove ? "อนุมัติ" : "ปิดงาน"}บิลของ "${targetNameOrId}" เป็นสถานะ [${newStatus}] เรียบร้อยแล้วครับ!\n\n👮‍♂️ ผู้ดำเนินการ: Admin/Approver (${userId ? userId.slice(-6) : "Web"})`
-        );
+      // สร้าง Map สำหรับเทียบชื่อผู้เบิก <-> รหัสพนักงาน
+      const peopleMap = new Map<string, string>();
+      const nameToEmpIdMap = new Map<string, string>();
+      for (const p of peopleRows) {
+        const empId = String(p["รหัสพนักงาน"] || p.id || "").trim();
+        const empName = String(p["ชื่อเล่น"] || p["ชื่อ-นามสกุล"] || p.name || "").trim();
+        if (empId && empName) {
+          peopleMap.set(empId, empName);
+          nameToEmpIdMap.set(empName, empId);
+        }
       }
+
+      const target = targetNameOrId.trim();
+      const matchedEmpId = nameToEmpIdMap.get(target) || target;
+
+      // ค้นหาบิลที่ตรงกับชื่อผู้เบิก รหัสพนักงาน หรือ ID บิล
+      const targetBills = rawBills.filter(b => {
+        const bId = String(b["ลำดับ"] || b.id || b._sheetRow || "").trim();
+        const bReq = String(b["ผู้เบิก"] || b.requester || "").trim();
+        const bReqName = peopleMap.get(bReq) || bReq;
+        
+        return bId === target || bReq === target || bReq === matchedEmpId || bReqName === target;
+      });
+
+      if (targetBills.length === 0) {
+        // Fallback ปรับปรุงโดยตรงผ่าน Supabase Client (แยกเลข ID กับ String)
+        let query = supabaseAdmin.from("bills").update({ status: newStatus });
+        if (/^\d+$/.test(target)) {
+          query = query.eq("id", Number(target));
+        } else {
+          query = query.eq("requester", target);
+        }
+        const { error } = await query;
+        if (error) {
+          await replyTextMessage(replyToken, `❌ ดำเนินการอัปเดตบิลไม่สำเร็จ: ${error.message}`);
+          return true;
+        }
+      } else {
+        // อัปเดตบิลทุกรายการที่ตรงกันผ่าน updateRowInSupabase
+        for (const b of targetBills) {
+          const bId = b.id || b["ลำดับ"] || b._sheetRow;
+          await updateRowInSupabase("bills", "id", bId, {
+            "สถานะ": newStatus,
+            status: newStatus
+          });
+        }
+      }
+
+      await replyTextMessage(
+        replyToken,
+        `✅ ${isApprove ? "อนุมัติ" : "ปิดงาน"}บิลของ "${targetNameOrId}" เป็นสถานะ [${newStatus}] เรียบร้อยแล้วครับ!\n\n👮‍♂️ ผู้ดำเนินการ: Admin/Approver (${userId ? userId.slice(-6) : "Web"})`
+      );
       return true;
     }
 
@@ -381,11 +419,25 @@ export async function handleLineCommand(
 
     // 7. Summary Commands (Controller_AllWorks.gs & Summary)
     if (lowerText.includes("สรุป") || lowerText.includes("สรุปบิล") || lowerText.includes("สรุปวันนี้") || lowerText === ":รวม") {
-      const { data: bills } = await supabaseAdmin.from("bills").select("amount, status");
-      const totalBills = bills?.length || 0;
-      const totalAmount = bills?.reduce((sum, b) => sum + (Number(b.amount) || 0), 0) || 0;
-      const pendingCount = bills?.filter(b => b.status === "รอตรวจสอบ" || b.status === "รออนุมัติ").length || 0;
-      const approvedCount = bills?.filter(b => b.status === "อนุมัติแล้ว" || b.status === "เบิกแล้ว" || b.status === "จ่ายแล้ว").length || 0;
+      const { getRowsFromSupabase } = await import("@/lib/supabase-db");
+      const bills = await getRowsFromSupabase("Data", 5000);
+
+      const totalBills = bills.length;
+      let totalAmount = 0;
+      let pendingCount = 0;
+      let approvedCount = 0;
+
+      bills.forEach(b => {
+        const amt = Number(b["ยอดเงิน"] || b.amount || 0);
+        totalAmount += amt;
+
+        const st = String(b["สถานะ"] || b.status || "").trim();
+        if (st === "รอตรวจสอบ" || st === "รออนุมัติ" || st === "รอดำเนินการ") {
+          pendingCount++;
+        } else if (st === "อนุมัติแล้ว" || st === "เบิกแล้ว" || st === "จ่ายแล้ว" || st === "อนุมัติ") {
+          approvedCount++;
+        }
+      });
 
       const textSummary = `📊 สรุปรายงานการเงินประจำวัน (CostCode Supabase)\n\n` +
         `- บิลทั้งหมด: ${totalBills} รายการ\n` +
@@ -402,12 +454,21 @@ export async function handleLineCommand(
     if (rawText.startsWith("แผน:") || rawText === "(บิลหลัก)" || rawText === "(บิลย่อย)") {
       const searchTerm = rawText.replace(/^แผน:/, "").replace(/\(บิลหลัก\)/, "").replace(/\(บิลย่อย\)/, "").trim();
 
-      let query = supabaseAdmin.from("projects").select("id, name, customer_name, budget, work_amount");
+      const { getRowsFromSupabase } = await import("@/lib/supabase-db");
+      const allProjects = await getRowsFromSupabase("Project", 1000);
+
+      let filteredProjects = allProjects;
       if (searchTerm) {
-        query = query.or(`name.ilike.%${searchTerm}%,customer_name.ilike.%${searchTerm}%,id.ilike.%${searchTerm}%`);
+        const q = searchTerm.toLowerCase();
+        filteredProjects = allProjects.filter(p => {
+          const pName = String(p["ชื่อ Project"] || p.name || "").toLowerCase();
+          const pCust = String(p["ลูกค้า"] || p.customer_name || "").toLowerCase();
+          const pId = String(p["ID Project"] || p.id || "").toLowerCase();
+          return pName.includes(q) || pCust.includes(q) || pId.includes(q);
+        });
       }
 
-      const { data: projects } = await query.order("id", { ascending: false }).limit(5);
+      const projects = filteredProjects.slice(0, 5);
 
       if (!projects || projects.length === 0) {
         const noProjMsg = searchTerm
@@ -419,7 +480,12 @@ export async function handleLineCommand(
 
       let planText = `📐 สรุปข้อมูลแผนงานและโครงการ${searchTerm ? ` ค้นหา: "${searchTerm}"` : ""}:\n\n`;
       projects.forEach((p, idx) => {
-        planText += `${idx + 1}. โครงการ: ${p.name} (ID: ${p.id})\n   - ลูกค้า: ${p.customer_name || "-"}\n   - งบประมาณ: ฿${Number(p.budget || p.work_amount || 0).toLocaleString("th-TH")}\n\n`;
+        const pName = p["ชื่อ Project"] || p.name || "โครงการ";
+        const pId = p["ID Project"] || p.id || "-";
+        const pCust = p["ลูกค้า"] || p.customer_name || "-";
+        const pBudget = Number(p["งบไม่เกิน"] || p["ยอดงาน"] || p.budget || p.work_amount || 0);
+
+        planText += `${idx + 1}. โครงการ: ${pName} (ID: ${pId})\n   - ลูกค้า: ${pCust}\n   - งบประมาณ: ฿${pBudget.toLocaleString("th-TH")}\n\n`;
       });
 
       await replyTextMessage(replyToken, planText.trim());
