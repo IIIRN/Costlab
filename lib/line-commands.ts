@@ -44,7 +44,7 @@ export async function handleLineCommand(
     }
 
     // 2. Menu & Help Commands
-    if (lowerText === "ช่วยด้วย" || lowerText === "เมนู" || lowerText === "คำสั่ง" || lowerText === "help") {
+    if (lowerText === "ช่วยด้วย" || lowerText === "ช่วยเหลือ" || lowerText === "ช่วย" || lowerText === "เมนู" || lowerText === "คำสั่ง" || lowerText === "help") {
       const menuText = `🤖 ระบบ LINE Bot ประจำ CostCode Supabase\n\n📌 คำสั่งที่รองรับทั้งหมด (63 คำสั่ง):\n\n1. 📊 หมวดสรุปการเงิน/เบิกเงิน:\n   - พิมพ์ "สรุป" / "สรุปบิล" / "สรุปวันนี้"\n   - พิมพ์ "รออนุมัติ"\n   - พิมพ์ "บิลหลัก: [ชื่อ]" หรือ "บิลย่อย: [ชื่อ]"\n   - พิมพ์ "อนุมัติบิลหลักของ:" / "อนุมัติเงินสดบิลย่อยของ:"\n   - พิมพ์ "ปิดงานบิลหลักลำดับที่:"\n\n2. 🎯 หมวดงาน & PW มอบหมาย:\n   - พิมพ์ "งาน2: [ชื่อพนักงาน]" (ดูตารางงานแผนงาน)\n   - พิมพ์ "งาน: [รายละเอียดงาน]" (สร้างงานใหม่)\n   - พิมพ์ "งานด่วน:" / "ปิดงาน:" / "ยืนยันปิดงาน:" / "s:" (ค้นหา)\n   - พิมพ์ "มอบหมาย:" / "กิจกรรม:" / "PW:" / "PW1:work" / "PWALL:work"\n\n3. 📐 หมวดแผนงาน (Plans):\n   - พิมพ์ "แผน: [ชื่อโครงการ]"\n   - พิมพ์ "(บิลหลัก)" / "(บิลย่อย)"\n\n4. ⚙️ หมวดตรวจสอบระบบ:\n   - พิมพ์ "testbot" / "check" / "getid"`;
       await replyTextMessage(replyToken, menuText);
       return true;
@@ -245,17 +245,21 @@ export async function handleLineCommand(
       return true;
     }
 
-    // 6. Query Bills Specific Commands ("หลัก:", "ย่อย:", "บิลหลัก:", "บิลย่อย:", "ทั้งหมด:", "รออนุมัติ")
+    // 6. Query Bills Specific Commands
+    // "หลัก:", "บิลหลัก:", "ย่อย:", "บิลย่อย:", "ทั้งหมด:", "รออนุมัติ"
+    // "บิล:", "bill:" — ค้นหาทั่วไป (ทั้งบิลหลักและย่อย)
     if (
       rawText.startsWith("หลัก:") ||
       rawText.startsWith("ย่อย:") ||
       rawText.startsWith("บิลหลัก:") ||
       rawText.startsWith("บิลย่อย:") ||
       rawText.startsWith("ทั้งหมด:") ||
+      rawText.startsWith("บิล:") ||
+      rawText.toLowerCase().startsWith("bill:") ||
       lowerText === "รออนุมัติ"
     ) {
       const isSub = rawText.includes("ย่อย");
-      const filterQuery = rawText.replace(/^หลัก:|^ย่อย:|^บิลหลัก:|^บิลย่อย:|^ทั้งหมด:/, "").trim();
+      const filterQuery = rawText.replace(/^หลัก:|^ย่อย:|^บิลหลัก:|^บิลย่อย:|^ทั้งหมด:|^บิล:|^bill:/i, "").trim();
 
       let query = supabaseAdmin.from("bills").select("*");
       if (filterQuery && filterQuery !== "ทั้งหมด") {
