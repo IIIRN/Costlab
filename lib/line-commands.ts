@@ -1,6 +1,10 @@
 import {
   replyTextMessage,
   replyFlexMessage,
+  sendTextMessage,
+  sendFlexMessageDetailed,
+  getLineTargetGroup,
+  logSystemError,
   createBillNotificationFlex,
   createWorkAssignmentFlex,
   createTaskSummaryFlex,
@@ -45,9 +49,52 @@ export async function handleLineCommand(
 
     // 2. Menu & Help Commands
     if (lowerText === "ช่วยด้วย" || lowerText === "ช่วยเหลือ" || lowerText === "ช่วย" || lowerText === "เมนู" || lowerText === "คำสั่ง" || lowerText === "help") {
-      const menuText = `🤖 ระบบ LINE Bot ประจำ CostCode Supabase\n\n📌 คำสั่งที่รองรับทั้งหมด (63 คำสั่ง):\n\n1. 📊 หมวดสรุปการเงิน/เบิกเงิน:\n   - พิมพ์ "สรุป" / "สรุปบิล" / "สรุปวันนี้"\n   - พิมพ์ "รออนุมัติ"\n   - พิมพ์ "บิลหลัก: [ชื่อ]" หรือ "บิลย่อย: [ชื่อ]"\n   - พิมพ์ "อนุมัติบิลหลักของ:" / "อนุมัติเงินสดบิลย่อยของ:"\n   - พิมพ์ "ปิดงานบิลหลักลำดับที่:"\n\n2. 🎯 หมวดงาน & PW มอบหมาย:\n   - พิมพ์ "งาน2: [ชื่อพนักงาน]" (ดูตารางงานแผนงาน)\n   - พิมพ์ "งาน: [รายละเอียดงาน]" (สร้างงานใหม่)\n   - พิมพ์ "งานด่วน:" / "ปิดงาน:" / "ยืนยันปิดงาน:" / "s:" (ค้นหา)\n   - พิมพ์ "มอบหมาย:" / "กิจกรรม:" / "PW:" / "PW1:work" / "PWALL:work"\n\n3. 📐 หมวดแผนงาน (Plans):\n   - พิมพ์ "แผน: [ชื่อโครงการ]"\n   - พิมพ์ "(บิลหลัก)" / "(บิลย่อย)"\n\n4. ⚙️ หมวดตรวจสอบระบบ:\n   - พิมพ์ "testbot" / "check" / "getid"`;
+      const menuText = `🤖 ระบบ LINE Bot ประจำ CostCode Supabase\n\n📌 คำสั่งที่รองรับทั้งหมด (63 คำสั่ง):\n\n1. 📊 หมวดสรุปการเงิน/เบิกเงิน:\n   - พิมพ์ "สรุป" / "สรุปบิล" / "สรุปวันนี้"\n   - พิมพ์ "รออนุมัติ"\n   - พิมพ์ "บิลหลัก: [ชื่อ]" หรือ "บิลย่อย: [ชื่อ]"\n   - พิมพ์ "อนุมัติบิลหลักของ:" / "อนุมัติเงินสดบิลย่อยของ:"\n   - พิมพ์ "ปิดงานบิลหลักลำดับที่:"\n\n2. 🎯 หมวดงาน & PW มอบหมาย:\n   - พิมพ์ "งาน2: [ชื่อพนักงาน]" (ดูตารางงานแผนงาน)\n   - พิมพ์ "งาน: [รายละเอียดงาน]" (สร้างงานใหม่)\n   - พิมพ์ "งานด่วน:" / "ปิดงาน:" / "ยืนยันปิดงาน:" / "s:" (ค้นหา)\n   - พิมพ์ "มอบหมาย:" / "กิจกรรม:" / "PW:" / "PW1:work" / "PWALL:work"\n\n3. ⚡ หมวดคำสั่งลัด (Shortcuts):\n   - พิมพ์ "copy" / "add1" / "add3" / "addp" / "doo"\n\n4. ⚙️ หมวดตรวจสอบระบบ:\n   - พิมพ์ "testbot" / "check" / "getid"`;
       await replyTextMessage(replyToken, menuText);
       return true;
+    }
+
+    // 2.1 Template Shortcut Commands (copy, work, add1, add3, addp, doo, doo2)
+    if (lowerText === "copy" || lowerText === "work" || lowerText === "add1" || lowerText === "add3" || lowerText === "addp" || lowerText === "doo" || lowerText === "doo2") {
+      if (lowerText === "copy" || lowerText === "work") {
+        const copyTemplate = `📋 แม่แบบสำหรับสร้างงานทั่วไป (คัดลอกข้อความด้านล่าง):\n\nงาน: [รายละเอียดงาน] - [ชื่อผู้รับผิดชอบ]`;
+        await replyTextMessage(replyToken, copyTemplate);
+        return true;
+      }
+      if (lowerText === "add1") {
+        const add1Template = `📋 แม่แบบสร้างงานมัลติไลน์ (คัดลอกข้อความด้านล่าง):\n\nรายการ: ตรวจสอบแบบโครงสร้าง\nดู/ทำ: ${new Date().toLocaleDateString("th-TH")}\nส่งงาน: -\nผู้รับ: สมชาย\nประเภท: 1`;
+        await replyTextMessage(replyToken, add1Template);
+        return true;
+      }
+      if (lowerText === "add3") {
+        const add3Template = `📋 แม่แบบสร้าง 3 งานย่อยต่อกัน (คัดลอกข้อความด้านล่าง):\n\nส่ง: งานเทคอนกรีตเสาอาคาร A\nผู้รับ: ช่างเอก\nหัวหน้า: วิชัย`;
+        await replyTextMessage(replyToken, add3Template);
+        return true;
+      }
+      if (lowerText === "addp") {
+        const addpTemplate = `📋 แม่แบบเปิดจ้าง PW มัลติไลน์ (คัดลอกข้อความด้านล่าง):\n\nเรื่อง: งานผูกเหล็กและเทคอนกรีตฐานราก\nPR: PR-2026-0801\nสถานที่: ไซต์งาน อาคาร B\nนัดดู: ${new Date().toLocaleDateString("th-TH")}\nนัดเสนอ: -\nติดต่อ1: ช่างเอก\nเบอร์1: 081-234-5678\nบริษัท: บริษัท คอสท์แล็บ จำกัด`;
+        await replyTextMessage(replyToken, addpTemplate);
+        return true;
+      }
+      if (lowerText === "doo" || lowerText === "doo2") {
+        const { data: activeWorks } = await supabaseAdmin
+          .from("contract_works")
+          .select("*")
+          .order("id", { ascending: false })
+          .limit(8);
+
+        if (!activeWorks || activeWorks.length === 0) {
+          await replyTextMessage(replyToken, `📋 ไม่พบรายการงานค้างในขณะนี้`);
+          return true;
+        }
+
+        let summary = `📋 รายการงานค้างล่าสุด (${activeWorks.length} รายการ):\n\n`;
+        activeWorks.forEach((w, i) => {
+          summary += `${i + 1}. [CW${w.id}] ${w.work_details || w.project_name || "งานประจำวัน"} (รับผิดชอบ: ${w["ชื่อเล่น"] || w.contractor_name || "ทีมงาน"})\n`;
+        });
+        await replyTextMessage(replyToken, summary);
+        return true;
+      }
     }
 
     // 3. Task Commands (Controller_Task.gs)
@@ -114,10 +161,15 @@ export async function handleLineCommand(
 
       await insertRowToSupabase("งานรับเหมา", rowObj);
 
-      await replyTextMessage(
-        replyToken,
-        `✅ บันทึกงานเรียบร้อยแล้ว!\n\n📌 รหัสงาน: ${generatedId}\nรายละเอียด: ${details}\nผู้รับผิดชอบ: ${assignee}\nสถานะ: กำลังดำเนินการ`
-      );
+      const notifyMsg = `✅ บันทึกงานเรียบร้อยแล้ว!\n\n📌 รหัสงาน: ${generatedId}\nรายละเอียด: ${details}\nผู้รับผิดชอบ: ${assignee}\nสถานะ: กำลังดำเนินการ`;
+      await replyTextMessage(replyToken, notifyMsg);
+
+      // Multi-Group Routing: Push to Task Group if configured and different from source
+      const taskGroup = await getLineTargetGroup("task");
+      if (taskGroup && taskGroup !== targetId) {
+        await sendTextMessage(taskGroup, `📢 [แจ้งเตือนงานใหม่]\n${notifyMsg}`);
+      }
+
       return true;
     }
 
@@ -137,7 +189,14 @@ export async function handleLineCommand(
       if (error) {
         await replyTextMessage(replyToken, `❌ ปิดงานรหัส ${taskId} ไม่สำเร็จ: ${error.message}`);
       } else {
-        await replyTextMessage(replyToken, `🎉 ปิดงานรหัส [${taskId}] เรียบร้อยแล้วครับ!`);
+        const closeMsg = `🎉 ปิดงานรหัส [${taskId}] เรียบร้อยแล้วครับ!`;
+        await replyTextMessage(replyToken, closeMsg);
+
+        // Multi-Group Routing: Push to Task Group
+        const taskGroup = await getLineTargetGroup("task");
+        if (taskGroup && taskGroup !== targetId) {
+          await sendTextMessage(taskGroup, `📢 [อัปเดตงาน]\n${closeMsg}`);
+        }
       }
       return true;
     }
@@ -171,7 +230,127 @@ export async function handleLineCommand(
       return true;
     }
 
+    // 3.4 Multi-Subtask Creation Command ("ส่ง:")
+    if (rawText.startsWith("ส่ง:")) {
+      const lines = rawText.replace(/^ส่ง:/, "").trim().split("\n");
+      const mainTitle = lines[0]?.trim() || "งานทั่วไป";
+      const receiver = lines[1]?.replace(/^ผู้รับ:|^ถึง:|^ผู้รับผิดชอบ:/, "").trim() || "ทีมงาน";
+      const head = lines[2]?.replace(/^หัวหน้า:|^อนุมัติโดย:/, "").trim() || "หัวหน้า";
+
+      const now = Date.now();
+      const id1 = `CW-${now.toString().slice(-6)}-1`;
+      const id2 = `CW-${now.toString().slice(-6)}-2`;
+      const id3 = `CW-${now.toString().slice(-6)}-3`;
+
+      // 3 Linked Sub-tasks
+      await Promise.all([
+        insertRowToSupabase("งานรับเหมา", { id_Conwork: id1, id: id1, "ชื่อเล่น": receiver, "ผู้รับผิดชอบ": receiver, "รายละเอียดงาน": mainTitle }),
+        insertRowToSupabase("งานรับเหมา", { id_Conwork: id2, id: id2, "ชื่อเล่น": head, "ผู้รับผิดชอบ": head, "รายละเอียดงาน": `${mainTitle} (ส่ง หัวหน้า)` }),
+        insertRowToSupabase("งานรับเหมา", { id_Conwork: id3, id: id3, "ชื่อเล่น": receiver, "ผู้รับผิดชอบ": receiver, "รายละเอียดงาน": `${mainTitle} (ส่ง ${receiver})` }),
+      ]);
+
+      const createdMsg = `🎉 สร้าง 3 งานย่อยเรียบร้อยแล้ว!\n\n1. [${id1}] ${mainTitle}\n   ผู้รับผิดชอบ: ${receiver}\n2. [${id2}] ${mainTitle} (ส่ง หัวหน้า)\n   ผู้รับผิดชอบ: ${head}\n3. [${id3}] ${mainTitle} (ส่ง ${receiver})\n   ผู้รับผิดชอบ: ${receiver}`;
+
+      await replyTextMessage(replyToken, createdMsg);
+
+      const taskGroup = await getLineTargetGroup("task");
+      if (taskGroup && taskGroup !== targetId) {
+        await sendTextMessage(taskGroup, `📢 [สร้าง 3 งานย่อยใหม่]\n${createdMsg}`);
+      }
+      return true;
+    }
+
+    // 3.5 Multi-line Task Edit / Creation Parser ("ลำดับ:", "รายการ:", "ดู/ทำ:")
+    if (rawText.includes("รายการ:") && (rawText.includes("ดู/ทำ:") || rawText.includes("ส่งงาน:") || rawText.includes("ลำดับ:"))) {
+      const getVal = (key: string) => {
+        const regex = new RegExp(`${key}[:\\s]*(.*?)(?=\\n[a-zA-Zก-๙]+:|$)`, "s");
+        const match = rawText.match(regex);
+        return match ? match[1].trim() : "";
+      };
+
+      const taskId = getVal("ลำดับ");
+      const listName = getVal("รายการ");
+      const doWork = getVal("ดู/ทำ") || getVal("ทำ");
+      const sendWork = getVal("ส่งงาน") || getVal("ส่ง");
+      const typeNum = getVal("ประเภท");
+      const receiver = getVal("ผู้รับ") || getVal("ผู้รับมอบหมาย");
+
+      const typeLabel = typeNum === "1" ? "เอกสาร" : typeNum === "2" ? "แผนงาน" : typeNum === "3" ? "PJSA" : "ทั่วไป";
+
+      if (taskId) {
+        await supabaseAdmin
+          .from("contract_works")
+          .update({
+            work_details: `[${typeLabel}] ${listName} (ดู: ${doWork || "-"}, ส่ง: ${sendWork || "-"})`,
+            "ชื่อเล่น": receiver || "ทีมงาน"
+          })
+          .eq("id", taskId);
+
+        await replyTextMessage(replyToken, `✅ อัปเดตงานลำดับ [${taskId}] เรียบร้อยแล้ว! (${typeLabel})`);
+      } else {
+        const newId = `CW-${Date.now().toString().slice(-6)}`;
+        await insertRowToSupabase("งานรับเหมา", {
+          id_Conwork: newId,
+          id: newId,
+          "ชื่อเล่น": receiver || "ทีมงาน",
+          "ผู้รับผิดชอบ": receiver || "ทีมงาน",
+          "รายละเอียดงาน": `[${typeLabel}] ${listName} (ดู: ${doWork || "-"}, ส่ง: ${sendWork || "-"})`
+        });
+        await replyTextMessage(replyToken, `✅ สร้างงานใหม่ [${newId}] เรียบร้อยแล้ว! (${typeLabel})`);
+      }
+      return true;
+    }
+
     // 4. Work / PW Commands (Controller_Work.gs)
+    // 4.1 Multi-line Detailed PW Assignment ("เรื่อง:", "PR:", "สถานที่:", "นัดดู:")
+    if (rawText.includes("เรื่อง:") || rawText.includes("PR:") || rawText.includes("นัดดู:") || rawText.includes("นัดเสนอ:")) {
+      const getPWVal = (key: string) => {
+        const regex = new RegExp(`${key}[:\\s]*(.*?)(?=\\n[a-zA-Zก-๙]+:|$)`, "i");
+        const match = rawText.match(regex);
+        return match ? match[1].trim() : "";
+      };
+
+      const topic = getPWVal("เรื่อง") || getPWVal("รายการ");
+      const prNo = getPWVal("PR") || "-";
+      const location = getPWVal("สถานที่") || "-";
+      const inspectDate = getPWVal("นัดดู") || "-";
+      const offerDate = getPWVal("นัดเสนอ") || "-";
+      const contact1 = getPWVal("ติดต่อ1") || getPWVal("ติดต่อ") || "-";
+      const phone1 = getPWVal("เบอร์1") || getPWVal("เบอร์") || "-";
+      const company = getPWVal("บริษัท") || "-";
+
+      const pwId = `PW-${Date.now().toString().slice(-6)}`;
+      const fullDetails = `${topic} (PR: ${prNo}, สถานที่: ${location}, นัดดู: ${inspectDate}, นัดเสนอ: ${offerDate})`;
+
+      await insertRowToSupabase("งานรับเหมา", {
+        id_Conwork: pwId,
+        id: pwId,
+        "ชื่อเล่น": contact1,
+        "ผู้รับผิดชอบ": contact1,
+        "รายละเอียดงาน": fullDetails,
+        "เบอร์โทรศัพท์": phone1,
+        "บริษัท": company
+      });
+
+      const flex = createWorkAssignmentFlex({
+        id: pwId,
+        project_name: company !== "-" ? company : "งานรับเหมา",
+        contractor_name: contact1,
+        amount: 0,
+        details: fullDetails,
+        contact: contact1,
+        phone: phone1
+      });
+
+      await replyFlexMessage(replyToken, `👷‍♂️ บันทึกงานรับเหมามัลติไลน์ [${pwId}] เรียบร้อยแล้ว`, flex);
+
+      const pwGroup = await getLineTargetGroup("pw");
+      if (pwGroup && pwGroup !== targetId) {
+        await sendFlexMessageDetailed(pwGroup, `📢 [แจ้งเตือนมอบหมายงาน PW มัลติไลน์: ${pwId}]`, flex);
+      }
+      return true;
+    }
+
     if (rawText.startsWith("มอบหมาย:") || rawText.startsWith("กิจกรรม:") || rawText.startsWith("PW:") || rawText.startsWith("PW1:") || rawText.startsWith("PWALL:")) {
       const content = rawText.replace(/^มอบหมาย:|^กิจกรรม:|^PW:|^PW1:work|^PWALL:work|^PW:/, "").trim();
       if (!content) {
@@ -206,6 +385,13 @@ export async function handleLineCommand(
       });
 
       await replyFlexMessage(replyToken, `👷‍♂️ มอบหมายงาน [${pwId}] เรียบร้อยแล้ว`, flex);
+
+      // Multi-Group Routing: Push to PW Work Group
+      const pwGroup = await getLineTargetGroup("pw");
+      if (pwGroup && pwGroup !== targetId) {
+        await sendFlexMessageDetailed(pwGroup, `📢 [แจ้งเตือนมอบหมายงาน PW ใหม่: ${pwId}]`, flex);
+      }
+
       return true;
     }
 

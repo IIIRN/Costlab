@@ -133,11 +133,11 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
       {/* 2. EXECUTIVE METRICS STAT GRID */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Total Expenses */}
-        <div className="bg-white rounded-md p-4 border border-slate-200 flex flex-col justify-between gap-2">
+        <div className="bg-white rounded-md p-4 border border-slate-200 flex flex-col justify-between gap-2 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">ยอดค่าใช้จ่ายรวม</span>
-            <span className="w-7 h-7 rounded bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center font-bold">
-              <Wallet size={15} />
+            <span className="w-8 h-8 rounded-lg bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center font-bold shrink-0 shadow-xs">
+              <Wallet size={16} />
             </span>
           </div>
           <div>
@@ -147,11 +147,11 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
         </div>
 
         {/* Revenue */}
-        <div className="bg-white rounded-md p-4 border border-slate-200 flex flex-col justify-between gap-2">
+        <div className="bg-white rounded-md p-4 border border-slate-200 flex flex-col justify-between gap-2 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">ยอดงานรวมภาษี (Revenue)</span>
-            <span className="w-7 h-7 rounded bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center font-bold">
-              <TrendingUp size={15} />
+            <span className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center font-bold shrink-0 shadow-xs">
+              <TrendingUp size={16} />
             </span>
           </div>
           <div>
@@ -161,32 +161,32 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
         </div>
 
         {/* Project Status */}
-        <div className="bg-white rounded-md p-4 border border-slate-200 flex flex-col justify-between gap-2">
+        <div className="bg-white rounded-md p-4 border border-slate-200 flex flex-col justify-between gap-2 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">สถานะโครงการ</span>
-            <span className="w-7 h-7 rounded bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center font-bold">
-              <FolderKanban size={15} />
+            <span className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-600 flex items-center justify-center font-bold shrink-0 shadow-xs">
+              <FolderKanban size={16} />
             </span>
           </div>
           <div className="flex items-center gap-4">
             <div>
               <div className="text-[11px] text-slate-500 font-medium">กำลังทำอยู่</div>
-              <div className="text-lg font-bold text-slate-900">{summary.activeProjects}</div>
+              <div className="text-lg font-bold text-indigo-900">{summary.activeProjects}</div>
             </div>
             <div className="h-7 w-px bg-slate-200" />
             <div>
               <div className="text-[11px] text-slate-500 font-medium">เสร็จสิ้นแล้ว</div>
-              <div className="text-lg font-bold text-slate-700">{summary.completeProjects}</div>
+              <div className="text-lg font-bold text-slate-600">{summary.completeProjects}</div>
             </div>
           </div>
         </div>
 
         {/* Net Profit */}
-        <div className="bg-white rounded-md p-4 border border-slate-200 flex flex-col justify-between gap-2">
+        <div className="bg-white rounded-md p-4 border border-slate-200 flex flex-col justify-between gap-2 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">กำไรสุทธิ (Net Profit)</span>
-            <span className="w-7 h-7 rounded bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center font-bold">
-              <DollarSign size={15} />
+            <span className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center font-bold shrink-0 shadow-xs">
+              <DollarSign size={16} />
             </span>
           </div>
           <div>
@@ -194,7 +194,7 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
             <div className="space-y-1 mt-1">
               <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden border border-slate-200">
                 <div
-                  className="h-full bg-slate-800 transition-all duration-500"
+                  className="h-full bg-amber-500 transition-all duration-500"
                   style={{ width: `${Math.max(0, Math.min(100, summary.profitPercent))}%` }}
                 />
               </div>
@@ -208,9 +208,9 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
 
       {/* 3. STATUS COUNTERS STRIP */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-        <div className="bg-white p-3 rounded-md border border-slate-200 flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center font-bold shrink-0">
-            <FileCheck size={14} />
+        <div className="bg-white p-3 rounded-md border border-slate-200 flex items-center gap-2.5 shadow-xs">
+          <div className="w-8 h-8 rounded-lg bg-sky-50 border border-sky-200 text-sky-600 flex items-center justify-center font-bold shrink-0">
+            <FileCheck size={16} />
           </div>
           <div className="min-w-0">
             <div className="text-slate-500 text-[10px] font-semibold">ตาม VAT (รอได้บิล)</div>
@@ -218,9 +218,9 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
           </div>
         </div>
 
-        <div className="bg-white p-3 rounded-md border border-slate-200 flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center font-bold shrink-0">
-            <UserCheck size={14} />
+        <div className="bg-white p-3 rounded-md border border-slate-200 flex items-center gap-2.5 shadow-xs">
+          <div className="w-8 h-8 rounded-lg bg-purple-50 border border-purple-200 text-purple-600 flex items-center justify-center font-bold shrink-0">
+            <UserCheck size={16} />
           </div>
           <div className="min-w-0">
             <div className="text-slate-500 text-[10px] font-semibold">ตาม หัก 3% บุคคล</div>
@@ -228,9 +228,9 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
           </div>
         </div>
 
-        <div className="bg-white p-3 rounded-md border border-slate-200 flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center font-bold shrink-0">
-            <Building2 size={14} />
+        <div className="bg-white p-3 rounded-md border border-slate-200 flex items-center gap-2.5 shadow-xs">
+          <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center font-bold shrink-0">
+            <Building2 size={16} />
           </div>
           <div className="min-w-0">
             <div className="text-slate-500 text-[10px] font-semibold">ตาม หัก 3% บริษัท</div>
@@ -238,9 +238,9 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
           </div>
         </div>
 
-        <div className="bg-white p-3 rounded-md border border-slate-200 flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center font-bold shrink-0">
-            <Clock3 size={14} />
+        <div className="bg-white p-3 rounded-md border border-slate-200 flex items-center gap-2.5 shadow-xs">
+          <div className="w-8 h-8 rounded-lg bg-orange-50 border border-orange-200 text-orange-600 flex items-center justify-center font-bold shrink-0">
+            <Clock3 size={16} />
           </div>
           <div className="min-w-0">
             <div className="text-slate-500 text-[10px] font-semibold">ตาม เครดิต (รอจ่าย)</div>

@@ -74,6 +74,119 @@ export async function isLineApproverAuthorized(userId: string, targetId?: string
   );
 }
 
+export async function getLineTargetGroup(
+  category: "task" | "work" | "pw" | "finance" | "summary" | "plan" | "paid"
+): Promise<string> {
+  try {
+    const { data: configRow } = await supabaseAdmin
+      .from("system_options")
+      .select("data")
+      .eq("id", "line_config")
+      .maybeSingle();
+
+    const cfg = configRow?.data || {};
+
+    let target = "";
+    switch (category) {
+      case "task":
+        target = cfg.LINE_GROUP_ID_TASK || process.env.LINE_GROUP_ID_TASK;
+        break;
+      case "work":
+      case "pw":
+        target = cfg.LINE_GROUP_ID_PW || process.env.LINE_GROUP_ID_PW;
+        break;
+      case "finance":
+        target = cfg.LINE_GROUP_ID_FINANCE || process.env.LINE_GROUP_ID_FINANCE;
+        break;
+      case "paid":
+        target = cfg.LINE_GROUP_ID_PAID || cfg.LINE_GROUP_ID_FINANCE || process.env.LINE_GROUP_ID_PAID;
+        break;
+      case "summary":
+        target = cfg.LINE_GROUP_ID_SUMMARY || process.env.LINE_GROUP_ID_SUMMARY;
+        break;
+      case "plan":
+        target = cfg.LINE_GROUP_ID_PLAN || process.env.LINE_GROUP_ID_PLAN;
+        break;
+    }
+
+    if (target && String(target).trim()) return String(target).trim();
+
+    return (
+      cfg.LINE_USER_ID_OWN ||
+      cfg.LINE_USER_ID_APPROVER ||
+      process.env.LINE_USER_ID_OWN ||
+      process.env.LINE_USER_ID_APPROVER ||
+      ""
+    );
+  } catch (e) {
+    console.error("Failed resolving target LINE group:", e);
+    return "";
+  }
+}
+
+export async function recordDiscoveredLineGroup(groupId: string, sourceName?: string): Promise<void> {
+  if (!groupId || !groupId.startsWith("C")) return;
+  try {
+    const { data: existing } = await supabaseAdmin
+      .from("system_options")
+      .select("data")
+      .eq("id", "line_group_activity")
+      .maybeSingle();
+
+    const currentGroups = existing?.data?.groups || {};
+    currentGroups[groupId] = {
+      groupId,
+      name: sourceName || currentGroups[groupId]?.name || "LINE Group",
+      lastActive: new Date().toISOString()
+    };
+
+    await supabaseAdmin.from("system_options").upsert({
+      id: "line_group_activity",
+      data: { groups: currentGroups },
+      updated_at: new Date().toISOString()
+    });
+  } catch (e) {
+    console.warn("⚠️ Warning recording discovered LINE group:", e);
+  }
+}
+
+export async function logSystemError(
+  source: string,
+  error: any,
+  context?: Record<string, any>
+): Promise<void> {
+  const errMsg = typeof error === "string" ? error : error?.message || String(error);
+  console.error(`❌ [System Error Log] (${source}):`, errMsg, context || "");
+
+  try {
+    const { data: existing } = await supabaseAdmin
+      .from("system_options")
+      .select("data")
+      .eq("id", "system_error_logs")
+      .maybeSingle();
+
+    const logs: any[] = Array.isArray(existing?.data?.logs) ? existing.data.logs : [];
+
+    const newLog = {
+      id: `ERR-${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      source,
+      message: errMsg,
+      context: context || {}
+    };
+
+    const updatedLogs = [newLog, ...logs].slice(0, 50);
+
+    await supabaseAdmin.from("system_options").upsert({
+      id: "system_error_logs",
+      data: { logs: updatedLogs },
+      updated_at: new Date().toISOString()
+    });
+  } catch (e) {
+    console.warn("⚠️ Warning logging system error to Supabase:", e);
+  }
+}
+
 export type LineSendResult = {
   success: boolean;
   error?: string;
@@ -429,6 +542,301 @@ export function createDailySummaryFlex(summary: {
   };
 }
 
+export function createMorningTasksCarouselFlex(data: {
+  dateStr: string;
+  tasks: Array<{ id: any; details: string; status?: string; project?: string }>;
+  works: Array<{ id: any; details: string; contractor?: string; project?: string }>;
+  pendingBills: Array<{ id: any; requester?: string; amount?: number | string }>;
+}): Record<string, any> {
+  const { dateStr, tasks = [], works = [], pendingBills = [] } = data;
+
+  // Tab 1: 📋 รายการงานค้างประจำวัน (Daily Tasks)
+  const tab1 = {
+    type: "bubble",
+    size: "mega",
+    header: {
+      type: "box",
+      layout: "vertical",
+      backgroundColor: "#0F172A",
+      paddingAll: "15px",
+      contents: [
+        { type: "text", text: "📋 แท็บ 1/3: งานค้างประจำวัน", weight: "bold", color: "#FFFFFF", size: "sm" },
+        { type: "text", text: `ประจำวันที่ ${dateStr} (${tasks.length} รายการ)`, color: "#38BDF8", size: "xs", margin: "xs" }
+      ]
+    },
+    body: {
+      type: "box",
+      layout: "vertical",
+      paddingAll: "14px",
+      spacing: "xs",
+      contents: tasks.length > 0 ? tasks.slice(0, 5).map((t, idx) => ({
+        type: "box",
+        layout: "vertical",
+        margin: idx > 0 ? "xs" : "none",
+        paddingAll: "6px",
+        backgroundColor: "#F8FAFC",
+        cornerRadius: "6px",
+        contents: [
+          { type: "text", text: `${idx + 1}. [${t.project || "งานทั่วไป"}] ${t.details}`, size: "xs", weight: "bold", color: "#0F172A", wrap: true },
+          { type: "text", text: `สถานะ: ${t.status || "กำลังทำ"}`, size: "xxs", color: "#059669" }
+        ]
+      })) : [
+        { type: "text", text: "✅ ไม่มีรายการงานค้างในวันนี้", size: "xs", color: "#059669", align: "center" }
+      ]
+    }
+  };
+
+  // Tab 2: 👷‍♂️ งานรับเหมา & PW มอบหมาย (Contract Works)
+  const tab2 = {
+    type: "bubble",
+    size: "mega",
+    header: {
+      type: "box",
+      layout: "vertical",
+      backgroundColor: "#1E1B4B",
+      paddingAll: "15px",
+      contents: [
+        { type: "text", text: "👷‍♂️ แท็บ 2/3: งานรับเหมา & PW", weight: "bold", color: "#FFFFFF", size: "sm" },
+        { type: "text", text: `รายการเปิดจ้างค้าง (${works.length} รายการ)`, color: "#A5B4FC", size: "xs", margin: "xs" }
+      ]
+    },
+    body: {
+      type: "box",
+      layout: "vertical",
+      paddingAll: "14px",
+      spacing: "xs",
+      contents: works.length > 0 ? works.slice(0, 5).map((w, idx) => ({
+        type: "box",
+        layout: "vertical",
+        margin: idx > 0 ? "xs" : "none",
+        paddingAll: "6px",
+        backgroundColor: "#F8FAFC",
+        cornerRadius: "6px",
+        contents: [
+          { type: "text", text: `${idx + 1}. [CW${w.id}] ${w.details}`, size: "xs", weight: "bold", color: "#1E293B", wrap: true },
+          { type: "text", text: `ผู้รับเหมา: ${w.contractor || "-"} | โครงการ: ${w.project || "ทั่วไป"}`, size: "xxs", color: "#64748B" }
+        ]
+      })) : [
+        { type: "text", text: "✅ ไม่มีรายการงานรับเหมาค้าง", size: "xs", color: "#059669", align: "center" }
+      ]
+    }
+  };
+
+  // Tab 3: 🧾 บิลตั้งเบิกที่ต้องตรวจสอบ (Pending Bills)
+  const tab3 = {
+    type: "bubble",
+    size: "mega",
+    header: {
+      type: "box",
+      layout: "vertical",
+      backgroundColor: "#065F46",
+      paddingAll: "15px",
+      contents: [
+        { type: "text", text: "🧾 แท็บ 3/3: บิลรอตรวจสอบ/ตั้งเบิก", weight: "bold", color: "#FFFFFF", size: "sm" },
+        { type: "text", text: `รายการบิลรออนุมัติ (${pendingBills.length} รายการ)`, color: "#A7F3D0", size: "xs", margin: "xs" }
+      ]
+    },
+    body: {
+      type: "box",
+      layout: "vertical",
+      paddingAll: "14px",
+      spacing: "xs",
+      contents: pendingBills.length > 0 ? pendingBills.slice(0, 5).map((b, idx) => ({
+        type: "box",
+        layout: "horizontal",
+        margin: idx > 0 ? "xs" : "none",
+        paddingAll: "6px",
+        backgroundColor: "#F8FAFC",
+        cornerRadius: "6px",
+        contents: [
+          { type: "text", text: `#${b.id} ${b.requester || "สมชาย"}`, size: "xs", weight: "bold", color: "#0F172A", flex: 6, wrap: true },
+          { type: "text", text: `฿${Number(b.amount || 0).toLocaleString("th-TH")}`, size: "xs", weight: "bold", color: "#059669", flex: 4, align: "end" }
+        ]
+      })) : [
+        { type: "text", text: "✅ ไม่มีรายการบิลรออนุมัติ", size: "xs", color: "#059669", align: "center" }
+      ]
+    }
+  };
+
+  return {
+    type: "carousel",
+    contents: [tab1, tab2, tab3]
+  };
+}
+
+export function createEveningSummaryCarouselFlex(summary: {
+  dateStr: string;
+  totalBills: number;
+  totalAmount: number;
+  pendingCount: number;
+  approvedCount: number;
+  activeWorksCount: number;
+  completedWorksCount: number;
+  lateTasks?: Array<{ id: any; details: string; assignee?: string }>;
+}): Record<string, any> {
+  const formattedAmount = Number(summary.totalAmount || 0).toLocaleString("th-TH", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  const lateList = summary.lateTasks || [];
+
+  // Tab 1: 📊 สรุปยอดรวมการเงิน & บิล
+  const tab1 = {
+    type: "bubble",
+    size: "mega",
+    header: {
+      type: "box",
+      layout: "vertical",
+      backgroundColor: "#0F172A",
+      paddingAll: "15px",
+      contents: [
+        { type: "text", text: "📊 แท็บ 1/3: สรุปภาพรวมการเงิน & บิล", weight: "bold", color: "#FFFFFF", size: "sm" },
+        { type: "text", text: `ประจำวันที่ ${summary.dateStr}`, color: "#38BDF8", size: "xs", margin: "xs" }
+      ]
+    },
+    body: {
+      type: "box",
+      layout: "vertical",
+      paddingAll: "16px",
+      spacing: "md",
+      contents: [
+        {
+          type: "box",
+          layout: "horizontal",
+          contents: [
+            { type: "text", text: "รายการบิลทั้งหมด", color: "#64748B", size: "sm" },
+            { type: "text", text: `${summary.totalBills} รายการ`, weight: "bold", color: "#0F172A", size: "sm", align: "end" },
+          ],
+        },
+        {
+          type: "box",
+          layout: "horizontal",
+          contents: [
+            { type: "text", text: "รออนุมัติ", color: "#64748B", size: "sm" },
+            { type: "text", text: `${summary.pendingCount} รายการ`, weight: "bold", color: "#D97706", size: "sm", align: "end" },
+          ],
+        },
+        {
+          type: "box",
+          layout: "horizontal",
+          contents: [
+            { type: "text", text: "อนุมัติแล้ว", color: "#64748B", size: "sm" },
+            { type: "text", text: `${summary.approvedCount} รายการ`, weight: "bold", color: "#16A34A", size: "sm", align: "end" },
+          ],
+        },
+        { type: "separator" },
+        {
+          type: "box",
+          layout: "horizontal",
+          contents: [
+            { type: "text", text: "รวมยอดเงินทั้งสิ้น", weight: "bold", color: "#0F172A", size: "sm" },
+            { type: "text", text: `฿${formattedAmount}`, weight: "bold", color: "#2563EB", size: "lg", align: "end" },
+          ],
+        },
+      ]
+    }
+  };
+
+  // Tab 2: 🎯 สรุปผลงานทีมและการดำเนินการ
+  const tab2 = {
+    type: "bubble",
+    size: "mega",
+    header: {
+      type: "box",
+      layout: "vertical",
+      backgroundColor: "#1E1B4B",
+      paddingAll: "15px",
+      contents: [
+        { type: "text", text: "🎯 แท็บ 2/3: สรุปผลงานทีม & PW", weight: "bold", color: "#FFFFFF", size: "sm" },
+        { type: "text", text: `สรุปความคืบหน้า (${summary.dateStr})`, color: "#A5B4FC", size: "xs", margin: "xs" }
+      ]
+    },
+    body: {
+      type: "box",
+      layout: "vertical",
+      paddingAll: "16px",
+      spacing: "md",
+      contents: [
+        {
+          type: "box",
+          layout: "horizontal",
+          contents: [
+            { type: "text", text: "งานที่กำลังดำเนินการ", color: "#64748B", size: "sm" },
+            { type: "text", text: `${summary.activeWorksCount} รายการ`, weight: "bold", color: "#2563EB", size: "sm", align: "end" },
+          ],
+        },
+        {
+          type: "box",
+          layout: "horizontal",
+          contents: [
+            { type: "text", text: "งานที่เสร็จสิ้นแล้ว", color: "#64748B", size: "sm" },
+            { type: "text", text: `${summary.completedWorksCount} รายการ`, weight: "bold", color: "#16A34A", size: "sm", align: "end" },
+          ],
+        },
+        { type: "separator" },
+        {
+          type: "box",
+          layout: "horizontal",
+          contents: [
+            { type: "text", text: "อัตราความสำเร็จ (Success Rate)", color: "#0F172A", size: "xs", weight: "bold" },
+            {
+              type: "text",
+              text: `${summary.activeWorksCount + summary.completedWorksCount > 0
+                ? Math.round((summary.completedWorksCount / (summary.activeWorksCount + summary.completedWorksCount)) * 100)
+                : 100}%`,
+              weight: "bold",
+              color: "#4F46E5",
+              size: "md",
+              align: "end"
+            },
+          ],
+        },
+      ]
+    }
+  };
+
+  // Tab 3: ⏳ รายการงานที่เกินกำหนด/ล่าช้า (Late Tasks Warning)
+  const tab3 = {
+    type: "bubble",
+    size: "mega",
+    header: {
+      type: "box",
+      layout: "vertical",
+      backgroundColor: "#991B1B",
+      paddingAll: "15px",
+      contents: [
+        { type: "text", text: "⏳ แท็บ 3/3: รายการงานค้าง/ต้องติดตาม", weight: "bold", color: "#FFFFFF", size: "sm" },
+        { type: "text", text: `งานค้างที่รอดำเนินการ (${summary.activeWorksCount} รายการ)`, color: "#FCA5A5", size: "xs", margin: "xs" }
+      ]
+    },
+    body: {
+      type: "box",
+      layout: "vertical",
+      paddingAll: "14px",
+      spacing: "xs",
+      contents: lateList.length > 0 ? lateList.slice(0, 5).map((l, idx) => ({
+        type: "box",
+        layout: "vertical",
+        margin: idx > 0 ? "xs" : "none",
+        paddingAll: "6px",
+        backgroundColor: "#FEF2F2",
+        cornerRadius: "6px",
+        contents: [
+          { type: "text", text: `${idx + 1}. [CW${l.id}] ${l.details}`, size: "xs", weight: "bold", color: "#991B1B", wrap: true },
+          { type: "text", text: `ผู้รับผิดชอบ: ${l.assignee || "ทีมงาน"}`, size: "xxs", color: "#991B1B" }
+        ]
+      })) : [
+        { type: "text", text: "🎉 ไม่มีรายการงานที่ล่าช้า", size: "xs", color: "#16A34A", align: "center", weight: "bold" }
+      ]
+    }
+  };
+
+  return {
+    type: "carousel",
+    contents: [tab1, tab2, tab3]
+  };
+}
+
 export function createBillSearchResultFlex(
   title: string,
   bills: Array<{
@@ -684,7 +1092,7 @@ export function createBillSearchResultFlex(
             type: "button",
             style: "primary",
             color: "#059669",
-            height: "xs",
+            height: "sm",
             flex: 6,
             action: {
               type: "message",
@@ -696,7 +1104,7 @@ export function createBillSearchResultFlex(
             type: "button",
             style: "primary",
             color: "#DC2626",
-            height: "xs",
+            height: "sm",
             flex: 6,
             action: {
               type: "message",

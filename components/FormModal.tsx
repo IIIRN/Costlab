@@ -107,6 +107,7 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
   const [enumListSearch, setEnumListSearch] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const isEditing = editSheetRow !== null && editSheetRow !== undefined;
   const isDataForm = form.tableName === TABLES.DATA || form.tableName === "Data";
 
@@ -151,6 +152,7 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
       }
       applyLocalFormulas(nextValues, form.tableName);
       setError("");
+      setSuccessMessage("");
       setEnumListSearch({});
       const targetRowKey = detail?.sheetRow ?? detail?.row?._sheetRow ?? detail?.row?.id ?? detail?.row?.id_bank ?? detail?.row?.id_store ?? detail?.row?.id_Contractor ?? detail?.row?.id_car ?? detail?.row?.id_cus ?? detail?.row?.id_Company;
       setEditSheetRow(detail?.row ? (targetRowKey !== undefined && targetRowKey !== null ? (typeof targetRowKey === "number" || typeof targetRowKey === "string" ? targetRowKey : String(targetRowKey)) : 1) : null);
@@ -215,6 +217,7 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
 
     setSaving(true);
     setError("");
+    setSuccessMessage("");
     try {
       const response = isEditing
         ? hasFiles
@@ -233,12 +236,22 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
         });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "บันทึกไม่สำเร็จ");
-      setOpen(false);
-      setEditSheetRow(null);
-      setValues(getInitialStringValues(form));
-      if (form.tableName === TABLES.DATA) {
-        window.location.reload();
+      
+      if (isEditing) {
+        setOpen(false);
+        setEditSheetRow(null);
+        setValues(getInitialStringValues(form));
+        if (form.tableName === TABLES.DATA) {
+          window.location.reload();
+        } else {
+          router.refresh();
+        }
       } else {
+        // Reset form to allow immediate creation of the next bill
+        setValues(getInitialStringValues(form));
+        setEnumListSearch({});
+        setError("");
+        setSuccessMessage("บันทึกรายการเรียบร้อยแล้ว สามารถสร้างรายการถัดไปต่อได้เลย");
         router.refresh();
       }
     } catch (caught) {
@@ -420,6 +433,22 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
                   <ProjectBudgetAllocator values={values} onChange={updateValueByName} />
                 ) : null}
 
+                {successMessage ? (
+                  <div className="p-3 bg-emerald-50 text-emerald-800 rounded-lg border border-emerald-200 text-xs font-bold flex items-center justify-between animate-in fade-in duration-150">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                      <span>{successMessage}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSuccessMessage("")}
+                      className="text-emerald-600 hover:text-emerald-800 transition cursor-pointer"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ) : null}
+
                 {error ? <div className="p-3 bg-rose-50 text-rose-700 rounded-lg border border-rose-200 text-xs font-bold">{error}</div> : null}
               </fieldset>
             </div>
@@ -444,7 +473,7 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
                 <button
                   type="button"
                   disabled={saving}
-                  onClick={() => { setOpen(false); setEditSheetRow(null); }}
+                  onClick={() => { setOpen(false); setEditSheetRow(null); setSuccessMessage(""); }}
                   className="px-4 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100 border border-slate-300 bg-white transition cursor-pointer"
                 >
                   ยกเลิก
@@ -478,6 +507,15 @@ function ImageFileFieldInput({
 }) {
   const [selectedFilePreview, setSelectedFilePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!value) {
+      setSelectedFilePreview(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  }, [value]);
 
   const previewUrl = imagePreviewUrl(value);
 
