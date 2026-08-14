@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { replyTextMessage } from "@/lib/line";
+import { replyTextMessage, recordDiscoveredLineGroup } from "@/lib/line";
 import { handleLineCommand } from "@/lib/line-commands";
 
 export async function POST(req: NextRequest) {
@@ -14,8 +14,13 @@ export async function POST(req: NextRequest) {
     for (const event of events) {
       if (!event) continue;
       const replyToken = event.replyToken || "";
-      const targetId = event.source?.groupId || event.source?.userId || "";
+      const groupId = event.source?.groupId || event.source?.roomId || "";
+      const targetId = groupId || event.source?.userId || "";
       const userId = event.source?.userId || "";
+
+      if (groupId) {
+        await recordDiscoveredLineGroup(groupId);
+      }
 
       // Handle Text Message Commands
       if (event.type === "message" && event.message?.type === "text") {

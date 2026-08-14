@@ -19,23 +19,26 @@ const DEFAULT_CONFIG = {
 
 export async function GET() {
   try {
-    const { data, error } = await supabaseAdmin
-      .from("system_options")
-      .select("*")
-      .eq("id", "line_config")
-      .maybeSingle();
+    const [configRes, groupRes] = await Promise.all([
+      supabaseAdmin.from("system_options").select("*").eq("id", "line_config").maybeSingle(),
+      supabaseAdmin.from("system_options").select("*").eq("id", "line_group_activity").maybeSingle()
+    ]);
 
-    if (error) {
-      console.warn("⚠️ Failed to load line_config from system_options:", error.message);
-      return NextResponse.json({ success: true, config: DEFAULT_CONFIG, source: "env" });
+    const data = configRes.data;
+    const groupData = groupRes.data;
+    const discoveredGroups = Object.values(groupData?.data?.groups || {});
+
+    if (configRes.error) {
+      console.warn("⚠️ Failed to load line_config from system_options:", configRes.error.message);
+      return NextResponse.json({ success: true, config: DEFAULT_CONFIG, source: "env", discoveredGroups });
     }
 
     if (data && data.data && typeof data.data === "object") {
       const mergedConfig = { ...DEFAULT_CONFIG, ...data.data };
-      return NextResponse.json({ success: true, config: mergedConfig, source: "supabase" });
+      return NextResponse.json({ success: true, config: mergedConfig, source: "supabase", discoveredGroups });
     }
 
-    return NextResponse.json({ success: true, config: DEFAULT_CONFIG, source: "env" });
+    return NextResponse.json({ success: true, config: DEFAULT_CONFIG, source: "env", discoveredGroups });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }

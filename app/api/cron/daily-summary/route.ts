@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sendFlexMessageDetailed, createDailySummaryFlex } from "@/lib/line";
+import { sendFlexMessageDetailed, sendTextMessageDetailed, createEveningSummaryCarouselFlex } from "@/lib/line";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const dynamic = "force-dynamic";
@@ -17,8 +17,9 @@ export async function GET(req: NextRequest) {
       .maybeSingle();
 
     const config = configRow?.data || {};
+    const configuredTime = config.CRON_TIME_EVENING || "17:00";
 
-    // Pure dynamic resolution without hardcoded fallback strings
+    // Dynamic resolution of target LINE group / User ID
     const targetGroup =
       searchTarget ||
       config.LINE_GROUP_ID_SUMMARY ||
@@ -32,17 +33,29 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // 3. Fetch summary statistics from Supabase PostgreSQL
-    const { data: bills, error } = await supabaseAdmin.from("bills").select("amount, status");
+    // 3. Fetch summary statistics from Supabase PostgreSQL (Bills & Contract Works)
+    const [billsRes, worksRes] = await Promise.all([
+      supabaseAdmin.from("bills").select("amount, status"),
+      supabaseAdmin.from("contract_works").select("*")
+    ]);
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
+    const bills = billsRes.data || [];
+    const works = worksRes.data || [];
 
-    const totalBills = bills?.length || 0;
-    const totalAmount = bills?.reduce((acc, b) => acc + (Number(b.amount) || 0), 0) || 0;
-    const pendingCount = bills?.filter((b) => b.status === "รอตรวจสอบ" || b.status === "รออนุมัติ").length || 0;
-    const approvedCount = bills?.filter((b) => b.status === "อนุมัติแล้ว" || b.status === "จ่ายแล้ว").length || 0;
+    const totalBills = bills.length;
+    const totalAmount = bills.reduce((acc, b) => acc + (Number(b.amount) || 0), 0);
+    const pendingCount = bills.filter((b) => b.status === "รอตรวจสอบ" || b.status === "รออนุมัติ").length;
+    const approvedCount = bills.filter((b) => b.status === "อนุมัติแล้ว" || b.status === "จ่ายแล้ว").length;
+
+    const activeWorks = works.filter(w => !String(w.work_details || "").includes("[เสร็จสิ้น]"));
+    const activeWorksCount = activeWorks.length;
+    const completedWorksCount = works.filter(w => String(w.work_details || "").includes("[เสร็จสิ้น]")).length;
+
+    const lateTasks = activeWorks.slice(0, 5).map(w => ({
+      id: w.id,
+      details: w.work_details || w.project_name || "งานค้าง",
+      assignee: w["ชื่อเล่น"] || w.contractor_name || "ทีมงาน"
+    }));
 
     const todayStr = new Date().toLocaleDateString("th-TH", {
       year: "numeric",
@@ -50,35 +63,50 @@ export async function GET(req: NextRequest) {
       day: "numeric",
     });
 
-    const flex = createDailySummaryFlex({
-      dateStr: todayStr,
+    // Build 3-Tab Swipable Flex Carousel Card for LINE Evening Summary
+    const flexCarousel = createEveningSummaryCarouselFlex({
+      dateStr: `${todayStr} (${configuredTime} น.)`,
       totalBills,
       totalAmount,
       pendingCount,
       approvedCount,
+      activeWorksCount,
+      completedWorksCount,
+      lateTasks
     });
 
-    const sendResult = await sendFlexMessageDetailed(targetGroup, `📊 สรุปรายงานประจำวัน ${todayStr}`, flex);
+    const sendResult = await sendFlexMessageDetailed(
+      targetGroup,
+      `📊 สรุปรายงานเย็น Multi-Tab Carousel (${todayStr})`,
+      flexCarousel
+    );
 
     if (!sendResult.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: sendResult.error || "เกิดข้อผิดพลาดในการส่งข้อความเข้า LINE",
-          targetGroup,
-        },
-        { status: 400 }
-      );
+      let teamSummaryText = `📊 สรุปภาพรวมการเงิน & ผลงานทีม (${todayStr} - ${configuredTime} น.)\n\n`;
+      teamSummaryText += `🧾 รายการบิล: ${totalBills} รายการ (รออนุมัติ: ${pendingCount}, อนุมัติแล้ว: ${approvedCount})\n`;
+      teamSummaryText += `💰 ยอดเงินรวม: ฿${totalAmount.toLocaleString("th-TH")}\n`;
+      teamSummaryText += `👷‍♂️ งานรับเหมา/PW: กำลังทำ ${activeWorksCount} รายการ, เสร็จแล้ว ${completedWorksCount} รายการ`;
+
+      const textResult = await sendTextMessageDetailed(targetGroup, teamSummaryText);
+      return NextResponse.json({
+        success: textResult.success,
+        targetGroup,
+        configuredTime,
+        fallbackText: true,
+        summary: { dateStr: todayStr, totalBills, totalAmount, pendingCount, approvedCount, activeWorksCount, completedWorksCount },
+      });
     }
 
     return NextResponse.json({
       success: true,
       targetGroup,
-      summary: { dateStr: todayStr, totalBills, totalAmount, pendingCount, approvedCount },
+      configuredTime,
+      todayStr,
+      summary: { dateStr: todayStr, totalBills, totalAmount, pendingCount, approvedCount, activeWorksCount, completedWorksCount },
+      tabs: 3,
     });
   } catch (err: any) {
     console.error("❌ Cron daily summary error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
-
