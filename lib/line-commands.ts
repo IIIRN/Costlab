@@ -280,17 +280,28 @@ export async function handleLineCommand(
       if (lowerText === "รออนุมัติ") {
         query = query.or("status.eq.รอตรวจสอบ,status.eq.รออนุมัติ,status.eq.รอดำเนินการ");
       } else if (filterQuery && filterQuery !== "ทั้งหมด") {
-        query = query.or(`requester.ilike.%${filterQuery}%,vendor_or_person.ilike.%${filterQuery}%,description.ilike.%${filterQuery}%,bill_no.ilike.%${filterQuery}%`);
+        // ค้นหาด้วย requester และ vendor_or_person (ลบ bill_no ออกเพราะอาจไม่มี column)
+        query = query.or(
+          `requester.ilike.%${filterQuery}%,` +
+          `vendor_or_person.ilike.%${filterQuery}%,` +
+          `description.ilike.%${filterQuery}%`
+        );
       }
 
-      const { data: bills, error: billError } = await query.order("id", { ascending: false }).limit(5);
+      const { data: bills, error: billError } = await query.order("id", { ascending: false }).limit(10);
+
+      // Log error เพื่อ debug
+      if (billError) {
+        console.error("❌ [LINE CMD] bills query error:", billError.message, "| filterQuery:", filterQuery);
+      }
 
       // ✅ FIX: ลบ hardcoded fallback — แสดง "ไม่พบรายการ" แทนข้อมูลปลอม
       if (!bills || bills.length === 0) {
+        const debugInfo = billError ? `\n\n(debug: ${billError.message})` : "";
         const noResultMsg = lowerText === "รออนุมัติ"
           ? "✅ ไม่มีรายการรออนุมัติในขณะนี้ครับ\n\nบิลทั้งหมดได้รับการอนุมัติหรือดำเนินการแล้ว"
           : filterQuery
-            ? `🔍 ไม่พบรายการบิลที่ตรงกับ "${filterQuery}"\n\nกรุณาตรวจสอบชื่อผู้เบิกหรือรายละเอียดที่ค้นหาอีกครั้งครับ`
+            ? `🔍 ไม่พบรายการบิลที่ตรงกับ "${filterQuery}"${debugInfo}\n\nกรุณาตรวจสอบชื่อผู้เบิกหรือรายละเอียดที่ค้นหาอีกครั้งครับ`
             : "ไม่พบรายการบิลในระบบ";
         await replyTextMessage(replyToken, noResultMsg);
         return true;
