@@ -62,34 +62,27 @@ export async function handleLineCommand(
         const { data: contractWorks } = await supabaseAdmin
           .from("contract_works")
           .select("*")
+          .order("id", { ascending: false })
           .limit(10);
 
-        const dbTasks = (contractWorks && contractWorks.length > 0) ? contractWorks.map(w => ({
+        if (!contractWorks || contractWorks.length === 0) {
+          await replyTextMessage(replyToken, `📋 ไม่พบรายการงานของ "${memberName}" ในระบบ\n\nกรุณาตรวจสอบชื่อหรือเพิ่มงานผ่านคำสั่ง "งาน: รายละเอียด" ครับ`);
+          return true;
+        }
+
+        const dbTasks = contractWorks.map(w => ({
           id: w.id,
           details: w.work_details || w.project_name || "งานประจำวัน",
           dateStr: new Date().toLocaleDateString("th-TH", { day: "2-digit", month: "2-digit", year: "2-digit" }),
           status: "กำลังทำ"
-        })) : [];
+        }));
 
-        const fallbackTasks = [
-          { id: 101, details: "ย้ายรถแม็คโคร", dateStr: "11/08/69", status: "กำลังทำ" },
-          { id: 102, details: "งานหลังคา", dateStr: "11/08/69", status: "กำลังทำ" },
-          { id: 103, details: "เทตอม่อเสา", dateStr: "11/08/69", status: "กำลังทำ" },
-          { id: 104, details: "DC ช่างไฟฟ้าและทั่วไป", dateStr: "11/08/69", status: "กำลังทำ" },
-          { id: 105, details: "ลานจอดมอไซค์", dateStr: "11/08/69", status: "กำลังทำ" },
-          { id: 106, details: "ค่ารถ6ล้อ", dateStr: "11/08/69", status: "กำลังทำ" },
-          { id: 107, details: "แผ่นเพล", dateStr: "11/08/69", status: "กำลังทำ" },
-          { id: 108, details: "รายวัน", dateStr: "11/08/69", status: "กำลังทำ" }
-        ];
+        const flex = createMemberTaskTableFlex(memberName, dbTasks);
+        const sent = await replyFlexMessage(replyToken, `📋 รายการงานทั้งหมดของ ${memberName} (${dbTasks.length} รายการ)`, flex);
 
-        const tasksToDisplay = dbTasks.length > 0 ? dbTasks : fallbackTasks;
-
-        const flex = createMemberTaskTableFlex(memberName, tasksToDisplay);
-        const sent = await replyFlexMessage(replyToken, `📋 รายการงานทั้งหมดของ ${memberName} (${tasksToDisplay.length} รายการ)`, flex);
-        
         if (!sent && replyToken) {
-          let textSummary = `📋 งานทั้งหมด : ${memberName} (${tasksToDisplay.length} รายการ)\n\n`;
-          tasksToDisplay.forEach((t, i) => {
+          let textSummary = `📋 งานทั้งหมด : ${memberName} (${dbTasks.length} รายการ)\n\n`;
+          dbTasks.forEach((t, i) => {
             textSummary += `${i + 1}. [CW${t.id}] ${t.details} (${t.dateStr}) - Close\n`;
           });
           await replyTextMessage(replyToken, textSummary);
@@ -154,14 +147,17 @@ export async function handleLineCommand(
       if (searchTerm && searchTerm !== "งานทั้งหมด" && searchTerm !== "งาน") {
         query = query.ilike("work_details", `%${searchTerm}%`);
       }
-      const { data: tasks } = await query.limit(10);
+      const { data: tasks } = await query.order("id", { ascending: false }).limit(10);
 
-      const displayTasks = (tasks && tasks.length > 0) ? tasks : [
-        { id: "101", work_details: "ย้ายรถแม็คโคร", project_name: "โครงการ A" },
-        { id: "102", work_details: "งานหลังคา", project_name: "โครงการ B" }
-      ];
+      if (!tasks || tasks.length === 0) {
+        const noTaskMsg = searchTerm
+          ? `🔍 ไม่พบงานที่ตรงกับ "${searchTerm}"\n\nลองค้นหาคำอื่น หรือสร้างงานใหม่ด้วยคำสั่ง "งาน: รายละเอียด" ครับ`
+          : `📋 ไม่พบรายการงานค้างในระบบขณะนี้`;
+        await replyTextMessage(replyToken, noTaskMsg);
+        return true;
+      }
 
-      const formattedTasks = displayTasks.map(t => ({
+      const formattedTasks = tasks.map(t => ({
         id: t.id,
         details: t.work_details || "-",
         status: "กำลังทำ",
@@ -169,7 +165,7 @@ export async function handleLineCommand(
       }));
 
       const flex = createTaskSummaryFlex(formattedTasks);
-      await replyFlexMessage(replyToken, `📋 รายการงานค้าง (${displayTasks.length} รายการ)`, flex);
+      await replyFlexMessage(replyToken, `📋 รายการงานค้าง (${tasks.length} รายการ)`, flex);
       return true;
     }
 
@@ -181,17 +177,33 @@ export async function handleLineCommand(
         return true;
       }
 
+      // Parse content: "มอบหมาย: งานผูกเหล็ก [ช่างเอก] ฿250,000 โทร:081-234-5678"
+      const amountMatch = content.match(/฿([\d,]+)/);
+      const contractorMatch = content.match(/\[([^\]]+)\]/);
+      const phoneMatch = content.match(/(?:โทร|tel|phone)[:\s]*([\d\-]+)/i);
+
+      const parsedAmount = amountMatch ? Number(amountMatch[1].replace(/,/g, "")) : 0;
+      const parsedContractor = contractorMatch ? contractorMatch[1].trim() : "-";
+      const parsedPhone = phoneMatch ? phoneMatch[1].trim() : "-";
+      const parsedDetails = content
+        .replace(/฿[\d,]+/, "")
+        .replace(/\[[^\]]+\]/, "")
+        .replace(/(?:โทร|tel|phone)[:\s]*[\d\-]+/i, "")
+        .trim() || content;
+
+      const pwId = `PW-${Date.now().toString().slice(-6)}`;
+
       const flex = createWorkAssignmentFlex({
-        id: `PW-${Date.now().toString().slice(-4)}`,
-        project_name: "โครงการปรับปรุงอาคาร A",
-        contractor_name: "ช่างชิต / ทีมงาน",
-        amount: 450000,
-        details: content,
-        contact: "คุณสมชาย",
-        phone: "081-234-5678"
+        id: pwId,
+        project_name: "-",
+        contractor_name: parsedContractor,
+        amount: parsedAmount,
+        details: parsedDetails,
+        contact: parsedContractor !== "-" ? parsedContractor : "-",
+        phone: parsedPhone
       });
 
-      await replyFlexMessage(replyToken, `👷‍♂️ มอบหมายงานเรียบร้อยแล้ว`, flex);
+      await replyFlexMessage(replyToken, `👷‍♂️ มอบหมายงาน [${pwId}] เรียบร้อยแล้ว`, flex);
       return true;
     }
 
@@ -261,27 +273,41 @@ export async function handleLineCommand(
       const isSub = rawText.includes("ย่อย");
       const filterQuery = rawText.replace(/^หลัก:|^ย่อย:|^บิลหลัก:|^บิลย่อย:|^ทั้งหมด:|^บิล:|^bill:/i, "").trim();
 
+      // Build Supabase query
       let query = supabaseAdmin.from("bills").select("*");
-      if (filterQuery && filterQuery !== "ทั้งหมด") {
-        query = query.or(`requester.ilike.%${filterQuery}%,vendor_or_person.ilike.%${filterQuery}%,description.ilike.%${filterQuery}%`);
-      } else if (lowerText === "รออนุมัติ") {
-        query = query.or("status.eq.รอตรวจสอบ,status.eq.รออนุมัติ");
+
+      // ✅ FIX: ตรวจสอบ "รออนุมัติ" ก่อน เพื่อกรองด้วย status (ไม่ใช่ชื่อผู้เบิก)
+      if (lowerText === "รออนุมัติ") {
+        query = query.or("status.eq.รอตรวจสอบ,status.eq.รออนุมัติ,status.eq.รอดำเนินการ");
+      } else if (filterQuery && filterQuery !== "ทั้งหมด") {
+        query = query.or(`requester.ilike.%${filterQuery}%,vendor_or_person.ilike.%${filterQuery}%,description.ilike.%${filterQuery}%,bill_no.ilike.%${filterQuery}%`);
       }
 
-      const { data: bills } = await query.limit(5);
+      const { data: bills, error: billError } = await query.order("id", { ascending: false }).limit(5);
 
-      const displayBills = (bills && bills.length > 0) ? bills : [
-        { id: "101", project_name: "โครงการสำนักงาน A", vendor_or_person: "โฮมมาร์ท", description: "ซื้อปูนซีเมนต์", amount: 107000, status: "เบิกแล้ว", requester: "ช่างเอก" },
-        { id: "102", project_name: "โครงการสำนักงาน A", vendor_or_person: "ช่างชิต", description: "ค่าแรงงานเสาเข็ม", amount: 150000, status: "อนุมัติแล้ว", requester: "ช่างชิต" }
-      ];
+      // ✅ FIX: ลบ hardcoded fallback — แสดง "ไม่พบรายการ" แทนข้อมูลปลอม
+      if (!bills || bills.length === 0) {
+        const noResultMsg = lowerText === "รออนุมัติ"
+          ? "✅ ไม่มีรายการรออนุมัติในขณะนี้ครับ\n\nบิลทั้งหมดได้รับการอนุมัติหรือดำเนินการแล้ว"
+          : filterQuery
+            ? `🔍 ไม่พบรายการบิลที่ตรงกับ "${filterQuery}"\n\nกรุณาตรวจสอบชื่อผู้เบิกหรือรายละเอียดที่ค้นหาอีกครั้งครับ`
+            : "ไม่พบรายการบิลในระบบ";
+        await replyTextMessage(replyToken, noResultMsg);
+        return true;
+      }
 
-      const flexTitle = filterQuery ? `ผลการค้นหาบิล${isSub ? "ย่อย" : "หลัก"}ของ "${filterQuery}"` : `รายการเบิกเงิน${isSub ? "บิลย่อย" : "บิลหลัก"}`;
-      const flexPayload = createBillSearchResultFlex(flexTitle, displayBills, isSub);
+      const flexTitle = lowerText === "รออนุมัติ"
+        ? `รายการรออนุมัติ`
+        : filterQuery
+          ? `ผลการค้นหาบิล${isSub ? "ย่อย" : ""}ของ "${filterQuery}"`
+          : `รายการเบิกเงิน${isSub ? "บิลย่อย" : "บิลหลัก"}`;
 
-      const sent = await replyFlexMessage(replyToken, `🧾 ${flexTitle} (${displayBills.length} รายการ)`, flexPayload);
+      const flexPayload = createBillSearchResultFlex(flexTitle, bills, isSub);
+
+      const sent = await replyFlexMessage(replyToken, `🧾 ${flexTitle} (${bills.length} รายการ)`, flexPayload);
       if (!sent && replyToken) {
-        let textResponse = `🧾 ${flexTitle} (${displayBills.length} รายการ):\n\n`;
-        displayBills.forEach((b, idx) => {
+        let textResponse = `🧾 ${flexTitle} (${bills.length} รายการ):\n\n`;
+        bills.forEach((b, idx) => {
           const amt = Number(b.amount || 0).toLocaleString("th-TH");
           textResponse += `${idx + 1}. [บิล #${b.id || b.bill_no}] ${b.project_name || "โครงการ"}\n   - ผู้เบิก/ร้าน: ${b.requester || b.vendor_or_person || "-"}\n   - รายละเอียด: ${b.description || "-"}\n   - ยอดเงิน: ฿${amt}\n   - สถานะ: ${b.status || "รออนุมัติ"}\n\n`;
         });
@@ -318,15 +344,18 @@ export async function handleLineCommand(
         query = query.or(`name.ilike.%${searchTerm}%,customer_name.ilike.%${searchTerm}%,id.ilike.%${searchTerm}%`);
       }
 
-      const { data: projects } = await query.limit(5);
+      const { data: projects } = await query.order("id", { ascending: false }).limit(5);
 
-      const displayProjects = (projects && projects.length > 0) ? projects : [
-        { id: "PRJ-001", name: "โครงการปรับปรุงอาคารสำนักงาน A", customer_name: "บริษัท แกรนด์ แอสเสท จำกัด", budget: 2000000, work_amount: 2500000 },
-        { id: "PRJ-002", name: "โครงการก่อสร้างบ้านพักอาศัย B", customer_name: "คุณวิชัย เอกไพศาล", budget: 4000000, work_amount: 4800000 }
-      ];
+      if (!projects || projects.length === 0) {
+        const noProjMsg = searchTerm
+          ? `🔍 ไม่พบโครงการที่ตรงกับ "${searchTerm}"\n\nกรุณาตรวจสอบชื่อโครงการหรือรหัสโครงการอีกครั้งครับ`
+          : `📐 ไม่พบข้อมูลโครงการในระบบ`;
+        await replyTextMessage(replyToken, noProjMsg);
+        return true;
+      }
 
-      let planText = `📐 สรุปข้อมูลแผนงานและโครงการ ${searchTerm ? `ค้นหา: "${searchTerm}"` : ""}:\n\n`;
-      displayProjects.forEach((p, idx) => {
+      let planText = `📐 สรุปข้อมูลแผนงานและโครงการ${searchTerm ? ` ค้นหา: "${searchTerm}"` : ""}:\n\n`;
+      projects.forEach((p, idx) => {
         planText += `${idx + 1}. โครงการ: ${p.name} (ID: ${p.id})\n   - ลูกค้า: ${p.customer_name || "-"}\n   - งบประมาณ: ฿${Number(p.budget || p.work_amount || 0).toLocaleString("th-TH")}\n\n`;
       });
 
