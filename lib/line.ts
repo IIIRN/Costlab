@@ -539,13 +539,11 @@ export function createBillSearchResultFlex(
             imgList = String(b.image_url).split(",").map(s => s.trim()).filter(s => s.startsWith("http"));
           }
 
-          const isSingleImage = imgList.length === 1;
-          const isMultiImage = imgList.length > 1;
+          const hasImages = imgList.length > 0;
 
           const textDetailsBox = {
             type: "box",
             layout: "vertical",
-            flex: isSingleImage ? 7 : 10,
             contents: [
               {
                 type: "box",
@@ -590,7 +588,7 @@ export function createBillSearchResultFlex(
                     action: {
                       type: "message",
                       label: "อนุมัติ",
-                      text: isSub ? `อนุมัติเงินสดบิลย่อยของ: ${requesterName}` : `อนุมัติบิลหลักของ: ${requesterName}`
+                      text: isSub ? `อนุมัติเงินสดบิลย่อยลำดับที่: ${billId}` : `อนุมัติบิลหลักลำดับที่: ${billId}`
                     }
                   },
                   {
@@ -604,7 +602,7 @@ export function createBillSearchResultFlex(
                     action: {
                       type: "message",
                       label: "ปิดงาน",
-                      text: `ปิดงานบิลหลักลำดับที่: ${billId}`
+                      text: isSub ? `ปิดงานเงินสดบิลย่อยลำดับที่: ${billId}` : `ปิดงานบิลหลักลำดับที่: ${billId}`
                     }
                   }
                 ]
@@ -612,25 +610,36 @@ export function createBillSearchResultFlex(
             ]
           };
 
-          if (isMultiImage) {
+          if (hasImages) {
             const displayedImgs = imgList.slice(0, 4);
+            const imgColumns: any[] = displayedImgs.map((imgUrl, imgIdx) => ({
+              type: "image",
+              url: imgUrl,
+              aspectRatio: "1:1",
+              aspectMode: "cover",
+              flex: 1,
+              action: {
+                type: "uri",
+                label: `รูปที่ ${imgIdx + 1}`,
+                uri: normalizeUri(imgUrl)
+              }
+            }));
+
+            // Always pad up to 4 columns so each column slot takes exactly 25% width
+            while (imgColumns.length < 4) {
+              imgColumns.push({
+                type: "box",
+                layout: "vertical",
+                flex: 1
+              });
+            }
+
             const multiImgRow = {
               type: "box",
               layout: "horizontal",
               margin: "xs",
               spacing: "xs",
-              contents: displayedImgs.map((imgUrl, imgIdx) => ({
-                type: "image",
-                url: imgUrl,
-                aspectRatio: "1:1",
-                aspectMode: "cover",
-                flex: 1,
-                action: {
-                  type: "uri",
-                  label: `รูปที่ ${imgIdx + 1}`,
-                  uri: normalizeUri(imgUrl)
-                }
-              }))
+              contents: imgColumns
             };
 
             return {
@@ -651,34 +660,6 @@ export function createBillSearchResultFlex(
                   ]
                 },
                 multiImgRow
-              ]
-            };
-          }
-
-          if (isSingleImage) {
-            return {
-              type: "box",
-              layout: "horizontal",
-              margin: "xs",
-              paddingAll: "8px",
-              backgroundColor: "#F8FAFC",
-              cornerRadius: "6px",
-              spacing: "sm",
-              contents: [
-                {
-                  type: "image",
-                  url: imgList[0],
-                  aspectRatio: "1:1",
-                  aspectMode: "cover",
-                  flex: 3,
-                  gravity: "center",
-                  action: {
-                    type: "uri",
-                    label: "ดูรูปใบเสร็จ",
-                    uri: normalizeUri(imgList[0])
-                  }
-                },
-                textDetailsBox
               ]
             };
           }
@@ -705,7 +686,7 @@ export function createBillSearchResultFlex(
             type: "button",
             style: "primary",
             color: "#059669",
-            height: "sm",
+            height: "xs",
             flex: 6,
             action: {
               type: "message",
@@ -717,7 +698,7 @@ export function createBillSearchResultFlex(
             type: "button",
             style: "primary",
             color: "#DC2626",
-            height: "sm",
+            height: "xs",
             flex: 6,
             action: {
               type: "message",

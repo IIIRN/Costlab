@@ -209,12 +209,18 @@ export async function handleLineCommand(
       return true;
     }
 
-    // 5. Approve / Close Bill Commands ("อนุมัติบิลหลักของ:", "อนุมัติเงินสดบิลย่อยของ:", "ปิดงานบิลหลักลำดับที่:", "อนุมัติทั้งหมด:", "ปิดงานทั้งหมด:")
+    // 5. Approve / Close Bill Commands ("อนุมัติบิลหลักของ:", "อนุมัติเงินสดบิลย่อยของ:", "อนุมัติบิลหลักลำดับที่:", "อนุมัติเงินสดบิลย่อยลำดับที่:", "ปิดงานบิลหลักลำดับที่:", "อนุมัติทั้งหมด:", "ปิดงานทั้งหมด:")
     if (
       rawText.startsWith("อนุมัติบิลหลักของ:") ||
       rawText.startsWith("อนุมัติเงินสดบิลย่อยของ:") ||
+      rawText.startsWith("อนุมัติบิลหลักลำดับที่:") ||
+      rawText.startsWith("อนุมัติเงินสดบิลย่อยลำดับที่:") ||
+      rawText.startsWith("อนุมัติบิลลำดับที่:") ||
       rawText.startsWith("ปิดงานบิลหลักลำดับที่:") ||
       rawText.startsWith("ปิดงานเงินสดบิลย่อยของ:") ||
+      rawText.startsWith("ปิดงานเงินสดบิลย่อยลำดับที่:") ||
+      rawText.startsWith("ปิดงานบิลย่อยลำดับที่:") ||
+      rawText.startsWith("ปิดงานบิลลำดับที่:") ||
       rawText.startsWith("อนุมัติทั้งหมด:") ||
       rawText.startsWith("ปิดงานทั้งหมด:")
     ) {
@@ -238,10 +244,11 @@ export async function handleLineCommand(
       }
 
       const newStatus = isApprove ? "อนุมัติแล้ว" : "เบิกแล้ว";
-      const isSubBatch = rawTarget.includes("ย่อย");
-      const isMainBatch = rawTarget.includes("หลัก");
-      const cleanTarget = rawTarget.replace(/^หลัก:|^ย่อย:|^บิลหลัก:|^บิลย่อย:/i, "").trim();
+      const isSubBatch = rawText.includes("ย่อย") || rawTarget.includes("ย่อย");
+      const isMainBatch = rawText.includes("หลัก") || rawTarget.includes("หลัก");
+      const cleanTarget = rawTarget.replace(/^หลัก:|^ย่อย:|^บิลหลัก:|^บิลย่อย:|^บิล:|^ลำดับที่:|^บิลลำดับที่:|^หลักลำดับที่:|^ย่อยลำดับที่:/i, "").trim();
 
+      const { normalizeBillStatus } = await import("@/lib/bill-status");
       const { getRowsFromSupabase, updateRowInSupabase } = await import("@/lib/supabase-db");
       const [rawBills, peopleRows] = await Promise.all([
         getRowsFromSupabase("Data", 1000),
@@ -272,22 +279,33 @@ export async function handleLineCommand(
 
       const targetBills = rawBills.filter(b => {
         const currentSt = String(b["สถานะ"] || b.status || "").trim();
-        if (isApprove && currentSt === "อนุมัติแล้ว") return false;
-        if (!isApprove && currentSt === "เบิกแล้ว") return false;
+        const normSt = normalizeBillStatus(currentSt);
+
+        // Skip bills that are already approved or finished when performing approval
+        if (isApprove && (normSt === "อนุมัติ" || normSt === "เบิกแล้ว" || currentSt.includes("เสร็จ") || currentSt.includes("ปิดงาน") || currentSt.includes("จ่ายแล้ว"))) {
+          return false;
+        }
+        // Skip bills that are already completed/closed when performing close
+        if (!isApprove && (normSt === "เบิกแล้ว" || currentSt.includes("เสร็จ") || currentSt.includes("ปิดงาน"))) {
+          return false;
+        }
 
         if (isSubBatch && !checkIsSubBill(b)) return false;
         if (isMainBatch && checkIsSubBill(b)) return false;
 
+        const bId = String(b["ลำดับ"] || b.id || b._sheetRow || "").trim();
+
+        // Exact match by Bill ID takes priority (for single-bill button actions)
+        if (bId === target) return true;
+
         if (!target || target === "ทั้งหมด" || target === "หลัก" || target === "ย่อย") return true;
 
-        const bId = String(b["ลำดับ"] || b.id || b._sheetRow || "").trim();
         const bReq = String(b["ผู้เบิก"] || b.requester || "").trim();
         const bReqName = peopleMap.get(bReq) || bReq;
         const bVendor = String(b["ร้าน/บุคคล"] || b.vendor_or_person || "").trim();
         const bDesc = String(b["สินค้า/ทำงาน"] || b.description || "").trim();
 
         return (
-          bId === target ||
           bReq === target ||
           bReq === matchedEmpId ||
           bReqName.toLowerCase().includes(target.toLowerCase()) ||
