@@ -209,18 +209,21 @@ export async function handleLineCommand(
       return true;
     }
 
-    // 5. Approve / Close Bill Commands ("อนุมัติบิลหลักของ:", "อนุมัติเงินสดบิลย่อยของ:", "ปิดงานบิลหลักลำดับที่:")
+    // 5. Approve / Close Bill Commands ("อนุมัติบิลหลักของ:", "อนุมัติเงินสดบิลย่อยของ:", "ปิดงานบิลหลักลำดับที่:", "อนุมัติทั้งหมด:", "ปิดงานทั้งหมด:")
     if (
       rawText.startsWith("อนุมัติบิลหลักของ:") ||
       rawText.startsWith("อนุมัติเงินสดบิลย่อยของ:") ||
       rawText.startsWith("ปิดงานบิลหลักลำดับที่:") ||
-      rawText.startsWith("ปิดงานเงินสดบิลย่อยของ:")
+      rawText.startsWith("ปิดงานเงินสดบิลย่อยของ:") ||
+      rawText.startsWith("อนุมัติทั้งหมด:") ||
+      rawText.startsWith("ปิดงานทั้งหมด:")
     ) {
-      const targetNameOrId = rawText.replace(/.*?:/, "").trim();
+      const rawTarget = rawText.replace(/.*?:/, "").trim();
       const isApprove = rawText.includes("อนุมัติ");
+      const isBatchAll = rawText.startsWith("อนุมัติทั้งหมด:") || rawText.startsWith("ปิดงานทั้งหมด:");
 
-      if (!targetNameOrId) {
-        await replyTextMessage(replyToken, `⚠️ กรุณาระบุชื่อผู้เบิกหรือเลขบิลที่ต้องการ${isApprove ? "อนุมัติ" : "ปิดงาน"}`);
+      if (!rawTarget && !isBatchAll) {
+        await replyTextMessage(replyToken, `⚠️ กรุณาระบุชื่อผู้เบิกหรือรายละเอียดที่ต้องการ${isApprove ? "อนุมัติ" : "ปิดงาน"}`);
         return true;
       }
 
@@ -235,14 +238,24 @@ export async function handleLineCommand(
       }
 
       const newStatus = isApprove ? "อนุมัติแล้ว" : "เบิกแล้ว";
-      
+      const isSubBatch = rawTarget.includes("ย่อย");
+      const isMainBatch = rawTarget.includes("หลัก");
+      const cleanTarget = rawTarget.replace(/^หลัก:|^ย่อย:|^บิลหลัก:|^บิลย่อย:/i, "").trim();
+
       const { getRowsFromSupabase, updateRowInSupabase } = await import("@/lib/supabase-db");
       const [rawBills, peopleRows] = await Promise.all([
         getRowsFromSupabase("Data", 1000),
         getRowsFromSupabase("master_members", 500).catch(() => []),
       ]);
 
-      // สร้าง Map สำหรับเทียบชื่อผู้เบิก <-> รหัสพนักงาน
+      function checkIsSubBill(b: any): boolean {
+        const billVal = String(b["บิล"] || b.bill || b.bill_type || "").trim();
+        if (billVal.includes("ย่อย")) return true;
+        if (billVal.includes("หลัก")) return false;
+        const cat = String(b["ประเภท"] || b.category || "").trim();
+        return cat.includes("ย่อย") || cat.startsWith("2.") || cat.startsWith("3.") || cat.startsWith("8.");
+      }
+
       const peopleMap = new Map<string, string>();
       const nameToEmpIdMap = new Map<string, string>();
       for (const p of peopleRows) {
@@ -254,45 +267,57 @@ export async function handleLineCommand(
         }
       }
 
-      const target = targetNameOrId.trim();
+      const target = cleanTarget;
       const matchedEmpId = nameToEmpIdMap.get(target) || target;
 
-      // ค้นหาบิลที่ตรงกับชื่อผู้เบิก รหัสพนักงาน หรือ ID บิล
       const targetBills = rawBills.filter(b => {
+        const currentSt = String(b["สถานะ"] || b.status || "").trim();
+        if (isApprove && currentSt === "อนุมัติแล้ว") return false;
+        if (!isApprove && currentSt === "เบิกแล้ว") return false;
+
+        if (isSubBatch && !checkIsSubBill(b)) return false;
+        if (isMainBatch && checkIsSubBill(b)) return false;
+
+        if (!target || target === "ทั้งหมด" || target === "หลัก" || target === "ย่อย") return true;
+
         const bId = String(b["ลำดับ"] || b.id || b._sheetRow || "").trim();
         const bReq = String(b["ผู้เบิก"] || b.requester || "").trim();
         const bReqName = peopleMap.get(bReq) || bReq;
-        
-        return bId === target || bReq === target || bReq === matchedEmpId || bReqName === target;
+        const bVendor = String(b["ร้าน/บุคคล"] || b.vendor_or_person || "").trim();
+        const bDesc = String(b["สินค้า/ทำงาน"] || b.description || "").trim();
+
+        return (
+          bId === target ||
+          bReq === target ||
+          bReq === matchedEmpId ||
+          bReqName.toLowerCase().includes(target.toLowerCase()) ||
+          bVendor.toLowerCase().includes(target.toLowerCase()) ||
+          bDesc.toLowerCase().includes(target.toLowerCase())
+        );
       });
 
       if (targetBills.length === 0) {
-        // Fallback ปรับปรุงโดยตรงผ่าน Supabase Client (แยกเลข ID กับ String)
-        let query = supabaseAdmin.from("bills").update({ status: newStatus });
-        if (/^\d+$/.test(target)) {
-          query = query.eq("id", Number(target));
-        } else {
-          query = query.eq("requester", target);
-        }
-        const { error } = await query;
-        if (error) {
-          await replyTextMessage(replyToken, `❌ ดำเนินการอัปเดตบิลไม่สำเร็จ: ${error.message}`);
-          return true;
-        }
-      } else {
-        // อัปเดตบิลทุกรายการที่ตรงกันผ่าน updateRowInSupabase
-        for (const b of targetBills) {
-          const bId = b.id || b["ลำดับ"] || b._sheetRow;
-          await updateRowInSupabase("bills", "id", bId, {
-            "สถานะ": newStatus,
-            status: newStatus
-          });
-        }
+        await replyTextMessage(
+          replyToken,
+          `🔍 ไม่พบรายการบิล${isSubBatch ? "ย่อย" : isMainBatch ? "หลัก" : ""}ที่สามารถ${isApprove ? "อนุมัติ" : "ปิดงาน"}ได้สำหรับ "${rawTarget || "รายการที่เลือก"}"`
+        );
+        return true;
       }
 
+      let totalAmount = 0;
+      for (const b of targetBills) {
+        const bId = b.id || b["ลำดับ"] || b._sheetRow;
+        totalAmount += Number(b["ยอดเงิน"] || b.amount || 0);
+        await updateRowInSupabase("bills", "id", bId, {
+          "สถานะ": newStatus,
+          status: newStatus
+        });
+      }
+
+      const formattedTotal = totalAmount.toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       await replyTextMessage(
         replyToken,
-        `✅ ${isApprove ? "อนุมัติ" : "ปิดงาน"}บิลของ "${targetNameOrId}" เป็นสถานะ [${newStatus}] เรียบร้อยแล้วครับ!\n\n👮‍♂️ ผู้ดำเนินการ: Admin/Approver (${userId ? userId.slice(-6) : "Web"})`
+        `✅ ${isApprove ? "อนุมัติ" : "ปิดงาน"}บิล${isSubBatch ? "ย่อย" : isMainBatch ? "หลัก" : ""}ของ "${rawTarget}" เรียบร้อยแล้ว!\n\n📊 จำนวน: ${targetBills.length} รายการ\n💰 ยอดเงินรวม: ฿${formattedTotal}\n👮‍♂️ ผู้ดำเนินการ: Admin/Approver (${userId ? userId.slice(-6) : "Web"})`
       );
       return true;
     }
@@ -400,7 +425,10 @@ export async function handleLineCommand(
         filtered = filtered.filter(b => !checkIsSubBill(b));
       }
 
-      const bills = filtered.slice(0, 5).map(b => {
+      const totalCount = filtered.length;
+      const totalSumAmount = filtered.reduce((sum, b) => sum + Number(b["ยอดเงิน"] || b.amount || 0), 0);
+
+      const bills = filtered.slice(0, 40).map(b => {
         const reqIdOrName = String(b["ผู้เบิก"] || b.requester || "").trim();
         const resolvedRequester = peopleMap.get(reqIdOrName) || reqIdOrName || "-";
         const itemIsSub = checkIsSubBill(b);
@@ -414,7 +442,9 @@ export async function handleLineCommand(
           description: String(b["สินค้า/ทำงาน"] || b.description || "-"),
           amount: Number(b["ยอดเงิน"] || b.amount || 0),
           status: String(b["สถานะ"] || b.status || "รออนุมัติ"),
-          requester: String(resolvedRequester)
+          requester: String(resolvedRequester),
+          image_url: String(b["รูปถ่ายบิล"] || b.image_url || ""),
+          image_urls: typeof b["รูปถ่ายบิล"] === "string" ? b["รูปถ่ายบิล"].split(",") : undefined
         };
       });
 
@@ -435,7 +465,7 @@ export async function handleLineCommand(
           ? `ผลการค้นหาบิล${isSub ? "ย่อย" : isMain ? "หลัก" : ""}ของ "${filterQuery}"`
           : `รายการเบิกเงิน${isSub ? "บิลย่อย" : isMain ? "บิลหลัก" : "บิล"}`;
 
-      const flexPayload = createBillSearchResultFlex(flexTitle, bills, isSub, isMain);
+      const flexPayload = createBillSearchResultFlex(flexTitle, bills, isSub, isMain, totalCount, totalSumAmount, filterQuery);
 
       const sent = await replyFlexMessage(replyToken, `🧾 ${flexTitle} (${bills.length} รายการ)`, flexPayload);
       if (!sent && replyToken) {
