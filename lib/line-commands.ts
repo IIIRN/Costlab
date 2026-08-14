@@ -296,9 +296,13 @@ export async function handleLineCommand(
     }
 
     // 6. Query Bills Specific Commands
-    // "หลัก:", "บิลหลัก:", "ย่อย:", "บิลย่อย:", "ทั้งหมด:", "รออนุมัติ"
+    // "หลัก", "ย่อย", "บิลหลัก", "บิลย่อย", "หลัก:", "บิลหลัก:", "ย่อย:", "บิลย่อย:", "ทั้งหมด:", "รออนุมัติ", "ตั้งเบิก"
     // "บิล:", "bill:" — ค้นหาทั่วไป (ทั้งบิลหลักและย่อย)
     if (
+      rawText === "หลัก" ||
+      rawText === "ย่อย" ||
+      rawText === "บิลหลัก" ||
+      rawText === "บิลย่อย" ||
       rawText.startsWith("หลัก:") ||
       rawText.startsWith("ย่อย:") ||
       rawText.startsWith("บิลหลัก:") ||
@@ -306,10 +310,16 @@ export async function handleLineCommand(
       rawText.startsWith("ทั้งหมด:") ||
       rawText.startsWith("บิล:") ||
       rawText.toLowerCase().startsWith("bill:") ||
-      lowerText === "รออนุมัติ"
+      lowerText === "รออนุมัติ" ||
+      lowerText === "ตั้งเบิก"
     ) {
       const isSub = rawText.includes("ย่อย");
-      const filterQuery = rawText.replace(/^หลัก:|^ย่อย:|^บิลหลัก:|^บิลย่อย:|^ทั้งหมด:|^บิล:|^bill:/i, "").trim();
+      const isMain = rawText.includes("หลัก");
+      const isPendingFilter = isMain || isSub || lowerText === "รออนุมัติ" || lowerText === "ตั้งเบิก";
+
+      const filterQuery = rawText
+        .replace(/^หลัก:|^ย่อย:|^บิลหลัก:|^บิลย่อย:|^ทั้งหมด:|^บิล:|^bill:|^หลัก$|^ย่อย$|^บิลหลัก$|^บิลย่อย$/i, "")
+        .trim();
 
       // ดึงข้อมูลบิลและตารางอ้างอิงทั้งหมดเพื่อ hydrate ข้อมูลให้เหมือนหน้าเว็บ 100%
       const { getRowsFromSupabase } = await import("@/lib/supabase-db");
@@ -344,14 +354,24 @@ export async function handleLineCommand(
 
       let filtered = hydratedBills;
 
-      if (lowerText === "รออนุมัติ") {
-        filtered = hydratedBills.filter(b => {
+      // ✅ กรองเฉพาะบิลสถานะ "รออนุมัติ" และ "ตั้งเบิก" (รวมทั้ง รอตรวจสอบ, รอดำเนินการ, รอเบิก) เมื่อพิมพ์ หลัก หรือ ย่อย
+      if (isPendingFilter && !rawText.startsWith("ทั้งหมด:")) {
+        filtered = filtered.filter(b => {
           const st = String(b["สถานะ"] || b.status || "").trim();
-          return st === "รอตรวจสอบ" || st === "รออนุมัติ" || st === "รอดำเนินการ";
+          return (
+            st === "รออนุมัติ" ||
+            st === "ตั้งเบิก" ||
+            st === "รอตรวจสอบ" ||
+            st === "รอดำเนินการ" ||
+            st === "รอเบิก"
+          );
         });
-      } else if (filterQuery && filterQuery !== "ทั้งหมด") {
+      }
+
+      // กรองเพิ่มเติมตามชื่อ/คำค้นหา (ถ้ามี)
+      if (filterQuery && filterQuery !== "ทั้งหมด") {
         const q = filterQuery.toLowerCase();
-        filtered = hydratedBills.filter(b => {
+        filtered = filtered.filter(b => {
           const rawReq = String(b["ผู้เบิก"] || b.requester || "").toLowerCase();
           const mappedReq = (peopleMap.get(String(b["ผู้เบิก"] || b.requester || "").trim()) || "").toLowerCase();
           const vendor = String(b["ร้าน/บุคคล"] || b.vendor_or_person || "").toLowerCase();
@@ -363,10 +383,16 @@ export async function handleLineCommand(
         });
       }
 
+      // กรองประเภท บิลย่อย vs บิลหลัก
       if (isSub) {
         filtered = filtered.filter(b => {
           const cat = String(b["ประเภท"] || b.category || "").trim();
           return cat.includes("ย่อย") || cat.startsWith("2.") || cat.startsWith("3.") || cat.startsWith("8.");
+        });
+      } else if (isMain) {
+        filtered = filtered.filter(b => {
+          const cat = String(b["ประเภท"] || b.category || "").trim();
+          return !cat.includes("ย่อย") && !cat.startsWith("2.") && !cat.startsWith("3.") && !cat.startsWith("8.");
         });
       }
 
