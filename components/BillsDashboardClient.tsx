@@ -9,6 +9,8 @@ import { BillImageThumbnail } from "@/components/BillImageThumbnail";
 import { FORM_SCHEMAS } from "@/lib/schemas";
 import { formatDateDisplay, normalizeDateToIso, parseDateStrict } from "@/lib/dates";
 import { money, toNumber } from "@/lib/numbers";
+import { normalizeBillStatus } from "@/lib/bill-status";
+import { showConfirm, showToast } from "@/components/ToastProvider";
 import type { SheetRow } from "@/lib/types";
 
 type BillsDashboardClientProps = {
@@ -102,7 +104,10 @@ export function BillsDashboardClient({
 
   const totalAmount = filteredRows.reduce((sum, row) => sum + toNumber(row["ยอดเงิน"]), 0);
   const approvedAmount = filteredRows
-    .filter(row => String(row["สถานะ"] || "").includes("อนุมัติ") || String(row["สถานะ"] || "").includes("เบิกแล้ว"))
+    .filter(row => {
+      const st = normalizeBillStatus(row["สถานะ"]);
+      return st === "อนุมัติ" || st === "เบิกแล้ว";
+    })
     .reduce((sum, row) => sum + toNumber(row["ยอดเงิน"]), 0);
   const pendingAmount = totalAmount - approvedAmount;
 
@@ -400,8 +405,18 @@ export function BillsDashboardClient({
             window.dispatchEvent(new CustomEvent("open-bill-edit-form", { detail: { row: bill } }));
           }}
           onDelete={async (bill) => {
-            const sheetRow = Number(bill._sheetRow);
-            if (!confirm(`คุณต้องการลบบิล ${String(bill["ลำดับ"] || bill["รายการ"] || "")} ใช่หรือไม่?`)) return;
+            if (!isAdmin) {
+              showToast("error", "เฉพาะสิทธิ์แอดมิน (Admin) เท่านั้นที่สามารถลบบิลได้");
+              return;
+            }
+            const currentStatus = normalizeBillStatus(bill["สถานะ"]);
+            if (currentStatus !== "รออนุมัติ") {
+              showToast("error", "สามารถลบได้เฉพาะบิลที่มีสถานะรออนุมัติเท่านั้น");
+              return;
+            }
+            const sheetRow = Number(bill._sheetRow || bill.id || bill["ลำดับ"]);
+            const confirmed = await showConfirm(`คุณต้องการลบบิล ${String(bill["ลำดับ"] || bill["รายการ"] || "")} ใช่หรือไม่?`);
+            if (!confirmed) return;
             try {
               const res = await fetch("/api/rows", {
                 method: "DELETE",
@@ -410,13 +425,14 @@ export function BillsDashboardClient({
               });
               if (res.ok) {
                 setSelectedDetailIndex(null);
+                showToast("success", "ลบบิลสำเร็จเรียบร้อย");
                 window.location.reload();
               } else {
                 const err = await res.json();
-                alert(`ลบบิลไม่สำเร็จ: ${err.error || "เกิดข้อผิดพลาด"}`);
+                showToast("error", `ลบบิลไม่สำเร็จ: ${err.error || "เกิดข้อผิดพลาด"}`);
               }
             } catch (e: any) {
-              alert(`เกิดข้อผิดพลาด: ${e.message}`);
+              showToast("error", `เกิดข้อผิดพลาด: ${e.message}`);
             }
           }}
           onPrev={() => setSelectedDetailIndex((i) => (i !== null && i > 0 ? i - 1 : i))}

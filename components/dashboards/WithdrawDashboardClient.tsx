@@ -496,7 +496,7 @@ function parseSheetDate(value: unknown) {
 
 function normalizedStatus(value: unknown) {
   const text = String(value || "").trim().toLowerCase();
-  if (text.includes("อนุมัติ") || text === "approved") return "อนุมัติ";
+  if ((text.includes("อนุมัติ") && !text.includes("รออนุมัติ")) || text === "approved") return "อนุมัติ";
   if (text.includes("เบิกแล้ว") || text === "withdrawn" || text === "paid") return "เบิกแล้ว";
   return "ตั้งเบิก";
 }

@@ -5,6 +5,7 @@ import { Pencil, Trash2 } from "lucide-react";
 import { FormModal } from "@/components/FormModal";
 import { FORM_SCHEMAS } from "@/lib/schemas";
 import { useRouter } from "next/navigation";
+import { showConfirm, showToast } from "@/components/ToastProvider";
 import type { SheetRow } from "@/lib/types";
 
 const EDIT_EVENT = "open-contract-detail-edit-form";
@@ -36,7 +37,8 @@ export function ContractDetailEditButton({ form, row }: ContractDetailEditButton
 
   async function handleDelete() {
     const label = String(row?.id_Conwork || row?._sheetRow || "");
-    if (!window.confirm(`ลบสัญญา ${label} ใช่หรือไม่?`)) return;
+    const confirmed = await showConfirm(`ลบสัญญา ${label} ใช่หรือไม่?`);
+    if (!confirmed) return;
     const sheetRow = row?._sheetRow ?? row?.id_Conwork ?? row?.id;
     if (!sheetRow) return;
     setDeleting(true);
@@ -48,9 +50,10 @@ export function ContractDetailEditButton({ form, row }: ContractDetailEditButton
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "ลบไม่สำเร็จ");
+      showToast("success", "ลบสัญญาสำเร็จแล้ว");
       router.push("/contract-open");
     } catch (e: any) {
-      alert(`เกิดข้อผิดพลาด: ${e?.message || "ลบไม่สำเร็จ"}`);
+      showToast("error", `เกิดข้อผิดพลาด: ${e?.message || "ลบไม่สำเร็จ"}`);
     } finally {
       setDeleting(false);
     }

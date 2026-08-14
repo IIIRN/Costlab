@@ -44,5 +44,10 @@ export function isUnpaidBill(row: SheetRow) {
 }
 
 export function normalizeBillStatus(value: unknown) {
-  return String(value || "").trim();
+  const str = String(value || "").trim();
+  if (str.includes("อนุมัติ") && !str.includes("รออนุมัติ")) return "อนุมัติ";
+  if (str.includes("เบิกแล้ว") || str.toLowerCase() === "paid" || str.toLowerCase() === "withdrawn") return "เบิกแล้ว";
+  if (str.includes("ตั้งเบิก")) return "ตั้งเบิก";
+  if (str.includes("รออนุมัติ")) return "รออนุมัติ";
+  return str;
 }

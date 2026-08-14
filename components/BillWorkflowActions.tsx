@@ -4,6 +4,7 @@ import { Banknote, Check, LoaderCircle, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { normalizeBillStatus } from "@/lib/bill-status";
+import { showConfirm } from "@/components/ToastProvider";
 import type { SheetRow } from "@/lib/types";
 
 type BillWorkflowActionsProps = {
@@ -17,7 +18,7 @@ export function BillWorkflowActions({ row, compact = false, allowEdit = false, r
   const router = useRouter();
   const [busy, setBusy] = useState<"status" | "delete" | null>(null);
   const [error, setError] = useState("");
-  const sheetRow = Number(row._sheetRow);
+  const sheetRow = row._sheetRow ?? row.id ?? row["ลำดับ"];
   const status = normalizeBillStatus(row["สถานะ"]);
   const pending = status === "รออนุมัติ" || status === "ตั้งเบิก";
   const approved = status === "อนุมัติ";
@@ -46,7 +47,8 @@ export function BillWorkflowActions({ row, compact = false, allowEdit = false, r
   }
 
   async function deleteBill() {
-    if (!window.confirm(`ลบบิล ${String(row["ลำดับ"] || "")} ใช่หรือไม่`)) return;
+    const confirmed = await showConfirm(`ลบบิล ${String(row["ลำดับ"] || "")} ใช่หรือไม่`);
+    if (!confirmed) return;
     setBusy("delete");
     setError("");
     try {

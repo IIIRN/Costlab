@@ -34,14 +34,18 @@ export async function isLineApproverAuthorized(userId: string, targetId?: string
       .maybeSingle();
 
     const cfg = configData?.data || {};
-    const allowedApprovers: string[] = [
-      String(cfg.LINE_USER_ID_APPROVER || "").trim(),
-      String(cfg.LINE_USER_ID_OWN || "").trim(),
-      String(process.env.LINE_USER_ID_APPROVER || "").trim(),
-      String(process.env.LINE_USER_ID_OWN || "").trim(),
-      String(LINE_CONFIG.USER_ID_APPROVER || "").trim(),
-      String(LINE_CONFIG.USER_ID_OWN || "").trim(),
-    ].filter(Boolean);
+    const rawIds = [
+      cfg.LINE_USER_ID_APPROVER,
+      cfg.LINE_USER_ID_OWN,
+      process.env.LINE_USER_ID_APPROVER,
+      process.env.LINE_USER_ID_OWN,
+      LINE_CONFIG.USER_ID_APPROVER,
+      LINE_CONFIG.USER_ID_OWN,
+    ];
+    const allowedApprovers: string[] = rawIds
+      .flatMap(v => String(v || "").split(","))
+      .map(v => v.trim())
+      .filter(Boolean);
 
     if (allowedApprovers.includes(userId) || (targetId && allowedApprovers.includes(targetId))) {
       return true;
@@ -467,19 +471,36 @@ export function createBillSearchResultFlex(
 
     return {
       type: "bubble",
-      size: "giga",
+      size: "mega",
       header: {
         type: "box",
         layout: "vertical",
-        backgroundColor: isSub ? "#D97706" : isMain ? "#0F766E" : "#1E293B",
-        paddingAll: "15px",
+        backgroundColor: "#0F172A",
+        paddingAll: "12px",
         contents: [
           {
-            type: "text",
-            text: `🧾 ${title}`,
-            weight: "bold",
-            color: "#FFFFFF",
-            size: "lg",
+            type: "box",
+            layout: "horizontal",
+            contents: [
+              {
+                type: "text",
+                text: title.replace(/^[^\w\s\u0E00-\u0E7F]+/gu, "").trim(),
+                weight: "bold",
+                color: "#FFFFFF",
+                size: "sm",
+                flex: 7,
+                wrap: true,
+              },
+              {
+                type: "text",
+                text: `รวม ฿${formattedTotal}`,
+                color: "#38BDF8",
+                size: "xs",
+                weight: "bold",
+                align: "end",
+                flex: 5
+              }
+            ]
           },
           {
             type: "box",
@@ -491,18 +512,9 @@ export function createBillSearchResultFlex(
                 text: totalPages > 1
                   ? `หน้า ${pageIndex + 1}/${totalPages} (${startNum}-${endNum} จาก ${count} บิล)`
                   : `พบทั้งหมด ${count} รายการ`,
-                color: "#E2E8F0",
-                size: "xs",
-                flex: 7
-              },
-              {
-                type: "text",
-                text: `รวม ฿${formattedTotal}`,
-                color: "#FDE047",
-                size: "xs",
-                weight: "bold",
-                align: "end",
-                flex: 5
+                color: "#94A3B8",
+                size: "xxs",
+                flex: 1
               }
             ]
           }
@@ -511,7 +523,7 @@ export function createBillSearchResultFlex(
       body: {
         type: "box",
         layout: "vertical",
-        paddingAll: "12px",
+        paddingAll: "10px",
         spacing: "sm",
         contents: pageBills.map((b, idx) => {
           const amt = Number(b.amount || 0).toLocaleString("th-TH");
@@ -566,7 +578,7 @@ export function createBillSearchResultFlex(
                 layout: "horizontal",
                 margin: "xs",
                 contents: [
-                  { type: "text", text: `สถานะ: ${b.status || "รออนุมัติ"}`, size: "xxs", color: b.status === "อนุมัติแล้ว" || b.status === "เบิกแล้ว" ? "#16A34A" : "#D97706", weight: "bold", flex: 5 },
+                  { type: "text", text: `สถานะ: ${b.status || "รออนุมัติ"}`, size: "xxs", color: b.status === "อนุมัติแล้ว" || b.status === "เบิกแล้ว" ? "#059669" : "#D97706", weight: "bold", flex: 5 },
                   {
                     type: "text",
                     text: "[อนุมัติ]",
@@ -635,7 +647,7 @@ export function createBillSearchResultFlex(
                   layout: "horizontal",
                   margin: "xs",
                   contents: [
-                    { type: "text", text: `📷 รูปแนบใบเสร็จ (${imgList.length} รูป - แตะรูปเพื่อดูภาพเต็ม):`, size: "xxs", color: "#475569", weight: "bold" }
+                    { type: "text", text: `รูปแนบใบเสร็จ (${imgList.length} รูป - แตะรูปเพื่อดูภาพเต็ม):`, size: "xxs", color: "#475569", weight: "bold" }
                   ]
                 },
                 multiImgRow
@@ -692,12 +704,12 @@ export function createBillSearchResultFlex(
           {
             type: "button",
             style: "primary",
-            color: "#16A34A",
+            color: "#059669",
             height: "sm",
             flex: 6,
             action: {
               type: "message",
-              label: `✅ อนุมัติทั้งหมด (${count})`,
+              label: `อนุมัติทั้งหมด (${count})`,
               text: `อนุมัติทั้งหมด:${batchParam}`
             }
           },
@@ -709,7 +721,7 @@ export function createBillSearchResultFlex(
             flex: 6,
             action: {
               type: "message",
-              label: `🔒 ปิดงานทั้งหมด (${count})`,
+              label: `ปิดงานทั้งหมด (${count})`,
               text: `ปิดงานทั้งหมด:${batchParam}`
             }
           }

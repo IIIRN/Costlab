@@ -231,6 +231,7 @@ export function LineSystemDashboardClient() {
   const [loadingConfig, setLoadingConfig] = useState(true);
   const [savingConfig, setSavingConfig] = useState(false);
   const [showToken, setShowToken] = useState(false);
+  const [showSecret, setShowSecret] = useState(false);
   const [configSource, setConfigSource] = useState<"supabase" | "env">("env");
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [saveResult, setSaveResult] = useState<{ success: boolean; message: string } | null>(null);
@@ -255,7 +256,7 @@ export function LineSystemDashboardClient() {
 
   const webhookUrl = typeof window !== "undefined"
     ? `${window.location.origin}/api/line/webhook`
-    : "https://coscosesuperbase.vercel.app/api/line/webhook";
+    : `${process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") || "https://costlab-steel.vercel.app"}/api/line/webhook`;
 
   useEffect(() => {
     async function loadConfig() {
@@ -515,6 +516,11 @@ export function LineSystemDashboardClient() {
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          {/* ─── Section: Credentials ─── */}
+          <div className="sm:col-span-2">
+            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-1 mb-2">🔑 Credentials (Token & Secret)</div>
+          </div>
+
           {/* Access Token */}
           <div className="sm:col-span-2 space-y-1">
             <label className="font-semibold text-slate-700 block">LINE Channel Access Token *</label>
@@ -524,7 +530,7 @@ export function LineSystemDashboardClient() {
                 required
                 value={formConfig.LINE_CHANNEL_ACCESS_TOKEN}
                 onChange={(e) => setFormConfig({ ...formConfig, LINE_CHANNEL_ACCESS_TOKEN: e.target.value })}
-                placeholder="วาง Access Token..."
+                placeholder="วาง Access Token จาก LINE Developers Console..."
                 className="w-full bg-white border border-slate-300 rounded pl-3 pr-9 py-1 font-mono text-slate-800 focus:outline-none focus:border-slate-500 text-xs"
               />
               <button
@@ -537,10 +543,35 @@ export function LineSystemDashboardClient() {
             </div>
           </div>
 
-          {/* User IDs */}
+          {/* Channel Secret */}
+          <div className="sm:col-span-2 space-y-1">
+            <label className="font-semibold text-slate-700 block">LINE Channel Secret</label>
+            <div className="relative flex items-center">
+              <input
+                type={showSecret ? "text" : "password"}
+                value={formConfig.LINE_CHANNEL_SECRET}
+                onChange={(e) => setFormConfig({ ...formConfig, LINE_CHANNEL_SECRET: e.target.value })}
+                placeholder="วาง Channel Secret จาก LINE Developers Console..."
+                className="w-full bg-white border border-slate-300 rounded pl-3 pr-9 py-1 font-mono text-slate-800 focus:outline-none focus:border-slate-500 text-xs"
+              />
+              <button
+                type="button"
+                onClick={() => setShowSecret(!showSecret)}
+                className="absolute right-2.5 text-slate-400 hover:text-slate-600"
+              >
+                {showSecret ? <EyeOff size={14} /> : <Eye size={14} />}
+              </button>
+            </div>
+          </div>
+
+          {/* ─── Section: User IDs ─── */}
+          <div className="sm:col-span-2">
+            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-1 mb-2 mt-1">👤 User IDs (ผู้ดูแลระบบ)</div>
+          </div>
+
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <label className="font-semibold text-slate-700">USER_ID_OWN (คุณแมน)</label>
+              <label className="font-semibold text-slate-700">USER_ID_OWN</label>
               <button type="button" onClick={() => setTestTargetId(formConfig.LINE_USER_ID_OWN)} className="text-[10px] text-slate-600 hover:underline">
                 ใส่ช่องทดสอบ
               </button>
@@ -549,14 +580,14 @@ export function LineSystemDashboardClient() {
               type="text"
               value={formConfig.LINE_USER_ID_OWN}
               onChange={(e) => setFormConfig({ ...formConfig, LINE_USER_ID_OWN: e.target.value })}
-              placeholder="Uxxxxxxxx..."
+              placeholder="Uxxxxxxxx... (LINE User ID เจ้าของระบบ)"
               className="w-full bg-white border border-slate-300 rounded px-3 py-1 font-mono text-slate-800 focus:outline-none focus:border-slate-500 text-xs"
             />
           </div>
 
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <label className="font-semibold text-slate-700">USER_ID_APPROVER (คุณซ้อ)</label>
+              <label className="font-semibold text-slate-700">USER_ID_APPROVER</label>
               <button type="button" onClick={() => setTestTargetId(formConfig.LINE_USER_ID_APPROVER)} className="text-[10px] text-slate-600 hover:underline">
                 ใส่ช่องทดสอบ
               </button>
@@ -565,40 +596,96 @@ export function LineSystemDashboardClient() {
               type="text"
               value={formConfig.LINE_USER_ID_APPROVER}
               onChange={(e) => setFormConfig({ ...formConfig, LINE_USER_ID_APPROVER: e.target.value })}
-              placeholder="Uxxxxxxxx..."
+              placeholder="Uxxxxxxxx... (LINE User ID ผู้อนุมัติ)"
               className="w-full bg-white border border-slate-300 rounded px-3 py-1 font-mono text-slate-800 focus:outline-none focus:border-slate-500 text-xs"
             />
           </div>
 
-          {/* Group IDs */}
+          {/* ─── Section: Group IDs ─── */}
+          <div className="sm:col-span-2">
+            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-1 mb-2 mt-1">📢 Group IDs (กลุ่ม LINE ปลายทาง)</div>
+          </div>
+
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <label className="font-semibold text-slate-700">GROUP_ID_TASK (แจ้งงาน)</label>
-              <button type="button" onClick={() => setTestTargetId(formConfig.LINE_GROUP_ID_TASK)} className="text-[10px] text-slate-600 hover:underline">
-                ใส่ช่องทดสอบ
-              </button>
+              <label className="font-semibold text-slate-700">GROUP_ID_TASK</label>
+              <button type="button" onClick={() => setTestTargetId(formConfig.LINE_GROUP_ID_TASK)} className="text-[10px] text-slate-600 hover:underline">ใส่ช่องทดสอบ</button>
             </div>
             <input
               type="text"
               value={formConfig.LINE_GROUP_ID_TASK}
               onChange={(e) => setFormConfig({ ...formConfig, LINE_GROUP_ID_TASK: e.target.value })}
-              placeholder="Cxxxxxxxx..."
+              placeholder="Cxxxxxxxx... (กลุ่มแจ้งงาน)"
               className="w-full bg-white border border-slate-300 rounded px-3 py-1 font-mono text-slate-800 focus:outline-none focus:border-slate-500 text-xs"
             />
           </div>
 
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <label className="font-semibold text-slate-700">GROUP_ID_FINANCE (การเงิน)</label>
-              <button type="button" onClick={() => setTestTargetId(formConfig.LINE_GROUP_ID_FINANCE)} className="text-[10px] text-slate-600 hover:underline">
-                ใส่ช่องทดสอบ
-              </button>
+              <label className="font-semibold text-slate-700">GROUP_ID_SUMMARY</label>
+              <button type="button" onClick={() => setTestTargetId(formConfig.LINE_GROUP_ID_SUMMARY)} className="text-[10px] text-slate-600 hover:underline">ใส่ช่องทดสอบ</button>
+            </div>
+            <input
+              type="text"
+              value={formConfig.LINE_GROUP_ID_SUMMARY}
+              onChange={(e) => setFormConfig({ ...formConfig, LINE_GROUP_ID_SUMMARY: e.target.value })}
+              placeholder="Cxxxxxxxx... (กลุ่มสรุปรายงาน)"
+              className="w-full bg-white border border-slate-300 rounded px-3 py-1 font-mono text-slate-800 focus:outline-none focus:border-slate-500 text-xs"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <label className="font-semibold text-slate-700">GROUP_ID_PW</label>
+              <button type="button" onClick={() => setTestTargetId(formConfig.LINE_GROUP_ID_PW)} className="text-[10px] text-slate-600 hover:underline">ใส่ช่องทดสอบ</button>
+            </div>
+            <input
+              type="text"
+              value={formConfig.LINE_GROUP_ID_PW}
+              onChange={(e) => setFormConfig({ ...formConfig, LINE_GROUP_ID_PW: e.target.value })}
+              placeholder="Cxxxxxxxx... (กลุ่มมอบหมาย PW)"
+              className="w-full bg-white border border-slate-300 rounded px-3 py-1 font-mono text-slate-800 focus:outline-none focus:border-slate-500 text-xs"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <label className="font-semibold text-slate-700">GROUP_ID_PLAN</label>
+              <button type="button" onClick={() => setTestTargetId(formConfig.LINE_GROUP_ID_PLAN)} className="text-[10px] text-slate-600 hover:underline">ใส่ช่องทดสอบ</button>
+            </div>
+            <input
+              type="text"
+              value={formConfig.LINE_GROUP_ID_PLAN}
+              onChange={(e) => setFormConfig({ ...formConfig, LINE_GROUP_ID_PLAN: e.target.value })}
+              placeholder="Cxxxxxxxx... (กลุ่มแผนงาน)"
+              className="w-full bg-white border border-slate-300 rounded px-3 py-1 font-mono text-slate-800 focus:outline-none focus:border-slate-500 text-xs"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <label className="font-semibold text-slate-700">GROUP_ID_FINANCE</label>
+              <button type="button" onClick={() => setTestTargetId(formConfig.LINE_GROUP_ID_FINANCE)} className="text-[10px] text-slate-600 hover:underline">ใส่ช่องทดสอบ</button>
             </div>
             <input
               type="text"
               value={formConfig.LINE_GROUP_ID_FINANCE}
               onChange={(e) => setFormConfig({ ...formConfig, LINE_GROUP_ID_FINANCE: e.target.value })}
-              placeholder="Cxxxxxxxx..."
+              placeholder="Cxxxxxxxx... (กลุ่มการเงิน)"
+              className="w-full bg-white border border-slate-300 rounded px-3 py-1 font-mono text-slate-800 focus:outline-none focus:border-slate-500 text-xs"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <label className="font-semibold text-slate-700">GROUP_ID_PAID</label>
+              <button type="button" onClick={() => setTestTargetId(formConfig.LINE_GROUP_ID_PAID)} className="text-[10px] text-slate-600 hover:underline">ใส่ช่องทดสอบ</button>
+            </div>
+            <input
+              type="text"
+              value={formConfig.LINE_GROUP_ID_PAID}
+              onChange={(e) => setFormConfig({ ...formConfig, LINE_GROUP_ID_PAID: e.target.value })}
+              placeholder="Cxxxxxxxx... (กลุ่มจ่ายแล้ว)"
               className="w-full bg-white border border-slate-300 rounded px-3 py-1 font-mono text-slate-800 focus:outline-none focus:border-slate-500 text-xs"
             />
           </div>

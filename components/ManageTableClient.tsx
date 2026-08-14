@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight, Eye, List, Pencil, Plus, Save, Trash2, X, Search, ArrowDownUp } from "lucide-react";
 import { BillImageThumbnail } from "@/components/BillImageThumbnail";
+import { showConfirm, showToast } from "@/components/ToastProvider";
 import type { RowValue, SheetRow } from "@/lib/types";
 import { formatDateDisplay } from "@/lib/dates";
 
@@ -212,7 +213,8 @@ export function ManageTableClient({
       setError("เลือกแถวที่ต้องการลบก่อน");
       return;
     }
-    if (!window.confirm(`ลบ ${selectedRows.length} ${rowLabel}?`)) return;
+    const confirmed = await showConfirm(`ลบ ${selectedRows.length} ${rowLabel}?`);
+    if (!confirmed) return;
 
     setBusy("delete");
     setError("");
@@ -236,7 +238,8 @@ export function ManageTableClient({
       setError("ไม่พบตำแหน่งแถวสำหรับลบ");
       return;
     }
-    if (!window.confirm("คุณต้องการลบรายการนี้ใช่หรือไม่?")) return;
+    const confirmed = await showConfirm("คุณต้องการลบรายการนี้ใช่หรือไม่?");
+    if (!confirmed) return;
     setBusy("delete");
     setError("");
     try {

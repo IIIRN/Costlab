@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, LogOut, User } from "lucide-react";
+import { showConfirm } from "@/components/ToastProvider";
 import type { SheetRow } from "@/lib/types";
 
 type UserSwitcherProps = {
@@ -31,7 +32,14 @@ export function UserSwitcher({ currentUser, theme = "dark", isCollapsed = false,
   }, [menuOpen]);
 
   const handleLogout = async () => {
-    if (!confirm("ต้องการออกจากระบบใช่หรือไม่?")) return;
+    const confirmed = await showConfirm({
+      title: "ออกจากระบบ",
+      message: "ต้องการออกจากระบบใช่หรือไม่?",
+      confirmText: "ออกจากระบบ",
+      cancelText: "ยกเลิก",
+      variant: "warning"
+    });
+    if (!confirmed) return;
     setLoading(true);
     try {
       await fetch("/api/auth", { method: "DELETE" });

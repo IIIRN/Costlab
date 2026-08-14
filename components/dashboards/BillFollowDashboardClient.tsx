@@ -195,7 +195,7 @@ export function BillFollowDashboardClient({
       showToast(`บันทึกได้รับบิลรายการ #${rowId} เรียบร้อยแล้ว`);
       router.refresh();
     } catch (err: any) {
-      alert(`เกิดข้อผิดพลาดในการบันทึกสถานะบิล: ${err?.message || "กรุณาลองใหม่อีกครั้ง"}`);
+      showToast(`เกิดข้อผิดพลาดในการบันทึกสถานะบิล: ${err?.message || "กรุณาลองใหม่อีกครั้ง"}`);
     } finally {
       setSavingRowId(null);
     }

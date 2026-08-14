@@ -1,6 +1,6 @@
 import { TABLES } from "@/lib/config";
 import { MainDashboardClient } from "@/components/dashboards/MainDashboardClient";
-import { isCommittedBill, isUnpaidBill } from "@/lib/bill-status";
+import { isCommittedBill, isUnpaidBill, normalizeBillStatus } from "@/lib/bill-status";
 import { computeBillTransferAmount, isCreditActive, isDeductActive, isVatActive } from "@/lib/project-summary";
 import { WithdrawDashboardClient, type WithdrawFilters } from "@/components/dashboards/WithdrawDashboardClient";
 import { WorkStatusDashboardClient } from "@/components/dashboards/WorkStatusDashboardClient";
@@ -21,8 +21,8 @@ export async function WithdrawDashboard({ filters = {} }: { filters?: WithdrawFi
   const isAdmin = cookieStore.get("auth_role")?.value === "Admin";
   
   const rows = hydrateDataRows(dataRows).filter(row => {
-    // แสดงเฉพาะบิลที่ "อนุมัติ" แล้ว รอเบิก
-    const status = String(row["สถานะ"] || "").trim();
+    // แสดงเฉพาะบิลที่ "อนุมัติ" / "อนุมัติแล้ว" รอเบิก
+    const status = normalizeBillStatus(row["สถานะ"]);
     if (status !== "อนุมัติ") return false;
     return hasValue(row["ลำดับ"]) || hasValue(row["ID Project"]) || hasValue(row["ร้าน/บุคคล"]) || hasValue(row["สินค้า/ทำงาน"]);
   });

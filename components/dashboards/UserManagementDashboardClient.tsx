@@ -17,6 +17,7 @@ import {
   ShieldAlert,
   Phone
 } from "lucide-react";
+import { showConfirm } from "@/components/ToastProvider";
 
 type SystemUser = {
   id: string;
@@ -107,8 +108,9 @@ export function UserManagementDashboardClient() {
     setModalOpen(true);
   }
 
-  function handleDeleteUser(index: number) {
-    if (!confirm(`คุณต้องการลบบัญชีผู้ใช้ "${users[index].displayName || users[index].username}" ใช่หรือไม่?`)) return;
+  async function handleDeleteUser(index: number) {
+    const confirmed = await showConfirm(`คุณต้องการลบบัญชีผู้ใช้ "${users[index].displayName || users[index].username}" ใช่หรือไม่?`);
+    if (!confirmed) return;
     const nextUsers = users.filter((_, i) => i !== index);
     setUsers(nextUsers);
     handleSaveUsersToDb(nextUsers);

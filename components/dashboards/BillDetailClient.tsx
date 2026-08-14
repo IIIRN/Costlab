@@ -6,6 +6,8 @@ import { ArrowLeft } from "lucide-react";
 import { BillImageThumbnail } from "@/components/BillImageThumbnail";
 import { BillWorkflowActions } from "@/components/BillWorkflowActions";
 import { DataTable } from "@/components/tables/DataTable";
+import { FormModal } from "@/components/FormModal";
+import { FORM_SCHEMAS } from "@/lib/schemas";
 import { money, toNumber } from "@/lib/numbers";
 import type { SheetRow } from "@/lib/types";
 
@@ -18,6 +20,7 @@ type BillDetailClientProps = {
   requesterLink?: string;
   vendorDisplay?: string;
   vendorLink?: string;
+  form?: any;
 };
 
 export function BillDetailClient({
@@ -29,7 +32,14 @@ export function BillDetailClient({
   requesterLink,
   vendorDisplay,
   vendorLink,
+  form,
 }: BillDetailClientProps) {
+  const activeForm = form || {
+    tableName: "Data",
+    schema: FORM_SCHEMAS["Data"] || [],
+    initialValues: { "บิล": "ย่อย", "ร้านค้า/ผู้รับเหมา": "ร้านค้า", "ว/ด/ป": new Date().toISOString().slice(0, 10) },
+    refOptions: {}
+  };
   const projectId = text(bill["ID Project"]);
   const projectName = text(bill["ชื่อ Project"]) || "ไม่ระบุโครงการ";
   const imageValue = bill["รูปถ่ายบิล"];
@@ -246,6 +256,16 @@ export function BillDetailClient({
           </div>
         )}
       </div>
+
+      {/* EDIT FORM MODAL */}
+      <FormModal
+        form={activeForm}
+        title="แก้ไขบิล"
+        submitPath="/api/rows"
+        openEventName="open-bill-edit-form"
+        hideLauncher
+        relaxed
+      />
     </div>
   );
 }
