@@ -517,6 +517,50 @@ export async function getBillFollowDatesFromSupabase(): Promise<Record<string, R
   }
 }
 
+export async function saveProjectBudgetAllocation(projectId: string, patch: Record<string, any>) {
+  if (!isSupabaseConfigured() || !projectId) return;
+  const budgetKeys = Object.keys(patch).filter(k => k.startsWith("งบไม่เกิน") || k === "คุมงบประเภทงาน");
+  if (!budgetKeys.length) return;
+
+  try {
+    const { data } = await supabaseAdmin.from("system_options").select("*").eq("id", "project_budget_allocations").maybeSingle();
+    const existingMap = (data?.data && typeof data.data === "object") ? { ...data.data } : {};
+
+    const mainKey = String(projectId).trim();
+    const currentBudgets = existingMap[mainKey] && typeof existingMap[mainKey] === "object" ? { ...existingMap[mainKey] } : {};
+
+    for (const k of budgetKeys) {
+      if (patch[k] !== undefined) {
+        currentBudgets[k] = patch[k];
+      }
+    }
+    existingMap[mainKey] = currentBudgets;
+
+    const altKey = String(patch["ID Project"] || patch.id || "").trim();
+    if (altKey && altKey !== mainKey) {
+      existingMap[altKey] = currentBudgets;
+    }
+
+    await supabaseAdmin.from("system_options").upsert({
+      id: "project_budget_allocations",
+      data: existingMap,
+      updated_at: new Date().toISOString()
+    });
+  } catch (e) {
+    console.warn("Failed to persist project budget allocations in system_options:", e);
+  }
+}
+
+export async function getProjectBudgetAllocationsFromSupabase(): Promise<Record<string, Record<string, any>>> {
+  if (!isSupabaseConfigured()) return {};
+  try {
+    const { data } = await supabaseAdmin.from("system_options").select("*").eq("id", "project_budget_allocations").maybeSingle();
+    return (data?.data && typeof data.data === "object") ? data.data : {};
+  } catch {
+    return {};
+  }
+}
+
 export async function updateRowInSupabase(tableName: string, keyColumn: string, keyValue: any, patch: Record<string, any>) {
   if (!isSupabaseConfigured()) return null;
 
@@ -538,6 +582,11 @@ export async function updateRowInSupabase(tableName: string, keyColumn: string, 
   if (followKeys.some(k => k in patch)) {
     const targetBillId = String(patch["ลำดับ"] ?? patch.id ?? primaryVal ?? keyValue);
     await saveBillFollowDate(targetBillId, patch);
+  }
+
+  if (dbTable === "projects" || tableName === "Project" || tableName === "PROJECT") {
+    const targetProjId = String(patch["ID Project"] ?? patch.id ?? primaryVal ?? keyValue);
+    await saveProjectBudgetAllocation(targetProjId, patch);
   }
 
   try {
@@ -659,14 +708,17 @@ export async function getRowsFromSupabase(tableName: string, maxRows = 10_000): 
   try {
     const isAscending = dbTable !== "bills";
     const rangeEnd = Math.max(0, maxRows - 1);
-    const [mainResult, entityBankMap, billFollowDatesMap] = await Promise.all([
+    const [mainResult, entityBankMap, billFollowDatesMap, projectBudgetsMap] = await Promise.all([
       supabaseAdmin.from(dbTable).select("*").order("id", { ascending: isAscending }).range(0, rangeEnd),
       (dbTable === "stores" || dbTable === "contractors" || dbTable === "master_members")
         ? getEntityBankMapFromSupabase()
         : Promise.resolve({} as Record<string, string>),
       dbTable === "bills"
         ? getBillFollowDatesFromSupabase()
-        : Promise.resolve({} as Record<string, Record<string, string>>)
+        : Promise.resolve({} as Record<string, Record<string, string>>),
+      dbTable === "projects"
+        ? getProjectBudgetAllocationsFromSupabase()
+        : Promise.resolve({} as Record<string, Record<string, any>>)
     ]);
 
     const { data, error } = mainResult;
@@ -689,6 +741,13 @@ export async function getRowsFromSupabase(tableName: string, maxRows = 10_000): 
           if (dates["วันได้บิล"]) res["วันได้บิล"] = dates["วันได้บิล"];
           if (dates["วันออก 3%"]) res["วันออก 3%"] = dates["วันออก 3%"];
           if (dates["วันจ่าย"]) res["วันจ่าย"] = dates["วันจ่าย"];
+        }
+      }
+
+      if (dbTable === "projects") {
+        const pId = String(res["ID Project"] || res.id || res._sheetRow || "");
+        if (pId && projectBudgetsMap[pId]) {
+          Object.assign(res, projectBudgetsMap[pId]);
         }
       }
 
@@ -783,6 +842,11 @@ export async function insertRowToSupabase(tableName: string, rowData: Record<str
   const entityId = dbRow.id || rowData["id_store"] || rowData["id_Contractor"] || rowData["รหัสพนักงาน"];
   if (bankVal && entityId) {
     saveEntityBankOption(String(entityId), String(bankVal));
+  }
+
+  if (dbTable === "projects" || tableName === "Project" || tableName === "PROJECT") {
+    const targetProjId = String(rowData["ID Project"] ?? rowData.id ?? dbRow.id);
+    await saveProjectBudgetAllocation(targetProjId, rowData);
   }
 
   try {

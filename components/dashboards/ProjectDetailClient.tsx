@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { DataTable } from "@/components/tables/DataTable";
@@ -29,6 +29,27 @@ type ProjectDetailClientProps = {
   expenseCategories: string[];
 };
 
+const PRODUCT_BUDGET_FIELDS: { name: string; field: string }[] = [
+  { name: "เหล็กเส้น", field: "งบไม่เกินเหล็กเส้น" },
+  { name: "เหล็กรูปพรรณ", field: "งบไม่เกินรูปพรรณ" },
+  { name: "คอนกรีต", field: "งบไม่เกินคอนกรีต" },
+  { name: "ไม้แบบ", field: "งบไม่เกินไม้แบบ" },
+  { name: "วัสดุมุง", field: "งบไม่เกินวัสดุมุง" },
+  { name: "ฝ้าผนัง", field: "งบไม่เกินฝ้าผนัง" },
+  { name: "ปูพื้น", field: "งบไม่เกินปูพื้น" },
+  { name: "กระจก", field: "งบไม่เกินกระจก" },
+  { name: "ไฟฟ้า", field: "งบไม่เกินไฟฟ้า" },
+  { name: "ประปา", field: "งบไม่เกินประปา" },
+  { name: "อื่นๆ (วัสดุ)", field: "งบไม่เกินอื่นๆ" },
+  { name: "สีเคมี", field: "งบไม่เกินสีเคมี" },
+  { name: "สุขภัณฑ์", field: "งบไม่เกินสุขภัณฑ์" },
+  { name: "บิวท์อิน", field: "งบไม่เกินบิวอิน" },
+  { name: "แอร์", field: "งบไม่เกินแอร์" },
+  { name: "ดิน", field: "งบไม่เกินดิน" },
+  { name: "หินทราย", field: "งบไม่เกินหินทราย" },
+  { name: "เตรียมงาน", field: "งบไม่เกินเตรียมงาน" },
+];
+
 export function ProjectDetailClient({
   projectId,
   projectName,
@@ -42,7 +63,7 @@ export function ProjectDetailClient({
   relatedColumns,
   expenseCategories,
 }: ProjectDetailClientProps) {
-  const [activeTab, setActiveTab] = useState<"bills" | "expenses" | "edit">("bills");
+  const [activeTab, setActiveTab] = useState<"bills" | "expenses" | "products" | "edit">("bills");
 
   const rawColor = String(hydratedProject.color || "").toLowerCase().trim();
   const isComplete = rawColor === "black" || rawColor === "เสร็จแล้ว" || rawColor === "completed";
@@ -56,6 +77,62 @@ export function ProjectDetailClient({
   const owner = String(hydratedProject["รับผิดชอบ"] || "-");
   const date = formatDateThai(hydratedProject["วันที่"]);
   const location = String(hydratedProject["สถานที่"] || "-");
+
+  // Product Budget Control calculations
+  const productSpendingMap = useMemo(() => {
+    const map: Record<string, { spent: number; count: number }> = {};
+    summaryRows.forEach(row => {
+      const itemRaw = String(row["สินค้า/ทำงาน"] || row["สินค้า"] || row["รายการ"] || "อื่นๆ").trim();
+      if (!itemRaw) return;
+      const amt = toNumber(row["ยอดเงิน"]);
+      if (!map[itemRaw]) {
+        map[itemRaw] = { spent: 0, count: 0 };
+      }
+      map[itemRaw].spent += amt;
+      map[itemRaw].count += 1;
+    });
+    return map;
+  }, [summaryRows]);
+
+  const productControlRows = useMemo(() => {
+    const list: {
+      name: string;
+      budget: number;
+      spent: number;
+      billCount: number;
+    }[] = [];
+
+    const processedItemNames = new Set<string>();
+
+    PRODUCT_BUDGET_FIELDS.forEach(p => {
+      const budget = toNumber(hydratedProject[p.field]);
+      let spent = 0;
+      let count = 0;
+      Object.entries(productSpendingMap).forEach(([itemName, data]) => {
+        if (itemName.toLowerCase().includes(p.name.toLowerCase()) || p.name.toLowerCase().includes(itemName.toLowerCase())) {
+          spent += data.spent;
+          count += data.count;
+          processedItemNames.add(itemName);
+        }
+      });
+      if (budget > 0 || spent > 0) {
+        list.push({ name: p.name, budget, spent, billCount: count });
+      }
+    });
+
+    Object.entries(productSpendingMap).forEach(([itemName, data]) => {
+      if (!processedItemNames.has(itemName)) {
+        list.push({
+          name: itemName,
+          budget: 0,
+          spent: data.spent,
+          billCount: data.count
+        });
+      }
+    });
+
+    return list;
+  }, [hydratedProject, productSpendingMap]);
 
   return (
     <div className="w-full flex flex-col gap-4 p-4 sm:p-5 max-w-[1400px] mx-auto font-sans text-sm text-slate-800">
@@ -149,6 +226,18 @@ export function ProjectDetailClient({
 
         <button
           type="button"
+          onClick={() => setActiveTab("products")}
+          className={`px-3 py-2 border-b-2 transition ${
+            activeTab === "products"
+              ? "border-slate-900 text-slate-900 font-bold"
+              : "border-transparent text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          คุมงบรายสินค้า ({productControlRows.length})
+        </button>
+
+        <button
+          type="button"
           onClick={() => setActiveTab("edit")}
           className={`px-3 py-2 border-b-2 transition ${
             activeTab === "edit"
@@ -195,6 +284,89 @@ export function ProjectDetailClient({
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {activeTab === "products" && (
+        <div className="border border-slate-200 rounded-md bg-white overflow-hidden">
+          <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+            <div>
+              <h2 className="text-xs font-bold text-slate-800">คุมงบประมาณรายสินค้า / หมวดงาน (Product Budget Control Matrix)</h2>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                เปรียบเทียบวงเงินจัดสรรรายหมวด กับยอดเงินเบิกจ่ายจริงตามบิล ({productControlRows.length} รายการ)
+              </p>
+            </div>
+            <div className="text-xs font-bold text-slate-700 bg-white px-3 py-1.5 rounded-lg border border-slate-200">
+              รวมเบิกจ่าย: <span className="text-indigo-700 font-extrabold">{money(productControlRows.reduce((sum, r) => sum + r.spent, 0))}</span>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-100/80 border-b border-slate-200 text-slate-600 font-bold text-[11px]">
+                  <th className="py-2.5 px-4">รายการสินค้า / หมวดงาน</th>
+                  <th className="py-2.5 px-4 text-right">วงเงินงบประมาณ</th>
+                  <th className="py-2.5 px-4 text-right">เบิกจ่ายแล้ว</th>
+                  <th className="py-2.5 px-4 text-right">คงเหลือวงเงิน</th>
+                  <th className="py-2.5 px-4 text-center">สัดส่วนการใช้งบ</th>
+                  <th className="py-2.5 px-4 text-center">จำนวนบิล</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {productControlRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-slate-400 text-xs">
+                      ยังไม่มีการตั้งวงเงิน หรือเบิกจ่ายสินค้าในโครงการนี้
+                    </td>
+                  </tr>
+                ) : (
+                  productControlRows.map((item, idx) => {
+                    const remaining = item.budget > 0 ? item.budget - item.spent : 0;
+                    const percent = item.budget > 0 ? Math.min(100, Math.round((item.spent / item.budget) * 100)) : 0;
+                    const isOver = item.budget > 0 && remaining < 0;
+
+                    return (
+                      <tr key={idx} className="hover:bg-slate-50/80 transition">
+                        <td className="py-2.5 px-4 font-semibold text-slate-800">
+                          {item.name}
+                        </td>
+                        <td className="py-2.5 px-4 text-right font-medium text-slate-600">
+                          {item.budget > 0 ? money(item.budget) : <span className="text-slate-400 text-[11px]">-</span>}
+                        </td>
+                        <td className="py-2.5 px-4 text-right font-bold text-indigo-700">
+                          {money(item.spent)}
+                        </td>
+                        <td className={`py-2.5 px-4 text-right font-bold ${isOver ? "text-rose-600" : item.budget > 0 ? "text-emerald-700" : "text-slate-400"}`}>
+                          {item.budget > 0 ? money(remaining) : <span className="text-slate-400 text-[11px]">-</span>}
+                        </td>
+                        <td className="py-2.5 px-4 text-center">
+                          {item.budget > 0 ? (
+                            <div className="flex items-center gap-2 justify-center">
+                              <div className="w-16 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full ${isOver ? "bg-rose-500" : percent > 80 ? "bg-amber-500" : "bg-emerald-500"}`}
+                                  style={{ width: `${percent}%` }}
+                                />
+                              </div>
+                              <span className={`text-[10px] font-bold ${isOver ? "text-rose-600" : "text-slate-600"}`}>{percent}%</span>
+                            </div>
+                          ) : (
+                            <span className="text-[10px] text-slate-400 font-medium">ไม่ได้คุมงบ</span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-4 text-center">
+                          <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">
+                            {item.billCount} บิล
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       )}

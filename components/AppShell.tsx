@@ -277,7 +277,7 @@ export function AppShell({ children, peopleRows = [], currentUser = null }: { ch
       />
 
       {/* Main Workspace Area (With padding for fixed Mobile Header & Footer) */}
-      <main className={`flex-1 min-w-0 min-h-screen pt-14 pb-16 md:pt-0 md:pb-0 relative transition-all duration-300 ${collapsed ? "md:pl-[68px]" : "md:pl-[316px]"}`}>
+      <main className={`flex-1 min-w-0 min-h-screen pt-14 pb-16 md:pt-0 md:pb-0 relative transition-all duration-300 ${collapsed ? "md:pl-[60px]" : "md:pl-[260px]"}`}>
         {children}
       </main>
     </div>

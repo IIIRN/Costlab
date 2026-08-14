@@ -1,6 +1,6 @@
-export type RowValue = string | number | boolean | null;
+export type RowValue = string | number | boolean | null | Record<string, any>;
 
-export type TableRow = Record<string, RowValue>;
+export type TableRow = Record<string, any>;
 export type SheetRow = TableRow;
 
 export type FieldType =

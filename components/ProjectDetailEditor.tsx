@@ -4,7 +4,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Save, X } from "lucide-react";
 import { TABLES } from "@/lib/config";
-import { money } from "@/lib/numbers";
+import { money, toNumber } from "@/lib/numbers";
 import type { SheetRow } from "@/lib/types";
 import { ProjectBudgetAllocator } from "@/components/forms/ProjectBudgetAllocator";
 
@@ -21,14 +21,19 @@ export function ProjectDetailEditor({ fields, project, customerDisplay, companyD
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [draft, setDraft] = useState<Record<string, string>>(() => draftFromProject(project, fields));
-  const sheetRow = Number(project._sheetRow);
-  const canSave = Number.isInteger(sheetRow) && sheetRow >= 2;
+  const rowKey = project._sheetRow ?? project["ID Project"] ?? project.id;
+  const canSave = Boolean(rowKey);
 
   const changedValues = useMemo(() => {
+    const rawObj = (project._raw || project) as SheetRow;
     return Object.fromEntries(
       Object.keys(draft)
         .filter(field => !readonlyField(field))
-        .filter(field => stringify(project[field]) !== (draft[field] ?? ""))
+        .filter(field => {
+          const draftVal = (draft[field] ?? "").trim();
+          const rawVal = stringify(rawObj[field]).trim();
+          return draftVal !== rawVal;
+        })
         .map(field => [field, draft[field] ?? ""])
     );
   }, [draft, project]);
@@ -48,7 +53,7 @@ export function ProjectDetailEditor({ fields, project, customerDisplay, companyD
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!canSave) {
-      setError("ไม่พบตำแหน่งแถวใน Sheet สำหรับบันทึก");
+      setError("ไม่พบรหัสโครงการสำหรับการบันทึก");
       return;
     }
     if (!Object.keys(changedValues).length) {
@@ -64,7 +69,7 @@ export function ProjectDetailEditor({ fields, project, customerDisplay, companyD
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           tableName: TABLES.PROJECT,
-          sheetRow,
+          sheetRow: rowKey,
           values: changedValues
         })
       });
@@ -188,13 +193,28 @@ export function ProjectDetailEditor({ fields, project, customerDisplay, companyD
   );
 
   function setDraftValue(field: string, value: string) {
-    setDraft(current => ({ ...current, [field]: value }));
+    setDraft(current => {
+      const next = { ...current, [field]: value };
+      if (field === "ยอดงาน") {
+        const workNum = toNumber(value);
+        if (workNum > 0 && (!current["ยอดรวม vat"] || toNumber(current["ยอดรวม vat"]) === 0)) {
+          next["ยอดรวม vat"] = String(Math.round(workNum * 1.07));
+        }
+      } else if (field === "ยอดรวม vat") {
+        const vatNum = toNumber(value);
+        if (vatNum > 0 && (!current["ยอดงาน"] || toNumber(current["ยอดงาน"]) === 0)) {
+          next["ยอดงาน"] = String(Math.round(vatNum / 1.07));
+        }
+      }
+      return next;
+    });
   }
 }
 
 function draftFromProject(project: SheetRow, fields: string[]) {
+  const raw = project._raw || project;
   const allKeys = [...new Set([...fields, ...Object.keys(project).filter(k => !k.startsWith("_"))])];
-  return Object.fromEntries(allKeys.map(field => [field, stringify(project[field])]));
+  return Object.fromEntries(allKeys.map(field => [field, stringify(raw[field] ?? project[field])]));
 }
 
 function stringify(value: unknown) {
@@ -203,7 +223,7 @@ function stringify(value: unknown) {
 }
 
 function readonlyField(field: string) {
-  return field === "ID Project" || field === "รวม ALL" || field === "ยอดรวม vat";
+  return field === "ID Project" || field === "รวม ALL";
 }
 
 function amountField(field: string) {

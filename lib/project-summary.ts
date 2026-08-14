@@ -53,6 +53,19 @@ export function rowsForProject(dataRows: SheetRow[], projectId: RowValue | undef
   return hydrateDataRows(dataRows).filter(row => String(row["ID Project"] || "").trim() === id);
 }
 
+export function getCategoryExpense(rows: SheetRow[], cat: string): number {
+  return rows.reduce((sum, row) => {
+    const directAmt = toNumber(row[cat]);
+    if (directAmt > 0) return sum + directAmt;
+
+    const catStr = String(row["ประเภท"] || row["รายการ"] || row["สินค้า/ทำงาน"] || "").trim();
+    if (catStr.includes(cat)) {
+      return sum + toNumber(row["ยอดเงิน"]);
+    }
+    return sum;
+  }, 0);
+}
+
 export function hydrateProjectSummary(project: SheetRow, projectDataRows: SheetRow[]): {
   project: SheetRow;
   totals: {
@@ -74,16 +87,24 @@ export function hydrateProjectSummary(project: SheetRow, projectDataRows: SheetR
 } {
   const committedRows = projectDataRows.filter(isCommittedBill);
   const projectTotal = sumColumns(committedRows, ["ยอดเงิน"]);
-  const workTotal = toNumber(valueOf(project, ["ยอดงาน"]));
-  const totalAll = hasValue(project["รวม ALL"]) ? toNumber(project["รวม ALL"]) : projectTotal;
-  const totalVat = hasValue(project["ยอดรวม vat"]) ? toNumber(project["ยอดรวม vat"]) : workTotal * 1.07;
-  const budget = toNumber(valueOf(project, ["งบไม่เกิน"]));
+
+  const rawWorkTotal = toNumber(valueOf(project, ["ยอดงาน", "ยอดงาน (ก่อน vat)", "ยอดงานก่อนvat"]));
+  const rawTotalVat = toNumber(valueOf(project, ["ยอดรวม vat", "ยอดรวม VAT", "ยอดรวมVat"]));
+  const rawBudget = toNumber(valueOf(project, ["งบไม่เกิน"]));
+
+  const totalVat = rawTotalVat > 0 ? rawTotalVat : (rawWorkTotal > 0 ? rawWorkTotal * 1.07 : 0);
+  const workTotal = rawWorkTotal > 0 ? rawWorkTotal : (totalVat > 0 ? totalVat / 1.07 : 0);
+  const totalAll = hasValue(project["รวม ALL"]) && toNumber(project["รวม ALL"]) > 0 ? toNumber(project["รวม ALL"]) : projectTotal;
+  const budget = rawBudget > 0 ? rawBudget : (totalVat > 0 ? totalVat : workTotal > 0 ? workTotal : totalAll);
 
   return {
     project: {
       ...project,
-      "รวม ALL": totalAll,
-      "ยอดรวม vat": totalVat
+      _raw: { ...project },
+      "ยอดงาน": hasValue(project["ยอดงาน"]) && toNumber(project["ยอดงาน"]) > 0 ? project["ยอดงาน"] : workTotal,
+      "ยอดรวม vat": hasValue(project["ยอดรวม vat"]) || hasValue(project["ยอดรวม VAT"]) ? (project["ยอดรวม vat"] || project["ยอดรวม VAT"]) : totalVat,
+      "งบไม่เกิน": hasValue(project["งบไม่เกิน"]) && toNumber(project["งบไม่เกิน"]) > 0 ? project["งบไม่เกิน"] : budget,
+      "รวม ALL": totalAll
     },
     totals: {
       workTotal,
@@ -92,14 +113,14 @@ export function hydrateProjectSummary(project: SheetRow, projectDataRows: SheetR
       totalAll,
       billCount: committedRows.length,
       remaining: budget - totalAll,
-      material: sumColumns(committedRows, ["ค่าของ"]),
-      labor: sumColumns(committedRows, ["ค่าแรง"]),
-      staff: sumColumns(committedRows, ["พนักงาน"]),
-      fuel: sumColumns(committedRows, ["น้ำมัน"]),
-      carRepair: sumColumns(committedRows, ["ซ่อมรถ"]),
-      machine: sumColumns(committedRows, ["เครื่องจักร"]),
-      tool: sumColumns(committedRows, ["เครื่องมือ"]),
-      other: sumColumns(committedRows, ["อื่นๆ"])
+      material: getCategoryExpense(committedRows, "ค่าของ"),
+      labor: getCategoryExpense(committedRows, "ค่าแรง"),
+      staff: getCategoryExpense(committedRows, "พนักงาน"),
+      fuel: getCategoryExpense(committedRows, "น้ำมัน"),
+      carRepair: getCategoryExpense(committedRows, "ซ่อมรถ"),
+      machine: getCategoryExpense(committedRows, "เครื่องจักร"),
+      tool: getCategoryExpense(committedRows, "เครื่องมือ"),
+      other: getCategoryExpense(committedRows, "อื่นๆ")
     }
   };
 }
