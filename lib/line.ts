@@ -430,6 +430,7 @@ export function createBillSearchResultFlex(
   bills: Array<{
     id: any;
     bill_no?: string;
+    bill_type?: string;
     project_name?: string;
     vendor_or_person?: string;
     description?: string;
@@ -439,7 +440,8 @@ export function createBillSearchResultFlex(
     image_url?: string;
     image_urls?: string[];
   }>,
-  isSub: boolean = false
+  isSub: boolean = false,
+  isMain: boolean = false
 ): Record<string, any> {
   const totalAmount = bills.reduce((sum, b) => sum + Number(b.amount || 0), 0);
   const formattedTotal = totalAmount.toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -450,7 +452,7 @@ export function createBillSearchResultFlex(
     header: {
       type: "box",
       layout: "vertical",
-      backgroundColor: isSub ? "#D97706" : "#1E293B",
+      backgroundColor: isSub ? "#D97706" : isMain ? "#0F766E" : "#1E293B",
       paddingAll: "15px",
       contents: [
         {
@@ -501,7 +503,7 @@ export function createBillSearchResultFlex(
               type: "box",
               layout: "horizontal",
               contents: [
-                { type: "text", text: `#${billId} | ${b.project_name || "โครงการทั่วไป"}`, weight: "bold", size: "xs", color: "#0F172A", flex: 7, wrap: true },
+                { type: "text", text: `#${billId}${b.bill_type ? ` [บิล${b.bill_type}]` : ""} | ${b.project_name || "โครงการทั่วไป"}`, weight: "bold", size: "xs", color: "#0F172A", flex: 7, wrap: true },
                 { type: "text", text: `฿${amt}`, weight: "bold", size: "xs", color: "#059669", flex: 3, align: "end" }
               ]
             },

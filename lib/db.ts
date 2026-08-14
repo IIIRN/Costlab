@@ -149,6 +149,7 @@ export async function deleteRows(tableName: string, targetKeys: (number | string
         String(r._sheetRow) === itemKey ||
         String(r[keyColumn]) === itemKey ||
         String(r.id) === itemKey ||
+        String(r.id_Conwork) === itemKey ||
         String(r.id_store) === itemKey ||
         String(r.id_bank) === itemKey ||
         String(r.id_Contractor) === itemKey ||
@@ -156,7 +157,7 @@ export async function deleteRows(tableName: string, targetKeys: (number | string
         String(r.id_cus) === itemKey ||
         String(r.id_Company) === itemKey
       );
-      const targetVal = foundRow?.id ?? foundRow?.[keyColumn] ?? foundRow?.id_bank ?? foundRow?.id_store ?? foundRow?.id_Contractor ?? foundRow?.id_cus ?? foundRow?.id_Company ?? foundRow?.id_car ?? itemKey;
+      const targetVal = foundRow?.id ?? foundRow?.[keyColumn] ?? foundRow?.id_Conwork ?? foundRow?.id_bank ?? foundRow?.id_store ?? foundRow?.id_Contractor ?? foundRow?.id_cus ?? foundRow?.id_Company ?? foundRow?.id_car ?? itemKey;
       if (typeof targetVal === "string" || typeof targetVal === "number") {
         if (String(targetVal).trim() !== "") {
           idsToDelete.add(targetVal);

@@ -27,6 +27,9 @@ const TABLE_MAP: Record<string, string> = {
   ร้านค้า: "stores",
   รับเหมา: "contractors",
   งานรับเหมา: "contract_works",
+  ContractWork: "contract_works",
+  CONTRACT_WORK: "contract_works",
+  contractWork: "contract_works",
   Tasks: "tasks",
   Works: "works",
   Plan: "plans",
@@ -627,7 +630,7 @@ export async function deleteRowFromSupabase(tableName: string, keyColumn: string
   if (!isSupabaseConfigured()) return null;
 
   const dbTable = TABLE_MAP[tableName] || tableName.toLowerCase();
-  const rawVal = row?.id ?? row?.[keyColumn] ?? row?.id_bank ?? row?.id_store ?? row?.id_Contractor ?? row?.id_cus ?? row?.id_Company ?? row?.id_car ?? keyValue;
+  const rawVal = row?.id ?? row?.[keyColumn] ?? row?.id_Conwork ?? row?.id_bank ?? row?.id_store ?? row?.id_Contractor ?? row?.id_cus ?? row?.id_Company ?? row?.id_car ?? keyValue;
   const numId = Number(rawVal);
   const targetVal = Number.isFinite(numId) && String(rawVal).trim() !== "" ? numId : rawVal;
 

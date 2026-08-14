@@ -104,6 +104,8 @@ export async function handleLineCommand(
       const rowObj = {
         id_Conwork: generatedId,
         id: generatedId,
+        "ชื่อเล่น": assignee,
+        "ผู้รับผิดชอบ": assignee,
         "รายละเอียดงาน": `${isUrgent ? "🔴 [ด่วน] " : ""}${details}`,
         "เบอร์โทรศัพท์": "-",
         "ยอดเงินจ้าง": 0,
@@ -384,25 +386,29 @@ export async function handleLineCommand(
       }
 
       // กรองประเภท บิลย่อย vs บิลหลัก
+      function checkIsSubBill(b: any): boolean {
+        const billVal = String(b["บิล"] || b.bill || b.bill_type || "").trim();
+        if (billVal.includes("ย่อย")) return true;
+        if (billVal.includes("หลัก")) return false;
+        const cat = String(b["ประเภท"] || b.category || "").trim();
+        return cat.includes("ย่อย") || cat.startsWith("2.") || cat.startsWith("3.") || cat.startsWith("8.");
+      }
+
       if (isSub) {
-        filtered = filtered.filter(b => {
-          const cat = String(b["ประเภท"] || b.category || "").trim();
-          return cat.includes("ย่อย") || cat.startsWith("2.") || cat.startsWith("3.") || cat.startsWith("8.");
-        });
+        filtered = filtered.filter(b => checkIsSubBill(b));
       } else if (isMain) {
-        filtered = filtered.filter(b => {
-          const cat = String(b["ประเภท"] || b.category || "").trim();
-          return !cat.includes("ย่อย") && !cat.startsWith("2.") && !cat.startsWith("3.") && !cat.startsWith("8.");
-        });
+        filtered = filtered.filter(b => !checkIsSubBill(b));
       }
 
       const bills = filtered.slice(0, 5).map(b => {
         const reqIdOrName = String(b["ผู้เบิก"] || b.requester || "").trim();
         const resolvedRequester = peopleMap.get(reqIdOrName) || reqIdOrName || "-";
+        const itemIsSub = checkIsSubBill(b);
 
         return {
           id: b["ลำดับ"] || b.id,
-          bill_no: String(b["บิล"] || b.bill_no || b["ลำดับ"] || b.id || "-"),
+          bill_no: String(b["ลำดับ"] || b.id || "-"),
+          bill_type: itemIsSub ? "ย่อย" : "หลัก",
           project_name: String(b["ชื่อ Project"] || b.project_name || "โครงการ"),
           vendor_or_person: String(b["ร้าน/บุคคล"] || b.vendor_or_person || "-"),
           description: String(b["สินค้า/ทำงาน"] || b.description || "-"),
@@ -417,7 +423,7 @@ export async function handleLineCommand(
         const noResultMsg = lowerText === "รออนุมัติ"
           ? "✅ ไม่มีรายการรออนุมัติในขณะนี้ครับ\n\nบิลทั้งหมดได้รับการอนุมัติหรือดำเนินการแล้ว"
           : filterQuery
-            ? `🔍 ไม่พบรายการบิลที่ตรงกับ "${filterQuery}"\n\nกรุณาตรวจสอบชื่อผู้เบิกหรือรายละเอียดที่ค้นหาอีกครั้งครับ`
+            ? `🔍 ไม่พบรายการบิล${isSub ? "ย่อย" : isMain ? "หลัก" : ""}ที่ตรงกับ "${filterQuery}"\n\nกรุณาตรวจสอบชื่อผู้เบิกหรือรายละเอียดที่ค้นหาอีกครั้งครับ`
             : "ไม่พบรายการบิลในระบบ";
         await replyTextMessage(replyToken, noResultMsg);
         return true;
@@ -426,10 +432,10 @@ export async function handleLineCommand(
       const flexTitle = lowerText === "รออนุมัติ"
         ? `รายการรออนุมัติ`
         : filterQuery
-          ? `ผลการค้นหาบิล${isSub ? "ย่อย" : ""}ของ "${filterQuery}"`
-          : `รายการเบิกเงิน${isSub ? "บิลย่อย" : "บิลหลัก"}`;
+          ? `ผลการค้นหาบิล${isSub ? "ย่อย" : isMain ? "หลัก" : ""}ของ "${filterQuery}"`
+          : `รายการเบิกเงิน${isSub ? "บิลย่อย" : isMain ? "บิลหลัก" : "บิล"}`;
 
-      const flexPayload = createBillSearchResultFlex(flexTitle, bills, isSub);
+      const flexPayload = createBillSearchResultFlex(flexTitle, bills, isSub, isMain);
 
       const sent = await replyFlexMessage(replyToken, `🧾 ${flexTitle} (${bills.length} รายการ)`, flexPayload);
       if (!sent && replyToken) {

@@ -1,7 +1,5 @@
 export const APP_NAME = "Cost Test";
 
-export const SHEET_ID = process.env.GOOGLE_SHEET_ID || "11nJrMjmDurFVj8e65-EOCXHxpAQJPkxn3O39KpgktE0";
-
 export const TABLES = {
   DATA: "Data",
   PROJECT: "Project",
@@ -29,18 +27,44 @@ export const TABLES = {
 
 export const TABLE_KEYS: Record<string, string> = {
   [TABLES.DATA]: "ลำดับ",
+  bills: "ลำดับ",
+
   [TABLES.PROJECT]: "ID Project",
+  projects: "ID Project",
+
   [TABLES.STORE]: "id_store",
+  stores: "id_store",
+
   [TABLES.CONTRACTOR]: "id_Contractor",
+  contractors: "id_Contractor",
+
   [TABLES.CAR]: "id_car",
+  cars: "id_car",
+
   [TABLES.PEOPLE]: "รหัสพนักงาน",
+  master_members: "รหัสพนักงาน",
+  PEOPLE: "รหัสพนักงาน",
+
   [TABLES.FILTER_MAIN]: "id_fmain",
+
   [TABLES.CONTRACT_WORK]: "id_Conwork",
+  ContractWork: "id_Conwork",
+  contract_works: "id_Conwork",
+
   [TABLES.BANK]: "id_bank",
+  banks: "id_bank",
+
   [TABLES.CUSTOMER]: "id_cus",
+  customers: "id_cus",
+
   [TABLES.COMPANY]: "id_Company",
+  companies: "id_Company",
+
   [TABLES.LOAN]: "id",
-  [TABLES.PRODUCT]: "id_product"
+  loans: "id",
+
+  [TABLES.PRODUCT]: "id_product",
+  products: "id_product"
 };
 
 export const PRIMARY_VIEWS = [
