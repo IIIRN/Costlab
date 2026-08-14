@@ -273,35 +273,87 @@ export async function handleLineCommand(
       const isSub = rawText.includes("ย่อย");
       const filterQuery = rawText.replace(/^หลัก:|^ย่อย:|^บิลหลัก:|^บิลย่อย:|^ทั้งหมด:|^บิล:|^bill:/i, "").trim();
 
-      // Build Supabase query
-      let query = supabaseAdmin.from("bills").select("*");
+      // ดึงข้อมูลบิลและตารางอ้างอิงทั้งหมดเพื่อ hydrate ข้อมูลให้เหมือนหน้าเว็บ 100%
+      const { getRowsFromSupabase } = await import("@/lib/supabase-db");
+      const { hydrateBillRows } = await import("@/lib/formulas");
 
-      // ✅ FIX: ตรวจสอบ "รออนุมัติ" ก่อน เพื่อกรองด้วย status (ไม่ใช่ชื่อผู้เบิก)
+      const [rawBills, peopleRows, projectRows, storeRows, contractRows, contractorRows] = await Promise.all([
+        getRowsFromSupabase("Data", 1000),
+        getRowsFromSupabase("master_members", 500).catch(() => []),
+        getRowsFromSupabase("Project", 500).catch(() => []),
+        getRowsFromSupabase("ร้านค้า", 500).catch(() => []),
+        getRowsFromSupabase("งานรับเหมา", 500).catch(() => []),
+        getRowsFromSupabase("รับเหมา", 500).catch(() => []),
+      ]);
+
+      // สร้าง Map สำหรับแปลง รหัสพนักงาน <-> ชื่อเล่น / ชื่อ-นามสกุล
+      const peopleMap = new Map<string, string>();
+      for (const p of peopleRows) {
+        const empId = String(p["รหัสพนักงาน"] || p.id || "").trim();
+        const empName = String(p["ชื่อเล่น"] || p["ชื่อ-นามสกุล"] || p.name || "").trim();
+        if (empId && empName) {
+          peopleMap.set(empId, empName);
+        }
+      }
+
+      // Hydrated bills (เติมชื่อโครงการ, ร้านค้า, รายละเอียดงาน)
+      const hydratedBills = await hydrateBillRows(rawBills, {
+        projects: projectRows,
+        stores: storeRows,
+        contracts: contractRows,
+        contractors: contractorRows,
+      });
+
+      let filtered = hydratedBills;
+
       if (lowerText === "รออนุมัติ") {
-        query = query.or("status.eq.รอตรวจสอบ,status.eq.รออนุมัติ,status.eq.รอดำเนินการ");
+        filtered = hydratedBills.filter(b => {
+          const st = String(b["สถานะ"] || b.status || "").trim();
+          return st === "รอตรวจสอบ" || st === "รออนุมัติ" || st === "รอดำเนินการ";
+        });
       } else if (filterQuery && filterQuery !== "ทั้งหมด") {
-        // ค้นหาด้วย requester และ vendor_or_person (ลบ bill_no ออกเพราะอาจไม่มี column)
-        query = query.or(
-          `requester.ilike.%${filterQuery}%,` +
-          `vendor_or_person.ilike.%${filterQuery}%,` +
-          `description.ilike.%${filterQuery}%`
-        );
+        const q = filterQuery.toLowerCase();
+        filtered = hydratedBills.filter(b => {
+          const rawReq = String(b["ผู้เบิก"] || b.requester || "").toLowerCase();
+          const mappedReq = (peopleMap.get(String(b["ผู้เบิก"] || b.requester || "").trim()) || "").toLowerCase();
+          const vendor = String(b["ร้าน/บุคคล"] || b.vendor_or_person || "").toLowerCase();
+          const desc = String(b["สินค้า/ทำงาน"] || b.description || "").toLowerCase();
+          const billNo = String(b["บิล"] || b.bill_no || b["ลำดับ"] || b.id || "").toLowerCase();
+          const projName = String(b["ชื่อ Project"] || b.project_name || "").toLowerCase();
+
+          return rawReq.includes(q) || mappedReq.includes(q) || vendor.includes(q) || desc.includes(q) || billNo.includes(q) || projName.includes(q);
+        });
       }
 
-      const { data: bills, error: billError } = await query.order("id", { ascending: false }).limit(10);
-
-      // Log error เพื่อ debug
-      if (billError) {
-        console.error("❌ [LINE CMD] bills query error:", billError.message, "| filterQuery:", filterQuery);
+      if (isSub) {
+        filtered = filtered.filter(b => {
+          const cat = String(b["ประเภท"] || b.category || "").trim();
+          return cat.includes("ย่อย") || cat.startsWith("2.") || cat.startsWith("3.") || cat.startsWith("8.");
+        });
       }
+
+      const bills = filtered.slice(0, 5).map(b => {
+        const reqIdOrName = String(b["ผู้เบิก"] || b.requester || "").trim();
+        const resolvedRequester = peopleMap.get(reqIdOrName) || reqIdOrName || "-";
+
+        return {
+          id: b["ลำดับ"] || b.id,
+          bill_no: String(b["บิล"] || b.bill_no || b["ลำดับ"] || b.id || "-"),
+          project_name: String(b["ชื่อ Project"] || b.project_name || "โครงการ"),
+          vendor_or_person: String(b["ร้าน/บุคคล"] || b.vendor_or_person || "-"),
+          description: String(b["สินค้า/ทำงาน"] || b.description || "-"),
+          amount: Number(b["ยอดเงิน"] || b.amount || 0),
+          status: String(b["สถานะ"] || b.status || "รออนุมัติ"),
+          requester: String(resolvedRequester)
+        };
+      });
 
       // ✅ FIX: ลบ hardcoded fallback — แสดง "ไม่พบรายการ" แทนข้อมูลปลอม
       if (!bills || bills.length === 0) {
-        const debugInfo = billError ? `\n\n(debug: ${billError.message})` : "";
         const noResultMsg = lowerText === "รออนุมัติ"
           ? "✅ ไม่มีรายการรออนุมัติในขณะนี้ครับ\n\nบิลทั้งหมดได้รับการอนุมัติหรือดำเนินการแล้ว"
           : filterQuery
-            ? `🔍 ไม่พบรายการบิลที่ตรงกับ "${filterQuery}"${debugInfo}\n\nกรุณาตรวจสอบชื่อผู้เบิกหรือรายละเอียดที่ค้นหาอีกครั้งครับ`
+            ? `🔍 ไม่พบรายการบิลที่ตรงกับ "${filterQuery}"\n\nกรุณาตรวจสอบชื่อผู้เบิกหรือรายละเอียดที่ค้นหาอีกครั้งครับ`
             : "ไม่พบรายการบิลในระบบ";
         await replyTextMessage(replyToken, noResultMsg);
         return true;
@@ -320,7 +372,7 @@ export async function handleLineCommand(
         let textResponse = `🧾 ${flexTitle} (${bills.length} รายการ):\n\n`;
         bills.forEach((b, idx) => {
           const amt = Number(b.amount || 0).toLocaleString("th-TH");
-          textResponse += `${idx + 1}. [บิล #${b.id || b.bill_no}] ${b.project_name || "โครงการ"}\n   - ผู้เบิก/ร้าน: ${b.requester || b.vendor_or_person || "-"}\n   - รายละเอียด: ${b.description || "-"}\n   - ยอดเงิน: ฿${amt}\n   - สถานะ: ${b.status || "รออนุมัติ"}\n\n`;
+          textResponse += `${idx + 1}. [บิล #${b.bill_no || b.id}] ${b.project_name}\n   - ผู้เบิก/ร้าน: ${b.requester || b.vendor_or_person}\n   - รายละเอียด: ${b.description}\n   - ยอดเงิน: ฿${amt}\n   - สถานะ: ${b.status}\n\n`;
         });
         await replyTextMessage(replyToken, textResponse.trim());
       }
