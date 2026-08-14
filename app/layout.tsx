@@ -42,6 +42,8 @@ export const viewport: Viewport = {
   viewportFit: "cover"
 };
 
+import { ToastProvider } from "@/components/ToastProvider";
+
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   let peopleRows: any[] = [];
   try {
@@ -61,11 +63,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="th" suppressHydrationWarning>
       <body>
         <PreventZoom />
-        {!currentUser ? (
-          <LoginScreen peopleRows={peopleRows} />
-        ) : (
-          <AppShell peopleRows={peopleRows} currentUser={currentUser}>{children}</AppShell>
-        )}
+        <ToastProvider>
+          {!currentUser ? (
+            <LoginScreen peopleRows={peopleRows} />
+          ) : (
+            <AppShell peopleRows={peopleRows} currentUser={currentUser}>{children}</AppShell>
+          )}
+        </ToastProvider>
       </body>
     </html>
   );

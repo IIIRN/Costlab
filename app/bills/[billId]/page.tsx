@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { BillDetailClient } from "@/components/dashboards/BillDetailClient";
 import { TABLES } from "@/lib/config";
+import { getFormPayload } from "@/lib/form";
 import { hydrateBillRows, hydrateContractRows, hydrateProjectRows } from "@/lib/formulas";
 import { getRows } from "@/lib/db";
 import type { SheetRow } from "@/lib/types";
@@ -22,6 +23,16 @@ export default async function BillDetailPage({ params }: BillDetailPageProps) {
     getRows(TABLES.STORE).catch(() => []),
     getRows(TABLES.CONTRACTOR).catch(() => []),
   ]);
+
+  const preloadedRows = {
+    [TABLES.PEOPLE]: peopleRows,
+    [TABLES.PROJECT]: rawProjectRows,
+    [TABLES.STORE]: storeRows,
+    [TABLES.CONTRACT_WORK]: rawContractRows,
+    [TABLES.CONTRACTOR]: contractorRows,
+  };
+
+  const form = await getFormPayload(TABLES.DATA, preloadedRows).catch(() => null);
 
   const dataRows = await hydrateBillRows(rawDataRows);
   const projectRows = hydrateProjectRows(rawProjectRows);
@@ -103,6 +114,7 @@ export default async function BillDetailPage({ params }: BillDetailPageProps) {
       requesterLink={requesterLink}
       vendorDisplay={vendorDisplay}
       vendorLink={vendorLink}
+      form={form}
     />
   );
 }

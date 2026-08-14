@@ -3,7 +3,7 @@ import { isCommittedBill } from "@/lib/bill-status";
 import { TABLES } from "@/lib/config";
 import { toNumber } from "@/lib/numbers";
 import { getRows } from "@/lib/db";
-import { hydrateProjectSummary, rowsForProject, valueOf } from "@/lib/project-summary";
+import { getCategoryExpense, hydrateProjectSummary, rowsForProject, valueOf } from "@/lib/project-summary";
 import type { SheetRow } from "@/lib/types";
 import { notFound } from "next/navigation";
 
@@ -114,7 +114,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
 function buildExpenseBreakdown(summaryRows: SheetRow[]) {
   const breakdown: Record<string, number> = {};
   for (const cat of EXPENSE_CATEGORIES) {
-    breakdown[cat] = summaryRows.reduce((sum, row) => sum + toNumber(row[cat]), 0);
+    breakdown[cat] = getCategoryExpense(summaryRows, cat);
   }
   return breakdown;
 }

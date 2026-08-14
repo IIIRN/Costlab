@@ -140,6 +140,7 @@ export async function DELETE(request: NextRequest) {
       keySet.has(String(row._sheetRow)) ||
       keySet.has(String(row[keyCol])) ||
       (row.id !== undefined && keySet.has(String(row.id))) ||
+      (row.id_Conwork !== undefined && keySet.has(String(row.id_Conwork))) ||
       (row.id_store !== undefined && keySet.has(String(row.id_store))) ||
       (row.id_bank !== undefined && keySet.has(String(row.id_bank))) ||
       (row.id_Contractor !== undefined && keySet.has(String(row.id_Contractor))) ||
@@ -150,7 +151,7 @@ export async function DELETE(request: NextRequest) {
 
     const numericSheetRows = rawKeys.map(Number).filter(n => !isNaN(n));
     if (tableName === TABLES.PROJECT) await validateProjectDelete(numericSheetRows);
-    if (tableName === TABLES.DATA) await validateBillDelete(numericSheetRows);
+    if (tableName === TABLES.DATA) validateBillDelete(deletingRows);
 
     await deleteRows(tableName, rawKeys, deletingRows);
     await Promise.all(deletingRows.map(row => appendAuditLog({
@@ -192,13 +193,29 @@ function ensureBillVendorType(row: SheetRow) {
   }
 }
 
-async function validateBillDelete(sheetRows: number[]) {
-  const rows = await getRows(TABLES.DATA);
-  const blocked = rows.filter(row => sheetRows.includes(Number(row._sheetRow)) && !canEditOrDeleteBill(row["สถานะ"]));
-  if (blocked.length) throw new Error("ลบได้เฉพาะบิลที่รออนุมัติ");
+function validateBillDelete(deletingRows: SheetRow[]) {
+  const blocked = deletingRows.filter(row => !canEditOrDeleteBill(row["สถานะ"]));
+  if (blocked.length) throw new Error("ลบได้เฉพาะบิลที่มีสถานะรออนุมัติ หรือตั้งเบิก");
 }
 
 function canManageTable(tableName: string) {
+  if (!tableName) return false;
+  const knownTables = new Set([
+    "Data", "bills", "data", "Data",
+    "Project", "projects", "project",
+    "ร้านค้า", "stores", "store",
+    "รับเหมา", "contractors", "contractor",
+    "งานรับเหมา", "contract_works", "ContractWork", "contractwork", "CONTRACT_WORK",
+    "รายชื่อ", "master_members", "PEOPLE", "Master Member", "people",
+    "ธนาคาร", "banks", "bank", "BANK",
+    "ทะเบียน", "cars", "car", "CAR",
+    "ประเภท", "categories", "category",
+    "ลูกค้า", "customers", "customer",
+    "บริษัท", "companies", "company",
+    "ยืมเงิน", "loans", "loan",
+    "สินค้า", "products", "product"
+  ]);
+  if (knownTables.has(tableName)) return true;
   return PRIMARY_VIEWS.some(view => view.type === "table" && view.table === tableName);
 }
 

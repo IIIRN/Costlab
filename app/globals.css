@@ -74,18 +74,18 @@
   }
 }
 
-/* AppShell Layout Alignment Fix (DualSidebar: Expanded 316px / Collapsed 68px) */
+/* AppShell Layout Alignment Fix (DualSidebar: Expanded 260px / Collapsed 60px) */
 .app-shell {
   min-height: 100vh;
   min-height: 100dvh;
   display: grid;
-  grid-template-columns: 316px minmax(0, 1fr) !important;
+  grid-template-columns: 260px minmax(0, 1fr) !important;
   align-items: stretch;
   transition: grid-template-columns 200ms ease;
 }
 
 .app-shell.is-sidebar-collapsed {
-  grid-template-columns: 68px minmax(0, 1fr) !important;
+  grid-template-columns: 60px minmax(0, 1fr) !important;
 }
 
 /* ==========================================================================

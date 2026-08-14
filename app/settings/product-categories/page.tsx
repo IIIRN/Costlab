@@ -21,6 +21,7 @@ import {
   Settings2,
   X
 } from "lucide-react";
+import { showConfirm, showToast } from "@/components/ToastProvider";
 
 export type ProductCategoryItem = {
   id: string;
@@ -196,11 +197,11 @@ export default function ProductCategoryMasterPage() {
     }
 
     setIsItemModalOpen(false);
-    setErrorMsg("");
   }
 
-  function handleDeleteItem(id: string) {
-    if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการลบหมวดสินค้านี้?")) return;
+  async function handleDeleteItem(id: string) {
+    const confirmed = await showConfirm("คุณแน่ใจหรือไม่ว่าต้องการลบหมวดสินค้านี้?");
+    if (!confirmed) return;
     setCategories(prev => prev.filter(item => item.id !== id));
   }
 
@@ -209,19 +210,18 @@ export default function ProductCategoryMasterPage() {
     const trimmed = newGroupName.trim();
     if (!trimmed) return;
     if (groups.includes(trimmed)) {
-      alert(`มีหมวดงาน "${trimmed}" อยู่ในระบบแล้ว`);
+      showToast("info", `มีหมวดงาน "${trimmed}" อยู่ในระบบแล้ว`);
       return;
     }
     setGroups(prev => [...prev, trimmed]);
     setNewGroupName("");
   }
 
-  function handleDeleteGroup(groupToDelete: string) {
+  async function handleDeleteGroup(groupToDelete: string) {
     const countInGroup = categories.filter(c => c.group === groupToDelete).length;
     if (countInGroup > 0) {
-      if (!confirm(`มีหมวดสินค้าอยู่ ${countInGroup} รายการใน "${groupToDelete}" ต้องการลบใช่หรือไม่? (สินค้าย่อยจะถูกเปลี่ยนไปอยู่หมวดทั่วไป)`)) {
-        return;
-      }
+      const confirmed = await showConfirm(`มีหมวดสินค้าอยู่ ${countInGroup} รายการใน "${groupToDelete}" ต้องการลบใช่หรือไม่? (สินค้าย่อยจะถูกเปลี่ยนไปอยู่หมวดทั่วไป)`);
+      if (!confirmed) return;
       setCategories(prev => prev.map(c => c.group === groupToDelete ? { ...c, group: "หมวดงานทั่วไป & ดำเนินการ" } : c));
     }
     setGroups(prev => prev.filter(g => g !== groupToDelete));
