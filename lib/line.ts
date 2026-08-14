@@ -625,12 +625,10 @@ export function createBillSearchResultFlex(
               }
             }));
 
-            // Always pad up to 4 columns so each column slot takes exactly 25% width
+            // Always pad up to 4 columns using filler components so each column slot takes exactly 25% width
             while (imgColumns.length < 4) {
               imgColumns.push({
-                type: "box",
-                layout: "vertical",
-                flex: 1
+                type: "filler"
               });
             }
 
