@@ -150,8 +150,8 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
   const currentTab = filterText ? "all" : activeCategory;
 
   return (
-    <aside className={`hidden md:flex fixed top-0 bottom-0 left-0 h-screen select-none bg-[#0b3531] text-slate-100 border-r border-[#062e2b] z-30 transition-all duration-300 ${collapsed ? "w-[60px]" : "w-[260px]"}`}>
-      {/* 1. LEFT SLIM RAIL (60px) - Deep Dark Forest Teal Accent (#062e2b) */}
+    <aside className={`hidden md:flex fixed top-0 bottom-0 left-0 h-screen select-none bg-[#0b3531] text-slate-100 border-r border-[#062e2b] z-30 font-sans font-normal transition-all duration-300 ${collapsed ? "w-[60px]" : "w-[260px]"}`}>
+      {/* 1. LEFT SLIM RAIL (60px) */}
       <div className="w-[60px] flex-shrink-0 h-full border-r border-[#0d3f3a] flex flex-col items-center justify-between py-3.5 bg-[#062e2b]">
         {/* Top Brand Logo Box */}
         <div className="flex flex-col items-center gap-3.5">
@@ -160,13 +160,13 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
             onClick={() => {
               if (collapsed) onToggleCollapse();
             }}
-            className="w-9 h-9 flex items-center justify-center hover:opacity-85 transition group shrink-0"
+            className="w-9 h-9 flex items-center justify-center hover:opacity-85 transition shrink-0"
             title={companySettings.companyName || "CostLab Application"}
           >
             {companySettings.logoUrl ? (
-              <img src={companySettings.logoUrl} alt="Logo" className="w-full h-full object-contain drop-shadow-xs" />
+              <img src={companySettings.logoUrl} alt="Logo" className="w-full h-full object-contain" />
             ) : (
-              <div className="flex gap-1 items-center justify-center font-extrabold text-[#d4f54e] text-sm">
+              <div className="flex gap-1 items-center justify-center font-bold text-[#d4f54e] text-sm">
                 CL
               </div>
             )}
@@ -182,9 +182,9 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
                 setFilterSearch("");
                 if (collapsed) onToggleCollapse();
               }}
-              className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
+              className={`w-9 h-9 rounded-md flex items-center justify-center transition-all ${
                 currentTab === "main" || (currentTab === "all" && !isSettingsActive && !pathname.startsWith("/views/"))
-                  ? "bg-[#d4f54e] text-[#0b3531] font-bold shadow-2xs"
+                  ? "bg-[#d4f54e] text-[#0b3531] font-medium"
                   : "text-[#8ea8a3] hover:text-white hover:bg-white/10"
               }`}
               title="เมนูหลัก (WORKPLACE)"
@@ -200,9 +200,9 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
                 setFilterSearch("");
                 if (collapsed) onToggleCollapse();
               }}
-              className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
+              className={`w-9 h-9 rounded-md flex items-center justify-center transition-all ${
                 currentTab === "master" || (currentTab === "all" && pathname.startsWith("/views/"))
-                  ? "bg-[#d4f54e] text-[#0b3531] font-bold shadow-2xs"
+                  ? "bg-[#d4f54e] text-[#0b3531] font-medium"
                   : "text-[#8ea8a3] hover:text-white hover:bg-white/10"
               }`}
               title="เมนูย่อย / ข้อมูลมาสเตอร์ (MANAGEMENT)"
@@ -220,9 +220,9 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
                 setFilterSearch("");
                 if (collapsed) onToggleCollapse();
               }}
-              className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
+              className={`w-9 h-9 rounded-md flex items-center justify-center transition-all ${
                 isSettingsActive || currentTab === "system"
-                  ? "bg-[#d4f54e] text-[#0b3531] font-bold shadow-2xs"
+                  ? "bg-[#d4f54e] text-[#0b3531] font-medium"
                   : "text-[#8ea8a3] hover:text-white hover:bg-white/10"
               }`}
               title="ตั้งค่าระบบ (SYSTEM)"
@@ -243,7 +243,7 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="w-8 h-8 rounded-lg border border-[#144d47] bg-[#0b3531] text-[#9eb5b0] hover:text-white hover:bg-[#13443e] flex items-center justify-center transition cursor-pointer"
+            className="w-8 h-8 rounded-md border border-[#144d47] bg-[#0b3531] text-[#9eb5b0] hover:text-white hover:bg-[#13443e] flex items-center justify-center transition cursor-pointer"
             title={collapsed ? "ขยายแถบข้าง" : "ย่อแถบข้าง"}
           >
             {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
@@ -251,18 +251,18 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
         </div>
       </div>
 
-      {/* 2. RIGHT SECONDARY DRAWER PANEL (200px) - Deep Forest Teal (#0b3531) */}
+      {/* 2. RIGHT SECONDARY DRAWER PANEL (200px) */}
       {!collapsed && (
-        <div className="w-[200px] flex-shrink-0 flex flex-col h-full bg-[#0b3531] text-slate-100 overflow-hidden border-r border-[#062e2b]">
+        <div className="w-[200px] flex-shrink-0 flex flex-col h-full bg-[#0b3531] text-slate-100 overflow-hidden border-r border-[#062e2b] font-sans font-normal">
           {/* Top Brand & Search Overlay Panel */}
           <div className="p-3 border-b border-[#12443e] bg-[#0b3531] sticky top-0 z-10 space-y-2">
             {/* Expanded Company Brand Header */}
             <div className="px-0.5 py-0.5">
-              <div className="text-[11.5px] font-bold text-white leading-snug tracking-tight break-words font-sans">
+              <div className="text-xs font-semibold text-white leading-snug break-words font-sans">
                 {companySettings.companyName || "CostLab Executive"}
               </div>
               {companySettings.companySubTitle && (
-                <div className="text-[10px] text-[#8eaba5] font-medium leading-tight mt-0.5 truncate">
+                <div className="text-xs text-[#8eaba5] font-normal leading-tight mt-0.5 truncate font-sans">
                   {companySettings.companySubTitle}
                 </div>
               )}
@@ -270,30 +270,30 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
 
             {/* Search Input Bar */}
             <div className="relative flex items-center">
-              <Search size={13} className="absolute left-2.5 text-[#7e9f9a] pointer-events-none" />
+              <Search size={14} className="absolute left-2.5 text-[#7e9f9a] pointer-events-none" />
               <input
                 type="text"
                 placeholder="ค้นหาเมนู..."
                 value={filterSearch}
                 onChange={(e) => setFilterSearch(e.target.value)}
                 autoComplete="off"
-                className="w-full bg-[#062e2b] text-white text-[11px] pl-7 pr-2.5 py-1.5 rounded-md border border-[#164e48] focus:border-[#d4f54e] focus:outline-none placeholder:text-[#6e8e88] transition"
+                className="w-full bg-[#062e2b] text-white text-xs pl-8 pr-2.5 py-1.5 rounded-md border border-[#164e48] focus:border-[#d4f54e] focus:outline-none placeholder:text-[#6e8e88] font-sans font-normal transition"
               />
             </div>
           </div>
 
           {/* Menu Items Container */}
-          <div className="flex-1 overflow-y-auto p-2.5 space-y-3.5 text-xs font-normal">
+          <div className="flex-1 overflow-y-auto p-2.5 space-y-4 text-xs font-sans font-normal">
             {/* SECTION 1: เมนูหลัก (WORKPLACE) */}
             {(currentTab === "all" || currentTab === "main") && (
-              <div className="space-y-1">
-                <div className="px-1.5 pb-1 flex items-center justify-between text-[9.5px] font-bold tracking-wider text-[#7fa39d] uppercase">
+              <div className="space-y-1.5">
+                <div className="px-1.5 pb-1 flex items-center justify-between text-xs font-semibold text-[#7fa39d] uppercase font-sans">
                   <span>เมนูหลัก (WORKPLACE)</span>
-                  <span className="text-[9px] bg-[#072825] text-[#d4f54e] px-1.5 py-0.2 rounded-full border border-[#144d47] font-bold">
+                  <span className="text-xs bg-[#072825] text-[#d4f54e] px-2 py-0.5 rounded-full border border-[#144d47] font-normal">
                     {filteredMainViews.length}
                   </span>
                 </div>
-                <div className="space-y-0.5">
+                <div className="space-y-1">
                   {filteredMainViews.map((view) => {
                     const href = hrefFor(view.id);
                     const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -303,18 +303,18 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
                         key={view.id}
                         href={href}
                         prefetch={false}
-                        className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md transition-all duration-150 text-[11.5px] ${
+                        className={`flex items-center gap-2.5 px-2.5 py-2 rounded-md transition-all duration-150 text-xs font-sans ${
                           active
-                            ? "bg-[#d4f54e] text-[#0b3531] font-bold shadow-2xs"
-                            : "text-[#a0b8b3] hover:text-white hover:bg-[#13443e] font-medium"
+                            ? "bg-[#d4f54e] text-[#0b3531] font-semibold"
+                            : "text-[#a0b8b3] hover:text-white hover:bg-[#13443e] font-normal"
                         }`}
                       >
                         <span
-                          className={`w-5.5 h-5.5 rounded-md flex items-center justify-center shrink-0 transition-colors ${
-                            active ? "bg-[#0b3531] text-[#d4f54e] font-bold" : "bg-[#072825] text-[#8ea8a3]"
+                          className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 transition-colors ${
+                            active ? "bg-[#0b3531] text-[#d4f54e]" : "bg-[#072825] text-[#8ea8a3]"
                           }`}
                         >
-                          <Icon size={13} />
+                          <Icon size={14} />
                         </span>
                         <span className="truncate">{view.name}</span>
                       </Link>
@@ -326,14 +326,14 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
 
             {/* SECTION 2: เมนูย่อย / ข้อมูลมาสเตอร์ (MANAGEMENT) */}
             {(currentTab === "all" || currentTab === "master") && (
-              <div className="space-y-1">
-                <div className="px-1.5 pb-1 flex items-center justify-between text-[9.5px] font-bold tracking-wider text-[#7fa39d] uppercase">
+              <div className="space-y-1.5">
+                <div className="px-1.5 pb-1 flex items-center justify-between text-xs font-semibold text-[#7fa39d] uppercase font-sans">
                   <span>เมนูย่อย (MANAGEMENT)</span>
-                  <span className="text-[9px] bg-[#072825] text-[#d4f54e] px-1.5 py-0.2 rounded-full border border-[#144d47] font-bold">
+                  <span className="text-xs bg-[#072825] text-[#d4f54e] px-2 py-0.5 rounded-full border border-[#144d47] font-normal">
                     {filteredMasterViews.length}
                   </span>
                 </div>
-                <div className="space-y-0.5">
+                <div className="space-y-1">
                   {filteredMasterViews.map((view) => {
                     const href = hrefFor(view.id);
                     const active = pathname.startsWith(href);
@@ -343,18 +343,18 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
                         key={view.id}
                         href={href}
                         prefetch={false}
-                        className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md transition-all duration-150 text-[11.5px] ${
+                        className={`flex items-center gap-2.5 px-2.5 py-2 rounded-md transition-all duration-150 text-xs font-sans ${
                           active
-                            ? "bg-[#d4f54e] text-[#0b3531] font-bold shadow-2xs"
-                            : "text-[#a0b8b3] hover:text-white hover:bg-[#13443e] font-medium"
+                            ? "bg-[#d4f54e] text-[#0b3531] font-semibold"
+                            : "text-[#a0b8b3] hover:text-white hover:bg-[#13443e] font-normal"
                         }`}
                       >
                         <span
-                          className={`w-5.5 h-5.5 rounded-md flex items-center justify-center shrink-0 transition-colors ${
-                            active ? "bg-[#0b3531] text-[#d4f54e] font-bold" : "bg-[#072825] text-[#8ea8a3]"
+                          className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 transition-colors ${
+                            active ? "bg-[#0b3531] text-[#d4f54e]" : "bg-[#072825] text-[#8ea8a3]"
                           }`}
                         >
-                          <Icon size={13} />
+                          <Icon size={14} />
                         </span>
                         <span className="truncate">{view.name}</span>
                       </Link>
@@ -366,26 +366,26 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
 
             {/* SECTION 3: ตั้งค่าระบบ (SYSTEM & ACCOUNT) */}
             {(currentTab === "all" || currentTab === "system") && (
-              <div className="space-y-1">
-                <div className="px-1.5 pb-1 text-[9.5px] font-bold tracking-wider text-[#7fa39d] uppercase">
+              <div className="space-y-1.5">
+                <div className="px-1.5 pb-1 text-xs font-semibold text-[#7fa39d] uppercase font-sans">
                   ตั้งค่าระบบ (SYSTEM & ACCOUNT)
                 </div>
-                <div className="space-y-0.5">
+                <div className="space-y-1">
                   <Link
                     href="/settings/general"
                     prefetch={false}
-                    className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md transition-all duration-150 text-[11.5px] ${
+                    className={`flex items-center gap-2.5 px-2.5 py-2 rounded-md transition-all duration-150 text-xs font-sans ${
                       isGeneralSettingsActive
-                        ? "bg-[#d4f54e] text-[#0b3531] font-bold shadow-2xs"
-                        : "text-[#a0b8b3] hover:text-white hover:bg-[#13443e] font-medium"
+                        ? "bg-[#d4f54e] text-[#0b3531] font-semibold"
+                        : "text-[#a0b8b3] hover:text-white hover:bg-[#13443e] font-normal"
                     }`}
                   >
                     <span
-                      className={`w-5.5 h-5.5 rounded-md flex items-center justify-center shrink-0 transition-colors ${
-                        isGeneralSettingsActive ? "bg-[#0b3531] text-[#d4f54e] font-bold" : "bg-[#072825] text-[#8ea8a3]"
+                      className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 transition-colors ${
+                        isGeneralSettingsActive ? "bg-[#0b3531] text-[#d4f54e]" : "bg-[#072825] text-[#8ea8a3]"
                       }`}
                     >
-                      <Building2 size={13} />
+                      <Building2 size={14} />
                     </span>
                     <span className="truncate">ตั้งค่าทั่วไป & โลโก้</span>
                   </Link>
@@ -393,18 +393,18 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
                   <Link
                     href="/settings"
                     prefetch={false}
-                    className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md transition-all duration-150 text-[11.5px] ${
+                    className={`flex items-center gap-2.5 px-2.5 py-2 rounded-md transition-all duration-150 text-xs font-sans ${
                       pathname === "/settings"
-                        ? "bg-[#d4f54e] text-[#0b3531] font-bold shadow-2xs"
-                        : "text-[#a0b8b3] hover:text-white hover:bg-[#13443e] font-medium"
+                        ? "bg-[#d4f54e] text-[#0b3531] font-semibold"
+                        : "text-[#a0b8b3] hover:text-white hover:bg-[#13443e] font-normal"
                     }`}
                   >
                     <span
-                      className={`w-5.5 h-5.5 rounded-md flex items-center justify-center shrink-0 transition-colors ${
-                        pathname === "/settings" ? "bg-[#0b3531] text-[#d4f54e] font-bold" : "bg-[#072825] text-[#8ea8a3]"
+                      className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 transition-colors ${
+                        pathname === "/settings" ? "bg-[#0b3531] text-[#d4f54e]" : "bg-[#072825] text-[#8ea8a3]"
                       }`}
                     >
-                      <Database size={13} />
+                      <Database size={14} />
                     </span>
                     <span className="truncate">สถานะ Supabase</span>
                   </Link>
@@ -412,18 +412,18 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
                   <Link
                     href="/settings/product-categories"
                     prefetch={false}
-                    className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md transition-all duration-150 text-[11.5px] ${
+                    className={`flex items-center gap-2.5 px-2.5 py-2 rounded-md transition-all duration-150 text-xs font-sans ${
                       pathname.startsWith("/settings/product-categories")
-                        ? "bg-[#d4f54e] text-[#0b3531] font-bold shadow-2xs"
-                        : "text-[#a0b8b3] hover:text-white hover:bg-[#13443e] font-medium"
+                        ? "bg-[#d4f54e] text-[#0b3531] font-semibold"
+                        : "text-[#a0b8b3] hover:text-white hover:bg-[#13443e] font-normal"
                     }`}
                   >
                     <span
-                      className={`w-5.5 h-5.5 rounded-md flex items-center justify-center shrink-0 transition-colors ${
-                        pathname.startsWith("/settings/product-categories") ? "bg-[#0b3531] text-[#d4f54e] font-bold" : "bg-[#072825] text-[#8ea8a3]"
+                      className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 transition-colors ${
+                        pathname.startsWith("/settings/product-categories") ? "bg-[#0b3531] text-[#d4f54e]" : "bg-[#072825] text-[#8ea8a3]"
                       }`}
                     >
-                      <Package size={13} />
+                      <Package size={14} />
                     </span>
                     <span className="truncate">หมวดสินค้า & คุมงบ</span>
                   </Link>
@@ -431,18 +431,18 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
                   <Link
                     href="/settings/options"
                     prefetch={false}
-                    className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md transition-all duration-150 text-[11.5px] ${
+                    className={`flex items-center gap-2.5 px-2.5 py-2 rounded-md transition-all duration-150 text-xs font-sans ${
                       pathname.startsWith("/settings/options")
-                        ? "bg-[#d4f54e] text-[#0b3531] font-bold shadow-2xs"
-                        : "text-[#a0b8b3] hover:text-white hover:bg-[#13443e] font-medium"
+                        ? "bg-[#d4f54e] text-[#0b3531] font-semibold"
+                        : "text-[#a0b8b3] hover:text-white hover:bg-[#13443e] font-normal"
                     }`}
                   >
                     <span
-                      className={`w-5.5 h-5.5 rounded-md flex items-center justify-center shrink-0 transition-colors ${
-                        pathname.startsWith("/settings/options") ? "bg-[#0b3531] text-[#d4f54e] font-bold" : "bg-[#072825] text-[#8ea8a3]"
+                      className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 transition-colors ${
+                        pathname.startsWith("/settings/options") ? "bg-[#0b3531] text-[#d4f54e]" : "bg-[#072825] text-[#8ea8a3]"
                       }`}
                     >
-                      <Sliders size={13} />
+                      <Sliders size={14} />
                     </span>
                     <span className="truncate">ตั้งค่าตัวเลือกระบบ</span>
                   </Link>
@@ -450,18 +450,18 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
                   <Link
                     href="/settings/line-system"
                     prefetch={false}
-                    className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md transition-all duration-150 text-[11.5px] ${
+                    className={`flex items-center gap-2.5 px-2.5 py-2 rounded-md transition-all duration-150 text-xs font-sans ${
                       pathname.startsWith("/settings/line-system") || pathname.startsWith("/line-system")
-                        ? "bg-[#d4f54e] text-[#0b3531] font-bold shadow-2xs"
-                        : "text-[#a0b8b3] hover:text-white hover:bg-[#13443e] font-medium"
+                        ? "bg-[#d4f54e] text-[#0b3531] font-semibold"
+                        : "text-[#a0b8b3] hover:text-white hover:bg-[#13443e] font-normal"
                     }`}
                   >
                     <span
-                      className={`w-5.5 h-5.5 rounded-md flex items-center justify-center shrink-0 transition-colors ${
-                        pathname.startsWith("/settings/line-system") || pathname.startsWith("/line-system") ? "bg-[#0b3531] text-[#d4f54e] font-bold" : "bg-[#072825] text-[#8ea8a3]"
+                      className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 transition-colors ${
+                        pathname.startsWith("/settings/line-system") || pathname.startsWith("/line-system") ? "bg-[#0b3531] text-[#d4f54e]" : "bg-[#072825] text-[#8ea8a3]"
                       }`}
                     >
-                      <MessageSquare size={13} />
+                      <MessageSquare size={14} />
                     </span>
                     <span className="truncate">ระบบ LINE Bot</span>
                   </Link>
@@ -469,18 +469,18 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
                   <Link
                     href="/settings/users"
                     prefetch={false}
-                    className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md transition-all duration-150 text-[11.5px] ${
+                    className={`flex items-center gap-2.5 px-2.5 py-2 rounded-md transition-all duration-150 text-xs font-sans ${
                       pathname.startsWith("/settings/users") || pathname.startsWith("/users")
-                        ? "bg-[#d4f54e] text-[#0b3531] font-bold shadow-2xs"
-                        : "text-[#a0b8b3] hover:text-white hover:bg-[#13443e] font-medium"
+                        ? "bg-[#d4f54e] text-[#0b3531] font-semibold"
+                        : "text-[#a0b8b3] hover:text-white hover:bg-[#13443e] font-normal"
                     }`}
                   >
                     <span
-                      className={`w-5.5 h-5.5 rounded-md flex items-center justify-center shrink-0 transition-colors ${
-                        pathname.startsWith("/settings/users") || pathname.startsWith("/users") ? "bg-[#0b3531] text-[#d4f54e] font-bold" : "bg-[#072825] text-[#8ea8a3]"
+                      className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 transition-colors ${
+                        pathname.startsWith("/settings/users") || pathname.startsWith("/users") ? "bg-[#0b3531] text-[#d4f54e]" : "bg-[#072825] text-[#8ea8a3]"
                       }`}
                     >
-                      <IdCard size={13} />
+                      <IdCard size={14} />
                     </span>
                     <span className="truncate">จัดการผู้ใช้ระบบ</span>
                   </Link>

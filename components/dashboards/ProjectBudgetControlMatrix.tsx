@@ -243,12 +243,12 @@ export function ProjectBudgetControlMatrix({
   const overallUsagePercent = totalProjectCap > 0 ? Number(((totalActualSpent / totalProjectCap) * 100).toFixed(1)) : 0;
 
   return (
-    <div className="bg-white text-slate-900 rounded-xl border border-slate-200 p-4 sm:p-5 shadow-sm space-y-5 font-sans my-4 max-w-full">
+    <div className="bg-white text-slate-900 rounded-lg border border-slate-200 p-4 sm:p-5 space-y-4 font-sans my-4 max-w-full">
       {/* 1. EXECUTIVE TITLE & TOOLBAR CONTROLS */}
       <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <div className="p-2 bg-emerald-700 text-white rounded-md shadow-xs">
+            <div className="p-2 bg-emerald-700 text-white rounded-md">
               <BarChart3 size={20} />
             </div>
             <div>
@@ -322,7 +322,7 @@ export function ProjectBudgetControlMatrix({
       {/* 2. EXECUTIVE SUMMARY KPI CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         {/* Card 1: Total Project Cap */}
-        <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex flex-col justify-between space-y-2">
+        <div className="bg-white p-4 rounded-lg border border-slate-200 flex flex-col justify-between space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-600 uppercase">งบโครงการรวม (Project Cap)</span>
             <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center font-bold">
@@ -336,7 +336,7 @@ export function ProjectBudgetControlMatrix({
         </div>
 
         {/* Card 2: Total Category Allocated Cap */}
-        <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex flex-col justify-between space-y-2">
+        <div className="bg-white p-4 rounded-lg border border-slate-200 flex flex-col justify-between space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-600 uppercase">รวมงบจัดสรรรายหมวด</span>
             <div className="w-8 h-8 rounded-lg bg-sky-50 border border-sky-200 text-sky-700 flex items-center justify-center font-bold">
@@ -352,7 +352,7 @@ export function ProjectBudgetControlMatrix({
         </div>
 
         {/* Card 3: Total Actual Spent */}
-        <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex flex-col justify-between space-y-2">
+        <div className="bg-white p-4 rounded-lg border border-slate-200 flex flex-col justify-between space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-600 uppercase">ยอดเบิกจ่ายจริงสะสม</span>
             <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center font-bold">
@@ -366,7 +366,7 @@ export function ProjectBudgetControlMatrix({
         </div>
 
         {/* Card 4: Budget Risk Level */}
-        <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex flex-col justify-between space-y-2">
+        <div className="bg-white p-4 rounded-lg border border-slate-200 flex flex-col justify-between space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-600 uppercase">สถานะความเสี่ยงงบประมาณ</span>
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold ${
@@ -404,7 +404,7 @@ export function ProjectBudgetControlMatrix({
 
       {/* 3. RISK ALERT BANNER (If any over-budget or warning categories exist) */}
       {riskAlertCategories.length > 0 && (
-        <div className="bg-amber-50/90 border border-amber-300 p-4 rounded-lg shadow-sm space-y-2">
+        <div className="bg-amber-50/90 border border-amber-300 p-4 rounded-lg space-y-2">
           <div className="flex items-center justify-between border-b border-amber-200 pb-2">
             <span className="font-bold text-amber-950 text-xs flex items-center gap-1.5">
               <AlertTriangle size={16} className="text-amber-700 animate-pulse" />
@@ -417,7 +417,7 @@ export function ProjectBudgetControlMatrix({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-1">
             {riskAlertCategories.map((cat, idx) => (
-              <div key={idx} className="bg-white p-2.5 rounded-md border border-amber-200 flex items-center justify-between gap-2 shadow-xs">
+              <div key={idx} className="bg-white p-2.5 rounded-md border border-amber-200 flex items-center justify-between gap-2">
                 <div className="min-w-0">
                   <span className="font-bold text-slate-900 text-xs block truncate">{cat.label}</span>
                   <span className="text-xs text-slate-600 font-semibold block mt-0.5">

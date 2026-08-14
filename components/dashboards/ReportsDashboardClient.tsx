@@ -796,24 +796,24 @@ export function ReportsDashboardClient({
 
           <div className="overflow-auto max-h-[calc(100vh-210px)] relative">
             <table className="w-full text-left text-xs text-slate-700 border-collapse font-sans">
-              <thead className="sticky top-0 z-20 bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
+              <thead className="sticky top-0 z-20 bg-slate-900 text-white font-bold border-b border-slate-900">
                 <tr>
-                  <th className="py-2 px-3 border-r border-slate-200">ลำดับ</th>
-                  <th className="py-2 px-3 border-r border-slate-200">ผู้เบิก</th>
-                  <th className="py-2 px-3 border-r border-slate-200">บิล</th>
-                  <th className="py-2 px-3 border-r border-slate-200">ชื่อร้านค้า/ผู้รับเหมา</th>
-                  <th className="py-2 px-3 border-r border-slate-200">รายละเอียดงาน</th>
-                  <th className="py-2 px-3 border-r border-slate-200">รายการ</th>
-                  <th className="py-2 px-3 border-r border-slate-200">ประเภท</th>
-                  <th className="py-2 px-3 text-right border-r border-slate-200">ค่าของ</th>
-                  <th className="py-2 px-3 text-right border-r border-slate-200">VAT</th>
-                  <th className="py-2 px-3 text-right border-r border-slate-200">น้ำมัน</th>
-                  <th className="py-2 px-3 text-right border-r border-slate-200">ซ่อมรถ</th>
-                  <th className="py-2 px-3 text-right border-r border-slate-200">เครื่องจักร</th>
-                  <th className="py-2 px-3 text-right border-r border-slate-200">เครื่องมือ</th>
-                  <th className="py-2 px-3 text-right border-r border-slate-200">อื่นๆ</th>
-                  <th className="py-2 px-3 text-right border-r border-slate-200 text-slate-900">โอนเงิน</th>
-                  <th className="py-2 px-3">ว/ด/ป</th>
+                  <th className="py-2.5 px-3 border-r border-slate-800">ลำดับ</th>
+                  <th className="py-2.5 px-3 border-r border-slate-800">ผู้เบิก</th>
+                  <th className="py-2.5 px-3 border-r border-slate-800">บิล</th>
+                  <th className="py-2.5 px-3 border-r border-slate-800">ชื่อร้านค้า/ผู้รับเหมา</th>
+                  <th className="py-2.5 px-3 border-r border-slate-800">รายละเอียดงาน</th>
+                  <th className="py-2.5 px-3 border-r border-slate-800">รายการ</th>
+                  <th className="py-2.5 px-3 border-r border-slate-800">ประเภท</th>
+                  <th className="py-2.5 px-3 text-right border-r border-slate-800">ค่าของ</th>
+                  <th className="py-2.5 px-3 text-right border-r border-slate-800">VAT</th>
+                  <th className="py-2.5 px-3 text-right border-r border-slate-800">น้ำมัน</th>
+                  <th className="py-2.5 px-3 text-right border-r border-slate-800">ซ่อมรถ</th>
+                  <th className="py-2.5 px-3 text-right border-r border-slate-800">เครื่องจักร</th>
+                  <th className="py-2.5 px-3 text-right border-r border-slate-800">เครื่องมือ</th>
+                  <th className="py-2.5 px-3 text-right border-r border-slate-800">อื่นๆ</th>
+                  <th className="py-2.5 px-3 text-right border-r border-slate-800 text-emerald-300">โอนเงิน</th>
+                  <th className="py-2.5 px-3">ว/ด/ป</th>
                 </tr>
               </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -927,14 +927,14 @@ export function ReportsDashboardClient({
 
       {/* 6. TAB 2: สรุปแยกตามประเภทสินค้า (ดึงข้อมูลจาก Master Data) */}
       {activeTab === "product_category" && (
-        <div className="space-y-3">
-          <div className="border border-slate-200 rounded-md p-3 bg-white flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+        <div className="space-y-4">
+          <div className="border border-slate-200 rounded-lg p-3.5 bg-white flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-slate-700">เลือกประเภทสินค้า:</span>
+              <span className="font-bold text-slate-800">เลือกประเภทสินค้า:</span>
               <select
                 value={selectedProductCategory}
                 onChange={(e) => setSelectedProductCategory(e.target.value)}
-                className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none"
+                className="bg-white border border-slate-300 text-xs font-bold text-slate-900 px-3 py-1.5 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-400 min-w-[240px]"
               >
                 <option value="all">แสดงสินค้าทุกประเภท ({productCategoryList.length} รหัสสินค้า)</option>
                 {productCategoryList.map((c) => (
@@ -945,50 +945,54 @@ export function ReportsDashboardClient({
               </select>
             </div>
 
-            <div className="font-bold text-slate-700">
-              ยอดโอนรวมสินค้า: <span className="text-emerald-700">{money(productCategoryMetrics.grandTotal)} ฿</span>
+            <div className="font-bold text-slate-800 text-xs">
+              ยอดโอนรวมสินค้า: <span className="text-emerald-800 text-sm font-extrabold">{money(productCategoryMetrics.grandTotal)} ฿</span>
             </div>
           </div>
 
           {/* Grouped Category Cards */}
-          <div className="space-y-3">
+          <div className="space-y-3.5">
             {Object.entries(productCategoryMetrics.groupedMap).map(([groupTitle, items]) => {
               const groupTransferSum = items.reduce((s, item) => s + item.transfer, 0);
 
               return (
-                <div key={groupTitle} className="bg-white border border-slate-200 rounded-lg p-3 space-y-2">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-1.5 text-xs font-bold text-slate-800">
+                <div key={groupTitle} className="bg-white border border-slate-200 rounded-lg overflow-hidden space-y-2">
+                  <div className="flex items-center justify-between border-b border-slate-200 bg-slate-100 px-3.5 py-2 text-xs font-bold text-slate-900">
                     <span className="flex items-center gap-1.5">
-                      <FolderKanban size={14} className="text-emerald-600" />
-                      <span>{groupTitle}</span>
-                      <span className="text-[10px] text-slate-400 font-normal">({items.length} รายการ)</span>
+                      <FolderKanban size={15} className="text-emerald-700" />
+                      <span className="font-extrabold text-slate-900">{groupTitle}</span>
+                      <span className="text-xs text-slate-600 font-semibold">({items.length} รายการ)</span>
                     </span>
-                    <span className="text-[11px] font-mono text-emerald-700">
+                    <span className="text-xs font-extrabold text-emerald-800">
                       รวมหมวดนี้: {money(groupTransferSum)} ฿
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                  <div className="p-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
                     {items.map((cat) => {
                       const isSelected = selectedProductCategory === cat.code;
                       return (
                         <div
                           key={cat.code}
                           onClick={() => setSelectedProductCategory(isSelected ? "all" : cat.code)}
-                          className={`bg-slate-50/60 rounded-md p-2 border transition cursor-pointer flex flex-col justify-between ${
-                            isSelected ? "border-emerald-600 bg-emerald-50/60 font-bold shadow-2xs" : "border-slate-200 hover:border-emerald-300 hover:bg-white"
+                          className={`rounded-md p-2.5 border transition cursor-pointer flex flex-col justify-between space-y-1 ${
+                            isSelected
+                              ? "border-emerald-600 bg-emerald-50 text-slate-900 font-bold"
+                              : "border-slate-200 bg-white hover:border-emerald-400 hover:bg-slate-50"
                           }`}
                         >
                           <div className="flex items-center justify-between gap-1">
-                            <span className="text-[10px] font-semibold text-slate-700 truncate">
+                            <span className="text-xs font-bold text-slate-900 truncate">
                               {cat.label}
                             </span>
-                            <span className="text-[9px] text-slate-400 shrink-0">{cat.count} บิล</span>
+                            <span className="text-[11px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded shrink-0">
+                              {cat.count} บิล
+                            </span>
                           </div>
 
-                          <div className="mt-1.5 flex items-baseline justify-between text-xs">
-                            <div className="font-bold text-slate-900 font-mono">{money(cat.transfer)}</div>
-                            <span className="text-[10px] text-slate-500 font-mono">{cat.percent.toFixed(1)}%</span>
+                          <div className="mt-1 flex items-baseline justify-between text-xs">
+                            <div className="text-xs font-extrabold text-slate-900">{money(cat.transfer)}</div>
+                            <span className="text-xs text-emerald-800 font-bold">{cat.percent.toFixed(1)}%</span>
                           </div>
                         </div>
                       );
@@ -999,38 +1003,38 @@ export function ReportsDashboardClient({
             })}
           </div>
 
-          <div className="border border-slate-200 rounded-md bg-white overflow-hidden">
+          <div className="border border-slate-200 rounded-lg bg-white overflow-hidden">
             <div className="overflow-auto max-h-[calc(100vh-210px)] relative">
-              <table className="w-full text-left text-xs text-slate-700 border-collapse font-sans">
-                <thead className="sticky top-0 z-20 bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
+              <table className="w-full text-left text-xs text-slate-800 border-collapse font-sans">
+                <thead className="sticky top-0 z-20 bg-slate-900 text-white font-bold border-b border-slate-900">
                   <tr>
-                    <th className="py-2 px-3 border-r border-slate-200">ลำดับ</th>
-                    <th className="py-2 px-3 border-r border-slate-200">ผู้เบิก</th>
-                    <th className="py-2 px-3 border-r border-slate-200">บิล</th>
-                    <th className="py-2 px-3 border-r border-slate-200">ชื่อร้านค้า/ผู้รับเหมา</th>
-                    <th className="py-2 px-3 border-r border-slate-200">รายละเอียดงาน / รายการ</th>
-                    <th className="py-2 px-3 border-r border-slate-200">ประเภท</th>
-                    <th className="py-2 px-3 text-right border-r border-slate-200">ยอดเงินบิล</th>
-                    <th className="py-2 px-3 text-right border-r border-slate-200 text-slate-900">โอนเงิน</th>
-                    <th className="py-2 px-3">ว/ด/ป</th>
+                    <th className="py-2.5 px-3 border-r border-slate-800">ลำดับ</th>
+                    <th className="py-2.5 px-3 border-r border-slate-800">ผู้เบิก</th>
+                    <th className="py-2.5 px-3 border-r border-slate-800">บิล</th>
+                    <th className="py-2.5 px-3 border-r border-slate-800">ชื่อร้านค้า/ผู้รับเหมา</th>
+                    <th className="py-2.5 px-3 border-r border-slate-800">รายละเอียดงาน / รายการ</th>
+                    <th className="py-2.5 px-3 border-r border-slate-800">ประเภท</th>
+                    <th className="py-2.5 px-3 text-right border-r border-slate-800">ยอดเงินบิล</th>
+                    <th className="py-2.5 px-3 text-right border-r border-slate-800 text-emerald-300">โอนเงิน</th>
+                    <th className="py-2.5 px-3">ว/ด/ป</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {productCategoryFilteredRows.map((r, i) => (
                     <tr key={i} className="hover:bg-slate-50 transition">
-                      <td className="py-2 px-3 font-semibold text-slate-500">{r["ลำดับ"] || i + 1}</td>
+                      <td className="py-2 px-3 font-semibold text-slate-600">{r["ลำดับ"] || i + 1}</td>
                       <td className="py-2 px-3 font-bold text-slate-900">{getRequesterDisplayName(r["ผู้เบิก"])}</td>
-                      <td className="py-2 px-3 font-medium">{r["บิล"] || "-"}</td>
+                      <td className="py-2 px-3 font-semibold text-slate-800">{r["บิล"] || "-"}</td>
                       <td className="py-2 px-3 font-bold text-slate-900">
                         {r["ร้านค้า"] || r["ผู้รับเหมา"] || r["ร้าน/บุคคล"] || "-"}
                       </td>
-                      <td className="py-2 px-3">{r["สินค้า/ทำงาน"] || r["รายละเอียดงาน"] || "-"}</td>
-                      <td className="py-2 px-3 font-semibold text-teal-700">{getRowCategory(r) || "-"}</td>
+                      <td className="py-2 px-3 font-medium text-slate-800">{r["สินค้า/ทำงาน"] || r["รายละเอียดงาน"] || "-"}</td>
+                      <td className="py-2 px-3 font-bold text-teal-800">{getRowCategory(r) || "-"}</td>
                       <td className="py-2 px-3 text-right font-bold text-slate-900">{money(getRowAmount(r))}</td>
-                      <td className="py-2 px-3 text-right font-black text-teal-700 bg-teal-50/60">
+                      <td className="py-2 px-3 text-right font-extrabold text-emerald-800 bg-emerald-50">
                         {money(getRowTransferAmount(r))}
                       </td>
-                      <td className="py-2 px-3 text-slate-600 font-semibold whitespace-nowrap">{formatDateThai(r["ว/ด/ป"] || r["วันที่"])}</td>
+                      <td className="py-2 px-3 text-slate-700 font-semibold whitespace-nowrap">{formatDateThai(r["ว/ด/ป"] || r["วันที่"])}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -1083,18 +1087,18 @@ export function ReportsDashboardClient({
 
           <div className="overflow-auto max-h-[calc(100vh-210px)] relative">
             <table className="w-full text-left text-xs text-slate-700 border-collapse font-sans">
-              <thead className="sticky top-0 z-20 bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
+              <thead className="sticky top-0 z-20 bg-slate-900 text-white font-bold border-b border-slate-900">
                 <tr>
-                  <th className="py-2 px-3 border-r border-slate-200">ลำดับ</th>
-                  <th className="py-2 px-3 border-r border-slate-200">ผู้เบิก</th>
-                  <th className="py-2 px-3 border-r border-slate-200">บิล</th>
-                  <th className="py-2 px-3 border-r border-slate-200">ชื่อผู้รับเหมา/ช่าง</th>
-                  <th className="py-2 px-3 border-r border-slate-200">รายละเอียดงาน</th>
-                  <th className="py-2 px-3 text-right border-r border-slate-200">เปิดจ้าง</th>
-                  <th className="py-2 px-3 text-right border-r border-slate-200">ค่าแรง</th>
-                  <th className="py-2 px-3 text-right border-r border-slate-200">จ่ายสะสม</th>
-                  <th className="py-2 px-3 text-right border-r border-slate-200 text-slate-900">โอนเงิน</th>
-                  <th className="py-2 px-3">ว/ด/ป</th>
+                  <th className="py-2.5 px-3 border-r border-slate-800">ลำดับ</th>
+                  <th className="py-2.5 px-3 border-r border-slate-800">ผู้เบิก</th>
+                  <th className="py-2.5 px-3 border-r border-slate-800">บิล</th>
+                  <th className="py-2.5 px-3 border-r border-slate-800">ชื่อผู้รับเหมา/ช่าง</th>
+                  <th className="py-2.5 px-3 border-r border-slate-800">รายละเอียดงาน</th>
+                  <th className="py-2.5 px-3 text-right border-r border-slate-800">เปิดจ้าง</th>
+                  <th className="py-2.5 px-3 text-right border-r border-slate-800">ค่าแรง</th>
+                  <th className="py-2.5 px-3 text-right border-r border-slate-800">จ่ายสะสม</th>
+                  <th className="py-2.5 px-3 text-right border-r border-slate-800 text-emerald-300">โอนเงิน</th>
+                  <th className="py-2.5 px-3">ว/ด/ป</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">

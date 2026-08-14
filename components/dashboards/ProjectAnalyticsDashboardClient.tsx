@@ -1,7 +1,26 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { BarChart3, Coins, Layers, Filter, PieChart, Search, X, SlidersHorizontal, ArrowUpDown } from "lucide-react";
+import {
+  BarChart3,
+  Coins,
+  Layers,
+  Filter,
+  PieChart,
+  Search,
+  X,
+  SlidersHorizontal,
+  ArrowUpDown,
+  TrendingUp,
+  LayoutGrid,
+  ShieldCheck,
+  Sparkles,
+  Building2,
+  Table as TableIcon,
+  PieChart as PieIcon,
+  BarChart2,
+  FolderKanban
+} from "lucide-react";
 import { money } from "@/lib/numbers";
 import type { SheetRow } from "@/lib/types";
 import {
@@ -23,6 +42,7 @@ type ProjectAnalyticsDashboardClientProps = {
 type RowDimension = "project" | "vendor" | "category" | "product_category" | "requester" | "month";
 type ColumnDimension = "category" | "product_category" | "project" | "month" | "status";
 type MetricType = "transfer" | "amount" | "count";
+type MainViewTab = "pivot" | "budget_matrix";
 
 const THAI_MONTHS_SHORT = [
   "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
@@ -63,7 +83,7 @@ const PRODUCT_CATEGORIES_LIST = [
   { code: "102", label: "102. ค่าขนส่ง", searchKeys: ["102", "ค่าขนส่ง"] },
   { code: "103", label: "103. เครื่องจักร", searchKeys: ["103", "เครื่องจักร"] },
   { code: "200", label: "200. ดำเนินการ(อื่นๆ)", searchKeys: ["200", "ดำเนินการ"] },
-  { code: "non", label: "non (7.เครื่องมือ 8.อื่นๆ ที่พัก)", searchKeys: ["non"] },
+  { code: "non", label: "non (7.เครื่องมือ 8.อื่นๆ)", searchKeys: ["non"] },
 ];
 
 export function ProjectAnalyticsDashboardClient({
@@ -73,6 +93,9 @@ export function ProjectAnalyticsDashboardClient({
 }: ProjectAnalyticsDashboardClientProps) {
   const [dataRows] = useState<SheetRow[]>(initialDataRows);
   const [projectRows] = useState<SheetRow[]>(initialProjectRows);
+
+  // Main View Tab (Pivot Hub vs Budget Control Matrix)
+  const [mainTab, setMainTab] = useState<MainViewTab>("pivot");
 
   // Pivot Controls State
   const [pivotPreset, setPivotPreset] = useState<"proj_cat" | "proj_prod" | "vendor_cat" | "month_proj" | "custom">(
@@ -256,6 +279,24 @@ export function ProjectAnalyticsDashboardClient({
     return rows.reduce((sum, r) => sum + getRowTransferAmount(r), 0);
   }
 
+  // Row Summary Stats for Pivot Charts
+  const rowChartStats = useMemo(() => {
+    const list = pivotMatrixData.rowKeys.map((rKey) => {
+      const rowBills: SheetRow[] = [];
+      pivotMatrixData.colKeys.forEach((cKey) => {
+        const cellBills = pivotMatrixData.cellMap.get(`${rKey}:::${cKey}`) || [];
+        if (cellBills.length) rowBills.push(...cellBills);
+      });
+      const val = calculateMetric(rowBills);
+      return { rKey, val, count: rowBills.length, rows: rowBills };
+    });
+
+    list.sort((a, b) => b.val - a.val);
+    const grandVal = list.reduce((s, i) => s + i.val, 0);
+
+    return { list, grandVal, maxVal: list[0]?.val || 1 };
+  }, [pivotMatrixData, metricType]);
+
   // Column Totals calculation
   const colTotals = useMemo(() => {
     const totals: Record<string, { val: number; rows: SheetRow[] }> = {};
@@ -297,336 +338,506 @@ export function ProjectAnalyticsDashboardClient({
     return filteredDataRows.reduce((sum, r) => sum + getRowTransferAmount(r), 0);
   }, [filteredDataRows]);
 
-  const totalBillAmountSum = useMemo(() => {
-    return filteredDataRows.reduce((sum, r) => sum + getRowAmount(r), 0);
-  }, [filteredDataRows]);
-
   return (
     <div className="w-full flex flex-col gap-4 p-4 sm:p-5 max-w-[1750px] mx-auto font-sans text-sm text-slate-800 print:p-0">
-      {/* 1. COMPACT EXECUTIVE HEADER BANNER */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-slate-200 rounded-xl p-3.5 shadow-2xs">
+      {/* 1. EXECUTIVE PIVOT BI HEADER & TAB SWITCHER */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-slate-200 rounded-lg p-4">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-emerald-600 text-white rounded-lg shadow-2xs">
-            <BarChart3 size={20} />
+          <div className="p-2.5 bg-slate-900 text-white rounded-md">
+            <BarChart2 size={22} />
           </div>
           <div>
             <h1 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <span>แดชบอร์ดวิเคราะห์การเงินและควบคุมงบประมาณ</span>
-              <span className="text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full">
-                Real-time Analytics
+              <span>ศูนย์วิเคราะห์ Pivot Chart & BI Matrix โครงการ</span>
+              <span className="text-xs font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 px-2.5 py-0.5 rounded-full">
+                BI Analytics Hub
               </span>
             </h1>
-            <p className="text-xs text-slate-500">วิเคราะห์ข้อมูลการเบิกจ่าย เปรียบเทียบวงเงินคุมงบ (Risk Control Matrix) และตาราง Pivot สรุปต้นทุน</p>
+            <p className="text-xs text-slate-600 mt-0.5">
+              วิเคราะห์สรุปยอดด้วย Pivot Chart, Cross-Tabulation Matrix และระบบติดตามวงเงินคุมงบ
+            </p>
           </div>
         </div>
 
-        {/* Executive Quick Stats Strip */}
-        <div className="flex items-center gap-2 text-xs">
-          <div className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-right">
-            <span className="text-[10px] text-slate-400 block font-semibold">โครงการทั้งหมด</span>
-            <span className="font-extrabold text-slate-800">{projectsList.length} โครงการ</span>
+        {/* View Switcher Tabs & Quick Stats */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="inline-flex p-1 bg-slate-100 rounded-md border border-slate-300 text-xs font-bold">
+            <button
+              type="button"
+              onClick={() => setMainTab("pivot")}
+              className={`px-3 py-1.5 rounded transition flex items-center gap-1.5 cursor-pointer ${
+                mainTab === "pivot"
+                  ? "bg-slate-900 text-white"
+                  : "text-slate-700 hover:text-slate-900"
+              }`}
+            >
+              <BarChart3 size={14} />
+              <span>📊 พิวอทกราฟ & เมทริกซ์</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMainTab("budget_matrix")}
+              className={`px-3 py-1.5 rounded transition flex items-center gap-1.5 cursor-pointer ${
+                mainTab === "budget_matrix"
+                  ? "bg-slate-900 text-white"
+                  : "text-slate-700 hover:text-slate-900"
+              }`}
+            >
+              <ShieldCheck size={14} />
+              <span>🛡️ คุมงบประมาณรายหมวด</span>
+            </button>
           </div>
-          <div className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-right">
-            <span className="text-[10px] text-slate-400 block font-semibold">บิลเบิกจ่ายรวม</span>
-            <span className="font-extrabold text-indigo-600">{filteredDataRows.length.toLocaleString()} บิล</span>
-          </div>
-          <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-1.5 text-right">
-            <span className="text-[10px] text-emerald-700 block font-semibold">ยอดโอนเงินสะสมรวม</span>
-            <span className="font-extrabold text-emerald-800">{money(totalTransferSum)} ฿</span>
+
+          <div className="hidden md:flex items-center gap-2 text-xs">
+            <div className="bg-emerald-50 border border-emerald-200 rounded-md px-3 py-1.5 text-right">
+              <span className="text-xs text-emerald-800 block font-semibold">ยอดโอนเงินรวม</span>
+              <span className="font-extrabold text-emerald-900">{money(totalTransferSum)} ฿</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* 2. EXECUTIVE CATEGORY BUDGET CONTROL MATRIX */}
-      <ProjectBudgetControlMatrix
-        projectRows={projectRows}
-        dataRows={dataRows}
-        selectedProjectId={selectedProjectId}
-        onSelectProject={setSelectedProjectId}
-      />
-
-      {/* 3. CLEAN & COMPACT PIVOT CONTROLS TOOLBAR */}
-      <div className="bg-white border border-slate-200 rounded-xl p-3.5 space-y-3 shadow-2xs">
-        {/* Preset Tabs & Metric Toggle Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-          {/* Preset Buttons */}
-          <div className="flex flex-wrap items-center gap-1.5 text-xs">
-            <span className="text-slate-500 font-bold flex items-center gap-1 mr-1">
-              <SlidersHorizontal size={13} className="text-emerald-600" /> มิติมุมมอง:
-            </span>
-            <button
-              type="button"
-              onClick={() => handleSelectPreset("proj_cat")}
-              className={`px-2.5 py-1 rounded-lg transition text-xs font-semibold cursor-pointer ${
-                pivotPreset === "proj_cat"
-                  ? "bg-emerald-700 text-white shadow-2xs"
-                  : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-              }`}
-            >
-              โครงการ × หมวดหมู่
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSelectPreset("proj_prod")}
-              className={`px-2.5 py-1 rounded-lg transition text-xs font-semibold cursor-pointer ${
-                pivotPreset === "proj_prod"
-                  ? "bg-emerald-700 text-white shadow-2xs"
-                  : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-              }`}
-            >
-              โครงการ × สินค้า
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSelectPreset("vendor_cat")}
-              className={`px-2.5 py-1 rounded-lg transition text-xs font-semibold cursor-pointer ${
-                pivotPreset === "vendor_cat"
-                  ? "bg-emerald-700 text-white shadow-2xs"
-                  : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-              }`}
-            >
-              ร้านค้า/ผู้รับเหมา × หมวดหมู่
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSelectPreset("month_proj")}
-              className={`px-2.5 py-1 rounded-lg transition text-xs font-semibold cursor-pointer ${
-                pivotPreset === "month_proj"
-                  ? "bg-emerald-700 text-white shadow-2xs"
-                  : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-              }`}
-            >
-              โครงการ × รายเดือน
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSelectPreset("custom")}
-              className={`px-2.5 py-1 rounded-lg transition text-xs font-semibold cursor-pointer ${
-                pivotPreset === "custom"
-                  ? "bg-emerald-700 text-white shadow-2xs"
-                  : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-              }`}
-            >
-              กำหนดเอง
-            </button>
-          </div>
-
-          {/* Metric Type Selector */}
-          <div className="flex items-center gap-1 text-xs">
-            <span className="text-slate-400 font-semibold mr-1">ตัวเลขที่แสดง:</span>
-            <div className="inline-flex p-0.5 bg-slate-100 rounded-lg border border-slate-200">
-              <button
-                type="button"
-                onClick={() => setMetricType("transfer")}
-                className={`px-2.5 py-0.5 rounded-md font-bold transition text-xs cursor-pointer ${
-                  metricType === "transfer" ? "bg-emerald-600 text-white shadow-2xs" : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                ยอดโอนสุทธิ (฿)
-              </button>
-              <button
-                type="button"
-                onClick={() => setMetricType("amount")}
-                className={`px-2.5 py-0.5 rounded-md font-bold transition text-xs cursor-pointer ${
-                  metricType === "amount" ? "bg-emerald-600 text-white shadow-2xs" : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                ยอดเงินบิล (฿)
-              </button>
-              <button
-                type="button"
-                onClick={() => setMetricType("count")}
-                className={`px-2.5 py-0.5 rounded-md font-bold transition text-xs cursor-pointer ${
-                  metricType === "count" ? "bg-emerald-600 text-white shadow-2xs" : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                จำนวนบิล
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Dimension Dropdowns & Search Input */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-slate-600">แนวแถว:</span>
-              <select
-                value={rowDimension}
-                onChange={(e) => {
-                  setRowDimension(e.target.value as RowDimension);
-                  setPivotPreset("custom");
-                }}
-                className="bg-slate-50 border border-slate-200 text-xs text-slate-800 font-semibold px-2.5 py-1 rounded-lg focus:outline-none focus:border-emerald-500"
-              >
-                <option value="project">โครงการ (Projects)</option>
-                <option value="vendor">ร้านค้า / ผู้รับเหมา (Vendors)</option>
-                <option value="category">หมวดหมู่หลัก (Categories)</option>
-                <option value="product_category">ประเภทสินค้า Master Data</option>
-                <option value="requester">ผู้เบิก (Requesters)</option>
-                <option value="month">รายเดือน (Monthly)</option>
-              </select>
-            </div>
-
-            <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-slate-600">แนวคอลัมน์:</span>
-              <select
-                value={colDimension}
-                onChange={(e) => {
-                  setColDimension(e.target.value as ColumnDimension);
-                  setPivotPreset("custom");
-                }}
-                className="bg-slate-50 border border-slate-200 text-xs text-slate-800 font-semibold px-2.5 py-1 rounded-lg focus:outline-none focus:border-emerald-500"
-              >
-                <option value="category">หมวดหมู่หลัก (Categories)</option>
-                <option value="product_category">ประเภทสินค้า Master Data</option>
-                <option value="project">โครงการ (Projects)</option>
-                <option value="month">รายเดือน (Monthly)</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Project & Search Filter */}
-          <div className="flex items-center gap-2">
-            <select
-              value={selectedProjectId}
-              onChange={(e) => setSelectedProjectId(e.target.value)}
-              className="bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800 px-2.5 py-1 rounded-lg focus:outline-none focus:border-emerald-500 max-w-[200px]"
-            >
-              <option value="all">ทุกโครงการ ({projectsList.length})</option>
-              {projectsList.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-
-            <div className="relative flex items-center">
-              <Search size={14} className="absolute left-2.5 text-slate-400" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="ค้นหารายการ..."
-                className="bg-slate-50 text-slate-800 text-xs pl-8 pr-7 py-1 rounded-lg border border-slate-200 focus:outline-none focus:border-emerald-500 w-40 sm:w-52 font-semibold"
-              />
-              {searchTerm && (
+      {/* VIEW TAB 1: PIVOT CHART & BI MATRIX DASHBOARD */}
+      {mainTab === "pivot" && (
+        <div className="space-y-4">
+          {/* 2. PIVOT CONTROLS & DIMENSION SELECTOR TOOLBAR */}
+          <div className="bg-white border border-slate-200 rounded-lg p-4 space-y-3.5">
+            {/* Preset Buttons & Metric Selector Header */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-200 pb-3">
+              <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                <span className="text-slate-800 font-bold flex items-center gap-1 mr-1">
+                  <SlidersHorizontal size={15} className="text-emerald-700" /> มิติมุมมอง Pivot:
+                </span>
                 <button
                   type="button"
-                  onClick={() => setSearchTerm("")}
-                  className="absolute right-2 text-slate-400 hover:text-slate-600"
+                  onClick={() => handleSelectPreset("proj_cat")}
+                  className={`px-3 py-1 rounded-md transition text-xs font-bold cursor-pointer border ${
+                    pivotPreset === "proj_cat"
+                      ? "bg-slate-900 text-white border-slate-900"
+                      : "bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-300"
+                  }`}
                 >
-                  <X size={14} />
+                  โครงการ × หมวดหมู่
                 </button>
-              )}
+                <button
+                  type="button"
+                  onClick={() => handleSelectPreset("proj_prod")}
+                  className={`px-3 py-1 rounded-md transition text-xs font-bold cursor-pointer border ${
+                    pivotPreset === "proj_prod"
+                      ? "bg-slate-900 text-white border-slate-900"
+                      : "bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-300"
+                  }`}
+                >
+                  โครงการ × สินค้า Master
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectPreset("vendor_cat")}
+                  className={`px-3 py-1 rounded-md transition text-xs font-bold cursor-pointer border ${
+                    pivotPreset === "vendor_cat"
+                      ? "bg-slate-900 text-white border-slate-900"
+                      : "bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-300"
+                  }`}
+                >
+                  ร้านค้า/ผู้รับเหมา × หมวดหมู่
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectPreset("month_proj")}
+                  className={`px-3 py-1 rounded-md transition text-xs font-bold cursor-pointer border ${
+                    pivotPreset === "month_proj"
+                      ? "bg-slate-900 text-white border-slate-900"
+                      : "bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-300"
+                  }`}
+                >
+                  โครงการ × รายเดือน
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectPreset("custom")}
+                  className={`px-3 py-1 rounded-md transition text-xs font-bold cursor-pointer border ${
+                    pivotPreset === "custom"
+                      ? "bg-slate-900 text-white border-slate-900"
+                      : "bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-300"
+                  }`}
+                >
+                  กำหนดเอง
+                </button>
+              </div>
+
+              {/* Metric Type Toggle */}
+              <div className="flex items-center gap-1.5 text-xs">
+                <span className="text-slate-800 font-bold mr-1">ตัวเลขที่คำนวณ:</span>
+                <div className="inline-flex p-0.5 bg-slate-100 rounded-md border border-slate-300">
+                  <button
+                    type="button"
+                    onClick={() => setMetricType("transfer")}
+                    className={`px-3 py-1 rounded-md font-bold transition text-xs cursor-pointer border ${
+                      metricType === "transfer" ? "bg-slate-900 text-white border-slate-900" : "text-slate-700 hover:text-slate-900 border-transparent"
+                    }`}
+                  >
+                    ยอดโอนสุทธิ (฿)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMetricType("amount")}
+                    className={`px-3 py-1 rounded-md font-bold transition text-xs cursor-pointer border ${
+                      metricType === "amount" ? "bg-slate-900 text-white border-slate-900" : "text-slate-700 hover:text-slate-900 border-transparent"
+                    }`}
+                  >
+                    ยอดเงินบิล (฿)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMetricType("count")}
+                    className={`px-3 py-1 rounded-md font-bold transition text-xs cursor-pointer border ${
+                      metricType === "count" ? "bg-slate-900 text-white border-slate-900" : "text-slate-700 hover:text-slate-900 border-transparent"
+                    }`}
+                  >
+                    จำนวนบิล
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Custom Dimension Selectors & Filters */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-slate-700">แกนแถว (Rows):</span>
+                  <select
+                    value={rowDimension}
+                    onChange={(e) => {
+                      setRowDimension(e.target.value as RowDimension);
+                      setPivotPreset("custom");
+                    }}
+                    className="bg-white border border-slate-300 text-xs font-bold text-slate-900 px-3 py-1.5 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-400"
+                  >
+                    <option value="project">โครงการ (Projects)</option>
+                    <option value="vendor">ร้านค้า / ผู้รับเหมา (Vendors)</option>
+                    <option value="category">หมวดหมู่หลัก (Categories)</option>
+                    <option value="product_category">ประเภทสินค้า Master Data</option>
+                    <option value="requester">ผู้เบิก (Requesters)</option>
+                    <option value="month">รายเดือน (Monthly)</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-slate-700">แกนคอลัมน์ (Cols):</span>
+                  <select
+                    value={colDimension}
+                    onChange={(e) => {
+                      setColDimension(e.target.value as ColumnDimension);
+                      setPivotPreset("custom");
+                    }}
+                    className="bg-white border border-slate-300 text-xs font-bold text-slate-900 px-3 py-1.5 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-400"
+                  >
+                    <option value="category">หมวดหมู่หลัก (Categories)</option>
+                    <option value="product_category">ประเภทสินค้า Master Data</option>
+                    <option value="project">โครงการ (Projects)</option>
+                    <option value="month">รายเดือน (Monthly)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Project Selector & Search Box */}
+              <div className="flex items-center gap-2">
+                <select
+                  value={selectedProjectId}
+                  onChange={(e) => setSelectedProjectId(e.target.value)}
+                  className="bg-white border border-slate-300 text-xs font-bold text-slate-900 px-3 py-1.5 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-400 max-w-[200px]"
+                >
+                  <option value="all">📂 ทุกโครงการ ({projectsList.length})</option>
+                  {projectsList.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.label}
+                    </option>
+                  ))}
+                </select>
+
+                <div className="relative flex items-center">
+                  <Search size={14} className="absolute left-2.5 text-slate-400" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="ค้นหา..."
+                    className="bg-white text-slate-900 text-xs pl-8 pr-7 py-1.5 rounded-md border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-400 w-36 sm:w-48 font-semibold"
+                  />
+                  {searchTerm && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchTerm("")}
+                      className="absolute right-2 text-slate-400 hover:text-slate-600"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* 4. DYNAMIC PIVOT MATRIX TABLE */}
-      <div className="border border-slate-200 rounded-xl bg-white overflow-hidden shadow-2xs flex flex-col">
-        <div className="px-3.5 py-2.5 border-b border-slate-200 bg-slate-50 flex items-center justify-between text-xs">
-          <span className="font-bold text-slate-700 flex items-center gap-1.5">
-            <span>ตารางเมทริกซ์ Pivot</span>
-            <span className="text-[11px] font-mono text-slate-400 font-normal">
-              ({pivotMatrixData.rowKeys.length} แถว × {pivotMatrixData.colKeys.length} คอลัมน์)
-            </span>
-          </span>
-          <span className="font-extrabold text-emerald-700 font-mono">
-            รวมสุทธิ: {metricType === "count" ? `${grandTotalValue} รายการ` : money(grandTotalValue)}
-          </span>
-        </div>
+          {/* 3. VISUAL PIVOT CHARTS SECTION (GRAPH VISUALIZATION) */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* PIVOT BAR CHART: DYNAMIC ROW DISTRIBUTION (2 Columns) */}
+            <div className="lg:col-span-2 bg-white border border-slate-200 rounded-lg p-4 space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
+                <h3 className="text-xs font-bold text-slate-900 flex items-center gap-2">
+                  <BarChart3 size={16} className="text-emerald-700" />
+                  <span>กราฟเปรียบเทียบการจัดสรรตามแถว ({rowDimension === "project" ? "โครงการ" : rowDimension === "vendor" ? "ร้านค้า" : "แกนแถว"})</span>
+                </h3>
+                <span className="text-xs font-bold text-slate-600">Row Dimension Visual Chart</span>
+              </div>
 
-        {/* Scrollable Pivot Grid */}
-        <div className="overflow-auto max-h-[calc(100vh-220px)] relative">
-          <table className="w-full text-left text-xs border-collapse font-sans">
-            <thead className="sticky top-0 z-20 bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
-              <tr>
-                <th className="py-2.5 px-3 border-r border-slate-200 min-w-[200px] sticky left-0 z-30 bg-slate-100">
-                  {rowDimension === "project"
-                    ? "โครงการ"
-                    : rowDimension === "vendor"
-                    ? "ร้านค้า/ผู้รับเหมา"
-                    : rowDimension === "category"
-                    ? "หมวดหมู่"
-                    : rowDimension === "product_category"
-                    ? "ประเภทสินค้า"
-                    : rowDimension === "requester"
-                    ? "ผู้เบิก"
-                    : "มิติแถว"}
-                </th>
-                {pivotMatrixData.colKeys.map((cKey) => (
-                  <th key={cKey} className="py-2.5 px-3 text-right border-r border-slate-200 min-w-[120px]">
-                    {cKey}
-                  </th>
-                ))}
-                <th className="py-2.5 px-3 text-right bg-slate-200 text-slate-900 min-w-[130px] font-bold border-l border-slate-300">
-                  รวมแถว
-                </th>
-              </tr>
-            </thead>
+              <div className="space-y-2.5">
+                {rowChartStats.list.length === 0 ? (
+                  <div className="text-center py-6 text-slate-500 text-xs font-bold">
+                    ไม่มีข้อมูลแสดงกราฟสำหรับเงื่อนไขนี้
+                  </div>
+                ) : (
+                  rowChartStats.list.slice(0, 7).map((item) => {
+                    const percentOfGrand = rowChartStats.grandVal > 0 ? (item.val / rowChartStats.grandVal) * 100 : 0;
+                    const barWidth = rowChartStats.maxVal > 0 ? (item.val / rowChartStats.maxVal) * 100 : 0;
 
-            <tbody className="divide-y divide-slate-100 bg-white">
-              {pivotMatrixData.rowKeys.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={pivotMatrixData.colKeys.length + 2}
-                    className="py-12 text-center text-slate-400 font-medium"
-                  >
-                    ไม่พบข้อมูลสำหรับเงื่อนไขที่เลือก
-                  </td>
-                </tr>
-              ) : (
-                pivotMatrixData.rowKeys.map((rKey) => {
-                  let rowSum = 0;
-                  const allRowCellBills: SheetRow[] = [];
+                    return (
+                      <div key={item.rKey} className="bg-slate-50 border border-slate-200 rounded-md p-2.5 space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-slate-900 truncate max-w-[60%]">{item.rKey}</span>
+                          <div className="flex items-center gap-2 font-extrabold">
+                            <span className="text-emerald-800">
+                              {metricType === "count" ? `${item.val} บิล` : `${money(item.val)} ฿`}
+                            </span>
+                            <span className="text-xs text-slate-600">({percentOfGrand.toFixed(1)}%)</span>
+                          </div>
+                        </div>
 
-                  return (
-                    <tr key={rKey} className="hover:bg-slate-50 transition-colors">
-                      {/* Row Label (Sticky Left) */}
-                      <td className="py-2.5 px-3 font-semibold text-slate-800 border-r border-slate-200 sticky left-0 z-10 bg-white">
-                        <div className="text-xs">{rKey}</div>
+                        <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden border border-slate-300">
+                          <div
+                            className="h-full bg-slate-900 rounded-full transition-all duration-500"
+                            style={{ width: `${Math.min(100, barWidth)}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* TOP LEADERBOARD PIVOT CHART (1 Column) */}
+            <div className="bg-white border border-slate-200 rounded-lg p-4 space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
+                <h3 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                  <Sparkles size={16} className="text-amber-600" />
+                  <span>5 อันดับสูงสุดตามมิติที่เลือก</span>
+                </h3>
+                <span className="text-xs font-bold text-slate-600">Top 5 Analytics</span>
+              </div>
+
+              <div className="space-y-2.5">
+                {rowChartStats.list.length === 0 ? (
+                  <div className="text-center py-6 text-slate-500 text-xs font-bold">
+                    ยังไม่มีข้อมูลอันดับ
+                  </div>
+                ) : (
+                  rowChartStats.list.slice(0, 5).map((item, idx) => {
+                    const percent = rowChartStats.grandVal > 0 ? (item.val / rowChartStats.grandVal) * 100 : 0;
+
+                    return (
+                      <div key={item.rKey} className="bg-slate-50 border border-slate-200 rounded-md p-2.5 space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-slate-900 flex items-center gap-2 truncate">
+                            <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-xs font-bold flex items-center justify-center shrink-0">
+                              {idx + 1}
+                            </span>
+                            <span className="truncate">{item.rKey}</span>
+                          </span>
+                          <span className="font-extrabold text-emerald-800 text-xs shrink-0">
+                            {metricType === "count" ? `${item.val} บิล` : `${money(item.val)} ฿`}
+                          </span>
+                        </div>
+
+                        <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden border border-slate-300">
+                          <div
+                            className="h-full bg-emerald-700 rounded-full transition-all duration-500"
+                            style={{ width: `${Math.min(100, percent)}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* 4. DYNAMIC CROSSTAB PIVOT MATRIX TABLE */}
+          <div className="border border-slate-200 rounded-lg bg-white overflow-hidden space-y-3 p-4">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <TableIcon size={16} className="text-slate-800" />
+                  <span>ตารางเมทริกซ์ Pivot Crosstab Matrix ({pivotMatrixData.rowKeys.length} แถว × {pivotMatrixData.colKeys.length} คอลัมน์)</span>
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  ตารางเปรียบเทียบไขว้สองมิติ พร้อมรหัสสี Heatmap แสดงความหนาแน่นยอดเงิน
+                </p>
+              </div>
+
+              <span className="text-xs font-extrabold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-md border border-emerald-200">
+                รวมสุทธิ Pivot: {metricType === "count" ? `${grandTotalValue} บิล` : `${money(grandTotalValue)} ฿`}
+              </span>
+            </div>
+
+            {/* Scrollable Pivot Grid */}
+            <div className="overflow-x-auto max-h-[550px] border border-slate-200 rounded-md relative">
+              <table className="w-full text-left text-xs border-collapse font-sans">
+                <thead className="sticky top-0 z-20 bg-slate-900 text-white font-bold border-b border-slate-900">
+                  <tr>
+                    <th className="py-3 px-3.5 border-r border-slate-800 min-w-[200px] sticky left-0 z-30 bg-slate-900">
+                      {rowDimension === "project"
+                        ? "โครงการ"
+                        : rowDimension === "vendor"
+                        ? "ร้านค้า/ผู้รับเหมา"
+                        : rowDimension === "category"
+                        ? "หมวดหมู่"
+                        : rowDimension === "product_category"
+                        ? "ประเภทสินค้า"
+                        : rowDimension === "requester"
+                        ? "ผู้เบิก"
+                        : "มิติแถว"}
+                    </th>
+                    {pivotMatrixData.colKeys.map((cKey) => (
+                      <th key={cKey} className="py-3 px-3 text-right border-r border-slate-800 min-w-[120px]">
+                        {cKey}
+                      </th>
+                    ))}
+                    <th className="py-3 px-3.5 text-right bg-slate-800 text-emerald-300 min-w-[130px] font-bold border-l border-slate-700">
+                      รวมแถว
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody className="divide-y divide-slate-100 bg-white">
+                  {pivotMatrixData.rowKeys.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={pivotMatrixData.colKeys.length + 2}
+                        className="py-12 text-center text-slate-500 font-bold"
+                      >
+                        ไม่พบข้อมูลสำหรับเงื่อนไขที่เลือก
                       </td>
+                    </tr>
+                  ) : (
+                    pivotMatrixData.rowKeys.map((rKey) => {
+                      let rowSum = 0;
+                      const allRowCellBills: SheetRow[] = [];
 
-                      {/* Matrix Cells */}
+                      return (
+                        <tr key={rKey} className="hover:bg-slate-50 transition">
+                          {/* Row Label (Sticky Left) */}
+                          <td className="py-2.5 px-3.5 font-bold text-slate-900 border-r border-slate-200 sticky left-0 z-10 bg-white">
+                            <div className="text-xs">{rKey}</div>
+                          </td>
+
+                          {/* Matrix Cells */}
+                          {pivotMatrixData.colKeys.map((cKey) => {
+                            const cellKey = `${rKey}:::${cKey}`;
+                            const cellBills = pivotMatrixData.cellMap.get(cellKey) || [];
+                            const val = calculateMetric(cellBills);
+                            rowSum += val;
+                            if (cellBills.length) allRowCellBills.push(...cellBills);
+
+                            const hasVal = val > 0;
+                            const intensity = maxCellValue > 0 ? val / maxCellValue : 0;
+
+                            let heatmapBg = "bg-white";
+                            if (hasVal) {
+                              if (intensity > 0.6) heatmapBg = "bg-emerald-50 text-emerald-950 font-extrabold";
+                              else if (intensity > 0.3) heatmapBg = "bg-slate-50 text-slate-900 font-bold";
+                              else heatmapBg = "bg-white text-slate-800 font-semibold";
+                            }
+
+                            return (
+                              <td
+                                key={cKey}
+                                onClick={() => {
+                                  if (cellBills.length) {
+                                    setDrilldownModal({
+                                      title: `บิลสำหรับ "${rKey}" × "${cKey}"`,
+                                      rows: cellBills,
+                                    });
+                                  }
+                                }}
+                                className={`py-2.5 px-3 text-right border-r border-slate-100 transition ${heatmapBg} ${
+                                  hasVal ? "cursor-pointer hover:bg-emerald-100" : "text-slate-300"
+                                }`}
+                              >
+                                {hasVal ? (
+                                  metricType === "count" ? (
+                                    <span>{val} บิล</span>
+                                  ) : (
+                                    <span>{money(val)}</span>
+                                  )
+                                ) : (
+                                  "-"
+                                )}
+                              </td>
+                            );
+                          })}
+
+                          {/* Row Total */}
+                          <td
+                            onClick={() => {
+                              if (allRowCellBills.length) {
+                                setDrilldownModal({
+                                  title: `สรุปบิลรวมแถว: "${rKey}"`,
+                                  rows: allRowCellBills,
+                                });
+                              }
+                            }}
+                            className="py-2.5 px-3.5 text-right font-extrabold text-slate-900 bg-slate-50 border-l border-slate-200 cursor-pointer hover:bg-slate-100 transition"
+                          >
+                            {metricType === "count" ? `${rowSum} บิล` : money(rowSum)}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+
+                {/* Matrix Footer Totals (Column Summary) */}
+                {pivotMatrixData.rowKeys.length > 0 && (
+                  <tfoot className="sticky bottom-0 z-20 bg-slate-100 text-slate-900 font-bold text-xs border-t-2 border-slate-400">
+                    <tr>
+                      <td className="py-3 px-3.5 sticky left-0 z-30 font-extrabold border-r border-slate-300 bg-slate-200 text-slate-950">
+                        รวมแนวตั้ง (Column Total)
+                      </td>
                       {pivotMatrixData.colKeys.map((cKey) => {
-                        const cellKey = `${rKey}:::${cKey}`;
-                        const cellBills = pivotMatrixData.cellMap.get(cellKey) || [];
-                        const val = calculateMetric(cellBills);
-                        rowSum += val;
-                        if (cellBills.length) allRowCellBills.push(...cellBills);
-
-                        const hasVal = val > 0;
-                        const intensity = maxCellValue > 0 ? val / maxCellValue : 0;
-
-                        let heatmapBg = "bg-white";
-                        if (hasVal) {
-                          if (intensity > 0.6) heatmapBg = "bg-emerald-50 text-emerald-900 font-bold";
-                          else if (intensity > 0.3) heatmapBg = "bg-slate-50 text-slate-900 font-semibold";
-                          else heatmapBg = "bg-white text-slate-800 font-medium";
-                        }
+                        const colData = colTotals.totals[cKey] || { val: 0, rows: [] };
+                        const hasVal = colData.val > 0;
 
                         return (
                           <td
                             key={cKey}
                             onClick={() => {
-                              if (cellBills.length) {
+                              if (colData.rows.length) {
                                 setDrilldownModal({
-                                  title: `บิลสำหรับ "${rKey}" × "${cKey}"`,
-                                  rows: cellBills,
+                                  title: `สรุปบิลรวมคอลัมน์: "${cKey}"`,
+                                  rows: colData.rows,
                                 });
                               }
                             }}
-                            className={`py-2 px-2.5 text-right border-r border-slate-100 transition ${heatmapBg} ${
-                              hasVal ? "cursor-pointer hover:bg-emerald-100" : "text-slate-300"
+                            className={`py-3 px-3 text-right border-r border-slate-200 transition font-extrabold bg-slate-100 ${
+                              hasVal ? "cursor-pointer text-emerald-800 hover:bg-emerald-100" : "text-slate-400"
                             }`}
                           >
                             {hasVal ? (
                               metricType === "count" ? (
-                                <span>{val} รายการ</span>
+                                <span>{colData.val} บิล</span>
                               ) : (
-                                <span>{money(val)}</span>
+                                <span>{money(colData.val)}</span>
                               )
                             ) : (
                               "-"
@@ -634,120 +845,70 @@ export function ProjectAnalyticsDashboardClient({
                           </td>
                         );
                       })}
-
-                      {/* Row Total */}
-                      <td
-                        onClick={() => {
-                          if (allRowCellBills.length) {
-                            setDrilldownModal({
-                              title: `สรุปบิลรวมแถว: "${rKey}"`,
-                              rows: allRowCellBills,
-                            });
-                          }
-                        }}
-                        className="py-2 px-3 text-right font-bold text-slate-900 bg-slate-50 border-l border-slate-200 cursor-pointer hover:bg-slate-100 transition"
-                      >
-                        {metricType === "count" ? `${rowSum} รายการ` : money(rowSum)}
+                      <td className="py-3 px-3.5 text-right font-black text-sm text-emerald-950 bg-emerald-200 border-l border-slate-300">
+                        {metricType === "count" ? `${grandTotalValue} บิล` : money(grandTotalValue)}
                       </td>
                     </tr>
-                  );
-                })
-              )}
-            </tbody>
-
-            {/* Matrix Footer Totals (Column Summary) */}
-            {pivotMatrixData.rowKeys.length > 0 && (
-              <tfoot className="sticky bottom-0 z-20 bg-slate-100 text-slate-900 font-bold text-xs border-t-2 border-slate-300">
-                <tr>
-                  <td className="py-2.5 px-3 sticky left-0 z-30 font-bold border-r border-slate-300 bg-slate-100">
-                    รวมแนวตั้ง (Column Total)
-                  </td>
-                  {pivotMatrixData.colKeys.map((cKey) => {
-                    const colData = colTotals.totals[cKey] || { val: 0, rows: [] };
-                    const hasVal = colData.val > 0;
-
-                    return (
-                      <td
-                        key={cKey}
-                        onClick={() => {
-                          if (colData.rows.length) {
-                            setDrilldownModal({
-                              title: `สรุปบิลรวมคอลัมน์: "${cKey}"`,
-                              rows: colData.rows,
-                            });
-                          }
-                        }}
-                        className={`py-2.5 px-2.5 text-right border-r border-slate-300 transition font-bold ${
-                          hasVal ? "cursor-pointer text-emerald-800 bg-emerald-50 hover:bg-emerald-100" : "text-slate-400"
-                        }`}
-                      >
-                        {hasVal ? (
-                          metricType === "count" ? (
-                            <span>{colData.val} รายการ</span>
-                          ) : (
-                            <span>{money(colData.val)}</span>
-                          )
-                        ) : (
-                          "-"
-                        )}
-                      </td>
-                    );
-                  })}
-                  <td
-                    style={{ color: "#020617", backgroundColor: "#a7f3d0" }}
-                    className="py-2.5 px-3 text-right font-black text-xs border-l border-emerald-400"
-                  >
-                    {metricType === "count" ? `${grandTotalValue} รายการ` : money(grandTotalValue)}
-                  </td>
-                </tr>
-              </tfoot>
-            )}
-          </table>
+                  </tfoot>
+                )}
+              </table>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* VIEW TAB 2: BUDGET CONTROL MATRIX VIEW */}
+      {mainTab === "budget_matrix" && (
+        <ProjectBudgetControlMatrix
+          projectRows={projectRows}
+          dataRows={dataRows}
+          selectedProjectId={selectedProjectId}
+          onSelectProject={setSelectedProjectId}
+        />
+      )}
 
       {/* 5. CELL DRILLDOWN MODAL */}
       {drilldownModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-5xl w-full max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-5xl w-full max-h-[85vh] flex flex-col border border-slate-300 shadow-2xl overflow-hidden animate-in fade-in duration-150">
             {/* Modal Header */}
-            <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-              <h3 className="text-xs font-bold text-slate-900">{drilldownModal.title}</h3>
+            <div className="px-5 py-3.5 border-b border-slate-200 bg-slate-100 flex items-center justify-between">
+              <h3 className="text-sm font-bold text-slate-900">{drilldownModal.title}</h3>
               <button
                 type="button"
                 onClick={() => setDrilldownModal(null)}
-                className="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 flex items-center justify-center transition cursor-pointer"
+                className="w-7 h-7 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-200 flex items-center justify-center transition cursor-pointer font-bold"
               >
-                <X size={15} />
+                <X size={18} />
               </button>
             </div>
 
             {/* Modal Content Table */}
-            <div className="p-3 overflow-y-auto flex-1">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
-                    <th className="py-2 px-2.5">ลำดับ</th>
-                    <th className="py-2 px-2.5">ร้านค้า/ผู้รับเหมา</th>
-                    <th className="py-2 px-2.5">รายละเอียดงาน</th>
-                    <th className="py-2 px-2.5 text-right">ยอดบิล</th>
-                    <th className="py-2 px-2.5 text-right text-emerald-700">ยอดโอน</th>
-                    <th className="py-2 px-2.5 text-center">วันที่</th>
+            <div className="p-4 overflow-y-auto flex-1">
+              <table className="w-full text-left text-xs border-collapse font-sans">
+                <thead className="bg-slate-900 text-white font-bold sticky top-0">
+                  <tr>
+                    <th className="py-2.5 px-3">ลำดับ</th>
+                    <th className="py-2.5 px-3">ร้านค้า/ผู้รับเหมา</th>
+                    <th className="py-2.5 px-3">รายละเอียดงาน / รายการ</th>
+                    <th className="py-2.5 px-3 text-right">ยอดบิล</th>
+                    <th className="py-2.5 px-3 text-right text-emerald-300">ยอดโอน</th>
+                    <th className="py-2.5 px-3 text-center">วันที่</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {drilldownModal.rows.map((b, i) => (
                     <tr key={i} className="hover:bg-slate-50 transition">
-                      <td className="py-2 px-2.5 text-slate-500 font-semibold">{b["ลำดับ"] || i + 1}</td>
-                      <td className="py-2 px-2.5 font-bold text-slate-900">
+                      <td className="py-2 px-3 text-slate-600 font-semibold">{b["ลำดับ"] || i + 1}</td>
+                      <td className="py-2 px-3 font-bold text-slate-900">
                         {b["ร้านค้า"] || b["ผู้รับเหมา"] || b["ร้าน/บุคคล"] || "-"}
                       </td>
-                      <td className="py-2 px-2.5 text-slate-700">{b["รายละเอียดงาน"] || b["สินค้า/ทำงาน"] || b["รายการ"] || "-"}</td>
-                      <td className="py-2 px-2.5 text-right font-mono font-bold">{money(getRowAmount(b))} ฿</td>
-                      <td className="py-2 px-2.5 text-right font-mono font-bold text-emerald-700 bg-emerald-50">
+                      <td className="py-2 px-3 font-medium text-slate-800">{b["รายละเอียดงาน"] || b["สินค้า/ทำงาน"] || b["รายการ"] || "-"}</td>
+                      <td className="py-2 px-3 text-right font-bold text-slate-900">{money(getRowAmount(b))} ฿</td>
+                      <td className="py-2 px-3 text-right font-extrabold text-emerald-800 bg-emerald-50">
                         {money(getRowTransferAmount(b))} ฿
                       </td>
-                      <td className="py-2 px-2.5 text-center text-slate-500 font-mono">
+                      <td className="py-2 px-3 text-center text-slate-700 font-semibold">
                         {String(b["ว/ด/ป"] || b["วันที่"] || "-")}
                       </td>
                     </tr>
@@ -757,9 +918,9 @@ export function ProjectAnalyticsDashboardClient({
             </div>
 
             {/* Modal Footer */}
-            <div className="px-4 py-2.5 border-t border-slate-200 bg-slate-50 flex items-center justify-between text-xs font-semibold">
-              <span className="text-slate-500">รวม {drilldownModal.rows.length} รายการ</span>
-              <span className="text-emerald-700 font-bold font-mono">
+            <div className="px-5 py-3 border-t border-slate-200 bg-slate-100 flex items-center justify-between text-xs font-bold">
+              <span className="text-slate-600">รวม {drilldownModal.rows.length} รายการ</span>
+              <span className="text-emerald-800 font-extrabold text-sm">
                 ยอดโอนสุทธิรวม: {money(drilldownModal.rows.reduce((sum, b) => sum + getRowTransferAmount(b), 0))} ฿
               </span>
             </div>
