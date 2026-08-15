@@ -1535,14 +1535,287 @@ export async function getLineConfigIds(): Promise<{ ownerId: string; approverIds
   }
 }
 
-export function createWithdrawRequesterFlex(row: Record<string, any>): Record<string, any> {
-  const sheetRow = row._sheetRow || row.id || row["ลำดับ"] || "-";
-  const amount = Number(row["ยอดเงิน"] || row.amount || 0).toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const projectName = row["ชื่อ Project"] || row.project_name || "โครงการทั่วไป";
-  const vendor = row["ร้าน/บุคคล"] || row.vendor_or_person || "-";
-  const itemDesc = row["สินค้า/ทำงาน"] || row.description || "-";
-  const requester = row["ผู้เบิก"] || row.requester || "-";
-  const billType = row["บิล"] || row.bill || row.bill_type || "ทั่วไป";
+export type MultiBillFlexOptions = {
+  title: string;
+  headerBgColor?: string;
+  badgeText?: string;
+  themeColor?: string;
+  mode?: "requester" | "owner" | "approver" | "search";
+};
+
+export function createMultiBillFlex(
+  billsInput: Record<string, any> | Array<Record<string, any>>,
+  options: MultiBillFlexOptions
+): Record<string, any> {
+  const bills = Array.isArray(billsInput) ? billsInput : [billsInput];
+  if (bills.length === 0) {
+    return {
+      type: "bubble",
+      body: {
+        type: "box",
+        layout: "vertical",
+        contents: [{ type: "text", text: "ไม่พบข้อมูลบิล" }]
+      }
+    };
+  }
+
+  const mode = options.mode || "search";
+  const headerBg = options.headerBgColor || (mode === "requester" ? "#0284C7" : mode === "owner" ? "#D97706" : mode === "approver" ? "#059669" : "#0F172A");
+
+  const totalAmount = bills.reduce((sum, b) => sum + Number(b["ยอดเงิน"] || b.amount || 0), 0);
+  const formattedTotal = totalAmount.toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const firstBill = bills[0];
+  const firstReq = firstBill["ผู้เบิก"] || firstBill.requester || "";
+  const sheetRowIds = bills.map(b => String(b._sheetRow || b.id || b["ลำดับ"] || "").trim()).filter(Boolean);
+  const sheetRowStr = sheetRowIds.join(",");
+
+  // Helper to extract image URLs from a bill object
+  function getBillImages(b: Record<string, any>): string[] {
+    const rawVal = b["รูปถ่ายบิล"] || b.bill_image || b.file_url || b.attachment || b.image || b.pictures || "";
+    if (Array.isArray(rawVal)) {
+      return rawVal.map(v => normalizeUri(String(v))).filter(v => v.startsWith("http"));
+    }
+    if (typeof rawVal === "string" && rawVal.trim()) {
+      return rawVal.split(",").map(v => normalizeUri(v.trim())).filter(v => v.startsWith("http"));
+    }
+    return [];
+  }
+
+  const itemsContents = bills.slice(0, 10).map((b, idx) => {
+    const bId = String(b._sheetRow || b.id || b["ลำดับ"] || idx + 1);
+    const amt = Number(b["ยอดเงิน"] || b.amount || 0).toLocaleString("th-TH");
+    const requesterName = b["ผู้เบิก"] || b.requester || "-";
+    const vendorName = b["ร้าน/บุคคล"] || b.vendor_or_person || "-";
+    const billType = b["บิล"] || b.bill || b.bill_type || "ทั่วไป";
+    const projName = b["ชื่อ Project"] || b.project_name || "โครงการทั่วไป";
+    const desc = b["สินค้า/ทำงาน"] || b.description || "-";
+    const status = b["สถานะ"] || b.status || "รอตั้งเบิก";
+
+    const imgList = getBillImages(b);
+    const hasImages = imgList.length > 0;
+
+    const textDetailsBox: Record<string, any> = {
+      type: "box",
+      layout: "vertical",
+      spacing: "xs",
+      contents: [
+        // Title & Amount Row
+        {
+          type: "box",
+          layout: "horizontal",
+          contents: [
+            { type: "text", text: `#${bId} [บิล${billType}] | ${projName}`, weight: "bold", size: "xs", color: "#0F172A", flex: 7, wrap: true },
+            { type: "text", text: `฿${amt}`, weight: "bold", size: "xs", color: "#059669", flex: 3, align: "end" }
+          ]
+        },
+        // Requester / Vendor Row
+        {
+          type: "box",
+          layout: "baseline",
+          margin: "xs",
+          contents: [
+            { type: "text", text: "ผู้เบิก/ร้าน:", size: "xxs", color: "#64748B", flex: 3 },
+            { type: "text", text: `${requesterName} / ${vendorName}`, size: "xxs", color: "#1E293B", flex: 7, wrap: true }
+          ]
+        },
+        // Description Row
+        {
+          type: "box",
+          layout: "baseline",
+          margin: "xs",
+          contents: [
+            { type: "text", text: "รายละเอียด:", size: "xxs", color: "#64748B", flex: 3 },
+            { type: "text", text: String(desc), size: "xxs", color: "#334155", flex: 7, wrap: true }
+          ]
+        },
+        // Status & Single Action Links Row
+        {
+          type: "box",
+          layout: "horizontal",
+          margin: "xs",
+          contents: [
+            { type: "text", text: `สถานะ: ${status}`, size: "xxs", color: status === "อนุมัติ" || status === "เบิกแล้ว" ? "#059669" : "#D97706", weight: "bold", flex: 4 },
+            {
+              type: "text",
+              text: "[ส่งอนุมัติ]",
+              size: "xxs",
+              color: "#0284C7",
+              align: "end",
+              weight: "bold",
+              flex: 2,
+              action: {
+                type: "message",
+                label: "ส่งอนุมัติ",
+                text: `ส่งไปเพื่ออนุมัติบิลลำดับที่: ${bId}`
+              }
+            },
+            {
+              type: "text",
+              text: "[อนุมัติ]",
+              size: "xxs",
+              color: "#059669",
+              align: "end",
+              weight: "bold",
+              flex: 2,
+              action: {
+                type: "message",
+                label: "อนุมัติ",
+                text: `อนุมัติบิลลำดับที่: ${bId}`
+              }
+            },
+            {
+              type: "text",
+              text: "[ปิดงาน]",
+              size: "xxs",
+              color: "#DC2626",
+              align: "end",
+              weight: "bold",
+              flex: 2,
+              action: {
+                type: "message",
+                label: "ปิดงาน",
+                text: `ปิดงานบิลลำดับที่: ${bId}`
+              }
+            }
+          ]
+        }
+      ]
+    };
+
+    if (hasImages) {
+      const displayedImgs = imgList.slice(0, 4);
+      const imgColumns: any[] = displayedImgs.map((imgUrl, imgIdx) => ({
+        type: "image",
+        url: imgUrl,
+        aspectRatio: "1:1",
+        aspectMode: "cover",
+        flex: 1,
+        action: {
+          type: "uri",
+          label: `รูปที่ ${imgIdx + 1}`,
+          uri: normalizeUri(imgUrl)
+        }
+      }));
+
+      while (imgColumns.length < 4) {
+        imgColumns.push({ type: "filler" });
+      }
+
+      const multiImgRow = {
+        type: "box",
+        layout: "horizontal",
+        margin: "xs",
+        spacing: "xs",
+        contents: imgColumns
+      };
+
+      return {
+        type: "box",
+        layout: "vertical",
+        margin: idx > 0 ? "sm" : "none",
+        paddingAll: "8px",
+        backgroundColor: "#F8FAFC",
+        cornerRadius: "6px",
+        contents: [
+          textDetailsBox,
+          {
+            type: "box",
+            layout: "horizontal",
+            margin: "xs",
+            contents: [
+              { type: "text", text: `รูปแนบใบเสร็จ (${imgList.length} รูป - แตะรูปเพื่อดูภาพเต็ม):`, size: "xxs", color: "#475569", weight: "bold" }
+            ]
+          },
+          multiImgRow
+        ]
+      };
+    }
+
+    return {
+      type: "box",
+      layout: "vertical",
+      margin: idx > 0 ? "sm" : "none",
+      paddingAll: "8px",
+      backgroundColor: "#F8FAFC",
+      cornerRadius: "6px",
+      contents: [textDetailsBox]
+    };
+  });
+
+  // Footer Actions
+  let footerButtons: any[] = [];
+  if (mode === "requester") {
+    footerButtons = [
+      {
+        type: "button",
+        style: "primary",
+        color: "#0284C7",
+        height: "sm",
+        action: {
+          type: "message",
+          label: `ส่งไปเพื่ออนุมัติ (${bills.length} รายการ)`,
+          text: bills.length === 1 ? `ส่งไปเพื่ออนุมัติบิลลำดับที่: ${sheetRowStr}` : `ส่งไปเพื่ออนุมัติ:${sheetRowStr}`
+        }
+      }
+    ];
+  } else if (mode === "owner") {
+    footerButtons = [
+      {
+        type: "button",
+        style: "primary",
+        color: "#059669",
+        height: "sm",
+        action: {
+          type: "message",
+          label: `อนุมัติทั้งหมด (${bills.length} รายการ)`,
+          text: bills.length === 1 ? `อนุมัติบิลลำดับที่: ${sheetRowStr}` : `อนุมัติบิลลำดับที่: ${sheetRowStr}`
+        }
+      }
+    ];
+  } else if (mode === "approver") {
+    footerButtons = [
+      {
+        type: "button",
+        style: "primary",
+        color: "#DC2626",
+        height: "sm",
+        action: {
+          type: "message",
+          label: `ปิดงานทั้งหมด (${bills.length} รายการ)`,
+          text: bills.length === 1 ? `ปิดงานบิลลำดับที่: ${sheetRowStr}` : `ปิดงานบิลลำดับที่: ${sheetRowStr}`
+        }
+      }
+    ];
+  } else {
+    // Mode search
+    footerButtons = [
+      {
+        type: "button",
+        style: "primary",
+        color: "#059669",
+        height: "sm",
+        flex: 6,
+        action: {
+          type: "message",
+          label: `อนุมัติทั้งหมด (${bills.length})`,
+          text: `อนุมัติทั้งหมด:${firstReq || sheetRowStr}`
+        }
+      },
+      {
+        type: "button",
+        style: "primary",
+        color: "#DC2626",
+        height: "sm",
+        flex: 6,
+        action: {
+          type: "message",
+          label: `ปิดงานทั้งหมด (${bills.length})`,
+          text: `ปิดงานทั้งหมด:${firstReq || sheetRowStr}`
+        }
+      }
+    ];
+  }
 
   return {
     type: "bubble",
@@ -1550,270 +1823,62 @@ export function createWithdrawRequesterFlex(row: Record<string, any>): Record<st
     header: {
       type: "box",
       layout: "vertical",
-      backgroundColor: "#0284C7",
+      backgroundColor: headerBg,
       paddingAll: "14px",
       contents: [
-        { type: "text", text: "📄 แจ้งเตือนการตั้งเบิกเงิน", weight: "bold", color: "#FFFFFF", size: "md" },
-        { type: "text", text: `บิลลำดับที่: #${sheetRow} | ประเภท: บิล${billType}`, color: "#E0F2FE", size: "xs", margin: "xs" }
+        {
+          type: "box",
+          layout: "horizontal",
+          contents: [
+            { type: "text", text: options.title, weight: "bold", color: "#FFFFFF", size: "sm", flex: 7, wrap: true },
+            { type: "text", text: `รวม ฿${formattedTotal}`, weight: "bold", color: "#38BDF8", size: "sm", flex: 5, align: "end" }
+          ]
+        },
+        {
+          type: "text",
+          text: `พบทั้งหมด ${bills.length} รายการ${firstReq ? ` | ผู้เบิก: ${firstReq}` : ""}`,
+          color: "#94A3B8",
+          size: "xs",
+          margin: "xs"
+        }
       ]
     },
     body: {
       type: "box",
       layout: "vertical",
-      paddingAll: "14px",
-      spacing: "sm",
-      contents: [
-        {
-          type: "box",
-          layout: "baseline",
-          contents: [
-            { type: "text", text: "โครงการ:", color: "#64748B", size: "xs", flex: 3 },
-            { type: "text", text: String(projectName), weight: "bold", color: "#0F172A", size: "xs", flex: 7, wrap: true }
-          ]
-        },
-        {
-          type: "box",
-          layout: "baseline",
-          contents: [
-            { type: "text", text: "ร้าน/บุคคล:", color: "#64748B", size: "xs", flex: 3 },
-            { type: "text", text: String(vendor), color: "#1E293B", size: "xs", flex: 7, wrap: true }
-          ]
-        },
-        {
-          type: "box",
-          layout: "baseline",
-          contents: [
-            { type: "text", text: "รายการ:", color: "#64748B", size: "xs", flex: 3 },
-            { type: "text", text: String(itemDesc), color: "#334155", size: "xs", flex: 7, wrap: true }
-          ]
-        },
-        {
-          type: "box",
-          layout: "baseline",
-          contents: [
-            { type: "text", text: "ผู้เบิก:", color: "#64748B", size: "xs", flex: 3 },
-            { type: "text", text: String(requester), color: "#1E293B", size: "xs", flex: 7, wrap: true }
-          ]
-        },
-        { type: "separator", margin: "sm" },
-        {
-          type: "box",
-          layout: "horizontal",
-          margin: "sm",
-          contents: [
-            { type: "text", text: "ยอดขอตั้งเบิก", weight: "bold", color: "#0F172A", size: "sm" },
-            { type: "text", text: `฿${amount}`, weight: "bold", color: "#0284C7", size: "md", align: "end" }
-          ]
-        }
-      ]
+      paddingAll: "12px",
+      spacing: "xs",
+      contents: itemsContents
     },
-    footer: {
+    footer: footerButtons.length > 0 ? {
       type: "box",
-      layout: "vertical",
+      layout: "horizontal",
+      spacing: "sm",
       paddingAll: "10px",
-      backgroundColor: "#F8FAFC",
-      contents: [
-        {
-          type: "button",
-          style: "primary",
-          color: "#0284C7",
-          height: "sm",
-          action: {
-            type: "message",
-            label: "ส่งไปเพื่ออนุมัติ",
-            text: `ส่งไปเพื่ออนุมัติบิลลำดับที่: ${sheetRow}`
-          }
-        }
-      ]
-    }
+      backgroundColor: "#F1F5F9",
+      contents: footerButtons
+    } : undefined
   };
 }
 
-export function createWithdrawOwnerFlex(row: Record<string, any>): Record<string, any> {
-  const sheetRow = row._sheetRow || row.id || row["ลำดับ"] || "-";
-  const amount = Number(row["ยอดเงิน"] || row.amount || 0).toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const projectName = row["ชื่อ Project"] || row.project_name || "โครงการทั่วไป";
-  const vendor = row["ร้าน/บุคคล"] || row.vendor_or_person || "-";
-  const itemDesc = row["สินค้า/ทำงาน"] || row.description || "-";
-  const requester = row["ผู้เบิก"] || row.requester || "-";
-  const billType = row["บิล"] || row.bill || row.bill_type || "ทั่วไป";
-
-  return {
-    type: "bubble",
-    size: "mega",
-    header: {
-      type: "box",
-      layout: "vertical",
-      backgroundColor: "#D97706",
-      paddingAll: "14px",
-      contents: [
-        { type: "text", text: "📋 คำขออนุมัติเบิกเงิน (ส่งจากผู้เบิก)", weight: "bold", color: "#FFFFFF", size: "md" },
-        { type: "text", text: `บิลลำดับที่: #${sheetRow} | ประเภท: บิล${billType}`, color: "#FEF3C7", size: "xs", margin: "xs" }
-      ]
-    },
-    body: {
-      type: "box",
-      layout: "vertical",
-      paddingAll: "14px",
-      spacing: "sm",
-      contents: [
-        {
-          type: "box",
-          layout: "baseline",
-          contents: [
-            { type: "text", text: "โครงการ:", color: "#64748B", size: "xs", flex: 3 },
-            { type: "text", text: String(projectName), weight: "bold", color: "#0F172A", size: "xs", flex: 7, wrap: true }
-          ]
-        },
-        {
-          type: "box",
-          layout: "baseline",
-          contents: [
-            { type: "text", text: "ร้าน/บุคคล:", color: "#64748B", size: "xs", flex: 3 },
-            { type: "text", text: String(vendor), color: "#1E293B", size: "xs", flex: 7, wrap: true }
-          ]
-        },
-        {
-          type: "box",
-          layout: "baseline",
-          contents: [
-            { type: "text", text: "รายการ:", color: "#64748B", size: "xs", flex: 3 },
-            { type: "text", text: String(itemDesc), color: "#334155", size: "xs", flex: 7, wrap: true }
-          ]
-        },
-        {
-          type: "box",
-          layout: "baseline",
-          contents: [
-            { type: "text", text: "ผู้เบิก:", color: "#64748B", size: "xs", flex: 3 },
-            { type: "text", text: String(requester), color: "#1E293B", size: "xs", flex: 7, wrap: true }
-          ]
-        },
-        { type: "separator", margin: "sm" },
-        {
-          type: "box",
-          layout: "horizontal",
-          margin: "sm",
-          contents: [
-            { type: "text", text: "ยอดอนุมัติ", weight: "bold", color: "#0F172A", size: "sm" },
-            { type: "text", text: `฿${amount}`, weight: "bold", color: "#D97706", size: "md", align: "end" }
-          ]
-        }
-      ]
-    },
-    footer: {
-      type: "box",
-      layout: "vertical",
-      paddingAll: "10px",
-      backgroundColor: "#F8FAFC",
-      contents: [
-        {
-          type: "button",
-          style: "primary",
-          color: "#059669",
-          height: "sm",
-          action: {
-            type: "message",
-            label: "อนุมัติ",
-            text: `อนุมัติบิลลำดับที่: ${sheetRow}`
-          }
-        }
-      ]
-    }
-  };
+export function createWithdrawRequesterFlex(billsInput: Record<string, any> | Array<Record<string, any>>): Record<string, any> {
+  return createMultiBillFlex(billsInput, {
+    title: "📄 แจ้งเตือนรายการตั้งเบิกเงิน",
+    mode: "requester"
+  });
 }
 
-export function createWithdrawApproverFlex(row: Record<string, any>): Record<string, any> {
-  const sheetRow = row._sheetRow || row.id || row["ลำดับ"] || "-";
-  const amount = Number(row["ยอดเงิน"] || row.amount || 0).toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const projectName = row["ชื่อ Project"] || row.project_name || "โครงการทั่วไป";
-  const vendor = row["ร้าน/บุคคล"] || row.vendor_or_person || "-";
-  const itemDesc = row["สินค้า/ทำงาน"] || row.description || "-";
-  const requester = row["ผู้เบิก"] || row.requester || "-";
-  const billType = row["บิล"] || row.bill || row.bill_type || "ทั่วไป";
+export function createWithdrawOwnerFlex(billsInput: Record<string, any> | Array<Record<string, any>>): Record<string, any> {
+  return createMultiBillFlex(billsInput, {
+    title: "📋 คำขออนุมัติเบิกเงิน (ส่งจากผู้เบิก)",
+    mode: "owner"
+  });
+}
 
-  return {
-    type: "bubble",
-    size: "mega",
-    header: {
-      type: "box",
-      layout: "vertical",
-      backgroundColor: "#059669",
-      paddingAll: "14px",
-      contents: [
-        { type: "text", text: "✅ รายการผ่านการอนุมัติแล้ว (รอปิดงาน)", weight: "bold", color: "#FFFFFF", size: "md" },
-        { type: "text", text: `บิลลำดับที่: #${sheetRow} | ประเภท: บิล${billType}`, color: "#D1FAE5", size: "xs", margin: "xs" }
-      ]
-    },
-    body: {
-      type: "box",
-      layout: "vertical",
-      paddingAll: "14px",
-      spacing: "sm",
-      contents: [
-        {
-          type: "box",
-          layout: "baseline",
-          contents: [
-            { type: "text", text: "โครงการ:", color: "#64748B", size: "xs", flex: 3 },
-            { type: "text", text: String(projectName), weight: "bold", color: "#0F172A", size: "xs", flex: 7, wrap: true }
-          ]
-        },
-        {
-          type: "box",
-          layout: "baseline",
-          contents: [
-            { type: "text", text: "ร้าน/บุคคล:", color: "#64748B", size: "xs", flex: 3 },
-            { type: "text", text: String(vendor), color: "#1E293B", size: "xs", flex: 7, wrap: true }
-          ]
-        },
-        {
-          type: "box",
-          layout: "baseline",
-          contents: [
-            { type: "text", text: "รายการ:", color: "#64748B", size: "xs", flex: 3 },
-            { type: "text", text: String(itemDesc), color: "#334155", size: "xs", flex: 7, wrap: true }
-          ]
-        },
-        {
-          type: "box",
-          layout: "baseline",
-          contents: [
-            { type: "text", text: "ผู้เบิก:", color: "#64748B", size: "xs", flex: 3 },
-            { type: "text", text: String(requester), color: "#1E293B", size: "xs", flex: 7, wrap: true }
-          ]
-        },
-        { type: "separator", margin: "sm" },
-        {
-          type: "box",
-          layout: "horizontal",
-          margin: "sm",
-          contents: [
-            { type: "text", text: "ยอดอนุมัติแล้ว", weight: "bold", color: "#0F172A", size: "sm" },
-            { type: "text", text: `฿${amount}`, weight: "bold", color: "#059669", size: "md", align: "end" }
-          ]
-        }
-      ]
-    },
-    footer: {
-      type: "box",
-      layout: "vertical",
-      paddingAll: "10px",
-      backgroundColor: "#F8FAFC",
-      contents: [
-        {
-          type: "button",
-          style: "primary",
-          color: "#DC2626",
-          height: "sm",
-          action: {
-            type: "message",
-            label: "ปิดงาน",
-            text: `ปิดงานบิลลำดับที่: ${sheetRow}`
-          }
-        }
-      ]
-    }
-  };
+export function createWithdrawApproverFlex(billsInput: Record<string, any> | Array<Record<string, any>>): Record<string, any> {
+  return createMultiBillFlex(billsInput, {
+    title: "✅ รายการอนุมัติสำเร็จ (รอปิดงาน)",
+    mode: "approver"
+  });
 }
 

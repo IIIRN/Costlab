@@ -564,18 +564,18 @@ export async function handleLineCommand(
           status: newStatus
         });
 
-        // When Owner Approves successfully, forward Flex Message to Approvers (LINE_USER_ID_APPROVER list)
-        if (isApprove && approverIds.length > 0) {
-          const flexForApprover = createWithdrawApproverFlex(b);
-          const amt = Number(b["ยอดเงิน"] || b.amount || 0).toLocaleString("th-TH");
-          for (const approverId of approverIds) {
-            await sendFlexMessageDetailed(
-              approverId,
-              `✅ รายการอนุมัติสำเร็จ (รอปิดงาน) #${bId} (฿${amt})`,
-              flexForApprover
-            );
-          }
+      // When Owner Approves successfully, forward Multi-Item Flex Message to Approvers (LINE_USER_ID_APPROVER list)
+      if (isApprove && approverIds.length > 0) {
+        const flexForApprover = createWithdrawApproverFlex(targetBills);
+        const totalAmtStr = totalAmount.toLocaleString("th-TH");
+        const altText = targetBills.length === 1
+          ? `✅ รายการอนุมัติสำเร็จ (รอปิดงาน) #${targetBills[0]["ลำดับ"] || targetBills[0].id || ""} (฿${totalAmtStr})`
+          : `✅ รายการอนุมัติสำเร็จ ${targetBills.length} รายการ (รวม ฿${totalAmtStr})`;
+
+        for (const approverId of approverIds) {
+          await sendFlexMessageDetailed(approverId, altText, flexForApprover);
         }
+      }
       }
 
       const formattedTotal = totalAmount.toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });

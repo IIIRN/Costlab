@@ -110,35 +110,41 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
     }
   }
 
-  async function approveSelected() {
+  async function approveSelected(targetStatus: "ตั้งเบิก" | "อนุมัติ" = "ตั้งเบิก") {
     if (selectedRows.size === 0) return;
     setIsBatchApproving(true);
     setActionError("");
 
     try {
+      const updatedRowsList: SheetRow[] = [];
+
       const updates = Array.from(selectedRows).map(async (sheetRow) => {
         const targetRow = rows.find(r => Number(r._sheetRow) === sheetRow);
         if (!targetRow) return;
-        const nextStatus = "ตั้งเบิก";
 
         const res = await fetch("/api/rows", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tableName: "Data", sheetRow, values: { "สถานะ": nextStatus } })
+          body: JSON.stringify({ tableName: "Data", sheetRow, values: { "สถานะ": targetStatus } })
         });
         if (res.ok) {
-          const updatedRow = { ...targetRow, "สถานะ": nextStatus };
-          setStatusOverrides(current => ({ ...current, [sheetRow]: nextStatus }));
-
-          fetch("/api/line/notify-withdraw-request", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ row: updatedRow })
-          }).catch(err => console.warn("Failed sending LINE withdraw notification:", err));
+          const updatedRow = { ...targetRow, "สถานะ": targetStatus };
+          setStatusOverrides(current => ({ ...current, [sheetRow]: targetStatus }));
+          updatedRowsList.push(updatedRow);
         }
       });
 
       await Promise.all(updates);
+
+      if (updatedRowsList.length > 0) {
+        const targetRole = targetStatus === "อนุมัติ" ? "approver" : "requester";
+        fetch("/api/line/notify-withdraw-request", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rows: updatedRowsList, targetRole })
+        }).catch(err => console.warn("Failed sending LINE withdraw notification:", err));
+      }
+
       setSelectedRows(new Set());
       router.refresh();
     } catch (error) {
@@ -240,20 +246,35 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
           </div>
         </div>
 
-        {/* Batch Approve Action Button */}
+        {/* Batch Approve Action Buttons */}
         {selectedRows.size > 0 && (
-          <button
-            type="button"
-            onClick={approveSelected}
-            disabled={isBatchApproving}
-            className="px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-md transition cursor-pointer flex items-center gap-1.5 shrink-0"
-          >
-            {isBatchApproving ? (
-              <><LoaderCircle className="spin" size={14} /> กำลังอัพเดท...</>
-            ) : (
-              <><Check size={14} /> อัพเดทที่เลือก ({selectedRows.size})</>
-            )}
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => approveSelected("ตั้งเบิก")}
+              disabled={isBatchApproving}
+              className="px-3 py-1 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold rounded-md transition cursor-pointer flex items-center gap-1.5"
+            >
+              {isBatchApproving ? (
+                <><LoaderCircle className="spin" size={14} /> กำลังอัพเดท...</>
+              ) : (
+                <><Check size={14} /> ตั้งเบิกที่เลือก ({selectedRows.size})</>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => approveSelected("อนุมัติ")}
+              disabled={isBatchApproving}
+              className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-md transition cursor-pointer flex items-center gap-1.5"
+            >
+              {isBatchApproving ? (
+                <><LoaderCircle className="spin" size={14} /> กำลังอัพเดท...</>
+              ) : (
+                <><Check size={14} /> อนุมัติที่เลือก ({selectedRows.size}) ➡️ ส่งต่อผู้อนุมัติ</>
+              )}
+            </button>
+          </div>
         )}
       </div>
 
