@@ -1560,7 +1560,6 @@ export function createMultiBillFlex(
   }
 
   const mode = options.mode || "search";
-  const headerBg = options.headerBgColor || (mode === "requester" ? "#0284C7" : mode === "owner" ? "#D97706" : mode === "approver" ? "#059669" : "#0F172A");
 
   const totalAmount = bills.reduce((sum, b) => sum + Number(b["ยอดเงิน"] || b.amount || 0), 0);
   const formattedTotal = totalAmount.toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -1582,6 +1581,33 @@ export function createMultiBillFlex(
     return [];
   }
 
+  // 1. Top Summary Banner (Inside Body, replacing Header)
+  const topSummaryBanner = {
+    type: "box",
+    layout: "vertical",
+    paddingAll: "10px",
+    backgroundColor: "#ECFDF5",
+    cornerRadius: "8px",
+    margin: "none",
+    contents: [
+      {
+        type: "text",
+        text: options.title,
+        weight: "bold",
+        color: "#065F46",
+        size: "sm"
+      },
+      {
+        type: "text",
+        text: `พบทั้งหมด ${bills.length} รายการ${firstReq ? ` | ผู้เบิก: ${firstReq}` : ""}`,
+        color: "#047857",
+        size: "xs",
+        margin: "xs"
+      }
+    ]
+  };
+
+  // 2. Bill Items List
   const itemsContents = bills.slice(0, 10).map((b, idx) => {
     const bId = String(b._sheetRow || b.id || b["ลำดับ"] || idx + 1);
     const amt = Number(b["ยอดเงิน"] || b.amount || 0).toLocaleString("th-TH");
@@ -1713,7 +1739,7 @@ export function createMultiBillFlex(
       return {
         type: "box",
         layout: "vertical",
-        margin: idx > 0 ? "sm" : "none",
+        margin: "sm",
         paddingAll: "8px",
         backgroundColor: "#F8FAFC",
         cornerRadius: "6px",
@@ -1735,7 +1761,7 @@ export function createMultiBillFlex(
     return {
       type: "box",
       layout: "vertical",
-      margin: idx > 0 ? "sm" : "none",
+      margin: "sm",
       paddingAll: "8px",
       backgroundColor: "#F8FAFC",
       cornerRadius: "6px",
@@ -1743,14 +1769,47 @@ export function createMultiBillFlex(
     };
   });
 
-  // Footer Actions
+  // 3. Bottom Total Sum Box (Theme Emerald Green)
+  const bottomTotalSumBox = {
+    type: "box",
+    layout: "horizontal",
+    margin: "md",
+    paddingAll: "12px",
+    backgroundColor: "#ECFDF5",
+    cornerRadius: "8px",
+    borderWidth: "1px",
+    borderColor: "#A7F3D0",
+    contents: [
+      {
+        type: "text",
+        text: `รวมทั้งสิ้น (${bills.length} รายการ)`,
+        weight: "bold",
+        color: "#065F46",
+        size: "sm",
+        flex: 6,
+        gravity: "center"
+      },
+      {
+        type: "text",
+        text: `฿${formattedTotal}`,
+        weight: "bold",
+        color: "#059669",
+        size: "lg",
+        flex: 6,
+        align: "end",
+        gravity: "center"
+      }
+    ]
+  };
+
+  // 4. Footer Action Buttons (Green Theme)
   let footerButtons: any[] = [];
   if (mode === "requester") {
     footerButtons = [
       {
         type: "button",
         style: "primary",
-        color: "#0284C7",
+        color: "#059669",
         height: "sm",
         action: {
           type: "message",
@@ -1820,42 +1879,23 @@ export function createMultiBillFlex(
   return {
     type: "bubble",
     size: "mega",
-    header: {
-      type: "box",
-      layout: "vertical",
-      backgroundColor: headerBg,
-      paddingAll: "14px",
-      contents: [
-        {
-          type: "box",
-          layout: "horizontal",
-          contents: [
-            { type: "text", text: options.title, weight: "bold", color: "#FFFFFF", size: "sm", flex: 7, wrap: true },
-            { type: "text", text: `รวม ฿${formattedTotal}`, weight: "bold", color: "#38BDF8", size: "sm", flex: 5, align: "end" }
-          ]
-        },
-        {
-          type: "text",
-          text: `พบทั้งหมด ${bills.length} รายการ${firstReq ? ` | ผู้เบิก: ${firstReq}` : ""}`,
-          color: "#94A3B8",
-          size: "xs",
-          margin: "xs"
-        }
-      ]
-    },
     body: {
       type: "box",
       layout: "vertical",
-      paddingAll: "12px",
+      paddingAll: "14px",
       spacing: "xs",
-      contents: itemsContents
+      contents: [
+        topSummaryBanner,
+        ...itemsContents,
+        bottomTotalSumBox
+      ]
     },
     footer: footerButtons.length > 0 ? {
       type: "box",
       layout: "horizontal",
       spacing: "sm",
       paddingAll: "10px",
-      backgroundColor: "#F1F5F9",
+      backgroundColor: "#F8FAFC",
       contents: footerButtons
     } : undefined
   };

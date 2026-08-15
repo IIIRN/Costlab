@@ -411,8 +411,10 @@ export async function handleLineCommand(
       const { getLineConfigIds, createWithdrawOwnerFlex, sendFlexMessageDetailed } = await import("@/lib/line");
       const rawBills = await getRowsFromSupabase("Data", 1000);
 
-      const targetRow = rawBills.find(b => String(b["ลำดับ"] || b.id || b._sheetRow || "").trim() === sheetRowStr);
-      if (!targetRow) {
+      const targetIdList = sheetRowStr.split(",").map(id => id.trim()).filter(Boolean);
+      const targetBills = rawBills.filter(b => targetIdList.includes(String(b["ลำดับ"] || b.id || b._sheetRow || "").trim()));
+
+      if (targetBills.length === 0) {
         await replyTextMessage(replyToken, `🔍 ไม่พบรายการบิลลำดับที่ [${sheetRowStr}] ในระบบ`);
         return true;
       }
@@ -423,13 +425,15 @@ export async function handleLineCommand(
         return true;
       }
 
-      const flexForOwner = createWithdrawOwnerFlex(targetRow);
-      const amount = Number(targetRow["ยอดเงิน"] || targetRow.amount || 0).toLocaleString("th-TH");
-      const result = await sendFlexMessageDetailed(
-        ownerId,
-        `📋 คำขออนุมัติเบิกเงิน #${sheetRowStr} (฿${amount})`,
-        flexForOwner
-      );
+      const flexForOwner = createWithdrawOwnerFlex(targetBills);
+      const totalAmount = targetBills.reduce((sum, b) => sum + Number(b["ยอดเงิน"] || b.amount || 0), 0);
+      const amountStr = totalAmount.toLocaleString("th-TH");
+
+      const altText = targetBills.length === 1
+        ? `📋 คำขออนุมัติเบิกเงิน #${sheetRowStr} (฿${amountStr})`
+        : `📋 คำขออนุมัติเบิกเงิน ${targetBills.length} รายการ (รวม ฿${amountStr})`;
+
+      const result = await sendFlexMessageDetailed(ownerId, altText, flexForOwner);
 
       if (result.success) {
         await replyTextMessage(replyToken, `✅ ส่งรายการตั้งเบิกบิลลำดับที่ [${sheetRowStr}] ไปยังเจ้าของระบบ (OWN / Admin) เพื่ออนุมัติเรียบร้อยแล้ว`);
