@@ -409,6 +409,7 @@ export async function handleLineCommand(
 
       const { getRowsFromSupabase } = await import("@/lib/supabase-db");
       const { getLineConfigIds, createWithdrawOwnerFlex, sendFlexMessageDetailed } = await import("@/lib/line");
+      const { normalizeBillStatus } = await import("@/lib/bill-status");
       const rawBills = await getRowsFromSupabase("Data", 1000);
 
       const targetIdList = sheetRowStr.split(",").map(id => id.trim()).filter(Boolean);
@@ -419,19 +420,33 @@ export async function handleLineCommand(
         return true;
       }
 
+      // Prevent duplicate approval requests for bills that are already approved or finished
+      const pendingBills = targetBills.filter(b => {
+        const st = normalizeBillStatus(b["สถานะ"] || b.status);
+        return st !== "อนุมัติ" && st !== "เบิกแล้ว";
+      });
+
+      if (pendingBills.length === 0) {
+        await replyTextMessage(
+          replyToken,
+          `⚠️ รายการบิลลำดับที่ [${sheetRowStr}] อยู่ในสถานะ "อนุมัติแล้ว" หรือ "ปิดงานแล้ว" เรียบร้อยแล้ว (ระบบป้องกันการสั่งอนุมัติซ้ำ)`
+        );
+        return true;
+      }
+
       const { ownerId } = await getLineConfigIds();
       if (!ownerId) {
         await replyTextMessage(replyToken, "⚠️ ยังไม่ได้ระบุ LINE User ID เจ้าของระบบ (OWN) ในการตั้งค่า LINE System");
         return true;
       }
 
-      const flexForOwner = createWithdrawOwnerFlex(targetBills);
-      const totalAmount = targetBills.reduce((sum, b) => sum + Number(b["ยอดเงิน"] || b.amount || 0), 0);
+      const flexForOwner = createWithdrawOwnerFlex(pendingBills);
+      const totalAmount = pendingBills.reduce((sum, b) => sum + Number(b["ยอดเงิน"] || b.amount || 0), 0);
       const amountStr = totalAmount.toLocaleString("th-TH");
 
-      const altText = targetBills.length === 1
+      const altText = pendingBills.length === 1
         ? `📋 คำขออนุมัติเบิกเงิน #${sheetRowStr} (฿${amountStr})`
-        : `📋 คำขออนุมัติเบิกเงิน ${targetBills.length} รายการ (รวม ฿${amountStr})`;
+        : `📋 คำขออนุมัติเบิกเงิน ${pendingBills.length} รายการ (รวม ฿${amountStr})`;
 
       const result = await sendFlexMessageDetailed(ownerId, altText, flexForOwner);
 
@@ -443,13 +458,15 @@ export async function handleLineCommand(
       return true;
     }
 
-    // 5. Approve / Close Bill Commands ("อนุมัติบิลหลักของ:", "อนุมัติเงินสดบิลย่อยของ:", "อนุมัติบิลหลักลำดับที่:", "อนุมัติเงินสดบิลย่อยลำดับที่:", "ปิดงานบิลหลักลำดับที่:", "อนุมัติทั้งหมด:", "ปิดงานทั้งหมด:")
+    // 5. Approve / Disapprove / Close Bill Commands
     if (
       rawText.startsWith("อนุมัติบิลหลักของ:") ||
       rawText.startsWith("อนุมัติเงินสดบิลย่อยของ:") ||
       rawText.startsWith("อนุมัติบิลหลักลำดับที่:") ||
       rawText.startsWith("อนุมัติเงินสดบิลย่อยลำดับที่:") ||
       rawText.startsWith("อนุมัติบิลลำดับที่:") ||
+      rawText.startsWith("ไม่อนุมัติบิลลำดับที่:") ||
+      rawText.startsWith("ไม่อนุมัติ:") ||
       rawText.startsWith("ปิดงานบิลหลักลำดับที่:") ||
       rawText.startsWith("ปิดงานเงินสดบิลย่อยของ:") ||
       rawText.startsWith("ปิดงานเงินสดบิลย่อยลำดับที่:") ||
@@ -459,11 +476,12 @@ export async function handleLineCommand(
       rawText.startsWith("ปิดงานทั้งหมด:")
     ) {
       const rawTarget = rawText.replace(/.*?:/, "").trim();
-      const isApprove = rawText.includes("อนุมัติ");
+      const isReject = rawText.includes("ไม่อนุมัติ");
+      const isApprove = rawText.includes("อนุมัติ") && !isReject;
       const isBatchAll = rawText.startsWith("อนุมัติทั้งหมด:") || rawText.startsWith("ปิดงานทั้งหมด:");
 
       if (!rawTarget && !isBatchAll) {
-        await replyTextMessage(replyToken, `⚠️ กรุณาระบุชื่อผู้เบิกหรือรายละเอียดที่ต้องการ${isApprove ? "อนุมัติ" : "ปิดงาน"}`);
+        await replyTextMessage(replyToken, `⚠️ กรุณาระบุชื่อผู้เบิกหรือรายละเอียดที่ต้องการ${isReject ? "ไม่อนุมัติ" : isApprove ? "อนุมัติ" : "ปิดงาน"}`);
         return true;
       }
 
@@ -472,12 +490,12 @@ export async function handleLineCommand(
       if (!isAuthorized) {
         await replyTextMessage(
           replyToken,
-          `⛔ ขออภัยครับ บัญชี LINE ของคุณไม่มีสิทธิ์ในการ${isApprove ? "อนุมัติ" : "ปิดงาน"}บิล\n\n(สิทธิ์นี้สงวนไว้เฉพาะผู้ดูแลระบบ Admin หรือ ผู้อนุมัติที่ได้รับอนุญาตเท่านั้น)`
+          `⛔ ขออภัยครับ บัญชี LINE ของคุณไม่มีสิทธิ์ในการ${isReject ? "ไม่อนุมัติ" : isApprove ? "อนุมัติ" : "ปิดงาน"}บิล\n\n(สิทธิ์นี้สงวนไว้เฉพาะผู้ดูแลระบบ Admin หรือ ผู้อนุมัติที่ได้รับอนุญาตเท่านั้น)`
         );
         return true;
       }
 
-      const newStatus = isApprove ? "อนุมัติ" : "เบิกแล้ว";
+      const newStatus = isReject ? "ไม่อนุมัติ" : isApprove ? "อนุมัติ" : "เบิกแล้ว";
       const isSubBatch = rawText.includes("ย่อย") || rawTarget.includes("ย่อย");
       const isMainBatch = rawText.includes("หลัก") || rawTarget.includes("หลัก");
       const cleanTarget = rawTarget.replace(/^หลัก:|^ย่อย:|^บิลหลัก:|^บิลย่อย:|^บิล:|^ลำดับที่:|^บิลลำดับที่:|^หลักลำดับที่:|^ย่อยลำดับที่:/i, "").trim();

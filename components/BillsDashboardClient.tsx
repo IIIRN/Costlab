@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowDownWideNarrow, ArrowUpWideNarrow, ChevronLeft, ChevronRight, Eye, Search, X } from "lucide-react";
+import { ArrowDownWideNarrow, ArrowUpWideNarrow, ChevronLeft, ChevronRight, Eye, Filter, Search, X } from "lucide-react";
 import { FormModal } from "@/components/FormModal";
 import { BillWorkflowActions } from "@/components/BillWorkflowActions";
 import { BillDetailDrawer } from "@/components/BillDetailDrawer";
@@ -48,6 +48,7 @@ export function BillsDashboardClient({
   const [page, setPage] = useState(initialPage);
   const [pageSize, setPageSize] = useState(initialPageSize);
   const [sortDesc, setSortDesc] = useState(initialSort === "latest");
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // Bill Detail Drawer State
   const [selectedDetailIndex, setSelectedDetailIndex] = useState<number | null>(null);
@@ -120,9 +121,9 @@ export function BillsDashboardClient({
   }
 
   return (
-    <div className="w-full flex flex-col gap-4 p-4 sm:p-5 max-w-[1600px] mx-auto font-sans text-sm text-slate-800">
-      {/* 1. EXECUTIVE SUMMARY KPI CARDS (2x2 on Mobile, 4-col on Desktop) */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3">
+    <div className="w-full flex flex-col gap-3 p-3 sm:p-5 max-w-[1600px] mx-auto font-sans text-sm text-slate-800">
+      {/* 1. EXECUTIVE SUMMARY KPI CARDS (Hidden on Mobile for clean layout) */}
+      <div className="hidden md:grid md:grid-cols-4 gap-3">
         <div className="bg-white rounded-md p-2.5 sm:p-3 border border-slate-200 shadow-2xs">
           <span className="text-[11px] sm:text-xs font-semibold text-slate-500 block truncate">รายการบิลทั้งหมด</span>
           <div className="text-base sm:text-lg font-bold text-slate-900 mt-0.5">{filteredRows.length} รายการ</div>
@@ -144,105 +145,116 @@ export function BillsDashboardClient({
         </div>
       </div>
 
-      {/* 2. FILTER TOOLBAR */}
-      <div className="flex border border-slate-200 rounded-md p-3 bg-white flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
-        <div className="flex flex-wrap items-center gap-3 flex-1">
-          {/* Dropdown Filters (Hidden on Mobile as requested) */}
-          <div className="hidden md:flex flex-wrap items-center gap-3">
-            {/* Requester Filter */}
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-slate-700 whitespace-nowrap">ผู้เบิก:</span>
-              <select
-                value={filters.requester}
-                onChange={event => updateFilter("requester", event.target.value)}
-                className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none cursor-pointer"
-              >
-                <option value="">ทั้งหมด</option>
-                {peopleRows.map(row => {
-                  const key = String(row["รหัสพนักงาน"] || row["ชื่อเล่น"] || row._sheetRow || "");
-                  const label = row["ชื่อเล่น"] ? `${key} - ${row["ชื่อเล่น"]}` : key;
-                  return key ? <option key={key} value={key}>{label}</option> : null;
-                })}
-              </select>
-            </div>
-
-            {/* Date Filter */}
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-slate-700 whitespace-nowrap">วันที่:</span>
+      {/* 2. FILTER TOOLBAR (Compact Mobile Layout) */}
+      <div className="flex border border-slate-200 rounded-md p-2.5 bg-white flex-col gap-2 text-xs">
+        {/* Search Bar & Mobile Filter Toggle Header */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 w-full">
+          <div className="flex items-center gap-2 flex-1">
+            <div className="relative flex items-center flex-1">
+              <Search size={14} className="absolute left-2.5 text-slate-400 pointer-events-none" />
               <input
-                type="date"
-                value={filters.date}
-                onChange={event => updateFilter("date", event.target.value)}
-                className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none cursor-pointer"
+                type="text"
+                placeholder="ค้นหา Project, ร้านค้า, รายการ..."
+                value={filters.search}
+                onChange={event => updateFilter("search", event.target.value)}
+                className="w-full bg-white text-slate-800 text-xs pl-8 pr-7 py-1.5 rounded-md border border-slate-300 focus:outline-none focus:border-slate-500 placeholder:text-slate-400"
               />
+              {filters.search && (
+                <X size={14} className="absolute right-2 text-slate-400 cursor-pointer hover:text-slate-600" onClick={() => updateFilter("search", "")} />
+              )}
             </div>
 
-            {/* Bill Type Filter */}
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-slate-700 whitespace-nowrap">ประเภทบิล:</span>
-              <select
-                value={filters.bill}
-                onChange={event => updateFilter("bill", event.target.value)}
-                className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none cursor-pointer"
-              >
-                <option value="">ทั้งหมด</option>
-                <option value="หลัก">หลัก</option>
-                <option value="ย่อย">ย่อย</option>
-              </select>
-            </div>
-
-            {/* Status Filter */}
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-slate-700 whitespace-nowrap">สถานะ:</span>
-              <select
-                value={filters.status}
-                onChange={event => updateFilter("status", event.target.value)}
-                className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none cursor-pointer"
-              >
-                <option value="">ทั้งหมด</option>
-                <option value="รออนุมัติ">รออนุมัติ</option>
-                <option value="ตั้งเบิก">ตั้งเบิก</option>
-                <option value="อนุมัติ">อนุมัติ</option>
-                <option value="เบิกแล้ว">เบิกแล้ว</option>
-              </select>
-            </div>
+            <button
+              type="button"
+              onClick={() => setShowMobileFilters(!showMobileFilters)}
+              className="md:hidden px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md border border-slate-300 flex items-center gap-1 shrink-0 cursor-pointer"
+            >
+              <Filter size={13} />
+              <span>{showMobileFilters ? "ซ่อนตัวกรอง" : "ตัวกรอง"}</span>
+            </button>
           </div>
 
-          {/* Search Input */}
-          <div className="relative flex items-center flex-1 min-w-[220px] max-w-md">
-            <Search size={14} className="absolute left-2.5 text-slate-400 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="ค้นหา Project, ร้านค้า, รายการ..."
-              value={filters.search}
-              onChange={event => updateFilter("search", event.target.value)}
-              className="w-full bg-white text-slate-800 text-xs pl-8 pr-7 py-1 rounded-md border border-slate-300 focus:outline-none focus:border-slate-500 placeholder:text-slate-400"
+          {/* Action Controls */}
+          <div className="flex items-center gap-2 shrink-0 justify-end">
+            <button
+              type="button"
+              onClick={() => setSortDesc(cur => !cur)}
+              className="px-2.5 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-md text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
+              title="สลับการเรียงลำดับ"
+            >
+              {sortDesc ? <ArrowDownWideNarrow size={14} className="text-slate-600" /> : <ArrowUpWideNarrow size={14} className="text-slate-600" />}
+              <span>{sortDesc ? "ล่าสุดก่อน" : "เก่าสุดก่อน"}</span>
+            </button>
+
+            <FormModal
+              form={activeForm}
+              title="เพิ่มบิล"
+              buttonLabel="เพิ่มบิล"
+              submitPath="/api/bills"
+              openEventName="open-bill-form"
             />
-            {filters.search && (
-              <X size={14} className="absolute right-2 text-slate-400 cursor-pointer hover:text-slate-600" onClick={() => updateFilter("search", "")} />
-            )}
           </div>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setSortDesc(cur => !cur)}
-            className="px-3 py-1 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-md text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
-            title="สลับการเรียงลำดับ"
-          >
-            {sortDesc ? <ArrowDownWideNarrow size={14} className="text-slate-600" /> : <ArrowUpWideNarrow size={14} className="text-slate-600" />}
-            <span>{sortDesc ? "ล่าสุดก่อน" : "เก่าสุดก่อน"}</span>
-          </button>
+        {/* Expandable Filter Controls */}
+        <div className={`flex-wrap items-center gap-2.5 pt-1.5 border-t border-slate-100 md:border-t-0 md:pt-0 ${showMobileFilters ? "flex" : "hidden md:flex"}`}>
+          {/* Requester Filter */}
+          <div className="flex items-center gap-1.5">
+            <span className="font-semibold text-slate-700 whitespace-nowrap">ผู้เบิก:</span>
+            <select
+              value={filters.requester}
+              onChange={event => updateFilter("requester", event.target.value)}
+              className="bg-white border border-slate-300 text-xs text-slate-800 px-2 py-1 rounded-md focus:outline-none cursor-pointer"
+            >
+              <option value="">ทั้งหมด</option>
+              {peopleRows.map(row => {
+                const key = String(row["รหัสพนักงาน"] || row["ชื่อเล่น"] || row._sheetRow || "");
+                const label = row["ชื่อเล่น"] ? `${key} - ${row["ชื่อเล่น"]}` : key;
+                return key ? <option key={key} value={key}>{label}</option> : null;
+              })}
+            </select>
+          </div>
 
-          <FormModal
-            form={activeForm}
-            title="เพิ่มบิล"
-            buttonLabel="เพิ่มบิล"
-            submitPath="/api/bills"
-            openEventName="open-bill-form"
-          />
+          {/* Date Filter */}
+          <div className="flex items-center gap-1.5">
+            <span className="font-semibold text-slate-700 whitespace-nowrap">วันที่:</span>
+            <input
+              type="date"
+              value={filters.date}
+              onChange={event => updateFilter("date", event.target.value)}
+              className="bg-white border border-slate-300 text-xs text-slate-800 px-2 py-1 rounded-md focus:outline-none cursor-pointer"
+            />
+          </div>
+
+          {/* Bill Type Filter */}
+          <div className="flex items-center gap-1.5">
+            <span className="font-semibold text-slate-700 whitespace-nowrap">ประเภท:</span>
+            <select
+              value={filters.bill}
+              onChange={event => updateFilter("bill", event.target.value)}
+              className="bg-white border border-slate-300 text-xs text-slate-800 px-2 py-1 rounded-md focus:outline-none cursor-pointer"
+            >
+              <option value="">ทั้งหมด</option>
+              <option value="หลัก">หลัก</option>
+              <option value="ย่อย">ย่อย</option>
+            </select>
+          </div>
+
+          {/* Status Filter */}
+          <div className="flex items-center gap-1.5">
+            <span className="font-semibold text-slate-700 whitespace-nowrap">สถานะ:</span>
+            <select
+              value={filters.status}
+              onChange={event => updateFilter("status", event.target.value)}
+              className="bg-white border border-slate-300 text-xs text-slate-800 px-2 py-1 rounded-md focus:outline-none cursor-pointer"
+            >
+              <option value="">ทั้งหมด</option>
+              <option value="รออนุมัติ">รออนุมัติ</option>
+              <option value="ตั้งเบิก">ตั้งเบิก</option>
+              <option value="อนุมัติ">อนุมัติ</option>
+              <option value="เบิกแล้ว">เบิกแล้ว</option>
+            </select>
+          </div>
         </div>
       </div>
 

@@ -765,13 +765,10 @@ function renderField(
             {options.map((option, index) => {
               const optionValue = String(option.value);
               const checked = choiceValue === optionValue;
+              const buttonStyle = getOptionButtonStyle(field.name, optionValue, checked);
               return (
                 <label
-                  className={`px-3 py-1.5 rounded-lg border text-xs font-normal cursor-pointer transition-all ${
-                    checked
-                      ? "bg-slate-800 text-white border-slate-800 font-medium"
-                      : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg border text-xs cursor-pointer transition-all flex items-center gap-1.5 ${buttonStyle}`}
                   key={`${optionValue}-${index}`}
                   onClick={(e) => {
                     if (readOnly) return;
@@ -796,7 +793,12 @@ function renderField(
                       onChange(event.target.value);
                     }}
                   />
-                  <span>{String(option.label)}</span>
+                  {field.name === "color" || field.name === "COLOR" ? (
+                    <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                      optionValue.toLowerCase() === "red" ? "bg-rose-500" : optionValue.toLowerCase() === "green" ? "bg-emerald-500" : "bg-slate-900"
+                    }`} />
+                  ) : null}
+                  <span>{getFieldOptionLabel(field.name, String(option.label || option.value))}</span>
                 </label>
               );
             })}
@@ -1083,6 +1085,41 @@ function customChoiceConfig(fieldName: string) {
   if (fieldName === "หัก") return { optionValue: "ระบุเอง", placeholder: "กำหนดเปอร์เซ็นต์หักเอง" };
   if (fieldName === "เครดิต") return { optionValue: "ระบุเอง", placeholder: "กำหนดเครดิตเอง (วัน)" };
   return null;
+}
+
+function getFieldOptionLabel(fieldName: string, label: string): string {
+  if (fieldName === "color" || fieldName === "COLOR") {
+    const val = label.trim().toLowerCase();
+    if (val === "red" || val.includes("แดง") || val.includes("ใหญ่")) return "Red (งานใหญ่)";
+    if (val === "green" || val.includes("เขียว") || val.includes("เล็ก")) return "Green (งานเล็ก)";
+    if (val === "black" || val.includes("ดำ") || val.includes("เสร็จ")) return "Black (งานเสร็จแล้ว)";
+  }
+  return label;
+}
+
+function getOptionButtonStyle(fieldName: string, optionValue: string, checked: boolean): string {
+  if (fieldName === "color" || fieldName === "COLOR") {
+    const val = optionValue.trim().toLowerCase();
+    if (val === "red" || val.includes("แดง") || val.includes("ใหญ่")) {
+      return checked
+        ? "bg-rose-600 text-white border-rose-600 font-bold shadow-xs ring-2 ring-rose-300"
+        : "bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100 font-medium";
+    }
+    if (val === "green" || val.includes("เขียว") || val.includes("เล็ก")) {
+      return checked
+        ? "bg-emerald-600 text-white border-emerald-600 font-bold shadow-xs ring-2 ring-emerald-300"
+        : "bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100 font-medium";
+    }
+    if (val === "black" || val.includes("ดำ") || val.includes("เสร็จ")) {
+      return checked
+        ? "bg-slate-900 text-white border-slate-900 font-bold shadow-xs ring-2 ring-slate-400"
+        : "bg-slate-100 text-slate-800 border-slate-300 hover:bg-slate-200 font-medium";
+    }
+  }
+
+  return checked
+    ? "bg-slate-800 text-white border-slate-800 font-medium"
+    : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50";
 }
 
 function getCookie(name: string): string {

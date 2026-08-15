@@ -1621,6 +1621,116 @@ export function createMultiBillFlex(
     const imgList = getBillImages(b);
     const hasImages = imgList.length > 0;
 
+    // Build per-role action links
+    const actionLinks: any[] = [];
+    if (mode === "requester") {
+      actionLinks.push({
+        type: "text",
+        text: "[ส่งอนุมัติ]",
+        size: "xxs",
+        color: "#0284C7",
+        align: "end",
+        weight: "bold",
+        flex: 3,
+        action: {
+          type: "message",
+          label: "ส่งอนุมัติ",
+          text: `ส่งไปเพื่ออนุมัติบิลลำดับที่: ${bId}`
+        }
+      });
+    } else if (mode === "owner") {
+      actionLinks.push(
+        {
+          type: "text",
+          text: "[อนุมัติ]",
+          size: "xxs",
+          color: "#059669",
+          align: "end",
+          weight: "bold",
+          flex: 2,
+          action: {
+            type: "message",
+            label: "อนุมัติ",
+            text: `อนุมัติบิลลำดับที่: ${bId}`
+          }
+        },
+        {
+          type: "text",
+          text: "[ไม่อนุมัติ]",
+          size: "xxs",
+          color: "#DC2626",
+          align: "end",
+          weight: "bold",
+          flex: 3,
+          action: {
+            type: "message",
+            label: "ไม่อนุมัติ",
+            text: `ไม่อนุมัติบิลลำดับที่: ${bId}`
+          }
+        }
+      );
+    } else if (mode === "approver") {
+      actionLinks.push({
+        type: "text",
+        text: "[ปิดงาน]",
+        size: "xxs",
+        color: "#DC2626",
+        align: "end",
+        weight: "bold",
+        flex: 3,
+        action: {
+          type: "message",
+          label: "ปิดงาน",
+          text: `ปิดงานบิลลำดับที่: ${bId}`
+        }
+      });
+    } else {
+      actionLinks.push(
+        {
+          type: "text",
+          text: "[ส่งอนุมัติ]",
+          size: "xxs",
+          color: "#0284C7",
+          align: "end",
+          weight: "bold",
+          flex: 2,
+          action: {
+            type: "message",
+            label: "ส่งอนุมัติ",
+            text: `ส่งไปเพื่ออนุมัติบิลลำดับที่: ${bId}`
+          }
+        },
+        {
+          type: "text",
+          text: "[อนุมัติ]",
+          size: "xxs",
+          color: "#059669",
+          align: "end",
+          weight: "bold",
+          flex: 2,
+          action: {
+            type: "message",
+            label: "อนุมัติ",
+            text: `อนุมัติบิลลำดับที่: ${bId}`
+          }
+        },
+        {
+          type: "text",
+          text: "[ปิดงาน]",
+          size: "xxs",
+          color: "#DC2626",
+          align: "end",
+          weight: "bold",
+          flex: 2,
+          action: {
+            type: "message",
+            label: "ปิดงาน",
+            text: `ปิดงานบิลลำดับที่: ${bId}`
+          }
+        }
+      );
+    }
+
     const textDetailsBox: Record<string, any> = {
       type: "box",
       layout: "vertical",
@@ -1655,55 +1765,14 @@ export function createMultiBillFlex(
             { type: "text", text: String(desc), size: "xxs", color: "#334155", flex: 7, wrap: true }
           ]
         },
-        // Status & Single Action Links Row
+        // Status & Per-role Action Links Row
         {
           type: "box",
           layout: "horizontal",
           margin: "xs",
           contents: [
             { type: "text", text: `สถานะ: ${status}`, size: "xxs", color: status === "อนุมัติ" || status === "เบิกแล้ว" ? "#059669" : "#D97706", weight: "bold", flex: 4 },
-            {
-              type: "text",
-              text: "[ส่งอนุมัติ]",
-              size: "xxs",
-              color: "#0284C7",
-              align: "end",
-              weight: "bold",
-              flex: 2,
-              action: {
-                type: "message",
-                label: "ส่งอนุมัติ",
-                text: `ส่งไปเพื่ออนุมัติบิลลำดับที่: ${bId}`
-              }
-            },
-            {
-              type: "text",
-              text: "[อนุมัติ]",
-              size: "xxs",
-              color: "#059669",
-              align: "end",
-              weight: "bold",
-              flex: 2,
-              action: {
-                type: "message",
-                label: "อนุมัติ",
-                text: `อนุมัติบิลลำดับที่: ${bId}`
-              }
-            },
-            {
-              type: "text",
-              text: "[ปิดงาน]",
-              size: "xxs",
-              color: "#DC2626",
-              align: "end",
-              weight: "bold",
-              flex: 2,
-              action: {
-                type: "message",
-                label: "ปิดงาน",
-                text: `ปิดงานบิลลำดับที่: ${bId}`
-              }
-            }
+            ...actionLinks
           ]
         }
       ]
@@ -1785,8 +1854,8 @@ export function createMultiBillFlex(
         text: `รวมทั้งสิ้น (${bills.length} รายการ)`,
         weight: "bold",
         color: "#065F46",
-        size: "sm",
-        flex: 6,
+        size: "xs",
+        flex: 5,
         gravity: "center"
       },
       {
@@ -1794,8 +1863,8 @@ export function createMultiBillFlex(
         text: `฿${formattedTotal}`,
         weight: "bold",
         color: "#059669",
-        size: "lg",
-        flex: 6,
+        size: "md",
+        flex: 7,
         align: "end",
         gravity: "center"
       }
@@ -1825,10 +1894,23 @@ export function createMultiBillFlex(
         style: "primary",
         color: "#059669",
         height: "sm",
+        flex: 6,
         action: {
           type: "message",
           label: `อนุมัติทั้งหมด (${bills.length} รายการ)`,
           text: bills.length === 1 ? `อนุมัติบิลลำดับที่: ${sheetRowStr}` : `อนุมัติบิลลำดับที่: ${sheetRowStr}`
+        }
+      },
+      {
+        type: "button",
+        style: "primary",
+        color: "#DC2626",
+        height: "sm",
+        flex: 6,
+        action: {
+          type: "message",
+          label: `ไม่อนุมัติ (${bills.length} รายการ)`,
+          text: bills.length === 1 ? `ไม่อนุมัติบิลลำดับที่: ${sheetRowStr}` : `ไม่อนุมัติบิลลำดับที่: ${sheetRowStr}`
         }
       }
     ];

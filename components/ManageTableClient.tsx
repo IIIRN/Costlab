@@ -790,18 +790,32 @@ function renderDisplayCell(column: string, value: RowValue | undefined, displayL
 }
 
 function ColorDot({ value }: { value: RowValue | undefined }) {
-  const label = stringify(value).trim();
-  const tone = label.toLowerCase();
-  const bgClass = tone === "green"
+  const raw = stringify(value).trim();
+  const tone = raw.toLowerCase();
+  const isRed = tone === "red" || tone.includes("แดง") || tone.includes("ใหญ่");
+  const isGreen = tone === "green" || tone.includes("เขียว") || tone.includes("เล็ก");
+  const isBlack = tone === "black" || tone.includes("ดำ") || tone.includes("เสร็จ");
+
+  const bgClass = isGreen
     ? "bg-emerald-500 ring-2 ring-emerald-200"
-    : tone === "red"
+    : isRed
       ? "bg-rose-500 ring-2 ring-rose-200"
-      : tone === "black"
+      : isBlack
         ? "bg-slate-900 ring-2 ring-slate-300"
         : "bg-slate-200";
+
+  const displayTitle = isRed
+    ? "Red (งานใหญ่)"
+    : isGreen
+      ? "Green (งานเล็ก)"
+      : isBlack
+        ? "Black (งานเสร็จแล้ว)"
+        : raw || "-";
+
   return (
-    <span className="inline-flex items-center justify-center" title={label || "-"}>
-      <span className={`w-3 h-3 rounded-full ${bgClass} transition-all`} aria-label={label || "-"} />
+    <span className="inline-flex items-center gap-1.5" title={displayTitle}>
+      <span className={`w-2.5 h-2.5 rounded-full ${bgClass} transition-all shrink-0`} aria-label={displayTitle} />
+      <span className="text-[11px] font-semibold text-slate-700">{displayTitle}</span>
     </span>
   );
 }

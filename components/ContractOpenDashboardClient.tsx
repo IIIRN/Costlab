@@ -64,9 +64,9 @@ export function ContractOpenDashboardClient({
   }, [searchTerm, pageSize]);
 
   return (
-    <div className="w-full flex flex-col gap-4 p-4 sm:p-5 max-w-[1600px] mx-auto font-sans text-sm text-slate-800">
-      {/* 1. SUMMARY KPI CARDS (2x2 on Mobile, 4-col on Desktop) */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3">
+    <div className="w-full flex flex-col gap-3 p-3 sm:p-5 max-w-[1600px] mx-auto font-sans text-sm text-slate-800">
+      {/* 1. SUMMARY KPI CARDS (Hidden on Mobile for clean layout) */}
+      <div className="hidden md:grid md:grid-cols-4 gap-3">
         <div className="bg-white rounded-md p-2.5 sm:p-3 border border-slate-200 shadow-2xs">
           <span className="text-[11px] sm:text-xs font-semibold text-slate-500 block truncate">สัญญาจ้างทั้งหมด</span>
           <div className="text-base sm:text-lg font-bold text-slate-900 mt-0.5">{filteredRows.length} รายการ</div>
@@ -88,17 +88,17 @@ export function ContractOpenDashboardClient({
         </div>
       </div>
 
-      {/* 2. FILTER TOOLBAR */}
-      <div className="border border-slate-200 rounded-md p-3 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+      {/* 2. FILTER TOOLBAR (Compact Mobile Layout) */}
+      <div className="border border-slate-200 rounded-md p-2.5 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
         {/* Search Input */}
-        <div className="relative flex items-center flex-1 min-w-[240px] max-w-md">
+        <div className="relative flex items-center flex-1">
           <Search size={14} className="absolute left-2.5 text-slate-400 pointer-events-none" />
           <input
             type="text"
             placeholder="ค้นหาชื่อ Project, ID, สัญญาจ้าง, ผู้รับเหมา..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="w-full bg-white text-slate-800 text-xs pl-8 pr-7 py-1 rounded-md border border-slate-300 focus:outline-none focus:border-slate-500 placeholder:text-slate-400"
+            className="w-full bg-white text-slate-800 text-xs pl-8 pr-7 py-1.5 rounded-md border border-slate-300 focus:outline-none focus:border-slate-500 placeholder:text-slate-400"
           />
           {searchTerm && (
             <X size={14} className="absolute right-2 text-slate-400 cursor-pointer hover:text-slate-600" onClick={() => setSearchTerm("")} />
@@ -106,11 +106,11 @@ export function ContractOpenDashboardClient({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0 justify-end">
           <button
             type="button"
             onClick={() => setSortDesc(cur => !cur)}
-            className="px-3 py-1 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-md text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
+            className="px-2.5 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-md text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
             title="สลับการเรียงลำดับ"
           >
             {sortDesc ? <ArrowDownWideNarrow size={14} className="text-slate-600" /> : <ArrowUpWideNarrow size={14} className="text-slate-600" />}

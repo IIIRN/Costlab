@@ -90,18 +90,27 @@ export function applyProjectFormulas(row: SheetRow) {
     output["ยอดงาน"] = Math.round(vatAmount / 1.07);
   }
 
-  // Calculate overall budget cap "งบไม่เกิน" if empty or 0
+  // Calculate overall budget cap "งบไม่เกิน"
   const currentCap = toNumber(output["งบไม่เกิน"]);
-  if (currentCap === 0) {
-    const categorySum = Object.keys(output)
-      .filter(k => k.startsWith("งบไม่เกิน") && k !== "งบไม่เกิน")
-      .reduce((sum, k) => sum + toNumber(output[k]), 0);
-    if (categorySum > 0) {
-      output["งบไม่เกิน"] = categorySum;
-    } else if (workAmount > 0) {
-      output["งบไม่เกิน"] = workAmount;
-    } else if (vatAmount > 0) {
-      output["งบไม่เกิน"] = Math.round(vatAmount / 1.07);
+  const recalculatedWorkAmount = toNumber(output["ยอดงาน"]);
+  const recalculatedVatAmount = toNumber(output["ยอดรวม vat"]);
+
+  const categorySum = Object.keys(output)
+    .filter(k => k.startsWith("งบไม่เกิน") && k !== "งบไม่เกิน")
+    .reduce((sum, k) => sum + toNumber(output[k]), 0);
+
+  if (categorySum > 0) {
+    // Priority 1: Sub-category allocations exist (e.g. 3,000,000 in Category Budget Matrix)
+    output["งบไม่เกิน"] = categorySum;
+  } else if (
+    currentCap === 0 ||
+    (recalculatedVatAmount > 0 && currentCap === recalculatedVatAmount && recalculatedWorkAmount > 0 && recalculatedWorkAmount !== recalculatedVatAmount)
+  ) {
+    // Priority 2: No sub-category allocations, and currentCap is empty/0 or incorrectly set to vatAmount
+    if (recalculatedWorkAmount > 0) {
+      output["งบไม่เกิน"] = recalculatedWorkAmount;
+    } else if (recalculatedVatAmount > 0) {
+      output["งบไม่เกิน"] = Math.round(recalculatedVatAmount / 1.07);
     }
   }
 

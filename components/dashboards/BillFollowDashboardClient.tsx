@@ -15,6 +15,7 @@ import {
   Copy,
   Eye,
   FileCheck,
+  Filter,
   Loader2,
   MessageSquare,
   Receipt,
@@ -64,6 +65,7 @@ export function BillFollowDashboardClient({
   const [selectedDate, setSelectedDate] = useState("");
   const [pageSize, setPageSize] = useState(20);
   const [page, setPage] = useState(1);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // Quick Action & Notification States
   const [savingRowId, setSavingRowId] = useState<string | null>(null);
@@ -276,8 +278,8 @@ export function BillFollowDashboardClient({
         </div>
       )}
 
-      {/* 1. EXECUTIVE SUMMARY KPI CARDS (2x2 on Mobile, 4-col on Desktop) */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+      {/* 1. EXECUTIVE SUMMARY KPI CARDS (Hidden on Mobile for clean layout) */}
+      <div className="hidden md:grid md:grid-cols-4 gap-3">
         {/* Vat Card */}
         <div
           onClick={() => handleTabChange("vat")}
@@ -343,12 +345,62 @@ export function BillFollowDashboardClient({
         </div>
       </div>
 
-      {/* 2. FILTER & ACTION TOOLBAR */}
-      <div className="border border-slate-200 rounded-md p-3 bg-white flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
-        {/* Left Filters */}
-        <div className="flex flex-wrap items-center gap-3 flex-1">
+      {/* 2. FILTER & ACTION TOOLBAR (Compact Mobile Layout) */}
+      <div className="border border-slate-200 rounded-md p-2.5 bg-white flex flex-col gap-2 text-xs">
+        {/* Search Bar & Mobile Filter Toggle Header */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 w-full">
+          <div className="flex items-center gap-2 flex-1">
+            <div className="relative flex items-center flex-1">
+              <Search size={14} className="absolute left-2.5 text-slate-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="ค้นหาลำดับ, ร้านค้า, Project, รายการ..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setPage(1);
+                }}
+                className="w-full bg-white text-slate-800 text-xs pl-8 pr-7 py-1.5 rounded-md border border-slate-300 focus:outline-none focus:border-slate-500 placeholder:text-slate-400"
+              />
+              {searchTerm && (
+                <X
+                  size={14}
+                  className="absolute right-2 text-slate-400 cursor-pointer hover:text-slate-600"
+                  onClick={() => {
+                    setSearchTerm("");
+                    setPage(1);
+                  }}
+                />
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowMobileFilters(!showMobileFilters)}
+              className="md:hidden px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md border border-slate-300 flex items-center gap-1 shrink-0 cursor-pointer"
+            >
+              <Filter size={13} />
+              <span>{showMobileFilters ? "ซ่อนตัวกรอง" : "ตัวกรอง"}</span>
+            </button>
+          </div>
+
+          {/* Batch Copy Button for Selected Requester */}
+          {selectedRequester && filteredRows.length > 0 && (
+            <button
+              type="button"
+              onClick={copyRequesterBatchText}
+              className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs rounded-md transition cursor-pointer shrink-0"
+              title="คัดลอกข้อความสรุปบิลค้างทั้งหมดของผู้เบิกรายนี้"
+            >
+              คัดลอกส่ง LINE ({filteredRows.length} รายการ)
+            </button>
+          )}
+        </div>
+
+        {/* Expandable Filter Controls */}
+        <div className={`flex-wrap items-center gap-2.5 pt-1.5 border-t border-slate-100 md:border-t-0 md:pt-0 ${showMobileFilters ? "flex" : "hidden md:flex"}`}>
           {/* Requester dropdown */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <span className="font-semibold text-slate-700 whitespace-nowrap">ผู้เบิก:</span>
             <select
               value={selectedRequester}
@@ -356,7 +408,7 @@ export function BillFollowDashboardClient({
                 setSelectedRequester(e.target.value);
                 setPage(1);
               }}
-              className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none cursor-pointer"
+              className="bg-white border border-slate-300 text-xs text-slate-800 px-2 py-1 rounded-md focus:outline-none cursor-pointer"
             >
               <option value="">ทั้งหมด ({allPendingRows.length} รายการ)</option>
               {peopleRows.map((row) => {
@@ -372,7 +424,7 @@ export function BillFollowDashboardClient({
           </div>
 
           {/* Date Picker */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <span className="font-semibold text-slate-700 whitespace-nowrap">วันที่:</span>
             <input
               type="date"
@@ -381,46 +433,9 @@ export function BillFollowDashboardClient({
                 setSelectedDate(e.target.value);
                 setPage(1);
               }}
-              className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none cursor-pointer"
+              className="bg-white border border-slate-300 text-xs text-slate-800 px-2 py-1 rounded-md focus:outline-none cursor-pointer"
             />
           </div>
-
-          {/* Live Search */}
-          <div className="relative flex items-center flex-1 min-w-[220px] max-w-md">
-            <Search size={14} className="absolute left-2.5 text-slate-400 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="ค้นหาลำดับ, ร้านค้า, Project, รายการ..."
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setPage(1);
-              }}
-              className="w-full bg-white text-slate-800 text-xs pl-8 pr-7 py-1 rounded-md border border-slate-300 focus:outline-none focus:border-slate-500 placeholder:text-slate-400"
-            />
-            {searchTerm && (
-              <X
-                size={14}
-                className="absolute right-2 text-slate-400 cursor-pointer hover:text-slate-600"
-                onClick={() => {
-                  setSearchTerm("");
-                  setPage(1);
-                }}
-              />
-            )}
-          </div>
-
-          {/* Batch Copy Button for Selected Requester */}
-          {selectedRequester && filteredRows.length > 0 && (
-            <button
-              type="button"
-              onClick={copyRequesterBatchText}
-              className="px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs rounded-md transition cursor-pointer shrink-0"
-              title="คัดลอกข้อความสรุปบิลค้างทั้งหมดของผู้เบิกรายนี้"
-            >
-              คัดลอกส่ง LINE ({filteredRows.length} รายการ)
-            </button>
-          )}
         </div>
 
         {/* Category Filter Tabs */}

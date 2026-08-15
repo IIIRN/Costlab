@@ -26,7 +26,20 @@ const PAGE_SIZE_OPTIONS = [20, 50, 100, 200];
 
 export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {}, isAdmin = false }: WithdrawDashboardClientProps) {
   const router = useRouter();
-  const columns = useMemo(() => isAdmin ? ALL_COLUMNS : ALL_COLUMNS.filter(c => c !== "จัดการ"), [isAdmin]);
+  const [effectiveIsAdmin, setEffectiveIsAdmin] = useState(isAdmin);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      const match = document.cookie.match(/auth_role=([^;]+)/);
+      const role = match ? decodeURIComponent(match[1]) : "";
+      if (role === "Admin" || isAdmin) {
+        setEffectiveIsAdmin(true);
+      }
+    }
+  }, [isAdmin]);
+
+  const columns = useMemo(() => effectiveIsAdmin ? ALL_COLUMNS : ALL_COLUMNS.filter(c => c !== "จัดการ"), [effectiveIsAdmin]);
   const [filters, setFilters] = useState(() => normalizeFilters(initialFilters));
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -99,7 +112,7 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
       fetch("/api/line/notify-withdraw-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ row: updatedRow })
+        body: JSON.stringify({ row: updatedRow, targetRole: "requester" })
       }).catch(err => console.warn("Failed sending LINE withdraw notification:", err));
 
       router.refresh();
@@ -116,9 +129,26 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
     setActionError("");
 
     try {
+      // Filter out rows that are already in target or finished status
+      const validSheetRows = Array.from(selectedRows).filter(sheetRow => {
+        const targetRow = rows.find(r => Number(r._sheetRow) === sheetRow);
+        if (!targetRow) return false;
+        const currentSt = normalizedStatus(targetRow["สถานะ"]);
+        // If approving or requesting withdraw, skip rows that are ALREADY approved or paid/closed
+        if (targetStatus === "อนุมัติ" && (currentSt === "อนุมัติ" || currentSt === "เบิกแล้ว")) return false;
+        if (targetStatus === "ตั้งเบิก" && (currentSt === "ตั้งเบิก" || currentSt === "อนุมัติ" || currentSt === "เบิกแล้ว")) return false;
+        return true;
+      });
+
+      if (validSheetRows.length === 0) {
+        setActionError("⚠️ รายการที่เลือกอยู่ในสถานะดังกล่าวแล้ว หรือปิดงานเรียบร้อยแล้ว (ไม่สามารถสั่งซ้ำได้)");
+        setIsBatchApproving(false);
+        return;
+      }
+
       const updatedRowsList: SheetRow[] = [];
 
-      const updates = Array.from(selectedRows).map(async (sheetRow) => {
+      const updates = validSheetRows.map(async (sheetRow) => {
         const targetRow = rows.find(r => Number(r._sheetRow) === sheetRow);
         if (!targetRow) return;
 
@@ -155,9 +185,9 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
   }
 
   return (
-    <div className="w-full flex flex-col gap-4 p-4 sm:p-5 max-w-[1600px] mx-auto font-sans text-sm text-slate-800">
-      {/* 1. EXECUTIVE SUMMARY KPI CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+    <div className="w-full flex flex-col gap-3 p-3 sm:p-5 max-w-[1600px] mx-auto font-sans text-sm text-slate-800">
+      {/* 1. EXECUTIVE SUMMARY KPI CARDS (Hidden on mobile for clean layout) */}
+      <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="bg-white rounded-md p-3 border border-sky-200 bg-sky-50/40">
           <span className="text-xs font-semibold text-sky-800">📌 สถานะ: รอตั้งเบิก</span>
           <div className="text-lg font-bold text-sky-900 mt-1">
@@ -185,16 +215,43 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
         </div>
       </div>
 
-      {/* 2. FILTER TOOLBAR */}
-      <div className="border border-slate-200 rounded-md p-3 bg-white flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
-        <div className="flex flex-wrap items-center gap-3 flex-1">
+      {/* 2. FILTER TOOLBAR (Compact Mobile Layout) */}
+      <div className="border border-slate-200 rounded-md p-2.5 bg-white flex flex-col gap-2 text-xs">
+        {/* Search Bar & Mobile Filter Toggle Header */}
+        <div className="flex items-center gap-2 w-full">
+          <div className="relative flex items-center flex-1">
+            <Search size={14} className="absolute left-2.5 text-slate-400 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="ค้นหา Project, ร้านค้า, รายการ..."
+              value={filters.search}
+              onChange={event => updateFilter("search", event.target.value)}
+              className="w-full bg-white text-slate-800 text-xs pl-8 pr-7 py-1.5 rounded-md border border-slate-300 focus:outline-none focus:border-slate-500 placeholder:text-slate-400"
+            />
+            {filters.search && (
+              <X size={14} className="absolute right-2 text-slate-400 cursor-pointer hover:text-slate-600" onClick={() => updateFilter("search", "")} />
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowMobileFilters(!showMobileFilters)}
+            className="md:hidden px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md border border-slate-300 flex items-center gap-1 shrink-0 cursor-pointer"
+          >
+            <Filter size={13} />
+            <span>{showMobileFilters ? "ซ่อนตัวกรอง" : "ตัวกรอง"}</span>
+          </button>
+        </div>
+
+        {/* Expandable Filter Controls */}
+        <div className={`flex-wrap items-center gap-2.5 pt-1 border-t border-slate-100 md:border-t-0 md:pt-0 ${showMobileFilters ? "flex" : "hidden md:flex"}`}>
           {/* Requester dropdown */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <span className="font-semibold text-slate-700 whitespace-nowrap">ผู้เบิก:</span>
             <select
               value={filters.requester}
               onChange={event => updateFilter("requester", event.target.value)}
-              className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none cursor-pointer"
+              className="bg-white border border-slate-300 text-xs text-slate-800 px-2 py-1 rounded-md focus:outline-none cursor-pointer"
             >
               <option value="">ทั้งหมด</option>
               {peopleRows.map(row => {
@@ -206,49 +263,34 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
           </div>
 
           {/* Date Picker */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <span className="font-semibold text-slate-700 whitespace-nowrap">วันที่:</span>
             <input
               type="date"
               value={filters.date}
               onChange={event => updateFilter("date", event.target.value)}
-              className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none cursor-pointer"
+              className="bg-white border border-slate-300 text-xs text-slate-800 px-2 py-1 rounded-md focus:outline-none cursor-pointer"
             />
           </div>
 
           {/* Bill Type */}
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-slate-700 whitespace-nowrap">ประเภทบิล:</span>
+          <div className="flex items-center gap-1.5">
+            <span className="font-semibold text-slate-700 whitespace-nowrap">ประเภท:</span>
             <select
               value={filters.bill}
               onChange={event => updateFilter("bill", event.target.value)}
-              className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none cursor-pointer"
+              className="bg-white border border-slate-300 text-xs text-slate-800 px-2 py-1 rounded-md focus:outline-none cursor-pointer"
             >
               <option value="">ทั้งหมด</option>
               <option value="หลัก">หลัก</option>
               <option value="ย่อย">ย่อย</option>
             </select>
           </div>
-
-          {/* Live Search */}
-          <div className="relative flex items-center flex-1 min-w-[220px] max-w-md">
-            <Search size={14} className="absolute left-2.5 text-slate-400 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="ค้นหา Project, ร้านค้า, รายการ..."
-              value={filters.search}
-              onChange={event => updateFilter("search", event.target.value)}
-              className="w-full bg-white text-slate-800 text-xs pl-8 pr-7 py-1 rounded-md border border-slate-300 focus:outline-none focus:border-slate-500 placeholder:text-slate-400"
-            />
-            {filters.search && (
-              <X size={14} className="absolute right-2 text-slate-400 cursor-pointer hover:text-slate-600" onClick={() => updateFilter("search", "")} />
-            )}
-          </div>
         </div>
 
         {/* Batch Approve Action Buttons */}
         {selectedRows.size > 0 && (
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 pt-1 border-t border-slate-100 shrink-0">
             <button
               type="button"
               onClick={() => approveSelected("ตั้งเบิก")}
@@ -262,18 +304,20 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
               )}
             </button>
 
-            <button
-              type="button"
-              onClick={() => approveSelected("อนุมัติ")}
-              disabled={isBatchApproving}
-              className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-md transition cursor-pointer flex items-center gap-1.5"
-            >
-              {isBatchApproving ? (
-                <><LoaderCircle className="spin" size={14} /> กำลังอัพเดท...</>
-              ) : (
-                <><Check size={14} /> อนุมัติที่เลือก ({selectedRows.size}) ➡️ ส่งต่อผู้อนุมัติ</>
-              )}
-            </button>
+            {effectiveIsAdmin && (
+              <button
+                type="button"
+                onClick={() => approveSelected("อนุมัติ")}
+                disabled={isBatchApproving}
+                className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-md transition cursor-pointer flex items-center gap-1.5"
+              >
+                {isBatchApproving ? (
+                  <><LoaderCircle className="spin" size={14} /> กำลังอัพเดท...</>
+                ) : (
+                  <><Check size={14} /> อนุมัติที่เลือก ({selectedRows.size}) ➡️ ส่งต่อผู้อนุมัติ</>
+                )}
+              </button>
+            )}
           </div>
         )}
       </div>
