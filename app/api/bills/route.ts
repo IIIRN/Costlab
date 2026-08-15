@@ -75,7 +75,7 @@ async function readBillRow(request: NextRequest): Promise<SheetRow> {
 function ensureBillStatus(row: SheetRow) {
   STATUS_COLUMNS.forEach(column => {
     if (row[column] === undefined || row[column] === null || String(row[column]).trim() === "") {
-      row[column] = "รออนุมัติ";
+      row[column] = "ตั้งเบิก";
     }
   });
   return row;
