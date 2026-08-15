@@ -205,13 +205,18 @@ export function LoginScreen({ peopleRows = [] }: { peopleRows?: SheetRow[] }) {
           type="button"
           onClick={loginWithLine}
           disabled={isLineLoading}
-          className="w-full py-2.5 px-4 bg-[#06C755] hover:bg-[#05b34c] active:bg-[#049f43] text-white font-bold rounded-lg transition flex items-center justify-center gap-2 cursor-pointer shadow-sm text-xs"
+          className="w-full py-2.5 px-4 bg-[#06C755] hover:bg-[#05b34c] active:bg-[#049f43] text-white font-medium rounded-lg transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs text-xs"
         >
           <svg className="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24">
             <path d="M24 10.304c0-4.58-4.51-8.304-10.05-8.304-5.543 0-10.05 3.724-10.05 8.304 0 4.1 3.58 7.53 8.42 8.16.33.07.77.21.88.49.1.26.07.66.03.93l-.15.93c-.05.29-.24 1.13.99.62 1.23-.52 6.64-3.91 9.07-6.69 1.57-1.74 2.86-3.83 2.86-6.44zm-14.88 1.9h-1.87v-3.79h.61v3.18h1.26v.61zm2.39 0h-.61v-3.79h.61v3.79zm3.56 0h-.62l-1.39-2.07v2.07h-.61v-3.79h.62l1.39 2.06v-2.06h.61v3.79zm3.32-3.18h-1.25v.98h1.25v.6h-1.25v1.0h1.25v.6h-1.86v-3.79h1.86v.61z" />
           </svg>
           <span>{isLineLoading ? "กำลังเชื่อมต่อ LINE..." : "เข้าสู่ระบบด้วย LINE"}</span>
         </button>
+
+        {/* Account Linking Help Tip */}
+        <p className="text-[10px] text-slate-500 text-center leading-normal m-0">
+          💡 เข้าใช้งานครั้งแรก ป๊อปอัปจะแสดงข้อมูลโปรไฟล์ LINE ของคุณ และให้ระบุเบอร์โทรศัพท์เพียงครั้งเดียวเพื่อผูกเข้ากับบัญชีในระบบ
+        </p>
 
         {/* Footer Security Note */}
         <div className="pt-1 text-center text-[10px] text-slate-400 flex items-center justify-center gap-1">
