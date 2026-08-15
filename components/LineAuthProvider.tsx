@@ -63,25 +63,41 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
 
   // 2. Load & Init @line/liff SDK
   async function loadLiffSdk(id: string) {
+    let liff: any = null;
     try {
-      const liff = (await import("@line/liff")).default;
+      liff = (await import("@line/liff")).default;
       await liff.init({ liffId: id });
       setLiffInstance(liff);
       setIsLiffReady(true);
 
       if (liff.isLoggedIn()) {
-        const profile = await liff.getProfile();
-        const pData: LineProfile = {
-          userId: profile.userId,
-          displayName: profile.displayName,
-          pictureUrl: profile.pictureUrl,
-          statusMessage: profile.statusMessage,
-        };
-        setLineProfile(pData);
-        await checkAndLoginLineUser(pData);
+        try {
+          const profile = await liff.getProfile();
+          if (profile?.userId) {
+            const pData: LineProfile = {
+              userId: profile.userId,
+              displayName: profile.displayName,
+              pictureUrl: profile.pictureUrl,
+              statusMessage: profile.statusMessage,
+            };
+            setLineProfile(pData);
+            await checkAndLoginLineUser(pData);
+          }
+        } catch (profileErr: any) {
+          console.warn("⚠️ LIFF getProfile error:", profileErr);
+          // If scope permission error, re-trigger liff.login() to prompt user consent for profile scope
+          if (profileErr?.message?.includes("scope") || profileErr?.message?.includes("permission")) {
+            console.log("🔄 Re-logging in to request missing LIFF profile scope...");
+            liff.login();
+          }
+        }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.warn("⚠️ LIFF SDK init error:", err);
+      if (liff) {
+        setLiffInstance(liff);
+        setIsLiffReady(true);
+      }
     }
   }
 
@@ -116,23 +132,56 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
 
   // 4. Trigger LINE Login (Redirects to LINE OAuth if not logged in)
   function loginWithLine() {
+    if (!liffId) {
+      alert("⚠️ ระบบยังไม่ได้ตั้งค่า LIFF ID กรุณากรอก LIFF ID ในการตั้งค่า LINE System (/settings/line-system) ครับ");
+      return;
+    }
+
     if (liffInstance) {
-      if (!liffInstance.isLoggedIn()) {
-        liffInstance.login();
-      } else {
-        liffInstance.getProfile().then((profile: any) => {
-          const pData: LineProfile = {
-            userId: profile.userId,
-            displayName: profile.displayName,
-            pictureUrl: profile.pictureUrl,
-            statusMessage: profile.statusMessage,
-          };
-          setLineProfile(pData);
-          checkAndLoginLineUser(pData);
-        });
+      try {
+        if (!liffInstance.isLoggedIn()) {
+          liffInstance.login();
+        } else {
+          liffInstance
+            .getProfile()
+            .then((profile: any) => {
+              const pData: LineProfile = {
+                userId: profile.userId,
+                displayName: profile.displayName,
+                pictureUrl: profile.pictureUrl,
+                statusMessage: profile.statusMessage,
+              };
+              setLineProfile(pData);
+              checkAndLoginLineUser(pData);
+            })
+            .catch((err: any) => {
+              console.warn("⚠️ getProfile error during loginWithLine:", err);
+              if (err?.message?.includes("scope") || err?.message?.includes("permission")) {
+                // Force fresh login to re-request missing profile scope consent
+                liffInstance.login();
+              } else {
+                alert(`⚠️ ไม่สามารถดึงข้อมูลโปรไฟล์ LINE ได้: ${err?.message || "โปรดลองใหม่อีกครั้ง"}`);
+              }
+            });
+        }
+      } catch (err: any) {
+        console.error("❌ loginWithLine failed:", err);
+        alert(`⚠️ เกิดข้อผิดพลาดในการเชื่อมต่อ LINE: ${err?.message || "โปรดลองใหม่อีกครั้ง"}`);
       }
     } else {
-      alert("⚠️ ระบบยังไม่ได้ตั้งค่า LIFF ID กรุณาตรวจสอบการตั้งค่า LINE ในระบบครับ");
+      // LIFF SDK is still loading or initializing, attempt lazy initialization & login
+      import("@line/liff")
+        .then((module) => {
+          const liff = module.default;
+          return liff.init({ liffId }).then(() => {
+            setLiffInstance(liff);
+            setIsLiffReady(true);
+            liff.login();
+          });
+        })
+        .catch((err) => {
+          alert(`⚠️ ไม่สามารถเชื่อมต่อกับ LINE LIFF (ID: ${liffId}) ได้: ${err?.message || "โปรดตรวจสอบ LIFF ID และการตั้งค่าใน LINE Developers Console"}`);
+        });
     }
   }
 
