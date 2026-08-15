@@ -850,7 +850,7 @@ export function ReportsDashboardClient({
                           <td className="py-2 px-3 text-right font-semibold">{money(getRowCategoryAmount(r, "เครื่องมือ"))}</td>
                           <td className="py-2 px-3 text-right font-semibold">{money(getRowCategoryAmount(r, "อื่นๆ"))}</td>
 
-                          <td className="py-2 px-3 text-right font-black text-emerald-700 bg-emerald-50/60">
+                          <td className="py-2 px-3 text-right font-bold text-emerald-700 bg-emerald-50/60">
                             {money(transfer)}
                           </td>
                           <td className="py-2 px-3 text-slate-600 font-semibold whitespace-nowrap">{formattedDate}</td>
@@ -861,53 +861,53 @@ export function ReportsDashboardClient({
                 </tbody>
                 {materialRows.length > 0 && (
                   <tfoot className="sticky bottom-0 z-20 shadow-md border-t-2 border-slate-400">
-                    <tr className="font-extrabold text-xs">
+                    <tr className="font-bold text-xs">
                       <td
                         colSpan={7}
                         style={{ color: "#0f172a", backgroundColor: "#e2e8f0" }}
-                        className="py-2.5 px-3 font-black text-slate-900 border-r border-slate-300 tracking-wider text-xs"
+                        className="py-2.5 px-3 font-bold text-slate-900 border-r border-slate-300 tracking-wider text-xs"
                       >
                         รวมสุทธิทั้งหมด ({materialRows.length} รายการ)
                       </td>
                       <td
                         style={{ color: "#064e3b", backgroundColor: "#d1fae5" }}
-                        className="py-2.5 px-3 text-right font-black border-r border-emerald-200 text-xs"
+                        className="py-2.5 px-3 text-right font-bold border-r border-emerald-200 text-xs"
                       >
                         {money(materialMetrics.catMaterial)}
                       </td>
                       <td
                         style={{ color: "#0f172a", backgroundColor: "#f1f5f9" }}
-                        className="py-2.5 px-3 text-right font-black border-r border-slate-300 text-xs"
+                        className="py-2.5 px-3 text-right font-bold border-r border-slate-300 text-xs"
                       >
                         {materialMetrics.vatTotal > 0 ? money(materialMetrics.vatTotal) : "-"}
                       </td>
                       <td
                         style={{ color: "#78350f", backgroundColor: "#fef3c7" }}
-                        className="py-2.5 px-3 text-right font-black border-r border-amber-200 text-xs"
+                        className="py-2.5 px-3 text-right font-bold border-r border-amber-200 text-xs"
                       >
                         {money(materialMetrics.catFuel)}
                       </td>
                       <td
                         style={{ color: "#7c2d12", backgroundColor: "#ffedd5" }}
-                        className="py-2.5 px-3 text-right font-black border-r border-orange-200 text-xs"
+                        className="py-2.5 px-3 text-right font-bold border-r border-orange-200 text-xs"
                       >
                         {money(materialMetrics.catRepair)}
                       </td>
                       <td
                         style={{ color: "#1e3a8a", backgroundColor: "#dbeafe" }}
-                        className="py-2.5 px-3 text-right font-black border-r border-blue-200 text-xs"
+                        className="py-2.5 px-3 text-right font-bold border-r border-blue-200 text-xs"
                       >
                         {money(materialMetrics.catMachine)}
                       </td>
                       <td
                         style={{ color: "#164e63", backgroundColor: "#cffafe" }}
-                        className="py-2.5 px-3 text-right font-black border-r border-cyan-200 text-xs"
+                        className="py-2.5 px-3 text-right font-bold border-r border-cyan-200 text-xs"
                       >
                         {money(materialMetrics.catTool)}
                       </td>
                       <td
                         style={{ color: "#881337", backgroundColor: "#ffe4e6" }}
-                        className="py-2.5 px-3 text-right font-black border-r border-rose-200 text-xs"
+                        className="py-2.5 px-3 text-right font-bold border-r border-rose-200 text-xs"
                       >
                         {money(materialMetrics.catOther)}
                       </td>
@@ -946,7 +946,7 @@ export function ReportsDashboardClient({
             </div>
 
             <div className="font-bold text-slate-800 text-xs">
-              ยอดโอนรวมสินค้า: <span className="text-emerald-800 text-sm font-extrabold">{money(productCategoryMetrics.grandTotal)} ฿</span>
+              ยอดโอนรวมสินค้า: <span className="text-emerald-800 text-sm font-bold">{money(productCategoryMetrics.grandTotal)} ฿</span>
             </div>
           </div>
 
@@ -960,10 +960,10 @@ export function ReportsDashboardClient({
                   <div className="flex items-center justify-between border-b border-slate-200 bg-slate-100 px-3.5 py-2 text-xs font-bold text-slate-900">
                     <span className="flex items-center gap-1.5">
                       <FolderKanban size={15} className="text-emerald-700" />
-                      <span className="font-extrabold text-slate-900">{groupTitle}</span>
+                      <span className="font-bold text-slate-900">{groupTitle}</span>
                       <span className="text-xs text-slate-600 font-semibold">({items.length} รายการ)</span>
                     </span>
-                    <span className="text-xs font-extrabold text-emerald-800">
+                    <span className="text-xs font-bold text-emerald-800">
                       รวมหมวดนี้: {money(groupTransferSum)} ฿
                     </span>
                   </div>
@@ -991,7 +991,7 @@ export function ReportsDashboardClient({
                           </div>
 
                           <div className="mt-1 flex items-baseline justify-between text-xs">
-                            <div className="text-xs font-extrabold text-slate-900">{money(cat.transfer)}</div>
+                            <div className="text-xs font-bold text-slate-900">{money(cat.transfer)}</div>
                             <span className="text-xs text-emerald-800 font-bold">{cat.percent.toFixed(1)}%</span>
                           </div>
                         </div>
@@ -1031,7 +1031,7 @@ export function ReportsDashboardClient({
                       <td className="py-2 px-3 font-medium text-slate-800">{r["สินค้า/ทำงาน"] || r["รายละเอียดงาน"] || "-"}</td>
                       <td className="py-2 px-3 font-bold text-teal-800">{getRowCategory(r) || "-"}</td>
                       <td className="py-2 px-3 text-right font-bold text-slate-900">{money(getRowAmount(r))}</td>
-                      <td className="py-2 px-3 text-right font-extrabold text-emerald-800 bg-emerald-50">
+                      <td className="py-2 px-3 text-right font-bold text-emerald-800 bg-emerald-50">
                         {money(getRowTransferAmount(r))}
                       </td>
                       <td className="py-2 px-3 text-slate-700 font-semibold whitespace-nowrap">{formatDateThai(r["ว/ด/ป"] || r["วันที่"])}</td>
@@ -1040,23 +1040,23 @@ export function ReportsDashboardClient({
                 </tbody>
                 {productCategoryFilteredRows.length > 0 && (
                   <tfoot className="sticky bottom-0 z-20 shadow-md border-t-2 border-slate-400">
-                    <tr className="font-extrabold text-xs">
+                    <tr className="font-bold text-xs">
                       <td
                         colSpan={6}
                         style={{ color: "#0f172a", backgroundColor: "#e2e8f0" }}
-                        className="py-2.5 px-3 font-black text-slate-900 border-r border-slate-300 tracking-wider text-xs"
+                        className="py-2.5 px-3 font-bold text-slate-900 border-r border-slate-300 tracking-wider text-xs"
                       >
                         รวมสุทธิสินค้า ({productCategoryFilteredRows.length} รายการ)
                       </td>
                       <td
                         style={{ color: "#0f172a", backgroundColor: "#f1f5f9" }}
-                        className="py-2.5 px-3 text-right font-black border-r border-slate-300 text-xs"
+                        className="py-2.5 px-3 text-right font-bold border-r border-slate-300 text-xs"
                       >
                         {money(productCategoryBillTotal)}
                       </td>
                       <td
                         style={{ color: "#ffffff", backgroundColor: "#0d9488" }}
-                        className="py-2.5 px-3 text-right font-black text-sm border-r border-teal-700 text-xs"
+                        className="py-2.5 px-3 text-right font-bold text-sm border-r border-teal-700 text-xs"
                       >
                         {money(productCategoryTransferTotal)}
                       </td>
@@ -1199,7 +1199,7 @@ export function ReportsDashboardClient({
                       <td className="py-2 px-3">{r["รายละเอียดงาน"] || r["สินค้า/ทำงาน"] || "-"}</td>
                       <td className="py-2 px-3 font-bold text-purple-700">{getRowCategory(r) || "-"}</td>
                       <td className="py-2 px-3 text-right font-bold text-slate-900">{money(getRowAmount(r))}</td>
-                      <td className="py-2 px-3 text-right font-black text-purple-700 bg-purple-50/60">
+                      <td className="py-2 px-3 text-right font-bold text-purple-700 bg-purple-50/60">
                         {money(getRowTransferAmount(r))}
                       </td>
                       <td className="py-2 px-3 text-slate-600 font-semibold whitespace-nowrap">{formatDateThai(r["ว/ด/ป"] || r["วันที่"])}</td>

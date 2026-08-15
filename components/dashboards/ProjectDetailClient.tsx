@@ -298,7 +298,7 @@ export function ProjectDetailClient({
               </p>
             </div>
             <div className="text-xs font-bold text-slate-700 bg-white px-3 py-1.5 rounded-lg border border-slate-200">
-              รวมเบิกจ่าย: <span className="text-indigo-700 font-extrabold">{money(productControlRows.reduce((sum, r) => sum + r.spent, 0))}</span>
+              รวมเบิกจ่าย: <span className="text-indigo-700 font-bold">{money(productControlRows.reduce((sum, r) => sum + r.spent, 0))}</span>
             </div>
           </div>
 

@@ -80,7 +80,7 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
             </span>
             <div>
               <div className="text-[10px] text-slate-400 font-semibold uppercase">โครงการทั้งหมด</div>
-              <div className="text-base font-extrabold text-slate-900">{projects.length} รายการ</div>
+              <div className="text-base font-bold text-slate-900">{projects.length} รายการ</div>
             </div>
           </div>
 
@@ -90,7 +90,7 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
             </span>
             <div>
               <div className="text-[10px] text-emerald-600 font-semibold uppercase">กำลังทำอยู่</div>
-              <div className="text-base font-extrabold text-emerald-700">{activeProjects.length} รายการ</div>
+              <div className="text-base font-bold text-emerald-700">{activeProjects.length} รายการ</div>
             </div>
           </div>
 
@@ -100,7 +100,7 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
             </span>
             <div>
               <div className="text-[10px] text-slate-400 font-semibold uppercase">เสร็จสิ้นแล้ว</div>
-              <div className="text-base font-extrabold text-slate-700">{completeProjects.length} รายการ</div>
+              <div className="text-base font-bold text-slate-700">{completeProjects.length} รายการ</div>
             </div>
           </div>
 
@@ -110,7 +110,7 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
             </span>
             <div>
               <div className="text-[10px] text-indigo-600 font-semibold uppercase">ยอดเบิกจ่ายรวม / งบรวม</div>
-              <div className="text-base font-extrabold text-slate-900">
+              <div className="text-base font-bold text-slate-900">
                 {money(totalSpent)} <span className="text-xs font-normal text-slate-400">/ {money(totalBudget)}</span>
               </div>
             </div>
@@ -263,7 +263,7 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
                       {/* Status Tag */}
                       <td className="py-2.5 px-3.5 text-center">
                         <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-extrabold ${
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-semibold ${
                             isComplete
                               ? "bg-slate-100 text-slate-700 border border-slate-200"
                               : isRed
@@ -281,7 +281,7 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
                       </td>
 
                       {/* Spent */}
-                      <td className="py-2.5 px-3.5 text-right font-extrabold text-slate-900">
+                      <td className="py-2.5 px-3.5 text-right font-bold text-slate-900">
                         {money(spent)}
                       </td>
 
@@ -293,7 +293,7 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
                       {/* Remaining */}
                       <td
                         className={`py-2.5 px-3.5 text-right font-bold ${
-                          remaining < 0 ? "text-rose-600 font-extrabold" : "text-emerald-700"
+                          remaining < 0 ? "text-rose-600 font-bold" : "text-emerald-700"
                         }`}
                       >
                         {money(remaining)}
@@ -349,7 +349,7 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
               >
                 <div className="flex items-center justify-between">
                   <span
-                    className={`px-2.5 py-0.5 rounded-md text-[11px] font-extrabold ${
+                    className={`px-2.5 py-0.5 rounded-md text-[11px] font-semibold ${
                       isComplete
                         ? "bg-slate-100 text-slate-700"
                         : isRed
@@ -379,7 +379,7 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
 
                 <div className="bg-slate-50 p-2.5 rounded-xl flex items-center justify-between text-xs mt-1">
                   <span className="text-slate-400 text-[10px]">ยอดเบิกจ่าย</span>
-                  <span className="font-extrabold text-slate-900">{money(spent)}</span>
+                  <span className="font-bold text-slate-900">{money(spent)}</span>
                 </div>
               </Link>
             );

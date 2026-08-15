@@ -331,9 +331,9 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
                   </tr>
                   <tr className="bg-slate-50 font-bold text-slate-900 border-t border-slate-200">
                     <td className="py-2.5 px-3 border-r border-slate-200">รวมทั้งสิ้น</td>
-                    <td className="py-2.5 px-3 border-r border-slate-200 text-right text-slate-900 font-extrabold">{money(summary.main3BeforeVatTotal)}</td>
-                    <td className="py-2.5 px-3 border-r border-slate-200 text-right text-slate-900 font-extrabold">{money(summary.main3VatTotal)}</td>
-                    <td className="py-2.5 px-3 text-right text-slate-900 font-extrabold">{money(summary.main3GrandTotal)}</td>
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-right text-slate-900 font-bold">{money(summary.main3BeforeVatTotal)}</td>
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-right text-slate-900 font-bold">{money(summary.main3VatTotal)}</td>
+                    <td className="py-2.5 px-3 text-right text-slate-900 font-bold">{money(summary.main3GrandTotal)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -390,9 +390,9 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
                   </tr>
                   <tr className="bg-slate-50 font-bold text-slate-900 border-t border-slate-200">
                     <td className="py-2.5 px-3 border-r border-slate-200">รวมทั้งสิ้น</td>
-                    <td className="py-2.5 px-3 border-r border-slate-200 text-right text-slate-900 font-extrabold">{money(summary.main4Total)}</td>
-                    <td className="py-2.5 px-3 border-r border-slate-200 text-right text-amber-700 font-extrabold">{money(summary.main4DeductTotal)}</td>
-                    <td className="py-2.5 px-3 text-right text-slate-900 font-extrabold">{money(summary.main4NetTotal)}</td>
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-right text-slate-900 font-bold">{money(summary.main4Total)}</td>
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-right text-amber-700 font-bold">{money(summary.main4DeductTotal)}</td>
+                    <td className="py-2.5 px-3 text-right text-slate-900 font-bold">{money(summary.main4NetTotal)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -437,15 +437,15 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
                   </tr>
                   <tr className="bg-slate-50 font-bold text-slate-900 border-t border-slate-200">
                     <td className="py-2.5 px-3 border-r border-slate-200">รวมก่อน VAT</td>
-                    <td className="py-2.5 px-3 border-r border-slate-200 text-right font-extrabold">{money(summary.main5BeforeVatTotal)}</td>
-                    <td className="py-2.5 px-3 border-r border-slate-200 text-right font-extrabold">{money(summary.main5ToolBeforeVatTotal)}</td>
-                    <td className="py-2.5 px-3 text-right font-extrabold">{money(summary.main5OtherBeforeVatTotal)}</td>
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-right font-bold">{money(summary.main5BeforeVatTotal)}</td>
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-right font-bold">{money(summary.main5ToolBeforeVatTotal)}</td>
+                    <td className="py-2.5 px-3 text-right font-bold">{money(summary.main5OtherBeforeVatTotal)}</td>
                   </tr>
                   <tr className="bg-slate-50 font-bold text-slate-900 border-t border-slate-200">
                     <td className="py-2.5 px-3 border-r border-slate-200">รวมไม่มี VAT</td>
-                    <td className="py-2.5 px-3 border-r border-slate-200 text-right font-extrabold">{money(summary.main5NoVatTotal)}</td>
-                    <td className="py-2.5 px-3 border-r border-slate-200 text-right font-extrabold">{money(summary.main5ToolNoVatTotal)}</td>
-                    <td className="py-2.5 px-3 text-right font-extrabold">{money(summary.main5OtherNoVatTotal)}</td>
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-right font-bold">{money(summary.main5NoVatTotal)}</td>
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-right font-bold">{money(summary.main5ToolNoVatTotal)}</td>
+                    <td className="py-2.5 px-3 text-right font-bold">{money(summary.main5OtherNoVatTotal)}</td>
                   </tr>
                 </tbody>
               </table>

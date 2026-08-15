@@ -8,6 +8,7 @@ import {
   ArrowRight,
   Building2,
   Calculator,
+  Check,
   CheckCircle2,
   ClipboardList,
   Coins,
@@ -90,12 +91,12 @@ const DATA_FORM_SECTIONS: { id: string; title: string; iconName: string; fields:
 
 function SectionHeaderIcon({ name }: { name: string }) {
   switch (name) {
-    case "ClipboardList": return <ClipboardList size={16} className="text-emerald-700" />;
-    case "Store": return <Store size={16} className="text-indigo-700" />;
-    case "Coins": return <Coins size={16} className="text-amber-700" />;
-    case "Receipt": return <Receipt size={16} className="text-sky-700" />;
-    case "FileCheck": return <FileCheck size={16} className="text-teal-700" />;
-    default: return <FileText size={16} className="text-slate-700" />;
+    case "ClipboardList": return <ClipboardList size={16} className="text-slate-600" />;
+    case "Store": return <Store size={16} className="text-slate-600" />;
+    case "Coins": return <Coins size={16} className="text-slate-600" />;
+    case "Receipt": return <Receipt size={16} className="text-slate-600" />;
+    case "FileCheck": return <FileCheck size={16} className="text-slate-600" />;
+    default: return <FileText size={16} className="text-slate-600" />;
   }
 }
 
@@ -110,6 +111,8 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
   const [successMessage, setSuccessMessage] = useState("");
   const isEditing = editSheetRow !== null && editSheetRow !== undefined;
   const isDataForm = form.tableName === TABLES.DATA || form.tableName === "Data";
+
+  const [resetKey, setResetKey] = useState(0);
 
   const visibleFields = form.schema.filter(field => {
     if (field.type === "Hidden") return false;
@@ -157,6 +160,7 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
       const targetRowKey = detail?.sheetRow ?? detail?.row?._sheetRow ?? detail?.row?.id ?? detail?.row?.id_bank ?? detail?.row?.id_store ?? detail?.row?.id_Contractor ?? detail?.row?.id_car ?? detail?.row?.id_cus ?? detail?.row?.id_Company;
       setEditSheetRow(detail?.row ? (targetRowKey !== undefined && targetRowKey !== null ? (typeof targetRowKey === "number" || typeof targetRowKey === "string" ? targetRowKey : String(targetRowKey)) : 1) : null);
       setValues(nextValues);
+      setResetKey(k => k + 1);
       setOpen(true);
     };
     window.addEventListener(openEventName, openFromExternalButton as EventListener);
@@ -241,6 +245,7 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
         setOpen(false);
         setEditSheetRow(null);
         setValues(getInitialStringValues(form));
+        setResetKey(k => k + 1);
         if (form.tableName === TABLES.DATA) {
           window.location.reload();
         } else {
@@ -248,10 +253,12 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
         }
       } else {
         // Reset form to allow immediate creation of the next bill
+        formElement.reset();
         setValues(getInitialStringValues(form));
         setEnumListSearch({});
         setError("");
         setSuccessMessage("บันทึกรายการเรียบร้อยแล้ว สามารถสร้างรายการถัดไปต่อได้เลย");
+        setResetKey(k => k + 1);
         router.refresh();
       }
     } catch (caught) {
@@ -350,9 +357,9 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
                             {sectionFields.map(field => (
                               <div className={`${getFieldClassName(field)} space-y-1`} key={field.name}>
-                                <label className="text-[11px] font-semibold text-slate-700 block">
+                                <label className="text-[11px] font-medium text-slate-700 block">
                                   {getFieldLabel(field)}
-                                  {field.required ? <span className="text-rose-600 font-bold ml-0.5">*</span> : ""}
+                                  {field.required ? <span className="text-rose-600 font-medium ml-0.5">*</span> : ""}
                                 </label>
                                 {renderField(
                                   field,
@@ -362,7 +369,8 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
                                   isEditing,
                                   value => updateValue(field, value),
                                   enumListSearch[field.name] || "",
-                                  value => setEnumListSearch(current => ({ ...current, [field.name]: value }))
+                                  value => setEnumListSearch(current => ({ ...current, [field.name]: value })),
+                                  resetKey
                                 )}
                               </div>
                             ))}
@@ -385,9 +393,9 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
                             {unsectionedFields.map(field => (
                               <div className={`${getFieldClassName(field)} space-y-1`} key={field.name}>
-                                <label className="text-[11px] font-semibold text-slate-700 block">
+                                <label className="text-[11px] font-medium text-slate-700 block">
                                   {getFieldLabel(field)}
-                                  {field.required ? <span className="text-rose-600 font-bold ml-0.5">*</span> : ""}
+                                  {field.required ? <span className="text-rose-600 font-medium ml-0.5">*</span> : ""}
                                 </label>
                                 {renderField(
                                   field,
@@ -397,7 +405,8 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
                                   isEditing,
                                   value => updateValue(field, value),
                                   enumListSearch[field.name] || "",
-                                  value => setEnumListSearch(current => ({ ...current, [field.name]: value }))
+                                  value => setEnumListSearch(current => ({ ...current, [field.name]: value })),
+                                  resetKey
                                 )}
                               </div>
                             ))}
@@ -412,7 +421,7 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
                       {visibleFields.map(field => (
                         <div className={`${getFieldClassName(field)} space-y-1.5`} key={field.name}>
-                          <label className="text-xs font-semibold text-slate-700 block">{getFieldLabel(field)}{field.required ? <span className="text-rose-600 font-semibold ml-0.5">*</span> : ""}</label>
+                          <label className="text-xs font-medium text-slate-700 block">{getFieldLabel(field)}{field.required ? <span className="text-rose-600 font-medium ml-0.5">*</span> : ""}</label>
                           {renderField(
                             field,
                             form,
@@ -421,7 +430,8 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
                             isEditing,
                             value => updateValue(field, value),
                             enumListSearch[field.name] || "",
-                            value => setEnumListSearch(current => ({ ...current, [field.name]: value }))
+                            value => setEnumListSearch(current => ({ ...current, [field.name]: value })),
+                            resetKey
                           )}
                         </div>
                       ))}
@@ -465,7 +475,7 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
                     </>
                   ) : null}
                   <span className="text-slate-300">|</span>
-                  <span className="text-slate-700 font-bold">ยอดโอนสุทธิ: <strong className="text-emerald-700 font-extrabold text-sm">{netTransferAmt.toLocaleString("th-TH", { minimumFractionDigits: 2 })} ฿</strong></span>
+                  <span className="text-slate-700 font-bold">ยอดโอนสุทธิ: <strong className="text-emerald-700 font-semibold text-sm">{netTransferAmt.toLocaleString("th-TH", { minimumFractionDigits: 2 })} ฿</strong></span>
                 </div>
               ) : <div />}
 
@@ -498,24 +508,24 @@ function ImageFileFieldInput({
   field,
   value,
   readOnly,
-  onChange
+  onChange,
+  resetKey = 0
 }: {
   field: FieldSchema;
   value: string;
   readOnly: boolean;
   onChange: (value: string) => void;
+  resetKey?: number;
 }) {
   const [selectedFilePreview, setSelectedFilePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!value) {
-      setSelectedFilePreview(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+    setSelectedFilePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
-  }, [value]);
+  }, [value, resetKey]);
 
   const previewUrl = imagePreviewUrl(value);
 
@@ -620,7 +630,8 @@ function renderField(
   isEditing: boolean,
   onChange: (value: string) => void,
   enumSearchValue = "",
-  onEnumSearchChange: (value: string) => void = () => {}
+  onEnumSearchChange: (value: string) => void = () => {},
+  resetKey = 0
 ) {
   const readOnly = Boolean(field.readonly || (isEditing && field.readonlyOnEdit));
   if (field.type === "Image" || field.type === "File") {
@@ -630,6 +641,7 @@ function renderField(
         value={value}
         readOnly={readOnly}
         onChange={onChange}
+        resetKey={resetKey}
       />
     );
   }
@@ -672,13 +684,13 @@ function renderField(
       }
 
       return (
-        <div className="space-y-2.5 border border-slate-300 rounded-lg p-3.5 bg-slate-50/70 shadow-2xs">
+        <div className="space-y-2 border border-slate-300 rounded-lg p-3 bg-slate-50/70">
           <input type="hidden" name={field.name} value={value} />
           <div className="flex items-center justify-between gap-2 text-xs">
             <div className="flex flex-wrap gap-1.5 min-h-[28px] items-center" aria-live="polite">
               {selectedValues.length ? (
                 selectedValues.map((selectedValue, index) => (
-                  <span className="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-lg border border-indigo-200 text-xs font-bold shadow-2xs" key={`${selectedValue}-${index}`}>
+                  <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-800 px-2 py-0.5 rounded border border-slate-300 text-xs font-medium" key={`${selectedValue}-${index}`}>
                     <span>{selectedValue}</span>
                     {!readOnly ? (
                       <button type="button" className="hover:text-rose-600 transition cursor-pointer ml-0.5" aria-label={`ลบ ${selectedValue}`} onClick={() => removeSelectedValue(selectedValue)}>
@@ -688,31 +700,31 @@ function renderField(
                   </span>
                 ))
               ) : (
-                <span className="text-slate-400 font-medium italic text-xs">ยังไม่ได้เลือกรายการ</span>
+                <span className="text-slate-400 font-normal italic text-xs">ยังไม่ได้เลือกรายการ</span>
               )}
             </div>
-            <span className="text-[11px] font-bold text-slate-500 bg-slate-200/60 px-2 py-0.5 rounded-full shrink-0">{selectedValues.length} / {options.length}</span>
+            <span className="text-[11px] font-medium text-slate-500 bg-slate-200/60 px-2 py-0.5 rounded-full shrink-0">{selectedValues.length} / {options.length}</span>
           </div>
           <input
-            type="search"
-            className="w-full h-9 px-3 bg-white border border-slate-300 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 rounded-lg text-xs font-semibold text-slate-800 placeholder:text-slate-400 shadow-2xs transition-all"
+            type="text"
+            className="w-full h-8 px-3 bg-white border border-slate-300 focus:border-slate-800 focus:outline-none rounded-lg text-xs font-normal text-slate-800 placeholder:text-slate-400 transition-all"
             value={enumSearchValue}
             readOnly={readOnly}
             placeholder="ค้นหารายละเอียดงาน..."
             onChange={event => onEnumSearchChange(event.target.value)}
           />
-          <div className="max-h-44 overflow-y-auto space-y-1 bg-white p-2 border border-slate-300 rounded-lg shadow-2xs" role="group" aria-label={field.name}>
+          <div className="max-h-44 overflow-y-auto space-y-1 bg-white p-2 border border-slate-300 rounded-lg" role="group" aria-label={field.name}>
             {filteredOptions.map((option, index) => {
               const optionValue = String(option.value);
               const checked = selectedValues.includes(optionValue);
               return (
-                <label className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer transition ${checked ? "bg-indigo-50/80 text-indigo-900 font-bold border border-indigo-100" : "hover:bg-slate-50 text-slate-700"}`} key={`${optionValue}-${index}`}>
+                <label className={`flex items-center gap-2 px-2.5 py-1.5 rounded text-xs font-normal cursor-pointer transition ${checked ? "bg-slate-100 text-slate-900 font-medium" : "hover:bg-slate-50 text-slate-700"}`} key={`${optionValue}-${index}`}>
                   <input
                     type="checkbox"
                     value={optionValue}
                     checked={checked}
                     disabled={readOnly}
-                    className="w-4 h-4 rounded border-slate-300 accent-indigo-600 cursor-pointer"
+                    className="w-4 h-4 rounded border-slate-300 accent-slate-800 cursor-pointer"
                     onChange={event => {
                       const nextValues = event.target.checked
                         ? [...selectedOptionValues, optionValue]
@@ -724,11 +736,11 @@ function renderField(
                 </label>
               );
             })}
-            {!filteredOptions.length ? <div className="p-3 text-center text-slate-400 text-xs font-medium">ไม่พบรายการ</div> : null}
+            {!filteredOptions.length ? <div className="p-3 text-center text-slate-400 text-xs font-normal">ไม่พบรายการ</div> : null}
           </div>
           <input
             type="text"
-            className="w-full h-9 px-3 bg-white border border-slate-300 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 rounded-lg text-xs font-semibold text-slate-800 placeholder:text-slate-400 shadow-2xs transition-all"
+            className="w-full h-8 px-3 bg-white border border-slate-300 focus:border-slate-800 focus:outline-none rounded-lg text-xs font-normal text-slate-800 placeholder:text-slate-400 transition-all"
             value={customValue}
             readOnly={readOnly}
             placeholder="เพิ่มงานอื่น คั่นด้วย comma"
@@ -755,10 +767,10 @@ function renderField(
               const checked = choiceValue === optionValue;
               return (
                 <label
-                  className={`px-3 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer transition-all ${
+                  className={`px-3 py-1.5 rounded-lg border text-xs font-normal cursor-pointer transition-all ${
                     checked
-                      ? "bg-slate-900 text-white border-slate-900 shadow-2xs font-bold"
-                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                      ? "bg-slate-800 text-white border-slate-800 font-medium"
+                      : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
                   }`}
                   key={`${optionValue}-${index}`}
                   onClick={(e) => {
@@ -792,7 +804,7 @@ function renderField(
           {customChoice && choiceValue === customChoice.optionValue ? (
             <input
               type="number"
-              className="w-full h-9 px-3 bg-white border border-slate-200 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 rounded-lg text-xs font-semibold text-slate-800 placeholder:text-slate-400"
+              className="w-full h-9 px-3 bg-white border border-slate-300 focus:border-slate-800 focus:outline-none rounded-lg text-xs font-normal text-slate-800 placeholder:text-slate-400"
               value={customValue}
               readOnly={readOnly}
               placeholder={customChoice.placeholder}
@@ -800,6 +812,25 @@ function renderField(
             />
           ) : null}
         </div>
+      );
+    }
+
+    if (field.type === "Enum") {
+      return (
+        <select
+          name={field.name}
+          value={value}
+          disabled={readOnly}
+          onChange={e => onChange(e.target.value)}
+          className="w-full h-9 px-2.5 bg-white border border-slate-300 focus:border-slate-800 focus:outline-none rounded text-xs font-normal text-slate-800 transition-all cursor-pointer"
+        >
+          <option value="">เลือก{field.name}...</option>
+          {options.map((option, index) => (
+            <option key={`${option.value}-${index}`} value={String(option.value)}>
+              {String(option.label)}
+            </option>
+          ))}
+        </select>
       );
     }
 
@@ -823,7 +854,7 @@ function renderField(
         readOnly={readOnly}
         rows={3}
         onChange={event => onChange(event.target.value)}
-        className="w-full p-2.5 bg-white border border-slate-300 focus:border-slate-800 focus:outline-none rounded text-xs font-semibold text-slate-800 placeholder:text-slate-400 transition-all resize-y"
+        className="w-full p-2.5 bg-white border border-slate-300 focus:border-slate-800 focus:outline-none rounded text-xs font-normal text-slate-800 placeholder:text-slate-400 transition-all resize-y"
       />
     );
   }
@@ -838,7 +869,7 @@ function renderField(
       readOnly={readOnly}
       lang={billDateMode ? "th-TH" : undefined}
       onChange={event => onChange(billDateMode ? normalizeBillDateInput(event.target.value) : event.target.value)}
-      className="w-full h-9 px-2.5 bg-white border border-slate-300 focus:border-slate-800 focus:outline-none rounded text-xs font-semibold text-slate-800 placeholder:text-slate-400 transition-all"
+      className="w-full h-9 px-2.5 bg-white border border-slate-300 focus:border-slate-800 focus:outline-none rounded text-xs font-normal text-slate-800 placeholder:text-slate-400 transition-all"
     />
   );
 }
@@ -868,7 +899,7 @@ function SearchableRefSelect({
       Object.values(option.row).some(v => v !== null && v !== undefined && String(v).trim() !== "" && String(v) === value)
     ))
   ) : undefined;
-  const selectedLabel = selectedOption ? optionLabel(selectedOption) : value;
+  const selectedLabel = selectedOption ? optionLabel(selectedOption, name) : value;
   const selectedImgUrl = (selectedOption?.row?.image || selectedOption?.row?.image_url || "") as string;
 
   const [query, setQuery] = useState(selectedLabel);
@@ -879,7 +910,7 @@ function SearchableRefSelect({
 
   const normalizedQuery = query.trim().toLowerCase();
   const filteredOptions = normalizedQuery
-    ? options.filter(option => optionSearchText(option).includes(normalizedQuery)).slice(0, 80)
+    ? options.filter(option => optionSearchText(option, name).includes(normalizedQuery)).slice(0, 80)
     : options.slice(0, 80);
 
   useEffect(() => { setQuery(selectedLabel); }, [selectedLabel, value]);
@@ -899,7 +930,7 @@ function SearchableRefSelect({
     openMenu();
     const exact = options.find(option => {
       const optionValue = String(option.value);
-      const label = optionLabel(option);
+      const label = optionLabel(option, name);
       return optionValue.toLowerCase() === nextQuery.toLowerCase() || label.toLowerCase() === nextQuery.toLowerCase();
     });
     onChange(exact ? String(exact.value) : nextQuery);
@@ -907,7 +938,7 @@ function SearchableRefSelect({
 
   function selectOption(option: RefOption) {
     onChange(String(option.value));
-    setQuery(optionLabel(option));
+    setQuery(optionLabel(option, name));
     setOpen(false);
   }
 
@@ -915,7 +946,7 @@ function SearchableRefSelect({
 
   const menuEl = open && !readOnly && menuPos ? (
     <div
-      className="bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-y-auto divide-y divide-slate-100 animate-in fade-in zoom-in-95 duration-100"
+      className="bg-white border border-slate-300 rounded-lg shadow-xl max-h-60 overflow-y-auto p-1 font-sans animate-in fade-in zoom-in-95 duration-100"
       role="listbox"
       aria-label={name}
       style={{
@@ -935,6 +966,7 @@ function SearchableRefSelect({
             <DropdownOption
               key={`${optionValue}-${index}`}
               option={option}
+              fieldName={name}
               optionValue={optionValue}
               imgUrl={imgUrl}
               isActive={optionValue === value}
@@ -943,7 +975,7 @@ function SearchableRefSelect({
           );
         })
       ) : (
-        <div className="p-3 text-center text-slate-400 text-xs font-medium">ไม่พบข้อมูล</div>
+        <div className="p-3 text-center text-slate-400 text-xs font-normal">ไม่พบข้อมูล</div>
       )}
     </div>
   ) : null;
@@ -958,8 +990,8 @@ function SearchableRefSelect({
     >
       <input type="hidden" name={name} value={value} />
       <input
-        type="search"
-        className="w-full h-9 px-2.5 bg-white border border-slate-300 focus:border-slate-800 focus:outline-none rounded text-xs font-semibold text-slate-800 placeholder:text-slate-400 transition-all"
+        type="text"
+        className="w-full h-9 px-2.5 bg-white border border-slate-300 focus:border-slate-800 focus:outline-none rounded text-xs font-normal text-slate-800 placeholder:text-slate-400 transition-all"
         value={query}
         readOnly={readOnly}
         placeholder={placeholder}
@@ -973,9 +1005,10 @@ function SearchableRefSelect({
 }
 
 function DropdownOption({
-  option, optionValue, imgUrl, isActive, onSelect
+  option, fieldName, optionValue, imgUrl, isActive, onSelect
 }: {
   option: RefOption;
+  fieldName: string;
   optionValue: string;
   imgUrl: string;
   isActive: boolean;
@@ -986,47 +1019,58 @@ function DropdownOption({
   return (
     <button
       type="button"
-      className={`w-full px-3 py-2 text-left text-xs font-semibold flex items-center gap-2 cursor-pointer transition ${
+      className={`w-full px-2.5 py-1.5 text-left text-xs font-normal flex items-center justify-between rounded-md cursor-pointer transition-colors ${
         isActive
-          ? "bg-indigo-50 text-indigo-900 font-extrabold"
-          : "text-slate-700 hover:bg-slate-50 hover:text-indigo-600"
+          ? "bg-slate-100 text-slate-900 font-medium"
+          : "text-slate-700 hover:bg-slate-100/70 hover:text-slate-900"
       }`}
       role="option"
       aria-selected={isActive}
       onMouseDown={e => e.preventDefault()}
       onClick={() => onSelect(option)}
     >
-      {showImg ? (
-        <img
-          src={imgUrl}
-          alt=""
-          className="w-6 h-6 rounded-md object-cover border border-slate-200 shrink-0"
-          onError={() => setBroken(true)}
-        />
-      ) : null}
-      <strong className="truncate">{optionLabel(option)}</strong>
+      <div className="flex items-center gap-2 min-w-0">
+        {showImg ? (
+          <img
+            src={imgUrl}
+            alt=""
+            className="w-5 h-5 rounded object-cover border border-slate-200 shrink-0"
+            onError={() => setBroken(true)}
+          />
+        ) : null}
+        <span className="truncate text-slate-800 font-normal">{optionLabel(option, fieldName)}</span>
+      </div>
+      {isActive ? <Check size={14} className="text-slate-600 shrink-0 ml-1" /> : null}
     </button>
   );
 }
 
-function cleanOptionLabel(rawLabel: string, value: string): string {
-  if (!rawLabel) return value || "";
-  const match = rawLabel.match(/^(?:[A-Za-z0-9_-]+\s*-\s*)(.+)$/);
-  if (match && match[1]) {
-    return match[1].trim();
-  }
-  return rawLabel;
-}
-
-function optionLabel(option: RefOption | undefined) {
+function optionLabel(option: RefOption | undefined, fieldName?: string) {
   if (!option) return "";
-  const raw = String(option.label || option.value || "");
-  const val = String(option.value || "");
-  return cleanOptionLabel(raw, val);
+  const val = String(option.value || "").trim();
+  const rawLabel = String(option.label || option.value || "").trim();
+
+  if (fieldName === "ผู้เบิก") {
+    const loggedInId = getCookie("auth_employee_id").trim();
+    const loggedInName = getCookie("auth_name").trim();
+    if (loggedInName && (val === loggedInId || rawLabel.includes(loggedInId) || val === loggedInName)) {
+      return loggedInName;
+    }
+    if (rawLabel.includes(" - ")) {
+      const parts = rawLabel.split(" - ");
+      return parts.slice(1).join(" - ").trim() || rawLabel;
+    }
+    return rawLabel;
+  }
+
+  if (!val) return rawLabel;
+  if (!rawLabel || rawLabel === val) return val;
+  if (rawLabel.startsWith(val)) return rawLabel;
+  return `${val} - ${rawLabel}`;
 }
 
-function optionSearchText(option: RefOption) {
-  return `${String(option.value || "")} ${optionLabel(option)}`.toLowerCase();
+function optionSearchText(option: RefOption, fieldName?: string) {
+  return `${String(option.value || "")} ${optionLabel(option, fieldName)}`.toLowerCase();
 }
 
 /** กรองและดึง URL รูปภาพที่ถูกต้อง (HTTP/HTTPS, Data URL) */
@@ -1052,9 +1096,38 @@ function getCookie(name: string): string {
 function getInitialStringValues(form: FormPayload) {
   const values = Object.fromEntries(form.schema.map(field => [field.name, String(form.initialValues[field.name] ?? "")]));
   if (form.tableName === TABLES.DATA || form.tableName === "Data") {
-    if (!values["ผู้เบิก"]) {
-      const loggedInEmployeeId = getCookie("auth_employee_id");
-      if (loggedInEmployeeId) {
+    const loggedInEmployeeId = getCookie("auth_employee_id");
+    const loggedInName = getCookie("auth_name");
+    if (loggedInEmployeeId || loggedInName) {
+      const requesterOptions = form.refOptions["ผู้เบิก"] || [];
+
+      // 1. Match by logged-in display name first (e.g. "คุณแมน")
+      const matchedByName = loggedInName ? requesterOptions.find(opt =>
+        String(opt.label).trim().toLowerCase() === loggedInName.trim().toLowerCase() ||
+        String(opt.value).trim().toLowerCase() === loggedInName.trim().toLowerCase() ||
+        (opt.row && (
+          String(opt.row["ชื่อเล่น"] || "").trim().toLowerCase() === loggedInName.trim().toLowerCase() ||
+          String(opt.row["ชื่อ-นามสกุล"] || "").trim().toLowerCase() === loggedInName.trim().toLowerCase() ||
+          String(opt.row["name"] || "").trim().toLowerCase() === loggedInName.trim().toLowerCase()
+        ))
+      ) : undefined;
+
+      // 2. Fallback: match by employee ID / username (e.g. "PT101")
+      const matchedById = loggedInEmployeeId ? requesterOptions.find(opt =>
+        String(opt.value) === loggedInEmployeeId ||
+        String(opt.row?.id) === loggedInEmployeeId ||
+        String(opt.row?.employee_id) === loggedInEmployeeId ||
+        String(opt.row?.user_id) === loggedInEmployeeId ||
+        String(opt.row?.username) === loggedInEmployeeId
+      ) : undefined;
+
+      const matchedUserOption = matchedByName || matchedById;
+
+      if (matchedUserOption) {
+        values["ผู้เบิก"] = String(matchedUserOption.value);
+      } else if (loggedInName) {
+        values["ผู้เบิก"] = loggedInName;
+      } else if (loggedInEmployeeId) {
         values["ผู้เบิก"] = loggedInEmployeeId;
       }
     }

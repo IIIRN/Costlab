@@ -1,266 +1,142 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import {
+  Key,
+  Shield,
+  Clock,
+  BookOpen,
+  AlertTriangle,
   CheckCircle2,
   Copy,
   Check,
-  ExternalLink,
   RefreshCw,
   Send,
-  Zap,
-  BookOpen,
-  Terminal,
-  Server,
-  Database,
-  Radio,
   Save,
+  Search,
+  ChevronRight,
+  Info,
+  Terminal,
   Eye,
   EyeOff,
-  SlidersHorizontal,
-  ShieldCheck,
-  Search,
-  FileText,
-  Clock
+  Zap,
+  Users,
+  MessageSquare,
+  Sparkles
 } from "lucide-react";
 
-type CommandItem = {
-  keyword: string;
-  category: "withdraw" | "task" | "work" | "plan" | "system";
-  categoryName: string;
-  description: string;
-  example: string;
-  syntax?: string;
-  responseType: "Text Message" | "LINE Flex Card";
+type LineConfig = {
+  LINE_LIFF_ID?: string;
+  LINE_CHANNEL_ACCESS_TOKEN?: string;
+  LINE_CHANNEL_SECRET?: string;
+  LINE_USER_ID_OWN?: string;
+  LINE_USER_ID_APPROVER?: string;
+  LINE_GROUP_ID_TASK?: string;
+  LINE_GROUP_ID_SUMMARY?: string;
+  LINE_GROUP_ID_PW?: string;
+  LINE_GROUP_ID_PLAN?: string;
+  LINE_GROUP_ID_FINANCE?: string;
+  LINE_GROUP_ID_PAID?: string;
+  CRON_TIME_MORNING?: string;
+  CRON_TIME_EVENING?: string;
 };
 
-const ALL_LINE_COMMANDS: CommandItem[] = [
-  // 1. Withdraw & Financial Commands
-  {
-    keyword: "สรุป / สรุปบิล / สรุปวันนี้",
-    category: "withdraw",
-    categoryName: "📊 สรุปการเงิน & เบิกบิล",
-    description: "สรุปยอดรวมรายการบิลทั้งหมด ยอดรออนุมัติ ยอดอนุมัติแล้ว และยอดเงินรวมทั้งสิ้น",
-    example: "สรุป",
-    responseType: "Text Message"
-  },
-  {
-    keyword: "รออนุมัติ",
-    category: "withdraw",
-    categoryName: "📊 สรุปการเงิน & เบิกบิล",
-    description: "ดึงรายการบิลที่อยู่ระหว่างรออนุมัติ แสดงผลเป็น Flex Card การ์ดหรูสีเข้มพร้อมปุ่มลิงก์เปิดดูบนเว็บ",
-    example: "รออนุมัติ",
-    responseType: "LINE Flex Card"
-  },
-  {
-    keyword: "หลัก: / บิลหลัก:",
-    category: "withdraw",
-    categoryName: "📊 สรุปการเงิน & เบิกบิล",
-    description: "ค้นหาหรือดูรายการบิลหลักทั้งหมด หรือค้นหาเฉพาะชื่อผู้เบิก/ร้านค้า แสดงผล Flex รูป 4 คอลัมน์",
-    example: "บิลหลัก: สมชาย",
-    syntax: "บิลหลัก: [ชื่อผู้เบิก หรือ ทั้งหมด]",
-    responseType: "LINE Flex Card"
-  },
-  {
-    keyword: "ย่อย: / บิลย่อย:",
-    category: "withdraw",
-    categoryName: "📊 สรุปการเงิน & เบิกบิล",
-    description: "ค้นหาหรือดูรายการบิลเงินสด/บิลย่อยทั้งหมด หรือค้นหาเฉพาะชื่อผู้เบิก",
-    example: "ย่อย: วิชัย",
-    syntax: "ย่อย: [ชื่อผู้เบิก หรือ ทั้งหมด]",
-    responseType: "LINE Flex Card"
-  },
-  {
-    keyword: "อนุมัติบิลหลักลำดับที่: / อนุมัติเงินสดบิลย่อยลำดับที่:",
-    category: "withdraw",
-    categoryName: "📊 สรุปการเงิน & เบิกบิล",
-    description: "อนุมัติบิลเจาะจงเฉพาะรายบิล ID (เช่น ลำดับที่ 101) เพื่อป้องกันการอนุมัติซ้ำ",
-    example: "อนุมัติบิลหลักลำดับที่: 101",
-    syntax: "อนุมัติบิลหลักลำดับที่: [เลขบิล ID]",
-    responseType: "Text Message"
-  },
-  {
-    keyword: "ปิดงานบิลหลักลำดับที่:",
-    category: "withdraw",
-    categoryName: "📊 สรุปการเงิน & เบิกบิล",
-    description: "เปลี่ยนสถานะบิลหลักที่จ่ายเงินเสร็จสิ้น ให้เป็นสถานะ 'เบิกแล้ว'",
-    example: "ปิดงานบิลหลักลำดับที่: 101",
-    syntax: "ปิดงานบิลหลักลำดับที่: [เลขลำดับบิล]",
-    responseType: "Text Message"
-  },
+type DiscoveredGroup = {
+  groupId: string;
+  firstSeen: string;
+  lastSeen: string;
+  messageCount: number;
+};
 
-  // 2. Task Commands
-  {
-    keyword: "งาน: / งานด่วน:",
-    category: "task",
-    categoryName: "🎯 สั่งงาน & บันทึกภารกิจ",
-    description: "บันทึกงานใหม่เข้าสู่ระบบ พร้อมระบุความด่วนและผู้รับผิดชอบ",
-    example: "งาน: ตรวจสอบแบบโครงสร้าง ชั้น 2 [วิชัย]",
-    syntax: "งาน: [รายละเอียดงาน] [ชื่อผู้รับผิดชอบ]",
-    responseType: "Text Message"
-  },
-  {
-    keyword: "ส่ง:",
-    category: "task",
-    categoryName: "🎯 สั่งงาน & บันทึกภารกิจ",
-    description: "สร้าง 3 งานย่อยต่อเนื่องกันอัตโนมัติ (งานปฏิบัติ -> งานส่งหัวหน้า -> งานส่งผู้รับ)",
-    example: "ส่ง: งานเทคอนกรีตเสา A\nผู้รับ: ช่างเอก\nหัวหน้า: วิชัย",
-    syntax: "ส่ง: [ชื่อรายการ]\nผู้รับ: [ชื่อ]\nหัวหน้า: [ชื่อ]",
-    responseType: "Text Message"
-  },
-  {
-    keyword: "ลำดับ: / รายการ: / ดู/ทำ:",
-    category: "task",
-    categoryName: "🎯 สั่งงาน & บันทึกภารกิจ",
-    description: "สร้างหรือแก้ไขงานด้วยข้อมูลมัลติไลน์ พร้อมคัดกรองประเภทงาน (1=เอกสาร, 2=แผนงาน, 3=PJSA)",
-    example: "ลำดับ: CW-101\nรายการ: ตรวจสอบแบบ\nดู/ทำ: 16/08/26\nผู้รับ: วิชัย\nประเภท: 1",
-    syntax: "ลำดับ: [ID]\nรายการ: [ชื่อ]\nประเภท: [1|2|3]",
-    responseType: "Text Message"
-  },
-  {
-    keyword: "ปิดงาน: / ยืนยันปิดงาน:",
-    category: "task",
-    categoryName: "🎯 สั่งงาน & บันทึกภารกิจ",
-    description: "ปิดงานภารกิจที่ทำเสร็จแล้ว อัปเดตสถานะลง Supabase Postgres",
-    example: "ปิดงาน: 102",
-    syntax: "ปิดงาน: [รหัสงาน]",
-    responseType: "Text Message"
-  },
-  {
-    keyword: "s: / งาน / งานทั้งหมด",
-    category: "task",
-    categoryName: "🎯 สั่งงาน & บันทึกภารกิจ",
-    description: "ค้นหารายการงานค้างและงานรับเหมาล่าสุด แสดงผลเป็น Flex Card สรุปงาน",
-    example: "งานทั้งหมด",
-    responseType: "LINE Flex Card"
-  },
+type ErrorLog = {
+  id: string;
+  created_at: string;
+  source: string;
+  message: string;
+  level: string;
+  context?: any;
+};
 
-  // 3. Work / PW Commands
-  {
-    keyword: "มอบหมาย: / กิจกรรม: / PW:",
-    category: "work",
-    categoryName: "👷‍♂️ มอบหมายงานรับเหมา (PW)",
-    description: "สร้างรายการมอบหมายงานรับเหมา เสนอราคา หรือกิจกรรมสนาม พร้อมส่ง Flex Card ยืนยัน",
-    example: "มอบหมาย: งานผูกเหล็กและเทคอนกรีต [ช่างเอก] ฿250,000",
-    syntax: "มอบหมาย: [รายละเอียดงาน] [ผู้รับเหมา] ฿[ยอดเงิน]",
-    responseType: "LINE Flex Card"
-  },
-  {
-    keyword: "เรื่อง: / PR: / สถานที่: / นัดดู:",
-    category: "work",
-    categoryName: "👷‍♂️ มอบหมายงานรับเหมา (PW)",
-    description: "บันทึกเปิดจ้างงานรับเหมาแบบมัลติไลน์เชิงลึก พร้อมข้อมูล PR, สถานที่ และวันนัดเสนอราคา",
-    example: "เรื่อง: งานผูกเหล็ก\nPR: PR-001\nสถานที่: ไซต์ B\nนัดดู: 16/08/26\nติดต่อ1: ช่างเอก\nบริษัท: คอสท์แล็บ",
-    syntax: "เรื่อง: [งาน]\nPR: [เลข PR]\nสถานที่: [ไซต์]",
-    responseType: "LINE Flex Card"
-  },
-  {
-    keyword: "PW1:work / PWALL:work",
-    category: "work",
-    categoryName: "👷‍♂️ มอบหมายงานรับเหมา (PW)",
-    description: "ดูรายการงานมอบหมายย่อย PW ลำดับที่ 1 หรือดูงาน PW ทั้งหมดในระบบ",
-    example: "PWALL:work",
-    responseType: "LINE Flex Card"
-  },
+type ManualItem = {
+  id: string;
+  category: "finance" | "task" | "shortcut" | "system";
+  categoryName: string;
+  keyword: string;
+  syntax: string;
+  description: string;
+  example: string;
+  note?: string;
+};
 
-  // 4. Plan Commands
-  {
-    keyword: "แผน:",
-    category: "plan",
-    categoryName: "📐 แผนงาน & โครงการ",
-    description: "ค้นหาข้อมูลโครงการ งบประมาณ และความคืบหน้าแผนงาน",
-    example: "แผน: สำนักงาน A",
-    syntax: "แผน: [ชื่อหรือ ID โครงการ]",
-    responseType: "Text Message"
-  },
-  {
-    keyword: "(บิลหลัก) / (บิลย่อย)",
-    category: "plan",
-    categoryName: "📐 แผนงาน & โครงการ",
-    description: "ดูงบประมาณแผนงานเปรียบเทียบกับยอดเบิกจริงในโครงการ",
-    example: "(บิลหลัก)",
-    responseType: "Text Message"
-  },
+const LINE_MANUAL_ITEMS: ManualItem[] = [
+  // System Category
+  { id: "m1", category: "system", categoryName: "ตรวจสอบระบบ", keyword: "testbot", syntax: "testbot", description: "ทดสอบการเชื่อมต่อเซิร์ฟเวอร์ และสถานะฐานข้อมูล Supabase PostgreSQL", example: "testbot" },
+  { id: "m2", category: "system", categoryName: "ตรวจสอบระบบ", keyword: "check", syntax: "check", description: "เช็คสถานะการทำงานของ Webhook Engine (Next.js Serverless)", example: "check" },
+  { id: "m3", category: "system", categoryName: "ตรวจสอบระบบ", keyword: "status", syntax: "status", description: "แสดงรายงานสถานะบอทออนไลน์ และข้อมูลกลุ่มที่เชื่อมต่อ", example: "status" },
+  { id: "m4", category: "system", categoryName: "ตรวจสอบระบบ", keyword: "getid", syntax: "getid", description: "ดึงข้อมูล ID ของผู้ใช้ปัจจุบัน และ ID ของกลุ่ม LINE ที่พิมพ์คำสั่ง", example: "getid" },
+  { id: "m5", category: "system", categoryName: "ตรวจสอบระบบ", keyword: "ช่วยด้วย / เมนู", syntax: "เมนู", description: "เปิดการ์ดคู่มือสรุปคำสั่งที่ใช้งานบ่อยและปุ่มช่วยเหลือด่วน", example: "ช่วยเหลือ" },
 
-  // 5. Shortcuts Commands
-  {
-    keyword: "copy / work",
-    category: "system",
-    categoryName: "⚡ คำสั่งลัด (Shortcuts)",
-    description: "ส่งแม่แบบข้อความสำหรับสร้างงานทั่วไป",
-    example: "copy",
-    responseType: "Text Message"
-  },
-  {
-    keyword: "add1",
-    category: "system",
-    categoryName: "⚡ คำสั่งลัด (Shortcuts)",
-    description: "ส่งแม่แบบข้อความสำหรับสร้างงานมัลติไลน์",
-    example: "add1",
-    responseType: "Text Message"
-  },
-  {
-    keyword: "add3",
-    category: "system",
-    categoryName: "⚡ คำสั่งลัด (Shortcuts)",
-    description: "ส่งแม่แบบข้อความสำหรับสร้าง 3 งานย่อยต่อกัน (`ส่ง:`)",
-    example: "add3",
-    responseType: "Text Message"
-  },
-  {
-    keyword: "addp",
-    category: "system",
-    categoryName: "⚡ คำสั่งลัด (Shortcuts)",
-    description: "ส่งแม่แบบข้อความเปิดจ้าง PW มัลติไลน์ (`เรื่อง:`, `PR:`, `สถานที่:`)",
-    example: "addp",
-    responseType: "Text Message"
-  },
-  {
-    keyword: "doo / doo2",
-    category: "system",
-    categoryName: "⚡ คำสั่งลัด (Shortcuts)",
-    description: "ทางลัดดึงสรุปรายการงานค้างล่าสุด",
-    example: "doo",
-    responseType: "Text Message"
-  },
+  // Finance Category
+  { id: "m6", category: "finance", categoryName: "สรุปการเงิน & เบิกเงิน", keyword: "สรุป / สรุปบิล", syntax: "สรุป", description: "แสดงการ์ด Flex สรุปภาพรวมยอดเบิกเงินประจำวัน ค่าใช้จ่ายสะสม และบิลค้างจ่าย", example: "สรุป" },
+  { id: "m7", category: "finance", categoryName: "สรุปการเงิน & เบิกเงิน", keyword: "สรุปวันนี้", syntax: "สรุปวันนี้", description: "เรียกดูสรุปรายการบิลเงินสดและใบตั้งเบิกที่บันทึกเพิ่มในวันนี้เฉพาะกลุ่ม", example: "สรุปวันนี้" },
+  { id: "m8", category: "finance", categoryName: "สรุปการเงิน & เบิกเงิน", keyword: "รออนุมัติ", syntax: "รออนุมัติ", description: "ดึงตารางรายการบิลที่อยู่ระหว่างรอผู้มีสิทธิ์อนุมัติยอดเงิน (Approver)", example: "รออนุมัติ" },
+  { id: "m9", category: "finance", categoryName: "สรุปการเงิน & เบิกเงิน", keyword: "บิลหลัก: [ชื่อ]", syntax: "บิลหลัก: [ชื่อโครงการ/บิล]", description: "ค้นหาหรือสร้างกลุ่มบิลหลักสำหรับรวบรวมใบเบิกเงินย่อยตามโครงการ", example: "บิลหลัก: ค่าอุปกรณ์ไซต์ A" },
+  { id: "m10", category: "finance", categoryName: "สรุปการเงิน & เบิกเงิน", keyword: "บิลย่อย: [ชื่อ]", syntax: "บิลย่อย: [รายการ] - [จำนวนเงิน]", description: "บันทึกบิลค่าใช้จ่ายย่อยเข้าสู่ระบบเพื่อขอตั้งเบิกเงิน", example: "บิลย่อย: ค่าน้ำมันรถกระบะ - 1200" },
+  { id: "m11", category: "finance", categoryName: "สรุปการเงิน & เบิกเงิน", keyword: "อนุมัติบิลหลักของ:", syntax: "อนุมัติบิลหลักของ: [ชื่อ]", description: "อนุมัติรายการบิลหลักทั้งหมดของโครงการ (เฉพาะสิทธิ์ Admin / Approver)", example: "อนุมัติบิลหลักของ: โครงการบ้านพฤกษา" },
+  { id: "m12", category: "finance", categoryName: "สรุปการเงิน & เบิกเงิน", keyword: "อนุมัติเงินสดบิลย่อยของ:", syntax: "อนุมัติเงินสดบิลย่อยของ: [ชื่อ]", description: "อนุมัติและจ่ายเงินสดสำหรับบิลย่อยของสมาชิก", example: "อนุมัติเงินสดบิลย่อยของ: สมชาย" },
+  { id: "m13", category: "finance", categoryName: "สรุปการเงิน & เบิกเงิน", keyword: "ปิดงานบิลหลักลำดับที่:", syntax: "ปิดงานบิลหลักลำดับที่: [เลขบิล]", description: "เปลี่ยนสถานะบิลหลักเป็นชำระเงินสำเร็จและปิดงานบิล", example: "ปิดงานบิลหลักลำดับที่: 104" },
 
-  // 6. System Commands
-  {
-    keyword: "testbot / check / getid",
-    category: "system",
-    categoryName: "⚙️ ตรวจสอบระบบ & เครื่องมือ",
-    description: "ทดสอบการทำงานบอท เช็คการเชื่อมต่อ Supabase Postgres และขอรหัส Target ID",
-    example: "testbot",
-    responseType: "Text Message"
-  },
-  {
-    keyword: "เมนู / คำสั่ง / help",
-    category: "system",
-    categoryName: "⚙️ ตรวจสอบระบบ & เครื่องมือ",
-    description: "แสดงเมนูคำสั่งช่วยเหลือฉบับย่อบน LINE แชท",
-    example: "เมนู",
-    responseType: "Text Message"
-  }
+  // Task & PW Category
+  { id: "m14", category: "task", categoryName: "งาน & PW มอบหมาย", keyword: "งาน2: [ชื่อ]", syntax: "งาน2: [ชื่อพนักงาน]", description: "เรียกดูตารางงานที่ได้รับมอบหมายและสถานะความคืบหน้าของพนักงานรายคน", example: "งาน2: วิชัย" },
+  { id: "m15", category: "task", categoryName: "งาน & PW มอบหมาย", keyword: "งาน: [รายละเอียด]", syntax: "งาน: [รายละเอียดงาน] - [ชื่อผู้รับผิดชอบ]", description: "สั่งสร้างรายการงานมอบหมายใหม่เข้าตารางติดตามงานประจำวัน", example: "งาน: ตรวจสอบโครงสร้างเหล็กไซต์ B - ช่างเอก" },
+  { id: "m16", category: "task", categoryName: "งาน & PW มอบหมาย", keyword: "งานด่วน:", syntax: "งานด่วน: [รายละเอียด]", description: "สร้างงานมอบหมายเร่งด่วน พร้อมติดป้ายเตือนความสำคัญระดับสูงใน LINE", example: "งานด่วน: ซ่อมปั๊มน้ำไซต์ A" },
+  { id: "m17", category: "task", categoryName: "งาน & PW มอบหมาย", keyword: "ปิดงาน:", syntax: "ปิดงาน: [รหัสงาน]", description: "แจ้งเสร็จสิ้นงานและเปลี่ยนสถานะเป็นรอตรวจรับงาน", example: "ปิดงาน: CW-102" },
+  { id: "m18", category: "task", categoryName: "งาน & PW มอบหมาย", keyword: "ยืนยันปิดงาน:", syntax: "ยืนยันปิดงาน: [รหัสงาน]", description: "หัวหน้างานตรวจสอบและอนุมัติปิดงานสมบูรณ์", example: "ยืนยันปิดงาน: CW-102" },
+  { id: "m19", category: "task", categoryName: "งาน & PW มอบหมาย", keyword: "s: [ข้อความ]", syntax: "s: [คีย์เวิร์ดค้นหา]", description: "ค้นหาข้อมูลงาน บิล หรือเอกสารอย่างรวดเร็ว (Quick Search)", example: "s: ท่อ PVC" },
+  { id: "m20", category: "task", categoryName: "งาน & PW มอบหมาย", keyword: "มอบหมาย:", syntax: "มอบหมาย: [งาน] -> [ผู้รับผิดชอบ]", description: "โอนย้ายหรือมอบหมายงานให้ทีมงานคนอื่นรับช่วงต่อ", example: "มอบหมาย: ทาสีรั้ว -> ช่างน้อย" },
+  { id: "m21", category: "task", categoryName: "งาน & PW มอบหมาย", keyword: "กิจกรรม:", syntax: "กิจกรรม: [ชื่อกิจกรรม]", description: "บันทึกตารางกิจกรรมนัดหมายหรือการประชุมไซต์งาน", example: "กิจกรรม: ประชุมไซต์งานประจำสัปดาห์" },
+  { id: "m22", category: "task", categoryName: "งาน & PW มอบหมาย", keyword: "PW:", syntax: "PW: [เรื่อง] / [ผู้รับเหมา]", description: "สร้างใบเปิดจ้างงาน PW (Pay Work) สำหรับผู้รับเหมาย่อย", example: "PW: งานผูกเหล็กฐานราก / ช่างเอก" },
+  { id: "m23", category: "task", categoryName: "งาน & PW มอบหมาย", keyword: "PW1:work", syntax: "PW1:work", description: "แสดงแม่แบบสร้างใบสั่งจ้าง PW แบบขั้นตอนย่อ 1 บรรทัด", example: "PW1:work" },
+  { id: "m24", category: "task", categoryName: "งาน & PW มอบหมาย", keyword: "PWALL:work", syntax: "PWALL:work", description: "ดึงรายการใบสั่งจ้าง PW ทั้งหมดที่กำลังรอดำเนินการ", example: "PWALL:work" },
+
+  // Shortcuts Category
+  { id: "m25", category: "shortcut", categoryName: "คำสั่งลัด (Shortcuts)", keyword: "copy / work", syntax: "copy", description: "ส่งแม่แบบข้อความสำหรับสร้างงานทั่วไปเพื่อให้คัดลอกได้ง่าย", example: "copy" },
+  { id: "m26", category: "shortcut", categoryName: "คำสั่งลัด (Shortcuts)", keyword: "add1", syntax: "add1", description: "ส่งแม่แบบการสร้างงานแบบหลายบรรทัด (Multiline Task Template)", example: "add1" },
+  { id: "m27", category: "shortcut", categoryName: "คำสั่งลัด (Shortcuts)", keyword: "add3", syntax: "add3", description: "ส่งแม่แบบการสร้าง 3 งานย่อยรวดเดียวต่อเนื่องกัน", example: "add3" },
+  { id: "m28", category: "shortcut", categoryName: "คำสั่งลัด (Shortcuts)", keyword: "addp", syntax: "addp", description: "ส่งแม่แบบการเปิดจ้าง PW มัลติไลน์พร้อมรายละเอียดเบอร์ติดต่อ", example: "addp" },
+  { id: "m29", category: "shortcut", categoryName: "คำสั่งลัด (Shortcuts)", keyword: "doo / doo2", syntax: "doo", description: "ดึงการ์ดสรุปรายการงานค้าง 8 รายการล่าสุดแบบด่วน", example: "doo" },
 ];
 
 export function LineSystemDashboardClient() {
-  const [activeMainTab, setActiveMainTab] = useState<"tokens" | "schedules" | "manual" | "logs">("tokens");
-  const [copied, setCopied] = useState(false);
-  const [copiedKeyword, setCopiedKeyword] = useState<string | null>(null);
-  const [testing, setTesting] = useState(false);
+  const [activeTab, setActiveTab] = useState<"config" | "schedules" | "manual" | "logs">("config");
+
+  // Config States
   const [loadingConfig, setLoadingConfig] = useState(true);
   const [savingConfig, setSavingConfig] = useState(false);
+  const [testing, setTesting] = useState(false);
   const [showToken, setShowToken] = useState(false);
   const [showSecret, setShowSecret] = useState(false);
   const [configSource, setConfigSource] = useState<"supabase" | "env">("env");
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [saveResult, setSaveResult] = useState<{ success: boolean; message: string } | null>(null);
   const [testTargetId, setTestTargetId] = useState("");
+  const [copied, setCopied] = useState(false);
 
+  // Manual States
   const [manualSearch, setManualSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [copiedKeyword, setCopiedKeyword] = useState<string | null>(null);
 
-  const [formConfig, setFormConfig] = useState({
+  // Discovered Groups
+  const [discoveredGroups, setDiscoveredGroups] = useState<DiscoveredGroup[]>([]);
+
+  // Logs States
+  const [errorLogs, setErrorLogs] = useState<ErrorLog[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+
+  // Form Configuration
+  const [formConfig, setFormConfig] = useState<LineConfig>({
+    LINE_LIFF_ID: "",
     LINE_CHANNEL_ACCESS_TOKEN: "",
     LINE_CHANNEL_SECRET: "",
     LINE_USER_ID_OWN: "",
@@ -275,52 +151,19 @@ export function LineSystemDashboardClient() {
     CRON_TIME_EVENING: "17:00",
   });
 
-  const webhookUrl = typeof window !== "undefined"
-    ? `${window.location.origin}/api/line/webhook`
-    : `${process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") || "https://costlab-steel.vercel.app"}/api/line/webhook`;
-
-  const [discoveredGroups, setDiscoveredGroups] = useState<any[]>([]);
-  const [errorLogs, setErrorLogs] = useState<any[]>([]);
-  const [loadingLogs, setLoadingLogs] = useState(false);
-
-  async function fetchErrorLogs() {
-    try {
-      setLoadingLogs(true);
-      const res = await fetch("/api/line/logs");
-      const data = await res.json();
-      if (res.ok && Array.isArray(data.logs)) {
-        setErrorLogs(data.logs);
-      }
-    } catch (e) {
-      console.error("Failed to load system error logs:", e);
-    } finally {
-      setLoadingLogs(false);
-    }
-  }
-
-  async function handleClearLogs() {
-    try {
-      setLoadingLogs(true);
-      const res = await fetch("/api/line/logs", { method: "DELETE" });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setErrorLogs([]);
-      }
-    } catch (e) {
-      console.error("Failed to clear error logs:", e);
-    } finally {
-      setLoadingLogs(false);
-    }
-  }
+  const webhookUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/api/line/webhook`
+      : `${process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") || "https://costlab-steel.vercel.app"}/api/line/webhook`;
 
   useEffect(() => {
     async function loadConfig() {
+      setLoadingConfig(true);
       try {
-        setLoadingConfig(true);
         const res = await fetch("/api/line/config");
         const data = await res.json();
         if (res.ok && data.config) {
-          setFormConfig(data.config);
+          setFormConfig((prev) => ({ ...prev, ...data.config }));
           setConfigSource(data.source || "env");
           if (Array.isArray(data.discoveredGroups)) {
             setDiscoveredGroups(data.discoveredGroups);
@@ -338,6 +181,21 @@ export function LineSystemDashboardClient() {
     loadConfig();
     fetchErrorLogs();
   }, []);
+
+  async function fetchErrorLogs() {
+    setLoadingLogs(true);
+    try {
+      const res = await fetch("/api/system-options?id=error_logs");
+      const json = await res.json();
+      if (json.success && Array.isArray(json.logs)) {
+        setErrorLogs(json.logs);
+      }
+    } catch (e) {
+      console.error("Failed to fetch logs:", e);
+    } finally {
+      setLoadingLogs(false);
+    }
+  }
 
   function copyWebhook() {
     navigator.clipboard.writeText(webhookUrl);
@@ -375,258 +233,193 @@ export function LineSystemDashboardClient() {
     }
   }
 
+  async function handleTestMessage() {
+    if (!testTargetId.trim()) {
+      setTestResult({ success: false, message: "กรุณาระบุ User ID หรือ Group ID สำหรับทดสอบ" });
+      return;
+    }
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const res = await fetch("/api/line/webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "test_message",
+          targetId: testTargetId.trim(),
+          text: `🟢 ทดสอบระบบ LINE Bot Supabase Engine!\n\nเวลา: ${new Date().toLocaleTimeString("th-TH")}\nสถานะ: ส่งข้อความสำเร็จ 100%`,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setTestResult({ success: true, message: `ส่งข้อความทดสอบไปยัง ${testTargetId} สำเร็จ!` });
+      } else {
+        setTestResult({ success: false, message: data.error || "ส่งข้อความล้มเหลว ตรวจสอบ Access Token หรือ ID" });
+      }
+    } catch (e: any) {
+      setTestResult({ success: false, message: e.message || "เกิดข้อผิดพลาดในการเชื่อมต่อ" });
+    } finally {
+      setTesting(false);
+    }
+  }
+
   async function handleTestMorningTasks() {
     setTesting(true);
     setTestResult(null);
     try {
-      const url = testTargetId.trim()
-        ? `/api/cron/daily-tasks?target=${encodeURIComponent(testTargetId.trim())}`
-        : "/api/cron/daily-tasks";
-
-      const res = await fetch(url);
+      const res = await fetch("/api/cron/daily-tasks?force=true");
       const data = await res.json();
       if (res.ok && data.success) {
-        setTestResult({
-          success: true,
-          message: `ส่งการ์ดสรุปงานเช้า (07:30 น.) เข้า LINE ปลายทาง (${data.targetGroup || testTargetId}) เรียบร้อยแล้ว!`,
-        });
+        setTestResult({ success: true, message: "ส่งการ์ดสรุปงานช่วงเช้าเข้า LINE กลุ่มงาน เรียบร้อยแล้ว!" });
       } else {
-        setTestResult({
-          success: false,
-          message: data.error || "เกิดข้อผิดพลาดในการส่งข้อความ",
-        });
+        setTestResult({ success: false, message: data.error || "เกิดข้อผิดพลาดในการยิงสรุปงานเช้า" });
       }
-    } catch (err: any) {
-      setTestResult({ success: false, message: err.message || "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้" });
+    } catch (e: any) {
+      setTestResult({ success: false, message: e.message || "ไม่สามารถเรียกใช้งาน API ได้" });
     } finally {
       setTesting(false);
     }
   }
 
-  async function handleTestNotification() {
+  async function handleTestEveningSummary() {
     setTesting(true);
     setTestResult(null);
     try {
-      const url = testTargetId.trim()
-        ? `/api/cron/daily-summary?target=${encodeURIComponent(testTargetId.trim())}`
-        : "/api/cron/daily-summary";
-
-      const res = await fetch(url);
+      const res = await fetch("/api/cron/daily-summary?force=true");
       const data = await res.json();
       if (res.ok && data.success) {
-        setTestResult({
-          success: true,
-          message: `ส่งการ์ดสรุปรายงานเย็น (17:00 น.) เข้า LINE ปลายทาง (${data.targetGroup || testTargetId}) เรียบร้อยแล้ว!`,
-        });
+        setTestResult({ success: true, message: "ส่งการ์ดสรุปผลงาน & การเงินช่วงเย็นเข้า LINE กลุ่มสรุป เรียบร้อยแล้ว!" });
       } else {
-        setTestResult({
-          success: false,
-          message: data.error || "เกิดข้อผิดพลาดในการส่งข้อความ",
-        });
+        setTestResult({ success: false, message: data.error || "เกิดข้อผิดพลาดในการยิงสรุปงานเย็น" });
       }
-    } catch (err: any) {
-      setTestResult({ success: false, message: err.message || "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้" });
+    } catch (e: any) {
+      setTestResult({ success: false, message: e.message || "ไม่สามารถเรียกใช้งาน API ได้" });
     } finally {
       setTesting(false);
     }
   }
 
-  const filteredCommands = useMemo(() => {
-    const query = manualSearch.trim().toLowerCase();
-    return ALL_LINE_COMMANDS.filter((item) => {
-      if (selectedCategory !== "all" && item.category !== selectedCategory) return false;
-      if (!query) return true;
-      return (
-        item.keyword.toLowerCase().includes(query) ||
-        item.description.toLowerCase().includes(query) ||
-        item.example.toLowerCase().includes(query) ||
-        (item.syntax && item.syntax.toLowerCase().includes(query))
-      );
-    });
-  }, [manualSearch, selectedCategory]);
+  const filteredManual = LINE_MANUAL_ITEMS.filter((item) => {
+    const matchesCategory = selectedCategory === "all" || item.category === selectedCategory;
+    const matchesSearch =
+      manualSearch.trim() === "" ||
+      item.keyword.toLowerCase().includes(manualSearch.toLowerCase()) ||
+      item.description.toLowerCase().includes(manualSearch.toLowerCase()) ||
+      item.example.toLowerCase().includes(manualSearch.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   return (
-    <div className="space-y-4 font-sans text-xs text-slate-800 max-w-7xl mx-auto pb-10">
-      {/* Top Header - Compact Bills Theme */}
-      <div className="bg-white p-3.5 rounded-md border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+    <div className="space-y-3 font-sans text-xs text-slate-800 max-w-7xl mx-auto pb-8">
+      {/* Top Header */}
+      <div className="bg-white p-3 rounded-md border border-slate-200 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-2.5">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="font-bold text-base text-slate-900 tracking-tight">ตั้งค่าระบบ LINE Bot & คู่มือคำสั่ง</h1>
-            <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+            <h1 className="text-sm font-medium text-slate-900 tracking-tight">ตั้งค่าระบบ LINE Bot & คู่มือคำสั่ง</h1>
+            <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-50 text-emerald-800 border border-emerald-200">
               V2.0 Active
             </span>
           </div>
-          <p className="text-slate-600 text-xs mt-0.5">
-            จัดการ Token, กำหนดเวลาส่งสรุปงานเช้า/เย็น, คู่มือคำสั่ง 63 คีย์เวิร์ด และตรวจ Error Logs
+          <p className="text-slate-500 text-[11px] mt-0.5">
+            จัดการ Token, LIFF ID, เวลาส่งสรุปงานประจำวัน, คู่มือคำสั่ง 63 คีย์เวิร์ด และตรวจ Error Logs
           </p>
         </div>
 
-        {/* Global Test Target ID Input & Quick Action */}
-        <div className="flex flex-wrap items-center gap-1.5 bg-slate-50 p-1.5 rounded border border-slate-200">
-          <input
-            type="text"
-            value={testTargetId}
-            onChange={(e) => setTestTargetId(e.target.value)}
-            placeholder="Target ID ทดสอบ..."
-            className="px-2.5 py-1 bg-white border border-slate-300 rounded text-slate-900 font-mono text-xs focus:outline-none focus:border-slate-500 w-44 sm:w-48"
-          />
-          <button
-            type="button"
-            disabled={testing}
-            onClick={handleTestMorningTasks}
-            className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded text-xs transition flex items-center gap-1 cursor-pointer disabled:opacity-50 shrink-0"
-          >
-            {testing ? <RefreshCw size={12} className="animate-spin" /> : <Clock size={12} />}
-            <span>ยิงสรุปเช้า</span>
-          </button>
-          <button
-            type="button"
-            disabled={testing}
-            onClick={handleTestNotification}
-            className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded text-xs transition flex items-center gap-1 cursor-pointer disabled:opacity-50 shrink-0"
-          >
-            {testing ? <RefreshCw size={12} className="animate-spin" /> : <Send size={12} />}
-            <span>ยิงสรุปเย็น</span>
-          </button>
+        <div className="flex items-center gap-2 text-[11px]">
+          <span className="text-slate-500">แหล่งข้อมูล:</span>
+          <span className={`px-2 py-0.5 rounded border ${configSource === "supabase" ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-amber-50 text-amber-800 border-amber-200"}`}>
+            {configSource === "supabase" ? "Supabase DB" : "Environment Vars"}
+          </span>
         </div>
       </div>
 
-      {testResult && (
-        <div
-          className={`p-3 rounded-md border text-xs font-bold flex items-center justify-between gap-2 animate-in fade-in ${
-            testResult.success ? "bg-emerald-50 border-emerald-200 text-emerald-800" : "bg-rose-50 border-rose-200 text-rose-800"
-          }`}
-        >
-          <div className="flex items-center gap-1.5">
-            {testResult.success ? <CheckCircle2 size={15} /> : <Zap size={15} />}
-            <span>{testResult.message}</span>
-          </div>
-          <button type="button" onClick={() => setTestResult(null)} className="text-slate-400 hover:text-slate-600 font-bold px-1">
-            ✕
-          </button>
-        </div>
-      )}
-
-      {/* Main Tab Navigation Bar - Compact Bills Theme */}
-      <div className="flex items-center gap-1.5 border-b border-slate-300 overflow-x-auto pb-0.5">
+      {/* Main Tab Navigation */}
+      <div className="flex items-center gap-1 border-b border-slate-200 overflow-x-auto bg-white px-2 rounded-t-md border-t border-x">
         <button
           type="button"
-          onClick={() => setActiveMainTab("tokens")}
-          className={`px-3.5 py-2 text-xs font-bold rounded-t-md transition flex items-center gap-1.5 border-t border-x cursor-pointer ${
-            activeMainTab === "tokens"
-              ? "bg-white text-slate-900 border-slate-300 border-b-white -mb-px shadow-sm"
-              : "bg-slate-100 text-slate-600 border-transparent hover:bg-slate-200"
+          onClick={() => setActiveTab("config")}
+          className={`px-3 py-2 text-xs border-b-2 transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap rounded-t-sm ${
+            activeTab === "config"
+              ? "border-emerald-600 text-emerald-800 bg-emerald-50 font-medium"
+              : "border-transparent text-slate-600 hover:text-emerald-700 hover:bg-emerald-50/40"
           }`}
         >
-          <SlidersHorizontal size={14} className={activeMainTab === "tokens" ? "text-emerald-700" : "text-slate-400"} />
+          <Key size={13} className={activeTab === "config" ? "text-emerald-600" : "text-emerald-500/70"} />
           <span>1. ตั้งค่า Token & Group IDs</span>
         </button>
 
         <button
           type="button"
-          onClick={() => setActiveMainTab("schedules")}
-          className={`px-3.5 py-2 text-xs font-bold rounded-t-md transition flex items-center gap-1.5 border-t border-x cursor-pointer ${
-            activeMainTab === "schedules"
-              ? "bg-white text-slate-900 border-slate-300 border-b-white -mb-px shadow-sm"
-              : "bg-slate-100 text-slate-600 border-transparent hover:bg-slate-200"
+          onClick={() => setActiveTab("schedules")}
+          className={`px-3 py-2 text-xs border-b-2 transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap rounded-t-sm ${
+            activeTab === "schedules"
+              ? "border-amber-600 text-amber-900 bg-amber-50 font-medium"
+              : "border-transparent text-slate-600 hover:text-amber-800 hover:bg-amber-50/40"
           }`}
         >
-          <Clock size={14} className={activeMainTab === "schedules" ? "text-amber-600" : "text-slate-400"} />
-          <span>2. เวลาส่งสรุปงานประจำวัน</span>
+          <Clock size={13} className={activeTab === "schedules" ? "text-amber-600" : "text-amber-500/70"} />
+          <span>2. เวลาส่งสรุปประจำวัน</span>
         </button>
 
         <button
           type="button"
-          onClick={() => setActiveMainTab("manual")}
-          className={`px-3.5 py-2 text-xs font-bold rounded-t-md transition flex items-center gap-1.5 border-t border-x cursor-pointer ${
-            activeMainTab === "manual"
-              ? "bg-white text-slate-900 border-slate-300 border-b-white -mb-px shadow-sm"
-              : "bg-slate-100 text-slate-600 border-transparent hover:bg-slate-200"
+          onClick={() => setActiveTab("manual")}
+          className={`px-3 py-2 text-xs border-b-2 transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap rounded-t-sm ${
+            activeTab === "manual"
+              ? "border-blue-600 text-blue-900 bg-blue-50 font-medium"
+              : "border-transparent text-slate-600 hover:text-blue-800 hover:bg-blue-50/40"
           }`}
         >
-          <BookOpen size={14} className={activeMainTab === "manual" ? "text-blue-600" : "text-slate-400"} />
-          <span>3. คู่มือคำสั่ง LINE Bot</span>
+          <BookOpen size={13} className={activeTab === "manual" ? "text-blue-600" : "text-blue-500/70"} />
+          <span>3. คู่มือคำสั่ง (63 คีย์เวิร์ด)</span>
         </button>
 
         <button
           type="button"
-          onClick={() => setActiveMainTab("logs")}
-          className={`px-3.5 py-2 text-xs font-bold rounded-t-md transition flex items-center gap-1.5 border-t border-x cursor-pointer ${
-            activeMainTab === "logs"
-              ? "bg-white text-slate-900 border-slate-300 border-b-white -mb-px shadow-sm"
-              : "bg-slate-100 text-slate-600 border-transparent hover:bg-slate-200"
+          onClick={() => setActiveTab("logs")}
+          className={`px-3 py-2 text-xs border-b-2 transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap rounded-t-sm ${
+            activeTab === "logs"
+              ? "border-rose-600 text-rose-900 bg-rose-50 font-medium"
+              : "border-transparent text-slate-600 hover:text-rose-800 hover:bg-rose-50/40"
           }`}
         >
-          <FileText size={14} className={activeMainTab === "logs" ? "text-rose-600" : "text-slate-400"} />
-          <span>4. ประวัติข้อผิดพลาดระบบ (Logs)</span>
-          {errorLogs.length > 0 && (
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-rose-100 text-rose-800 font-bold border border-rose-300">
-              {errorLogs.length}
-            </span>
-          )}
+          <AlertTriangle size={13} className={activeTab === "logs" ? "text-rose-600" : "text-rose-500/70"} />
+          <span>4. ประวัติ Error Logs</span>
         </button>
       </div>
 
-      {/* ─── TAB 1: ตั้งค่า Token & Group IDs ─── */}
-      {activeMainTab === "tokens" && (
-        <div className="space-y-3.5 animate-in fade-in">
-          {/* System Status Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="bg-white p-3 rounded-md border border-slate-200 flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 shrink-0">
-                <Server size={15} />
-              </div>
-              <div className="min-w-0">
-                <div className="text-[10px] font-bold text-slate-500 uppercase">Engine Status</div>
-                <div className="font-bold text-slate-900 text-xs truncate">Next.js Webhook</div>
-              </div>
-            </div>
-
-            <div className="bg-white p-3 rounded-md border border-slate-200 flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 shrink-0">
-                <Database size={15} />
-              </div>
-              <div className="min-w-0">
-                <div className="text-[10px] font-bold text-slate-500 uppercase">Config Source</div>
-                <div className="font-bold text-slate-900 text-xs truncate">{configSource === "supabase" ? "Supabase DB" : "Environment (.env)"}</div>
-              </div>
-            </div>
-
-            <div className="bg-white p-3 rounded-md border border-slate-200 flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 shrink-0">
-                <ShieldCheck size={15} />
-              </div>
-              <div className="min-w-0">
-                <div className="text-[10px] font-bold text-slate-500 uppercase">LINE Token</div>
-                <div className="font-bold text-slate-900 text-xs truncate">{formConfig.LINE_CHANNEL_ACCESS_TOKEN ? "พร้อมใช้งาน 100%" : "ยังไม่ได้ตั้งค่า"}</div>
-              </div>
-            </div>
-
-            <div className="bg-white p-3 rounded-md border border-slate-200 flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 shrink-0">
-                <Radio size={15} />
-              </div>
-              <div className="min-w-0">
-                <div className="text-[10px] font-bold text-slate-500 uppercase">Target Groups</div>
-                <div className="font-bold text-slate-900 text-xs truncate">5 กลุ่มระบบหลัก</div>
-              </div>
-            </div>
+      {/* Global Result Alerts */}
+      {saveResult && (
+        <div className={`p-2.5 rounded-md border text-xs flex items-center justify-between gap-2 ${saveResult.success ? "bg-emerald-50 border-emerald-200 text-emerald-900" : "bg-rose-50 border-rose-200 text-rose-900"}`}>
+          <div className="flex items-center gap-1.5">
+            {saveResult.success ? <CheckCircle2 size={14} className="text-emerald-600 shrink-0" /> : <AlertTriangle size={14} className="text-rose-600 shrink-0" />}
+            <span>{saveResult.message}</span>
           </div>
+          <button type="button" onClick={() => setSaveResult(null)} className="text-slate-400 hover:text-slate-600 text-xs">✕</button>
+        </div>
+      )}
 
-          {/* Webhook Configuration Section */}
-          <div className="bg-white p-3.5 rounded-md border border-slate-200 space-y-2">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-              <span className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
-                <Terminal size={15} className="text-slate-700" /> Webhook URL (วางใน LINE Console)
-              </span>
-              <a
-                href="https://developers.line.biz"
-                target="_blank"
-                rel="noreferrer"
-                className="text-[11px] font-bold text-slate-700 hover:underline flex items-center gap-1"
-              >
-                <span>LINE Console</span> <ExternalLink size={12} />
-              </a>
+      {testResult && (
+        <div className={`p-2.5 rounded-md border text-xs flex items-center justify-between gap-2 ${testResult.success ? "bg-emerald-50 border-emerald-200 text-emerald-900" : "bg-amber-50 border-amber-200 text-amber-900"}`}>
+          <div className="flex items-center gap-1.5">
+            {testResult.success ? <CheckCircle2 size={14} className="text-emerald-600 shrink-0" /> : <Info size={14} className="text-amber-600 shrink-0" />}
+            <span>{testResult.message}</span>
+          </div>
+          <button type="button" onClick={() => setTestResult(null)} className="text-slate-400 hover:text-slate-600 text-xs">✕</button>
+        </div>
+      )}
+
+      {/* TAB 1: Config (Token & Group IDs) */}
+      {activeTab === "config" && (
+        <div className="space-y-3">
+          {/* Webhook URL Box */}
+          <div className="bg-white p-3 rounded-md border border-slate-200 shadow-2xs space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-slate-800">
+                <Terminal size={14} className="text-slate-500" />
+                <span className="text-xs">Webhook Endpoint URL (ระบุใน LINE Developers Console):</span>
+              </div>
+              <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">SSL / HTTPS Ready</span>
             </div>
 
             <div className="flex items-center gap-2">
@@ -634,12 +427,12 @@ export function LineSystemDashboardClient() {
                 type="text"
                 readOnly
                 value={webhookUrl}
-                className="flex-1 bg-slate-50 border border-slate-300 rounded px-3 py-1 font-mono text-slate-900 text-xs font-semibold focus:outline-none"
+                className="flex-1 bg-slate-50 border border-slate-200 rounded px-2.5 py-1.5 font-mono text-[11px] text-slate-800 focus:outline-none"
               />
               <button
                 type="button"
                 onClick={copyWebhook}
-                className="px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded transition flex items-center gap-1 cursor-pointer shrink-0 text-xs"
+                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded transition flex items-center gap-1 text-xs shrink-0 cursor-pointer"
               >
                 {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
                 <span>{copied ? "คัดลอกแล้ว" : "คัดลอก URL"}</span>
@@ -647,32 +440,28 @@ export function LineSystemDashboardClient() {
             </div>
           </div>
 
-          {/* Discovered Groups Panel */}
+          {/* Discovered LINE Groups Card */}
           {discoveredGroups.length > 0 && (
-            <div className="bg-amber-50/70 p-3.5 rounded-md border border-amber-200 space-y-2">
-              <div className="flex items-center justify-between border-b border-amber-200/80 pb-2">
-                <span className="font-bold text-amber-950 text-xs flex items-center gap-1.5">
-                  <Radio size={15} className="text-amber-700 animate-pulse" />
-                  <span>รหัสกลุ่ม LINE ที่บอทตรวจพบอัตโนมัติ (Discovered LINE Groups)</span>
-                </span>
-                <span className="text-[10px] font-bold text-amber-900 bg-amber-200 px-2 py-0.5 rounded border border-amber-300">
-                  พบ {discoveredGroups.length} กลุ่ม
-                </span>
+            <div className="bg-white p-3 rounded-md border border-emerald-200 shadow-2xs space-y-2">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+                <div className="flex items-center gap-1.5">
+                  <Users size={14} className="text-emerald-600" />
+                  <span className="text-xs text-slate-900">ตรวจพบกลุ่ม LINE ที่มีการรับส่งข้อความอัตโนมัติ ({discoveredGroups.length} กลุ่ม)</span>
+                </div>
+                <span className="text-[10px] text-slate-500">คัดลอก Group ID ด้านล่างไปใส่ในช่องกลุ่มเป้าหมาย</span>
               </div>
-              <p className="text-slate-600 text-xs">
-                เมื่อพิมพ์คำสั่งในกลุ่ม LINE บอทจะตรวจจับ Group ID อัตโนมัติ สามารถกดคัดลอกรหัส <code className="font-mono font-bold bg-white px-1 border border-amber-300 rounded text-amber-900">C...</code> ไปใส่ในช่อง Group ID ด้านล่างได้ทันที:
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5">
-                {discoveredGroups.map((g: any, idx: number) => (
-                  <div key={idx} className="bg-white p-2 rounded border border-amber-200 flex items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <span className="font-bold text-slate-900 block text-xs truncate">{g.name || "LINE Group"}</span>
-                      <code className="text-[11px] font-mono text-amber-900 font-bold truncate block">{g.groupId}</code>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                {discoveredGroups.map((g) => (
+                  <div key={g.groupId} className="p-2 rounded bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
+                    <div className="min-w-0 pr-2">
+                      <div className="font-mono text-[11px] text-slate-800 truncate" title={g.groupId}>{g.groupId}</div>
+                      <div className="text-[10px] text-slate-500">รับแล้ว {g.messageCount} ข้อความ</div>
                     </div>
                     <button
                       type="button"
                       onClick={() => copyTextSnippet(g.groupId)}
-                      className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold rounded text-[10px] transition shrink-0 border border-amber-300"
+                      className="px-2 py-1 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 rounded text-[10px] cursor-pointer shrink-0"
                     >
                       {copiedKeyword === g.groupId ? "คัดลอกแล้ว" : "คัดลอก ID"}
                     </button>
@@ -682,59 +471,55 @@ export function LineSystemDashboardClient() {
             </div>
           )}
 
-          {/* Form: Editable LINE Configurations */}
-          <form onSubmit={handleSaveConfig} className="bg-white p-4 rounded-md border border-slate-200 space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-              <span className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
-                <SlidersHorizontal size={15} className="text-slate-700" /> ตั้งค่า Token & Group IDs (บันทึกลง Supabase)
-              </span>
+          {/* Configuration Form */}
+          <form onSubmit={handleSaveConfig} className="bg-white p-3.5 rounded-md border border-slate-200 shadow-2xs space-y-3">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <div>
+                <h2 className="text-xs font-medium text-slate-900 m-0">กำหนดค่า Token & Group IDs</h2>
+                <p className="text-[10px] text-slate-500 m-0">ระบุการตั้งค่าสำหรับการเชื่อมต่อ LINE Messaging API และ LINE OA LIFF</p>
+              </div>
               <button
                 type="submit"
-                disabled={savingConfig || loadingConfig}
-                className="px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded transition flex items-center gap-1 cursor-pointer disabled:opacity-50 text-xs"
+                disabled={savingConfig}
+                className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded transition flex items-center gap-1 text-xs cursor-pointer disabled:opacity-50"
               >
                 {savingConfig ? <RefreshCw size={13} className="animate-spin" /> : <Save size={13} />}
-                <span>{savingConfig ? "บันทึก..." : "บันทึกข้อมูล"}</span>
+                <span>บันทึกการตั้งค่า</span>
               </button>
             </div>
 
-            {saveResult && (
-              <div
-                className={`p-3 rounded-md border text-xs font-bold flex items-center justify-between gap-2 animate-in fade-in ${
-                  saveResult.success ? "bg-emerald-50 border-emerald-200 text-emerald-800" : "bg-rose-50 border-rose-200 text-rose-800"
-                }`}
-              >
-                <div className="flex items-center gap-1.5">
-                  {saveResult.success ? <CheckCircle2 size={15} /> : <Zap size={15} />}
-                  <span>{saveResult.message}</span>
-                </div>
-                <button type="button" onClick={() => setSaveResult(null)} className="text-slate-400 hover:text-slate-600 font-bold">
-                  ✕
-                </button>
-              </div>
-            )}
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* Credentials */}
+              {/* Credentials & LIFF Section */}
               <div className="sm:col-span-2 border-b border-slate-100 pb-1">
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">🔑 Credentials (Token & Secret)</span>
+                <span className="text-[11px] text-slate-500 uppercase">🔑 Credentials & LIFF App ID (LINE OA & Bot)</span>
               </div>
 
               <div className="sm:col-span-2 space-y-1">
-                <label className="font-bold text-slate-700 block text-xs">LINE Channel Access Token *</label>
+                <label className="text-slate-700 block text-xs">LINE LIFF ID (เช่น 1234567890-AbCdEfGh สำหรับเข้าสู่ระบบผ่าน LINE OA)</label>
+                <input
+                  type="text"
+                  value={formConfig.LINE_LIFF_ID || ""}
+                  onChange={(e) => setFormConfig({ ...formConfig, LINE_LIFF_ID: e.target.value })}
+                  placeholder="ระบุ LIFF ID จาก LINE Developers Console..."
+                  className="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 font-mono text-slate-900 text-xs focus:outline-none focus:border-slate-500"
+                />
+              </div>
+
+              <div className="sm:col-span-2 space-y-1">
+                <label className="text-slate-700 block text-xs">LINE Channel Access Token *</label>
                 <div className="relative flex items-center">
                   <input
                     type={showToken ? "text" : "password"}
                     required
-                    value={formConfig.LINE_CHANNEL_ACCESS_TOKEN}
+                    value={formConfig.LINE_CHANNEL_ACCESS_TOKEN || ""}
                     onChange={(e) => setFormConfig({ ...formConfig, LINE_CHANNEL_ACCESS_TOKEN: e.target.value })}
                     placeholder="วาง Access Token..."
-                    className="w-full bg-white border border-slate-300 rounded pl-3 pr-8 py-1.5 font-mono text-slate-900 text-xs focus:outline-none focus:border-slate-500"
+                    className="w-full bg-white border border-slate-300 rounded pl-2.5 pr-8 py-1.5 font-mono text-slate-900 text-xs focus:outline-none focus:border-slate-500"
                   />
                   <button
                     type="button"
                     onClick={() => setShowToken(!showToken)}
-                    className="absolute right-2.5 text-slate-400 hover:text-slate-600"
+                    className="absolute right-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
                   >
                     {showToken ? <EyeOff size={14} /> : <Eye size={14} />}
                   </button>
@@ -742,198 +527,195 @@ export function LineSystemDashboardClient() {
               </div>
 
               <div className="sm:col-span-2 space-y-1">
-                <label className="font-bold text-slate-700 block text-xs">LINE Channel Secret</label>
+                <label className="text-slate-700 block text-xs">LINE Channel Secret</label>
                 <div className="relative flex items-center">
                   <input
                     type={showSecret ? "text" : "password"}
-                    value={formConfig.LINE_CHANNEL_SECRET}
+                    value={formConfig.LINE_CHANNEL_SECRET || ""}
                     onChange={(e) => setFormConfig({ ...formConfig, LINE_CHANNEL_SECRET: e.target.value })}
                     placeholder="วาง Channel Secret..."
-                    className="w-full bg-white border border-slate-300 rounded pl-3 pr-8 py-1.5 font-mono text-slate-900 text-xs focus:outline-none focus:border-slate-500"
+                    className="w-full bg-white border border-slate-300 rounded pl-2.5 pr-8 py-1.5 font-mono text-slate-900 text-xs focus:outline-none focus:border-slate-500"
                   />
                   <button
                     type="button"
                     onClick={() => setShowSecret(!showSecret)}
-                    className="absolute right-2.5 text-slate-400 hover:text-slate-600"
+                    className="absolute right-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
                   >
                     {showSecret ? <EyeOff size={14} /> : <Eye size={14} />}
                   </button>
                 </div>
               </div>
 
-              {/* User IDs */}
+              {/* Target User IDs Section */}
               <div className="sm:col-span-2 border-b border-slate-100 pb-1 mt-1">
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">👤 User IDs (ผู้ดูแลระบบ)</span>
+                <span className="text-[11px] text-slate-500 uppercase">👤 User IDs ผู้รับการแจ้งเตือนส่วนตัว</span>
               </div>
 
               <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <label className="font-bold text-slate-700 text-xs">USER_ID_OWN (เจ้าของ)</label>
-                  <button type="button" onClick={() => setTestTargetId(formConfig.LINE_USER_ID_OWN)} className="text-[10px] text-slate-500 hover:underline">
-                    ใส่ช่องทดสอบ
-                  </button>
-                </div>
+                <label className="text-slate-700 block text-xs">LINE User ID เจ้าของระบบ (OWN / Admin)</label>
                 <input
                   type="text"
-                  value={formConfig.LINE_USER_ID_OWN}
+                  value={formConfig.LINE_USER_ID_OWN || ""}
                   onChange={(e) => setFormConfig({ ...formConfig, LINE_USER_ID_OWN: e.target.value })}
-                  placeholder="Uxxxxxxxx... (เจ้าของระบบ)"
-                  className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 font-mono text-slate-900 text-xs focus:outline-none focus:border-slate-500"
+                  placeholder="เช่น U1234567890abcdef..."
+                  className="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 font-mono text-slate-900 text-xs focus:outline-none focus:border-slate-500"
                 />
               </div>
 
               <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <label className="font-bold text-slate-700 text-xs">USER_ID_APPROVER (ผู้อนุมัติ)</label>
-                  <button type="button" onClick={() => setTestTargetId(formConfig.LINE_USER_ID_APPROVER)} className="text-[10px] text-slate-500 hover:underline">
-                    ใส่ช่องทดสอบ
-                  </button>
-                </div>
+                <label className="text-slate-700 block text-xs">LINE User ID ผู้อนุมัติ (Approvers) (คั่นด้วย comma)</label>
                 <input
                   type="text"
-                  value={formConfig.LINE_USER_ID_APPROVER}
+                  value={formConfig.LINE_USER_ID_APPROVER || ""}
                   onChange={(e) => setFormConfig({ ...formConfig, LINE_USER_ID_APPROVER: e.target.value })}
-                  placeholder="Uxxxxxxxx... (ผู้อนุมัติ)"
-                  className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 font-mono text-slate-900 text-xs focus:outline-none focus:border-slate-500"
+                  placeholder="เช่น U111...,U222..."
+                  className="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 font-mono text-slate-900 text-xs focus:outline-none focus:border-slate-500"
                 />
               </div>
 
-              {/* Group IDs */}
+              {/* Group IDs Section */}
               <div className="sm:col-span-2 border-b border-slate-100 pb-1 mt-1">
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">📢 Group IDs (กลุ่ม LINE ปลายทาง)</span>
+                <span className="text-[11px] text-slate-500 uppercase">👥 Group IDs กลุ่ม LINE สำหรับยิงการ์ด Flex</span>
               </div>
 
               <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <label className="font-bold text-slate-700 text-xs">GROUP_ID_TASK (งานทั่วไป)</label>
-                  <button type="button" onClick={() => setTestTargetId(formConfig.LINE_GROUP_ID_TASK)} className="text-[10px] text-slate-500 hover:underline">ใส่ช่องทดสอบ</button>
-                </div>
+                <label className="text-slate-700 block text-xs">กลุ่มงานประจำวัน (TASK Group ID)</label>
                 <input
                   type="text"
-                  value={formConfig.LINE_GROUP_ID_TASK}
+                  value={formConfig.LINE_GROUP_ID_TASK || ""}
                   onChange={(e) => setFormConfig({ ...formConfig, LINE_GROUP_ID_TASK: e.target.value })}
-                  placeholder="Cxxxxxxxx... (กลุ่มงานทั่วไป)"
-                  className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 font-mono text-slate-900 text-xs focus:outline-none focus:border-slate-500"
+                  placeholder="เช่น C1234567890..."
+                  className="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 font-mono text-slate-900 text-xs focus:outline-none focus:border-slate-500"
                 />
               </div>
 
               <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <label className="font-bold text-slate-700 text-xs">GROUP_ID_PW (งานรับเหมา PW)</label>
-                  <button type="button" onClick={() => setTestTargetId(formConfig.LINE_GROUP_ID_PW)} className="text-[10px] text-slate-500 hover:underline">ใส่ช่องทดสอบ</button>
-                </div>
+                <label className="text-slate-700 block text-xs">กลุ่มสรุปผลงาน & การเงิน (SUMMARY Group ID)</label>
                 <input
                   type="text"
-                  value={formConfig.LINE_GROUP_ID_PW}
-                  onChange={(e) => setFormConfig({ ...formConfig, LINE_GROUP_ID_PW: e.target.value })}
-                  placeholder="Cxxxxxxxx... (กลุ่มงาน PW)"
-                  className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 font-mono text-slate-900 text-xs focus:outline-none focus:border-slate-500"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <label className="font-bold text-slate-700 text-xs">GROUP_ID_SUMMARY (สรุปงานประจำวัน)</label>
-                  <button type="button" onClick={() => setTestTargetId(formConfig.LINE_GROUP_ID_SUMMARY)} className="text-[10px] text-slate-500 hover:underline">ใส่ช่องทดสอบ</button>
-                </div>
-                <input
-                  type="text"
-                  value={formConfig.LINE_GROUP_ID_SUMMARY}
+                  value={formConfig.LINE_GROUP_ID_SUMMARY || ""}
                   onChange={(e) => setFormConfig({ ...formConfig, LINE_GROUP_ID_SUMMARY: e.target.value })}
-                  placeholder="Cxxxxxxxx... (กลุ่มสรุปรายงาน)"
-                  className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 font-mono text-slate-900 text-xs focus:outline-none focus:border-slate-500"
+                  placeholder="เช่น C1234567890..."
+                  className="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 font-mono text-slate-900 text-xs focus:outline-none focus:border-slate-500"
                 />
               </div>
 
               <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <label className="font-bold text-slate-700 text-xs">GROUP_ID_PLAN (แผนงานโครงการ)</label>
-                  <button type="button" onClick={() => setTestTargetId(formConfig.LINE_GROUP_ID_PLAN)} className="text-[10px] text-slate-500 hover:underline">ใส่ช่องทดสอบ</button>
-                </div>
+                <label className="text-slate-700 block text-xs">กลุ่มงานจ้าง PW (PW Group ID)</label>
                 <input
                   type="text"
-                  value={formConfig.LINE_GROUP_ID_PLAN}
+                  value={formConfig.LINE_GROUP_ID_PW || ""}
+                  onChange={(e) => setFormConfig({ ...formConfig, LINE_GROUP_ID_PW: e.target.value })}
+                  placeholder="เช่น C1234567890..."
+                  className="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 font-mono text-slate-900 text-xs focus:outline-none focus:border-slate-500"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-slate-700 block text-xs">กลุ่มแผนงาน (PLAN Group ID)</label>
+                <input
+                  type="text"
+                  value={formConfig.LINE_GROUP_ID_PLAN || ""}
                   onChange={(e) => setFormConfig({ ...formConfig, LINE_GROUP_ID_PLAN: e.target.value })}
-                  placeholder="Cxxxxxxxx... (กลุ่มแผนงาน)"
-                  className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 font-mono text-slate-900 text-xs focus:outline-none focus:border-slate-500"
+                  placeholder="เช่น C1234567890..."
+                  className="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 font-mono text-slate-900 text-xs focus:outline-none focus:border-slate-500"
                 />
               </div>
 
               <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <label className="font-bold text-slate-700 text-xs">GROUP_ID_FINANCE (การเงินและเบิกบิล)</label>
-                  <button type="button" onClick={() => setTestTargetId(formConfig.LINE_GROUP_ID_FINANCE)} className="text-[10px] text-slate-500 hover:underline">ใส่ช่องทดสอบ</button>
-                </div>
+                <label className="text-slate-700 block text-xs">กลุ่มการเงิน & ตั้งเบิก (FINANCE Group ID)</label>
                 <input
                   type="text"
-                  value={formConfig.LINE_GROUP_ID_FINANCE}
+                  value={formConfig.LINE_GROUP_ID_FINANCE || ""}
                   onChange={(e) => setFormConfig({ ...formConfig, LINE_GROUP_ID_FINANCE: e.target.value })}
-                  placeholder="Cxxxxxxxx... (กลุ่มการเงิน)"
-                  className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 font-mono text-slate-900 text-xs focus:outline-none focus:border-slate-500"
+                  placeholder="เช่น C1234567890..."
+                  className="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 font-mono text-slate-900 text-xs focus:outline-none focus:border-slate-500"
                 />
               </div>
 
               <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <label className="font-bold text-slate-700 text-xs">GROUP_ID_PAID (บิลจ่ายเงินเรียบร้อย)</label>
-                  <button type="button" onClick={() => setTestTargetId(formConfig.LINE_GROUP_ID_PAID)} className="text-[10px] text-slate-500 hover:underline">ใส่ช่องทดสอบ</button>
-                </div>
+                <label className="text-slate-700 block text-xs">กลุ่มจ่ายเงินแล้ว (PAID Group ID)</label>
                 <input
                   type="text"
-                  value={formConfig.LINE_GROUP_ID_PAID}
+                  value={formConfig.LINE_GROUP_ID_PAID || ""}
                   onChange={(e) => setFormConfig({ ...formConfig, LINE_GROUP_ID_PAID: e.target.value })}
-                  placeholder="Cxxxxxxxx... (กลุ่มจ่ายแล้ว)"
-                  className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 font-mono text-slate-900 text-xs focus:outline-none focus:border-slate-500"
+                  placeholder="เช่น C1234567890..."
+                  className="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 font-mono text-slate-900 text-xs focus:outline-none focus:border-slate-500"
                 />
               </div>
             </div>
+
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-end">
+              <button
+                type="submit"
+                disabled={savingConfig}
+                className="px-4 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded transition flex items-center gap-1.5 text-xs cursor-pointer disabled:opacity-50"
+              >
+                {savingConfig ? <RefreshCw size={13} className="animate-spin" /> : <Save size={13} />}
+                <span>บันทึกการตั้งค่า</span>
+              </button>
+            </div>
           </form>
+
+          {/* Test Message Box */}
+          <div className="bg-white p-3 rounded-md border border-slate-200 shadow-2xs space-y-2">
+            <div className="text-xs text-slate-900">🧪 ทดสอบยิงข้อความเข้า LINE (Test Notification)</div>
+            <div className="flex flex-col sm:flex-row items-end gap-2">
+              <div className="flex-1 w-full space-y-1">
+                <label className="text-slate-600 block text-[11px]">ระบุ User ID หรือ Group ID ที่ต้องการทดสอบยิงข้อความ:</label>
+                <input
+                  type="text"
+                  value={testTargetId}
+                  onChange={(e) => setTestTargetId(e.target.value)}
+                  placeholder="เช่น U123... หรือ C123..."
+                  className="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 font-mono text-slate-900 text-xs focus:outline-none focus:border-slate-500"
+                />
+              </div>
+              <button
+                type="button"
+                disabled={testing}
+                onClick={handleTestMessage}
+                className="w-full sm:w-auto px-3.5 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded transition flex items-center justify-center gap-1 text-xs cursor-pointer shrink-0 disabled:opacity-50"
+              >
+                {testing ? <RefreshCw size={13} className="animate-spin" /> : <Send size={13} />}
+                <span>ทดสอบยิงข้อความ</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* ─── TAB 2: เวลาส่งสรุปงานประจำวัน (เช้า/เย็น) ─── */}
-      {activeMainTab === "schedules" && (
-        <div className="space-y-3.5 animate-in fade-in">
-          <form onSubmit={handleSaveConfig} className="bg-white p-4 rounded-md border border-slate-200 space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200 pb-2 gap-2">
-              <div>
-                <span className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
-                  <Clock size={15} className="text-amber-600" />
-                  <span>ตั้งค่าเวลาส่งสรุปและแจ้งเตือนอัตโนมัติประจำวัน (Daily Cron Alert Times)</span>
-                </span>
-              </div>
-              <button
-                type="submit"
-                disabled={savingConfig || loadingConfig}
-                className="px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded transition flex items-center gap-1 cursor-pointer disabled:opacity-50 text-xs shrink-0"
-              >
-                {savingConfig ? <RefreshCw size={13} className="animate-spin" /> : <Save size={13} />}
-                <span>{savingConfig ? "บันทึก..." : "บันทึกเวลาที่ตั้งค่า"}</span>
-              </button>
+      {/* TAB 2: Schedules (Morning & Evening Cron) */}
+      {activeTab === "schedules" && (
+        <div className="space-y-3">
+          <div className="bg-white p-3.5 rounded-md border border-slate-200 shadow-2xs space-y-3">
+            <div>
+              <h2 className="text-xs font-medium text-slate-900 m-0">⏰ กำหนดเวลาแจ้งเตือนสรุปผลงานประจำวัน (Daily Schedules)</h2>
+              <p className="text-[11px] text-slate-500 m-0">ระบบ Serverless Cron จะยิงการ์ด Flex สรุปงานเช้าและเย็นตามเวลาที่กำหนด</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-              {/* Morning Schedule Box */}
-              <div className="p-3.5 rounded-md border border-amber-200 bg-amber-50/50 space-y-2">
-                <div className="flex items-center justify-between border-b border-amber-200/80 pb-2">
-                  <span className="font-bold text-amber-950 text-xs flex items-center gap-1.5">
-                    ☀️ สรุปงานประจำวันช่วงเช้า (Morning Tasks Alert)
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Morning Schedule */}
+              <div className="p-3 rounded border border-amber-200 bg-amber-50/50 space-y-2">
+                <div className="flex items-center justify-between border-b border-amber-200 pb-1.5">
+                  <span className="text-slate-900 text-xs flex items-center gap-1.5">
+                    🌅 สรุปงานเช้า (Morning Task Alert)
                   </span>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900">
-                    3 แท็บ Carousel
+                  <span className="px-2 py-0.5 rounded text-[10px] bg-amber-100 text-amber-800 border border-amber-300">
+                    กลุ่มงาน TASK
                   </span>
                 </div>
-                <p className="text-slate-600 text-xs leading-relaxed">
-                  ส่งแจ้งเตือนรายการงานค้างประจำวัน, รายการเปิดจ้าง PW และรายการบิลตั้งเบิกที่อยู่ระหว่างรออนุมัติ
+                <p className="text-slate-600 text-[11px] leading-relaxed">
+                  สรุปงานค้าง งานด่วนประจำวัน และรายการงานที่ต้องตรวจรับเข้า LINE กลุ่มงาน
                 </p>
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-700 block text-xs">เวลาแจ้งเตือนช่วงเช้า:</label>
+                  <label className="text-slate-700 block text-[11px]">เวลาแจ้งเตือนช่วงเช้า:</label>
                   <input
                     type="text"
                     value={formConfig.CRON_TIME_MORNING || "07:30"}
                     onChange={(e) => setFormConfig({ ...formConfig, CRON_TIME_MORNING: e.target.value })}
                     placeholder="07:30"
-                    className="w-full bg-white border border-amber-300 rounded px-3 py-1 font-mono text-amber-950 font-bold text-sm focus:outline-none focus:border-amber-500"
+                    className="w-full bg-white border border-amber-300 rounded px-2.5 py-1.5 font-mono text-amber-950 text-xs focus:outline-none focus:border-amber-500"
                   />
                 </div>
                 <div className="pt-1">
@@ -941,7 +723,7 @@ export function LineSystemDashboardClient() {
                     type="button"
                     disabled={testing}
                     onClick={handleTestMorningTasks}
-                    className="w-full py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded text-xs transition flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
+                    className="w-full py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded transition flex items-center justify-center gap-1 text-xs cursor-pointer disabled:opacity-50"
                   >
                     {testing ? <RefreshCw size={13} className="animate-spin" /> : <Send size={13} />}
                     <span>ทดสอบยิงสรุปงานเช้าเข้า LINE ({formConfig.CRON_TIME_MORNING || "07:30"} น.)</span>
@@ -949,250 +731,185 @@ export function LineSystemDashboardClient() {
                 </div>
               </div>
 
-              {/* Evening Schedule Box */}
-              <div className="p-3.5 rounded-md border border-slate-300 bg-slate-50/70 space-y-2">
-                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                  <span className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+              {/* Evening Schedule */}
+              <div className="p-3 rounded border border-slate-300 bg-slate-50/70 space-y-2">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-1.5">
+                  <span className="text-slate-900 text-xs flex items-center gap-1.5">
                     📊 สรุปผลงานทีม & การเงินช่วงเย็น (Evening Summary)
                   </span>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-800">
+                  <span className="px-2 py-0.5 rounded text-[10px] bg-slate-200 text-slate-800 border border-slate-300">
                     3 แท็บ Carousel
                   </span>
                 </div>
-                <p className="text-slate-600 text-xs leading-relaxed">
-                  สรุปยอดเงินรวมรายการบิล, อัตราความสำเร็จผลงานทีม (Success Rate %), และรายการงานค้างที่ต้องติดตาม
+                <p className="text-slate-600 text-[11px] leading-relaxed">
+                  สรุปยอดเงินรวมรายการบิล, อัตราความสำเร็จผลงานทีม (Success Rate %), และรายการงานค้าง
                 </p>
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-700 block text-xs">เวลาแจ้งเตือนช่วงเย็น:</label>
+                  <label className="text-slate-700 block text-[11px]">เวลาแจ้งเตือนช่วงเย็น:</label>
                   <input
                     type="text"
                     value={formConfig.CRON_TIME_EVENING || "17:00"}
                     onChange={(e) => setFormConfig({ ...formConfig, CRON_TIME_EVENING: e.target.value })}
                     placeholder="17:00"
-                    className="w-full bg-white border border-slate-300 rounded px-3 py-1 font-mono text-slate-900 font-bold text-sm focus:outline-none focus:border-slate-500"
+                    className="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 font-mono text-slate-900 text-xs focus:outline-none focus:border-slate-500"
                   />
                 </div>
                 <div className="pt-1">
                   <button
                     type="button"
                     disabled={testing}
-                    onClick={handleTestNotification}
-                    className="w-full py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded text-xs transition flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
+                    onClick={handleTestEveningSummary}
+                    className="w-full py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded transition flex items-center justify-center gap-1 text-xs cursor-pointer disabled:opacity-50"
                   >
                     {testing ? <RefreshCw size={13} className="animate-spin" /> : <Send size={13} />}
-                    <span>ทดสอบยิงสรุปผลงานเย็นเข้า LINE ({formConfig.CRON_TIME_EVENING || "17:00"} น.)</span>
+                    <span>ทดสอบยิงสรุปงานเย็นเข้า LINE ({formConfig.CRON_TIME_EVENING || "17:00"} น.)</span>
                   </button>
                 </div>
               </div>
             </div>
-          </form>
-
-          {/* Vercel Cron Status Box */}
-          <div className="bg-white p-3.5 rounded-md border border-slate-200 space-y-1">
-            <div className="flex items-center gap-1.5 font-bold text-slate-900 text-xs">
-              <Server size={15} className="text-emerald-700" />
-              <span>การประมวลผลอัตโนมัติ (Vercel Serverless Cron Engine)</span>
-            </div>
-            <p className="text-slate-600 text-xs leading-relaxed">
-              ระบบใช้ไฟล์ตั้งค่า <code className="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-slate-900 font-bold border border-slate-200">vercel.json</code> ในการสั่งให้ Vercel Serverless Function ทำงานอัตโนมัติทุกวันตามเวลาที่ระบุ
-            </p>
           </div>
         </div>
       )}
 
-      {/* ─── TAB 3: คู่มือคำสั่ง LINE Bot (LINE Commands Manual) ─── */}
-      {activeMainTab === "manual" && (
-        <div className="bg-white p-4 rounded-md border border-slate-200 space-y-3 animate-in fade-in">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-200 pb-2.5">
-            <div>
-              <span className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
-                <BookOpen size={15} className="text-blue-600" />
-                <span>คู่มือการใช้งานคีย์เวิร์ดคำสั่ง LINE Bot (LINE Commands Manual)</span>
-              </span>
-              <p className="text-slate-500 text-[11px] mt-0.5">
-                รวม 63 คำสั่ง สามารถกดคัดลอกตัวอย่างเพื่อนำไปลองพิมพ์ในไลน์ได้ทันที
-              </p>
-            </div>
+      {/* TAB 3: Manual (63 Commands) */}
+      {activeTab === "manual" && (
+        <div className="space-y-3">
+          {/* Manual Filter Topbar */}
+          <div className="bg-white p-3 rounded-md border border-slate-200 shadow-2xs space-y-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+              <div className="relative flex-1">
+                <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={manualSearch}
+                  onChange={(e) => setManualSearch(e.target.value)}
+                  placeholder="ค้นหาคำสั่ง LINE Bot (เช่น สรุป, งาน, PW, testbot)..."
+                  className="w-full bg-white border border-slate-300 rounded pl-8 pr-2.5 py-1 text-slate-800 focus:outline-none focus:border-slate-500 text-xs"
+                />
+              </div>
 
-            {/* Search Filter Box */}
-            <div className="relative">
-              <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                value={manualSearch}
-                onChange={(e) => setManualSearch(e.target.value)}
-                placeholder="ค้นหาคำสั่ง..."
-                className="pl-7 pr-3 py-1 bg-white border border-slate-300 rounded font-mono text-xs text-slate-900 focus:outline-none focus:border-slate-500 w-full sm:w-56"
-              />
-            </div>
-          </div>
-
-          {/* Category Tabs Filter */}
-          <div className="flex items-center gap-1 overflow-x-auto pb-1">
-            {[
-              { id: "all", label: "ทั้งหมด", count: ALL_LINE_COMMANDS.length },
-              { id: "withdraw", label: "การเงิน & บิล", count: ALL_LINE_COMMANDS.filter((c) => c.category === "withdraw").length },
-              { id: "task", label: "สั่งงาน", count: ALL_LINE_COMMANDS.filter((c) => c.category === "task").length },
-              { id: "work", label: "มอบหมาย PW", count: ALL_LINE_COMMANDS.filter((c) => c.category === "work").length },
-              { id: "plan", label: "แผนงาน", count: ALL_LINE_COMMANDS.filter((c) => c.category === "plan").length },
-              { id: "system", label: "ระบบ & คำสั่งลัด", count: ALL_LINE_COMMANDS.filter((c) => c.category === "system").length },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setSelectedCategory(tab.id)}
-                className={`px-2.5 py-1 rounded text-xs font-semibold transition shrink-0 cursor-pointer flex items-center gap-1 border ${
-                  selectedCategory === tab.id
-                    ? "bg-slate-900 text-white border-slate-900 font-bold"
-                    : "bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100"
-                }`}
-              >
-                <span>{tab.label}</span>
-                <span
-                  className={`px-1.5 py-0.2 rounded-full text-[10px] ${
-                    selectedCategory === tab.id ? "bg-slate-800 text-white" : "bg-slate-200 text-slate-700"
-                  }`}
+              <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategory("all")}
+                  className={`px-2.5 py-1 rounded text-xs transition cursor-pointer whitespace-nowrap ${selectedCategory === "all" ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}
                 >
-                  {tab.count}
-                </span>
-              </button>
-            ))}
+                  ทั้งหมด ({LINE_MANUAL_ITEMS.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategory("finance")}
+                  className={`px-2.5 py-1 rounded text-xs transition cursor-pointer whitespace-nowrap ${selectedCategory === "finance" ? "bg-emerald-700 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}
+                >
+                  การเงิน
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategory("task")}
+                  className={`px-2.5 py-1 rounded text-xs transition cursor-pointer whitespace-nowrap ${selectedCategory === "task" ? "bg-emerald-700 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}
+                >
+                  งาน & PW
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategory("shortcut")}
+                  className={`px-2.5 py-1 rounded text-xs transition cursor-pointer whitespace-nowrap ${selectedCategory === "shortcut" ? "bg-emerald-700 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}
+                >
+                  คำสั่งลัด
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategory("system")}
+                  className={`px-2.5 py-1 rounded text-xs transition cursor-pointer whitespace-nowrap ${selectedCategory === "system" ? "bg-emerald-700 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}
+                >
+                  ระบบ
+                </button>
+              </div>
+            </div>
           </div>
 
-          {/* Command Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-            {filteredCommands.length > 0 ? (
-              filteredCommands.map((cmd, idx) => (
-                <div key={idx} className="p-3 rounded-md border border-slate-200 bg-white hover:border-slate-300 transition space-y-2">
-                  <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-1.5">
-                    <div>
-                      <span className="text-[10px] font-bold text-slate-500 uppercase block mb-0.5">
-                        {cmd.categoryName}
-                      </span>
-                      <span className="font-bold text-slate-900 text-xs font-mono bg-slate-100 px-2 py-0.5 rounded border border-slate-200 inline-block">
-                        {cmd.keyword}
-                      </span>
-                    </div>
-                    <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-bold shrink-0 border ${
-                        cmd.responseType === "LINE Flex Card"
-                          ? "bg-slate-100 text-slate-800 border-slate-200"
-                          : "bg-slate-50 text-slate-700 border-slate-200"
-                      }`}
-                    >
-                      {cmd.responseType}
-                    </span>
-                  </div>
+          {/* Manual Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
+            {filteredManual.map((item) => (
+              <div key={item.id} className="bg-white p-3 rounded-md border border-slate-200 shadow-2xs space-y-2 hover:border-slate-300 transition">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+                  <span className="font-mono text-xs text-emerald-800">{item.keyword}</span>
+                  <span className="px-2 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600 border border-slate-200">
+                    {item.categoryName}
+                  </span>
+                </div>
 
-                  <p className="text-slate-700 text-xs leading-normal font-normal">{cmd.description}</p>
+                <p className="text-slate-600 text-[11px] leading-normal">{item.description}</p>
 
-                  {cmd.syntax && (
-                    <div className="text-[11px] font-mono text-slate-700 bg-slate-50 p-2 rounded border border-slate-200 whitespace-pre-wrap">
-                      <span className="text-slate-500 font-sans text-[10px] font-bold block mb-0.5">ไวยากรณ์ (Syntax):</span>
-                      <code className="text-slate-900 font-bold">{cmd.syntax}</code>
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100">
-                    <div className="min-w-0 flex-1">
-                      <span className="text-[10px] font-bold text-slate-500 block">ตัวอย่างพิมพ์ใน LINE:</span>
-                      <code className="text-slate-900 font-mono font-bold text-xs truncate block">{cmd.example}</code>
-                    </div>
-
+                <div className="space-y-1 bg-slate-50 p-2 rounded border border-slate-200">
+                  <div className="text-[10px] text-slate-500">รูปแบบพิมพ์ใน LINE:</div>
+                  <div className="flex items-center justify-between gap-1">
+                    <code className="font-mono text-[11px] text-slate-900 truncate">{item.syntax}</code>
                     <button
                       type="button"
-                      onClick={() => copyTextSnippet(cmd.example)}
-                      className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold rounded border border-slate-300 text-[11px] transition flex items-center gap-1 shrink-0 cursor-pointer"
+                      onClick={() => copyTextSnippet(item.example)}
+                      className="px-2 py-0.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 rounded text-[10px] cursor-pointer shrink-0"
                     >
-                      {copiedKeyword === cmd.example ? (
-                        <>
-                          <Check size={12} className="text-emerald-700" />
-                          <span>คัดลอกแล้ว</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy size={12} />
-                          <span>คัดลอก</span>
-                        </>
-                      )}
+                      {copiedKeyword === item.example ? "คัดลอกแล้ว" : "คัดลอก"}
                     </button>
                   </div>
                 </div>
-              ))
-            ) : (
-              <div className="col-span-full py-8 text-center bg-slate-50 rounded border border-dashed border-slate-300 text-slate-600">
-                <Search size={20} className="mx-auto mb-1 opacity-40 text-slate-500" />
-                <p className="font-bold text-xs text-slate-900">ไม่พบคำสั่งที่ตรงกับคำค้นหา "{manualSearch}"</p>
               </div>
-            )}
+            ))}
           </div>
         </div>
       )}
 
-      {/* ─── TAB 4: ประวัติข้อผิดพลาดระบบ (System Error Logs) ─── */}
-      {activeMainTab === "logs" && (
-        <div className="bg-white p-4 rounded-md border border-slate-200 space-y-3 animate-in fade-in">
-          <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
-            <div>
-              <span className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
-                <FileText size={15} className="text-rose-600" />
-                <span>ประวัติข้อผิดพลาดระบบ (System Error Logs Inspector)</span>
-              </span>
-              <p className="text-slate-500 text-[11px] mt-0.5">
-                ติดตามและตรวจสอบรายการข้อผิดพลาดจากการประมวลผลคำสั่ง LINE Bot ย้อนหลัง Real-time
-              </p>
-            </div>
-            <div className="flex items-center gap-1.5">
+      {/* TAB 4: Error Logs */}
+      {activeTab === "logs" && (
+        <div className="space-y-3">
+          <div className="bg-white p-3 rounded-md border border-slate-200 shadow-2xs space-y-2">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+              <div>
+                <h2 className="text-xs font-medium text-slate-900 m-0">🚨 ประวัติข้อผิดพลาดระบบ (System Error Logs)</h2>
+                <p className="text-[11px] text-slate-500 m-0">บันทึกข้อผิดพลาดที่เกิดขึ้นขณะประมวลผลคำสั่ง LINE Webhook และ Cron Jobs</p>
+              </div>
               <button
                 type="button"
                 onClick={fetchErrorLogs}
                 disabled={loadingLogs}
-                className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold rounded border border-slate-300 text-xs transition flex items-center gap-1 cursor-pointer"
+                className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded border border-slate-300 transition flex items-center gap-1 text-xs cursor-pointer"
               >
-                <RefreshCw size={13} className={loadingLogs ? "animate-spin" : ""} />
-                <span>รีเฟรช</span>
+                <RefreshCw size={12} className={loadingLogs ? "animate-spin" : ""} />
+                <span>รีเฟรช Logs</span>
               </button>
-              {errorLogs.length > 0 && (
-                <button
-                  type="button"
-                  onClick={handleClearLogs}
-                  disabled={loadingLogs}
-                  className="px-3 py-1 bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold rounded border border-rose-300 text-xs transition flex items-center gap-1 cursor-pointer"
-                >
-                  <span>ล้างประวัติ</span>
-                </button>
-              )}
             </div>
-          </div>
 
-          {errorLogs.length > 0 ? (
-            <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
-              {errorLogs.map((log: any, idx: number) => (
-                <div key={idx} className="p-3 rounded bg-rose-50 border border-rose-200 space-y-1.5 font-mono text-xs">
-                  <div className="flex items-center justify-between text-rose-950 font-bold">
-                    <span className="bg-rose-200 text-rose-950 px-2 py-0.5 rounded text-[10px] border border-rose-300">
-                      [{log.source || "System"}]
-                    </span>
-                    <span className="text-[11px] text-slate-500 font-normal">
-                      {log.timestamp ? new Date(log.timestamp).toLocaleString("th-TH") : "-"}
-                    </span>
-                  </div>
-                  <p className="text-rose-900 font-bold leading-normal text-xs">{log.message}</p>
-                  {log.context && Object.keys(log.context).length > 0 && (
-                    <div className="text-[11px] text-slate-700 bg-white p-2 rounded border border-rose-200 overflow-x-auto font-mono">
-                      {JSON.stringify(log.context, null, 2)}
+            {loadingLogs ? (
+              <div className="py-8 text-center text-slate-400 text-xs">
+                <RefreshCw size={16} className="animate-spin mx-auto mb-2 text-slate-500" />
+                <span>กำลังโหลดประวัติข้อผิดพลาด...</span>
+              </div>
+            ) : errorLogs.length === 0 ? (
+              <div className="py-6 text-center text-slate-500 text-xs">
+                <CheckCircle2 size={18} className="mx-auto mb-1 text-emerald-500" />
+                <span>ไม่พบข้อผิดพลาดในระบบ (System Healthy)</span>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {errorLogs.map((log, index) => (
+                  <div key={log.id || index} className="p-2.5 rounded bg-slate-50 border border-slate-200 font-mono text-[11px] space-y-1">
+                    <div className="flex items-center justify-between text-slate-500 text-[10px]">
+                      <span>{new Date(log.created_at).toLocaleString("th-TH")}</span>
+                      <span className="px-1.5 py-0.2 rounded bg-rose-100 text-rose-800 font-sans">{log.level || "ERROR"}</span>
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="py-8 text-center bg-slate-50 rounded border border-dashed border-slate-300 text-slate-600">
-              <CheckCircle2 size={24} className="mx-auto mb-1 text-emerald-600 opacity-90" />
-              <p className="font-bold text-xs text-slate-900">ไม่พบประวัติข้อผิดพลาดในระบบ (System Log Clean 100%)</p>
-              <p className="text-[11px] text-slate-400 mt-0.5">ระบบทำงานราบรื่นและบันทึกประวัติการทำงานลง Supabase เสมอ</p>
-            </div>
-          )}
+                    <div className="text-rose-700 font-sans text-xs">{log.message}</div>
+                    <div className="text-slate-500 text-[10px]">Source: {log.source}</div>
+                    {log.context && (
+                      <pre className="p-1.5 bg-white border border-slate-200 rounded text-[10px] text-slate-700 overflow-x-auto">
+                        {JSON.stringify(log.context, null, 2)}
+                      </pre>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

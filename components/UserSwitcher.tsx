@@ -8,7 +8,7 @@ import type { SheetRow } from "@/lib/types";
 
 type UserSwitcherProps = {
   people?: SheetRow[];
-  currentUser: { id: string; name: string; role: string } | null;
+  currentUser: { id: string; name: string; role: string; pictureUrl?: string } | null;
   theme?: "dark" | "light";
   isCollapsed?: boolean;
   compact?: boolean;
@@ -61,9 +61,13 @@ export function UserSwitcher({ currentUser, theme = "dark", isCollapsed = false,
           onClick={handleLogout}
           disabled={loading}
           title={`ออกจากระบบ (${currentUser.name || currentUser.id})`}
-          className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-600 to-emerald-800 text-white font-extrabold flex items-center justify-center text-xs shadow-md cursor-pointer hover:opacity-90 transition shrink-0"
+          className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-600 to-emerald-800 text-white font-bold flex items-center justify-center text-xs shadow-md cursor-pointer hover:opacity-90 transition shrink-0 overflow-hidden"
         >
-          {currentUser.name ? String(currentUser.name).slice(0, 2).toUpperCase() : "CT"}
+          {currentUser.pictureUrl ? (
+            <img src={currentUser.pictureUrl} alt={currentUser.name} className="w-full h-full object-cover" />
+          ) : (
+            currentUser.name ? String(currentUser.name).slice(0, 2).toUpperCase() : "CT"
+          )}
         </button>
       );
     }
@@ -77,11 +81,15 @@ export function UserSwitcher({ currentUser, theme = "dark", isCollapsed = false,
           title="คลิกเพื่อดูโปรไฟล์และออกจากระบบ"
         >
           <div className="flex items-center gap-2 overflow-hidden min-w-0">
-            <div className={`h-7.5 w-7.5 rounded-lg flex items-center justify-center flex-shrink-0 ${isLight ? "bg-slate-200 text-slate-700" : "bg-white/20 text-white"}`}>
-              <User size={15} className={isLight ? "text-slate-700" : "text-white"} />
+            <div className={`h-7.5 w-7.5 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden ${isLight ? "bg-slate-200 text-slate-700" : "bg-white/20 text-white"}`}>
+              {currentUser.pictureUrl ? (
+                <img src={currentUser.pictureUrl} alt={currentUser.name} className="w-full h-full object-cover" />
+              ) : (
+                <User size={15} className={isLight ? "text-slate-700" : "text-white"} />
+              )}
             </div>
             <div className="flex flex-col min-w-0">
-              <span className={`text-xs font-extrabold truncate leading-tight flex items-center gap-1 ${isLight ? "text-slate-900" : "text-white"}`}>
+              <span className={`text-xs font-semibold truncate leading-tight flex items-center gap-1 ${isLight ? "text-slate-900" : "text-white"}`}>
                 <span>{currentUser.name || currentUser.id}</span>
                 <ChevronDown size={12} className={`${isLight ? "text-slate-500" : "text-white/80"} transition-transform ${menuOpen ? "rotate-180" : ""}`} />
               </span>
@@ -131,8 +139,12 @@ export function UserSwitcher({ currentUser, theme = "dark", isCollapsed = false,
   return (
     <div className={`flex items-center justify-between px-3 py-2 rounded-lg border ${isLight ? "bg-gray-100 border-gray-200" : "bg-white/10 border-white/20"}`}>
       <div className="flex items-center gap-3 overflow-hidden">
-        <div className={`h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 ${isLight ? "bg-gray-200" : "bg-white/20"}`}>
-          <User size={16} className={isLight ? "text-gray-600" : "text-white"} />
+        <div className={`h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isLight ? "bg-gray-200" : "bg-white/20"}`}>
+          {currentUser.pictureUrl ? (
+            <img src={currentUser.pictureUrl} alt={currentUser.name} className="w-full h-full object-cover" />
+          ) : (
+            <User size={16} className={isLight ? "text-gray-600" : "text-white"} />
+          )}
         </div>
         <div className="flex flex-col min-w-0">
           <span className={`text-sm font-medium truncate leading-tight ${isLight ? "text-gray-900" : "text-white"}`}>

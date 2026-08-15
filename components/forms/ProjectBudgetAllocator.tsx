@@ -214,7 +214,7 @@ export function ProjectBudgetAllocator({
             <h4 className="font-bold text-xs text-slate-800 flex items-center gap-2">
               <span>จัดสรรงบประมาณรายหมวดงาน (Category Budget Matrix)</span>
               {totalAllocated > 0 && (
-                <span className="text-[10px] font-extrabold px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full">
+                <span className="text-[10px] font-semibold px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full">
                   จัดสรรแล้ว {money(totalAllocated)} ฿ ({allocatedPercent}%)
                 </span>
               )}
@@ -264,11 +264,11 @@ export function ProjectBudgetAllocator({
             <div className="flex items-center gap-3 text-xs border-t sm:border-t-0 sm:border-l border-slate-200 pt-2 sm:pt-0 sm:pl-3">
               <div>
                 <span className="text-[10px] text-slate-400 block font-semibold">งบรวมโครงการ:</span>
-                <span className="font-extrabold text-slate-800">{money(totalProjectBudget)} ฿</span>
+                <span className="font-bold text-slate-800">{money(totalProjectBudget)} ฿</span>
               </div>
               <div>
                 <span className="text-[10px] text-slate-400 block font-semibold">คงเหลือจัดสรร:</span>
-                <span className={`font-extrabold ${remainingBudget < 0 ? "text-rose-600 animate-pulse" : "text-emerald-700"}`}>
+                <span className={`font-bold ${remainingBudget < 0 ? "text-rose-600 animate-pulse" : "text-emerald-700"}`}>
                   {money(remainingBudget)} ฿
                 </span>
               </div>
@@ -297,7 +297,7 @@ export function ProjectBudgetAllocator({
                       </span>
                     </div>
                     {groupSum > 0 && (
-                      <span className="text-[11px] font-extrabold text-emerald-700 font-mono">
+                      <span className="text-[11px] font-bold text-emerald-700 font-mono">
                         รวมงบหมวดนี้: {money(groupSum)} ฿
                       </span>
                     )}

@@ -76,7 +76,7 @@ export function BillCategoryBudgetGuardrail({ values, projectRows = [] }: BillCa
             <div className="font-bold flex items-center gap-1.5">
               <span>คุมงบหมวดงาน: {categoryLabel}</span>
               <span
-                className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
+                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
                   isOverBudget
                     ? "bg-rose-900 border-rose-500 text-rose-200"
                     : isWarning
@@ -93,7 +93,7 @@ export function BillCategoryBudgetGuardrail({ values, projectRows = [] }: BillCa
 
         <div className="text-right shrink-0">
           <span className="text-[10px] opacity-75 block">วงเงินหมวดงาน:</span>
-          <span className="font-extrabold text-xs">{money(budgetLimit)} ฿</span>
+          <span className="font-bold text-xs">{money(budgetLimit)} ฿</span>
         </div>
       </div>
 

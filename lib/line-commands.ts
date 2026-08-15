@@ -395,6 +395,50 @@ export async function handleLineCommand(
       return true;
     }
 
+    // 4.9 Send for Approval Command ("ส่งไปเพื่ออนุมัติบิลลำดับที่:", "ส่งไปเพื่ออนุมัติ:")
+    if (
+      rawText.startsWith("ส่งไปเพื่ออนุมัติบิลลำดับที่:") ||
+      rawText.startsWith("ส่งไปเพื่ออนุมัติ:") ||
+      rawText.startsWith("ส่งไปเพื่ออนุมัติบิล:")
+    ) {
+      const sheetRowStr = rawText.replace(/.*?:/, "").trim();
+      if (!sheetRowStr) {
+        await replyTextMessage(replyToken, "⚠️ กรุณาระบุลำดับบิลที่ต้องการส่งอนุมัติ");
+        return true;
+      }
+
+      const { getRowsFromSupabase } = await import("@/lib/supabase-db");
+      const { getLineConfigIds, createWithdrawOwnerFlex, sendFlexMessageDetailed } = await import("@/lib/line");
+      const rawBills = await getRowsFromSupabase("Data", 1000);
+
+      const targetRow = rawBills.find(b => String(b["ลำดับ"] || b.id || b._sheetRow || "").trim() === sheetRowStr);
+      if (!targetRow) {
+        await replyTextMessage(replyToken, `🔍 ไม่พบรายการบิลลำดับที่ [${sheetRowStr}] ในระบบ`);
+        return true;
+      }
+
+      const { ownerId } = await getLineConfigIds();
+      if (!ownerId) {
+        await replyTextMessage(replyToken, "⚠️ ยังไม่ได้ระบุ LINE User ID เจ้าของระบบ (OWN) ในการตั้งค่า LINE System");
+        return true;
+      }
+
+      const flexForOwner = createWithdrawOwnerFlex(targetRow);
+      const amount = Number(targetRow["ยอดเงิน"] || targetRow.amount || 0).toLocaleString("th-TH");
+      const result = await sendFlexMessageDetailed(
+        ownerId,
+        `📋 คำขออนุมัติเบิกเงิน #${sheetRowStr} (฿${amount})`,
+        flexForOwner
+      );
+
+      if (result.success) {
+        await replyTextMessage(replyToken, `✅ ส่งรายการตั้งเบิกบิลลำดับที่ [${sheetRowStr}] ไปยังเจ้าของระบบ (OWN / Admin) เพื่ออนุมัติเรียบร้อยแล้ว`);
+      } else {
+        await replyTextMessage(replyToken, `❌ ไม่สามารถส่ง Flex ไปยังเจ้าของระบบได้: ${result.error || "ข้อผิดพลาด LINE API"}`);
+      }
+      return true;
+    }
+
     // 5. Approve / Close Bill Commands ("อนุมัติบิลหลักของ:", "อนุมัติเงินสดบิลย่อยของ:", "อนุมัติบิลหลักลำดับที่:", "อนุมัติเงินสดบิลย่อยลำดับที่:", "ปิดงานบิลหลักลำดับที่:", "อนุมัติทั้งหมด:", "ปิดงานทั้งหมด:")
     if (
       rawText.startsWith("อนุมัติบิลหลักของ:") ||
@@ -429,13 +473,14 @@ export async function handleLineCommand(
         return true;
       }
 
-      const newStatus = isApprove ? "อนุมัติแล้ว" : "เบิกแล้ว";
+      const newStatus = isApprove ? "อนุมัติ" : "เบิกแล้ว";
       const isSubBatch = rawText.includes("ย่อย") || rawTarget.includes("ย่อย");
       const isMainBatch = rawText.includes("หลัก") || rawTarget.includes("หลัก");
       const cleanTarget = rawTarget.replace(/^หลัก:|^ย่อย:|^บิลหลัก:|^บิลย่อย:|^บิล:|^ลำดับที่:|^บิลลำดับที่:|^หลักลำดับที่:|^ย่อยลำดับที่:/i, "").trim();
 
       const { normalizeBillStatus } = await import("@/lib/bill-status");
       const { getRowsFromSupabase, updateRowInSupabase } = await import("@/lib/supabase-db");
+      const { getLineConfigIds, createWithdrawApproverFlex, sendFlexMessageDetailed } = await import("@/lib/line");
       const [rawBills, peopleRows] = await Promise.all([
         getRowsFromSupabase("Data", 1000),
         getRowsFromSupabase("master_members", 500).catch(() => []),
@@ -509,6 +554,8 @@ export async function handleLineCommand(
       }
 
       let totalAmount = 0;
+      const { approverIds } = await getLineConfigIds();
+
       for (const b of targetBills) {
         const bId = b.id || b["ลำดับ"] || b._sheetRow;
         totalAmount += Number(b["ยอดเงิน"] || b.amount || 0);
@@ -516,12 +563,25 @@ export async function handleLineCommand(
           "สถานะ": newStatus,
           status: newStatus
         });
+
+        // When Owner Approves successfully, forward Flex Message to Approvers (LINE_USER_ID_APPROVER list)
+        if (isApprove && approverIds.length > 0) {
+          const flexForApprover = createWithdrawApproverFlex(b);
+          const amt = Number(b["ยอดเงิน"] || b.amount || 0).toLocaleString("th-TH");
+          for (const approverId of approverIds) {
+            await sendFlexMessageDetailed(
+              approverId,
+              `✅ รายการอนุมัติสำเร็จ (รอปิดงาน) #${bId} (฿${amt})`,
+              flexForApprover
+            );
+          }
+        }
       }
 
       const formattedTotal = totalAmount.toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       await replyTextMessage(
         replyToken,
-        `✅ ${isApprove ? "อนุมัติ" : "ปิดงาน"}บิล${isSubBatch ? "ย่อย" : isMainBatch ? "หลัก" : ""}ของ "${rawTarget}" เรียบร้อยแล้ว!\n\n📊 จำนวน: ${targetBills.length} รายการ\n💰 ยอดเงินรวม: ฿${formattedTotal}\n👮‍♂️ ผู้ดำเนินการ: Admin/Approver (${userId ? userId.slice(-6) : "Web"})`
+        `✅ ${isApprove ? "อนุมัติ" : "ปิดงาน"}บิล${isSubBatch ? "ย่อย" : isMainBatch ? "หลัก" : ""}ของ "${rawTarget}" เรียบร้อยแล้ว!\n\n📊 จำนวน: ${targetBills.length} รายการ\n💰 ยอดเงินรวม: ฿${formattedTotal}\n👮‍♂️ ผู้ดำเนินการ: ${isApprove ? "Owner/Admin" : "Approver"} (${userId ? userId.slice(-6) : "Web"})${isApprove && approverIds.length > 0 ? `\n📲 ส่ง Flex ต่อไปยังผู้อนุมัติ (${approverIds.length} ท่าน) เพื่อปิดงานแล้ว` : ""}`
       );
       return true;
     }
@@ -541,12 +601,13 @@ export async function handleLineCommand(
       rawText.startsWith("ทั้งหมด:") ||
       rawText.startsWith("บิล:") ||
       rawText.toLowerCase().startsWith("bill:") ||
+      lowerText === "รอตั้งเบิก" ||
       lowerText === "รออนุมัติ" ||
       lowerText === "ตั้งเบิก"
     ) {
       const isSub = rawText.includes("ย่อย");
       const isMain = rawText.includes("หลัก");
-      const isPendingFilter = isMain || isSub || lowerText === "รออนุมัติ" || lowerText === "ตั้งเบิก";
+      const isPendingFilter = isMain || isSub || lowerText === "รอตั้งเบิก" || lowerText === "รออนุมัติ" || lowerText === "ตั้งเบิก";
 
       const filterQuery = rawText
         .replace(/^หลัก:|^ย่อย:|^บิลหลัก:|^บิลย่อย:|^ทั้งหมด:|^บิล:|^bill:|^หลัก$|^ย่อย$|^บิลหลัก$|^บิลย่อย$/i, "")
@@ -585,13 +646,14 @@ export async function handleLineCommand(
 
       let filtered = hydratedBills;
 
-      // ✅ กรองเฉพาะบิลสถานะ "รออนุมัติ" และ "ตั้งเบิก" (รวมทั้ง รอตรวจสอบ, รอดำเนินการ, รอเบิก) เมื่อพิมพ์ หลัก หรือ ย่อย
+      // ✅ กรองเฉพาะบิลสถานะ "รอตั้งเบิก", "ตั้งเบิก" และ "รออนุมัติ" เมื่อพิมพ์ หลัก หรือ ย่อย
       if (isPendingFilter && !rawText.startsWith("ทั้งหมด:")) {
         filtered = filtered.filter(b => {
           const st = String(b["สถานะ"] || b.status || "").trim();
           return (
-            st === "รออนุมัติ" ||
+            st === "รอตั้งเบิก" ||
             st === "ตั้งเบิก" ||
+            st === "รออนุมัติ" ||
             st === "รอตรวจสอบ" ||
             st === "รอดำเนินการ" ||
             st === "รอเบิก"

@@ -288,7 +288,7 @@ export function ManageTableClient({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            className="px-3.5 py-1.5 bg-[#d4f54e] hover:bg-[#c2e438] text-[#0b3531] text-xs font-extrabold rounded-lg shadow-2xs border border-[#b8df28] transition cursor-pointer flex items-center gap-1.5 shrink-0"
+            className="px-3.5 py-1.5 bg-[#d4f54e] hover:bg-[#c2e438] text-[#0b3531] text-xs font-bold rounded-lg shadow-2xs border border-[#b8df28] transition cursor-pointer flex items-center gap-1.5 shrink-0"
             disabled={Boolean(busy)}
             onClick={openAddForm}
           >
@@ -310,7 +310,7 @@ export function ManageTableClient({
             <>
               <button
                 type="button"
-                className="px-3.5 py-1.5 bg-[#0b3531] hover:bg-[#072724] text-white rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition cursor-pointer"
+                className="px-3.5 py-1.5 bg-[#0b3531] hover:bg-[#072724] text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
                 disabled={busy === "edit"}
                 onClick={saveEdit}
               >

@@ -7,14 +7,15 @@ export function validateBillStatusTransition(currentStatus: unknown, nextStatus:
   if (current === next) return;
 
   const validTransitions: Record<string, string[]> = {
-    "": ["รออนุมัติ", "ตั้งเบิก", "อนุมัติ", "เบิกแล้ว"],
-    "รออนุมัติ": ["ตั้งเบิก", "อนุมัติ", "เบิกแล้ว"],
-    "ตั้งเบิก": ["รออนุมัติ", "อนุมัติ", "เบิกแล้ว"],
-    "อนุมัติ": ["รออนุมัติ", "ตั้งเบิก", "เบิกแล้ว"],
-    "เบิกแล้ว": ["รออนุมัติ", "อนุมัติ"]
+    "": ["รอตั้งเบิก", "ตั้งเบิก", "อนุมัติ", "เบิกแล้ว"],
+    "รอตั้งเบิก": ["ตั้งเบิก", "อนุมัติ", "เบิกแล้ว"],
+    "รออนุมัติ": ["รอตั้งเบิก", "ตั้งเบิก", "อนุมัติ", "เบิกแล้ว"],
+    "ตั้งเบิก": ["รอตั้งเบิก", "อนุมัติ", "เบิกแล้ว"],
+    "อนุมัติ": ["ตั้งเบิก", "เบิกแล้ว"],
+    "เบิกแล้ว": ["อนุมัติ", "ตั้งเบิก"]
   };
 
-  const allowed = validTransitions[current] || ["รออนุมัติ", "อนุมัติ", "เบิกแล้ว"];
+  const allowed = validTransitions[current] || ["รอตั้งเบิก", "ตั้งเบิก", "อนุมัติ", "เบิกแล้ว"];
   if (!allowed.includes(next)) {
     throw new Error(`เปลี่ยนสถานะจาก ${current || "ว่าง"} เป็น ${next || "ว่าง"} ไม่ได้`);
   }
@@ -22,7 +23,7 @@ export function validateBillStatusTransition(currentStatus: unknown, nextStatus:
 
 export function canEditOrDeleteBill(status: unknown) {
   const normStatus = normalizeBillStatus(status);
-  return normStatus === "" || normStatus === "ตั้งเบิก" || normStatus === "รออนุมัติ";
+  return normStatus === "" || normStatus === "รอตั้งเบิก" || normStatus === "ตั้งเบิก" || normStatus === "รออนุมัติ";
 }
 
 export function isValidBill(row: SheetRow) {
@@ -45,6 +46,7 @@ export function isUnpaidBill(row: SheetRow) {
 
 export function normalizeBillStatus(value: unknown) {
   const str = String(value || "").trim();
+  if (str.includes("รอตั้งเบิก")) return "รอตั้งเบิก";
   if (str.includes("อนุมัติ") && !str.includes("รออนุมัติ")) return "อนุมัติ";
   if (str.includes("เบิกแล้ว") || str.toLowerCase() === "paid" || str.toLowerCase() === "withdrawn") return "เบิกแล้ว";
   if (str.includes("ตั้งเบิก")) return "ตั้งเบิก";
