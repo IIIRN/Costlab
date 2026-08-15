@@ -61,66 +61,27 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
     initLiff();
   }, []);
 
-  async function getLineProfileOrIdToken(liff: any): Promise<LineProfile | null> {
-    if (!liff) return null;
-
-    // 1. Try liff.getProfile()
-    try {
-      const profile = await liff.getProfile();
-      if (profile?.userId) {
-        return {
-          userId: profile.userId,
-          displayName: profile.displayName,
-          pictureUrl: profile.pictureUrl,
-          statusMessage: profile.statusMessage,
-        };
-      }
-    } catch (profileErr: any) {
-      console.warn("⚠️ liff.getProfile failed, attempting ID Token fallback:", profileErr);
-    }
-
-    // 2. Try liff.getDecodedIDToken()
-    try {
-      const decodedToken = liff.getDecodedIDToken();
-      if (decodedToken && decodedToken.sub) {
-        return {
-          userId: decodedToken.sub,
-          displayName: decodedToken.name || `ผู้ใช้ LINE (${decodedToken.sub.slice(-4)})`,
-          pictureUrl: decodedToken.picture || "",
-          statusMessage: "",
-        };
-      }
-    } catch (tokenErr: any) {
-      console.warn("⚠️ liff.getDecodedIDToken failed:", tokenErr);
-    }
-
-    return null;
-  }
-
   // 2. Load & Init @line/liff SDK
   async function loadLiffSdk(id: string) {
-    let liff: any = null;
     try {
-      liff = (await import("@line/liff")).default;
+      const liff = (await import("@line/liff")).default;
       await liff.init({ liffId: id });
       setLiffInstance(liff);
       setIsLiffReady(true);
 
       if (liff.isLoggedIn()) {
-        const pData = await getLineProfileOrIdToken(liff);
-        if (pData) {
-          setLineProfile(pData);
-          await checkAndLoginLineUser(pData);
-        } else {
-          console.warn("⚠️ Unable to retrieve LINE profile or ID Token from LIFF session");
-        }
+        const profile = await liff.getProfile();
+        const pData: LineProfile = {
+          userId: profile.userId,
+          displayName: profile.displayName,
+          pictureUrl: profile.pictureUrl,
+          statusMessage: profile.statusMessage,
+        };
+        setLineProfile(pData);
+        await checkAndLoginLineUser(pData);
       }
     } catch (err: any) {
       console.warn("⚠️ LIFF SDK init error:", err);
-      if (liff) {
-        setLiffInstance(liff);
-        setIsLiffReady(true);
-      }
     }
   }
 
@@ -128,7 +89,7 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
   async function checkAndLoginLineUser(profile: LineProfile) {
     setIsLoading(true);
     try {
-      let res = await fetch("/api/auth/line", {
+      const res = await fetch("/api/auth/line", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -138,21 +99,7 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
         }),
       });
 
-      if (res.status === 404) {
-        // Fallback to /api/auth if route sub-path returns 404
-        res = await fetch("/api/auth", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "login",
-            lineUserId: profile.userId,
-            pictureUrl: profile.pictureUrl,
-          }),
-        });
-      }
-
       const data = await res.json();
-
       if (res.ok && data.success) {
         // Logged in successfully! Reload to apply cookie session
         window.location.reload();
@@ -170,43 +117,32 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
   // 4. Trigger LINE Login (Redirects to LINE OAuth if not logged in)
   function loginWithLine() {
     if (!liffId) {
-      alert("⚠️ ระบบยังไม่ได้ตั้งค่า LIFF ID กรุณากรอก LIFF ID ในการตั้งค่า LINE System (/settings/line-system) ครับ");
+      alert("⚠️ กรุณากำหนดค่า LIFF ID ในการตั้งค่า LINE System (/settings/line-system) ครับ");
       return;
     }
 
     if (liffInstance) {
-      try {
-        if (!liffInstance.isLoggedIn()) {
-          liffInstance.login();
-        } else {
-          getLineProfileOrIdToken(liffInstance).then((pData) => {
-            if (pData) {
-              setLineProfile(pData);
-              checkAndLoginLineUser(pData);
-            } else {
-              // If logged in but profile/ID Token failed, force fresh login
-              liffInstance.login();
-            }
+      if (!liffInstance.isLoggedIn()) {
+        liffInstance.login();
+      } else {
+        liffInstance
+          .getProfile()
+          .then((profile: any) => {
+            const pData: LineProfile = {
+              userId: profile.userId,
+              displayName: profile.displayName,
+              pictureUrl: profile.pictureUrl,
+              statusMessage: profile.statusMessage,
+            };
+            setLineProfile(pData);
+            checkAndLoginLineUser(pData);
+          })
+          .catch((err: any) => {
+            alert(`⚠️ ไม่สามารถดึงโปรไฟล์ LINE ได้: ${err?.message || "โปรดลองใหม่อีกครั้ง"}`);
           });
-        }
-      } catch (err: any) {
-        console.error("❌ loginWithLine failed:", err);
-        alert(`⚠️ เกิดข้อผิดพลาดในการเชื่อมต่อ LINE: ${err?.message || "โปรดลองใหม่อีกครั้ง"}`);
       }
     } else {
-      // LIFF SDK is still loading or initializing, attempt lazy initialization & login
-      import("@line/liff")
-        .then((module) => {
-          const liff = module.default;
-          return liff.init({ liffId }).then(() => {
-            setLiffInstance(liff);
-            setIsLiffReady(true);
-            liff.login();
-          });
-        })
-        .catch((err) => {
-          alert(`⚠️ ไม่สามารถเชื่อมต่อกับ LINE LIFF (ID: ${liffId}) ได้: ${err?.message || "โปรดตรวจสอบ LIFF ID และการตั้งค่าใน LINE Developers Console"}`);
-        });
+      alert("⚠️ ระบบกำลังเชื่อมต่อ LIFF SDK กรุณาลองใหม่อีกครั้งในครู่เดียวครับ");
     }
   }
 
@@ -223,7 +159,7 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
     setRegistering(true);
     setRegisterError("");
     try {
-      let res = await fetch("/api/auth/line", {
+      const res = await fetch("/api/auth/line", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -234,20 +170,6 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
           phone: phoneInput.trim(),
         }),
       });
-
-      if (res.status === 404) {
-        res = await fetch("/api/auth", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "register",
-            lineUserId: lineProfile.userId,
-            displayName: lineProfile.displayName,
-            pictureUrl: lineProfile.pictureUrl,
-            phone: phoneInput.trim(),
-          }),
-        });
-      }
 
       const data = await res.json();
       if (res.ok && data.success) {
