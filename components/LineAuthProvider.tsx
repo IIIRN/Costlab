@@ -101,8 +101,13 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
 
       const data = await res.json();
       if (res.ok && data.success) {
-        // Logged in successfully! Reload to apply cookie session
-        window.location.reload();
+        // Prevent infinite reload loop: Only redirect if on login page or missing auth cookie
+        const isLoginPage = typeof window !== "undefined" && window.location.pathname.startsWith("/login");
+        const hasAuthCookie = typeof document !== "undefined" && document.cookie.includes("auth_employee_id=");
+
+        if (isLoginPage || !hasAuthCookie) {
+          window.location.href = "/";
+        }
       } else {
         // User not found in DB ➡️ Prompt for Phone Registration / Account Linking
         setShowPhoneModal(true);
@@ -174,7 +179,7 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
       const data = await res.json();
       if (res.ok && data.success) {
         setShowPhoneModal(false);
-        window.location.reload();
+        window.location.href = "/";
       } else {
         setRegisterError(data.error || "เกิดข้อผิดพลาดในการลงทะเบียน");
       }
