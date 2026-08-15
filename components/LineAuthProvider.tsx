@@ -61,6 +61,42 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
     initLiff();
   }, []);
 
+  async function getLineProfileOrIdToken(liff: any): Promise<LineProfile | null> {
+    if (!liff) return null;
+
+    // 1. Try liff.getProfile()
+    try {
+      const profile = await liff.getProfile();
+      if (profile?.userId) {
+        return {
+          userId: profile.userId,
+          displayName: profile.displayName,
+          pictureUrl: profile.pictureUrl,
+          statusMessage: profile.statusMessage,
+        };
+      }
+    } catch (profileErr: any) {
+      console.warn("⚠️ liff.getProfile failed, attempting ID Token fallback:", profileErr);
+    }
+
+    // 2. Try liff.getDecodedIDToken()
+    try {
+      const decodedToken = liff.getDecodedIDToken();
+      if (decodedToken && decodedToken.sub) {
+        return {
+          userId: decodedToken.sub,
+          displayName: decodedToken.name || `ผู้ใช้ LINE (${decodedToken.sub.slice(-4)})`,
+          pictureUrl: decodedToken.picture || "",
+          statusMessage: "",
+        };
+      }
+    } catch (tokenErr: any) {
+      console.warn("⚠️ liff.getDecodedIDToken failed:", tokenErr);
+    }
+
+    return null;
+  }
+
   // 2. Load & Init @line/liff SDK
   async function loadLiffSdk(id: string) {
     let liff: any = null;
@@ -71,25 +107,12 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
       setIsLiffReady(true);
 
       if (liff.isLoggedIn()) {
-        try {
-          const profile = await liff.getProfile();
-          if (profile?.userId) {
-            const pData: LineProfile = {
-              userId: profile.userId,
-              displayName: profile.displayName,
-              pictureUrl: profile.pictureUrl,
-              statusMessage: profile.statusMessage,
-            };
-            setLineProfile(pData);
-            await checkAndLoginLineUser(pData);
-          }
-        } catch (profileErr: any) {
-          console.warn("⚠️ LIFF getProfile error:", profileErr);
-          // If scope permission error, re-trigger liff.login() to prompt user consent for profile scope
-          if (profileErr?.message?.includes("scope") || profileErr?.message?.includes("permission")) {
-            console.log("🔄 Re-logging in to request missing LIFF profile scope...");
-            liff.login();
-          }
+        const pData = await getLineProfileOrIdToken(liff);
+        if (pData) {
+          setLineProfile(pData);
+          await checkAndLoginLineUser(pData);
+        } else {
+          console.warn("⚠️ Unable to retrieve LINE profile or ID Token from LIFF session");
         }
       }
     } catch (err: any) {
@@ -142,27 +165,15 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
         if (!liffInstance.isLoggedIn()) {
           liffInstance.login();
         } else {
-          liffInstance
-            .getProfile()
-            .then((profile: any) => {
-              const pData: LineProfile = {
-                userId: profile.userId,
-                displayName: profile.displayName,
-                pictureUrl: profile.pictureUrl,
-                statusMessage: profile.statusMessage,
-              };
+          getLineProfileOrIdToken(liffInstance).then((pData) => {
+            if (pData) {
               setLineProfile(pData);
               checkAndLoginLineUser(pData);
-            })
-            .catch((err: any) => {
-              console.warn("⚠️ getProfile error during loginWithLine:", err);
-              if (err?.message?.includes("scope") || err?.message?.includes("permission")) {
-                // Force fresh login to re-request missing profile scope consent
-                liffInstance.login();
-              } else {
-                alert(`⚠️ ไม่สามารถดึงข้อมูลโปรไฟล์ LINE ได้: ${err?.message || "โปรดลองใหม่อีกครั้ง"}`);
-              }
-            });
+            } else {
+              // If logged in but profile/ID Token failed, force fresh login
+              liffInstance.login();
+            }
+          });
         }
       } catch (err: any) {
         console.error("❌ loginWithLine failed:", err);
