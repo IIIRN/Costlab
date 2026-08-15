@@ -128,7 +128,7 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
   async function checkAndLoginLineUser(profile: LineProfile) {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/auth/line", {
+      let res = await fetch("/api/auth/line", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -137,6 +137,20 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
           pictureUrl: profile.pictureUrl,
         }),
       });
+
+      if (res.status === 404) {
+        // Fallback to /api/auth if route sub-path returns 404
+        res = await fetch("/api/auth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "login",
+            lineUserId: profile.userId,
+            pictureUrl: profile.pictureUrl,
+          }),
+        });
+      }
+
       const data = await res.json();
 
       if (res.ok && data.success) {
@@ -209,7 +223,7 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
     setRegistering(true);
     setRegisterError("");
     try {
-      const res = await fetch("/api/auth/line", {
+      let res = await fetch("/api/auth/line", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -220,6 +234,20 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
           phone: phoneInput.trim(),
         }),
       });
+
+      if (res.status === 404) {
+        res = await fetch("/api/auth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "register",
+            lineUserId: lineProfile.userId,
+            displayName: lineProfile.displayName,
+            pictureUrl: lineProfile.pictureUrl,
+            phone: phoneInput.trim(),
+          }),
+        });
+      }
 
       const data = await res.json();
       if (res.ok && data.success) {
