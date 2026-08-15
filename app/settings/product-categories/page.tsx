@@ -275,112 +275,112 @@ export default function ProductCategoryMasterPage() {
   });
 
   return (
-    <div className="p-3 sm:p-5 max-w-6xl mx-auto space-y-4 font-sans text-xs text-slate-800">
-      {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 bg-emerald-100 text-emerald-800 rounded-xl border border-emerald-200">
-            <Package size={20} />
+    <div className="p-3 sm:p-5 max-w-5xl mx-auto space-y-3.5 font-sans text-xs text-slate-800">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-200 pb-2.5 bg-white p-3 rounded-md border shadow-2xs">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 bg-emerald-100 text-emerald-800 rounded border border-emerald-200">
+            <Package size={16} />
           </div>
           <div>
-            <h1 className="font-extrabold text-base text-slate-900 tracking-tight flex items-center gap-2">
+            <h1 className="text-sm font-medium text-slate-900 tracking-tight flex items-center gap-1.5">
               <span>จัดการหมวดสินค้า & รหัสจัดกลุ่มงบประมาณ</span>
-              <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full flex items-center gap-1">
-                <Sparkles size={11} /> Master Data
+              <span className="text-[10px] px-2 py-0.2 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full flex items-center gap-1">
+                <Sparkles size={10} /> Master Data
               </span>
             </h1>
-            <p className="text-slate-500 text-xs mt-0.5">จัดการเพิ่ม/ลบหมวดงานหลัก และรหัสประเภทสินค้าอย่างเป็นระบบ</p>
+            <p className="text-slate-500 text-[11px] mt-0.5">จัดการเพิ่ม/ลบหมวดงานหลัก และรหัสประเภทสินค้าอย่างเป็นระบบ</p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           <button
             type="button"
             onClick={() => setIsGroupModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-lg border border-indigo-200 transition cursor-pointer"
+            className="flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 font-medium rounded border border-indigo-200 transition cursor-pointer text-xs"
           >
-            <Settings2 size={14} />
-            <span>จัดการหมวดงานหลัก ({groups.length})</span>
+            <Settings2 size={13} />
+            <span>หมวดงานหลัก ({groups.length})</span>
           </button>
           <button
             type="button"
             onClick={handleOpenCreateItem}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-lg transition cursor-pointer"
+            className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-900 text-white font-medium rounded transition cursor-pointer text-xs"
           >
-            <Plus size={14} />
-            <span>เพิ่มหมวดสินค้าใหม่</span>
+            <Plus size={13} />
+            <span>เพิ่มหมวดสินค้า</span>
           </button>
           <button
             type="button"
             onClick={handleSaveAllToDatabase}
             disabled={saving}
-            className="flex items-center gap-1.5 px-4 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold rounded-lg transition shadow-xs disabled:opacity-50 cursor-pointer"
+            className="flex items-center gap-1 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-medium rounded transition shadow-2xs disabled:opacity-50 cursor-pointer text-xs"
           >
-            {saving ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
-            <span>{saving ? "กำลังบันทึก..." : "บันทึกฐานข้อมูล"}</span>
+            {saving ? <RefreshCw size={13} className="animate-spin" /> : <Save size={13} />}
+            <span>{saving ? "กำลังบันทึก..." : "บันทึกข้อมูล"}</span>
           </button>
         </div>
       </div>
 
       {/* Notifications */}
       {successMsg && (
-        <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold flex items-center gap-2 animate-in fade-in">
-          <CheckCircle2 size={16} className="text-emerald-700 shrink-0" />
+        <div className="p-2.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center gap-2">
+          <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
           <span>{successMsg}</span>
         </div>
       )}
       {errorMsg && (
-        <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 font-bold flex items-center gap-2 animate-in fade-in">
-          <ShieldAlert size={16} className="text-rose-700 shrink-0" />
+        <div className="p-2.5 rounded-md bg-rose-50 border border-rose-200 text-rose-900 text-xs flex items-center gap-2">
+          <ShieldAlert size={14} className="text-rose-600 shrink-0" />
           <span>{errorMsg}</span>
         </div>
       )}
 
       {/* Search & Filter Bar */}
-      <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div className="bg-white border border-slate-200 rounded-md p-2.5 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-2.5">
         {/* Search Box */}
-        <div className="relative w-full sm:w-72">
-          <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
+        <div className="relative w-full sm:w-64">
+          <Search size={13} className="absolute left-2.5 top-2 text-slate-400" />
           <input
             type="text"
             placeholder="ค้นหารหัส หรือ ชื่อหมวดสินค้า..."
             value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:outline-none focus:border-emerald-500 focus:bg-white transition"
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-8 pr-2.5 py-1 bg-slate-50 border border-slate-200 rounded text-xs focus:outline-none focus:border-slate-500 focus:bg-white transition"
           />
         </div>
 
         {/* Group Filter Pill Buttons */}
-        <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-1 w-full sm:w-auto">
           <button
             type="button"
             onClick={() => setSelectedGroupFilter("ALL")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+            className={`px-2.5 py-1 rounded text-xs transition cursor-pointer flex items-center gap-1 ${
               selectedGroupFilter === "ALL"
-                ? "bg-emerald-700 text-white shadow-2xs"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                ? "bg-slate-800 text-white font-medium"
+                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
             }`}
           >
-            <FolderKanban size={13} />
+            <FolderKanban size={12} />
             <span>ทั้งหมด ({categories.length})</span>
           </button>
-          {groups.map(g => {
-            const count = categories.filter(c => c.group === g).length;
+          {groups.map((g) => {
+            const count = categories.filter((c) => c.group === g).length;
             const isSelected = selectedGroupFilter === g;
             return (
               <button
                 key={g}
                 type="button"
                 onClick={() => setSelectedGroupFilter(g)}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                className={`px-2 py-1 rounded text-xs transition cursor-pointer flex items-center gap-1 ${
                   isSelected
-                    ? "bg-emerald-700 text-white font-bold shadow-2xs"
+                    ? "bg-emerald-700 text-white font-medium shadow-2xs"
                     : "bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100"
                 }`}
               >
                 {getGroupIcon(g)}
                 <span>{g}</span>
-                <span className="text-[10px] font-mono px-1 py-0.2 bg-slate-200/60 rounded text-slate-800">{count}</span>
+                <span className="text-[10px] font-mono px-1 rounded bg-slate-200/60 text-slate-800">{count}</span>
               </button>
             );
           })}
@@ -388,67 +388,67 @@ export default function ProductCategoryMasterPage() {
       </div>
 
       {/* Main Master Data Table */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
+      <div className="bg-white border border-slate-200 rounded-md overflow-hidden shadow-2xs">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                <th className="py-2.5 px-4 w-20 text-center">รหัส (Code)</th>
-                <th className="py-2.5 px-4">ชื่อหมวดสินค้า (Name)</th>
-                <th className="py-2.5 px-4">กลุ่มประเภทงาน (Group)</th>
-                <th className="py-2.5 px-4">คำอธิบายขอบเขตงาน</th>
-                <th className="py-2.5 px-4 w-28 text-center">การจัดการ</th>
+              <tr className="bg-slate-50 border-b border-slate-200 text-xs font-medium text-slate-700">
+                <th className="py-2.5 px-3 w-20 text-center border-r border-slate-200">รหัส (Code)</th>
+                <th className="py-2.5 px-3 border-r border-slate-200">ชื่อหมวดสินค้า (Name)</th>
+                <th className="py-2.5 px-3 border-r border-slate-200">กลุ่มประเภทงาน (Group)</th>
+                <th className="py-2.5 px-3 border-r border-slate-200">คำอธิบายขอบเขตงาน</th>
+                <th className="py-2.5 px-3 w-24 text-center">จัดการ</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-xs">
+            <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-slate-400">
-                    <RefreshCw size={18} className="animate-spin mx-auto mb-2 text-emerald-600" />
+                  <td colSpan={5} className="py-6 text-center text-slate-400 text-xs">
+                    <RefreshCw size={16} className="animate-spin mx-auto mb-1 text-slate-500" />
                     <span>กำลังโหลดข้อมูลหมวดสินค้า...</span>
                   </td>
                 </tr>
               ) : filteredCategories.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-slate-400 font-medium">
+                  <td colSpan={5} className="py-6 text-center text-slate-400 text-xs">
                     ไม่พบหมวดสินค้าที่ตรงกับคำค้นหา
                   </td>
                 </tr>
               ) : (
-                filteredCategories.map(cat => (
-                  <tr key={cat.id} className="hover:bg-slate-50/80 transition">
-                    <td className="py-2.5 px-4 font-mono font-extrabold text-center text-indigo-700 bg-indigo-50/40 rounded">
+                filteredCategories.map((cat) => (
+                  <tr key={cat.id} className="hover:bg-slate-50 transition-colors text-xs">
+                    <td className="py-2 px-3 font-mono font-medium text-center text-indigo-800 bg-indigo-50/50 border-r border-slate-100">
                       {cat.code}
                     </td>
-                    <td className="py-2.5 px-4 font-bold text-slate-900">
+                    <td className="py-2 px-3 font-medium text-slate-900 border-r border-slate-100">
                       {cat.name}
                     </td>
-                    <td className="py-2.5 px-4">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                    <td className="py-2 px-3 border-r border-slate-100">
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] bg-slate-100 text-slate-700 border border-slate-200">
                         {getGroupIcon(cat.group)}
                         <span>{cat.group}</span>
                       </span>
                     </td>
-                    <td className="py-2.5 px-4 text-slate-500 text-[11px]">
+                    <td className="py-2 px-3 text-slate-600 text-[11px] border-r border-slate-100">
                       {cat.description || "-"}
                     </td>
-                    <td className="py-2.5 px-4 text-center">
-                      <div className="flex items-center justify-center gap-1.5">
+                    <td className="py-2 px-3 text-center">
+                      <div className="flex items-center justify-center gap-1">
                         <button
                           type="button"
                           onClick={() => handleOpenEditItem(cat)}
-                          className="p-1 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded transition cursor-pointer"
+                          className="w-6 h-6 rounded border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 flex items-center justify-center transition cursor-pointer"
                           title="แก้ไขหมวดสินค้านี้"
                         >
-                          <Edit2 size={14} />
+                          <Edit2 size={12} />
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDeleteItem(cat.id)}
-                          className="p-1 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded transition cursor-pointer"
+                          className="w-6 h-6 rounded border border-rose-300 bg-white text-rose-700 hover:bg-rose-50 flex items-center justify-center transition cursor-pointer"
                           title="ลบหมวดสินค้านี้"
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={12} />
                         </button>
                       </div>
                     </td>
@@ -460,90 +460,90 @@ export default function ProductCategoryMasterPage() {
         </div>
 
         {/* Footer Info */}
-        <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-500 font-semibold">
+        <div className="px-3 py-2 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-500">
           <span>แสดง {filteredCategories.length} จากทั้งหมด {categories.length} รายการ</span>
-          <span> Costlab Master Data Management System</span>
+          <span> CostLab Master Data Management</span>
         </div>
       </div>
 
       {/* Modal 1: ITEM Create / Edit Modal */}
       {isItemModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden">
-            <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-              <h3 className="font-extrabold text-sm text-slate-900">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-md border border-slate-200 shadow-xl w-full max-w-md overflow-hidden">
+            <div className="px-3.5 py-2.5 bg-white border-b border-slate-200 flex items-center justify-between">
+              <h3 className="font-medium text-xs text-slate-900">
                 {editingItem ? "แก้ไขหมวดสินค้า" : "เพิ่มหมวดสินค้าใหม่"}
               </h3>
               <button
                 type="button"
                 onClick={() => setIsItemModalOpen(false)}
-                className="text-slate-400 hover:text-slate-700 transition"
+                className="text-slate-400 hover:text-slate-600 transition cursor-pointer"
               >
                 <X size={16} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveItem} className="p-4 space-y-3.5">
-              <div className="grid grid-cols-3 gap-3">
+            <form onSubmit={handleSaveItem} className="p-3.5 space-y-3">
+              <div className="grid grid-cols-3 gap-2.5">
                 <div className="col-span-1 space-y-1">
-                  <label className="text-[11px] font-bold text-slate-700 block">รหัส (Code) *</label>
+                  <label className="text-xs text-slate-700 block">รหัส (Code) *</label>
                   <input
                     type="text"
                     required
                     placeholder="เช่น 1, 101"
                     value={formCode}
-                    onChange={e => setFormCode(e.target.value)}
-                    className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold text-indigo-700 focus:bg-white focus:outline-none focus:border-indigo-500"
+                    onChange={(e) => setFormCode(e.target.value)}
+                    className="w-full px-2.5 py-1 bg-white border border-slate-300 rounded text-xs font-mono font-medium text-indigo-800 focus:outline-none focus:border-slate-500"
                   />
                 </div>
                 <div className="col-span-2 space-y-1">
-                  <label className="text-[11px] font-bold text-slate-700 block">ชื่อหมวดสินค้า (Name) *</label>
+                  <label className="text-xs text-slate-700 block">ชื่อหมวดสินค้า (Name) *</label>
                   <input
                     type="text"
                     required
                     placeholder="เช่น เหล็กเส้น, คอนกรีต"
                     value={formName}
-                    onChange={e => setFormName(e.target.value)}
-                    className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:bg-white focus:outline-none focus:border-indigo-500"
+                    onChange={(e) => setFormName(e.target.value)}
+                    className="w-full px-2.5 py-1 bg-white border border-slate-300 rounded text-xs text-slate-900 focus:outline-none focus:border-slate-500"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-700 block">กลุ่มประเภทงาน (Group)</label>
+                <label className="text-xs text-slate-700 block">กลุ่มประเภทงาน (Group)</label>
                 <select
                   value={formGroup}
-                  onChange={e => setFormGroup(e.target.value)}
-                  className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none focus:border-indigo-500 cursor-pointer"
+                  onChange={(e) => setFormGroup(e.target.value)}
+                  className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs text-slate-900 focus:outline-none focus:border-slate-500 cursor-pointer"
                 >
-                  {groups.map(g => (
+                  {groups.map((g) => (
                     <option key={g} value={g}>{g}</option>
                   ))}
                 </select>
               </div>
 
               <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-700 block">คำอธิบายขอบเขตงาน</label>
+                <label className="text-xs text-slate-700 block">คำอธิบายขอบเขตงาน</label>
                 <textarea
                   rows={2}
-                  placeholder="เช่น รายละเอียดประเภทสินค้าย่อย หรือมาตรฐานที่เกี่ยวข้อง"
+                  placeholder="รายละเอียดประเภทสินค้าย่อย..."
                   value={formDesc}
-                  onChange={e => setFormDesc(e.target.value)}
-                  className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:bg-white focus:outline-none focus:border-indigo-500"
+                  onChange={(e) => setFormDesc(e.target.value)}
+                  className="w-full px-2.5 py-1 bg-white border border-slate-300 rounded text-xs text-slate-900 focus:outline-none focus:border-slate-500 resize-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setIsItemModalOpen(false)}
-                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-xs transition cursor-pointer"
+                  className="px-3 py-1 rounded border border-slate-300 text-slate-700 font-medium hover:bg-slate-100 transition text-xs cursor-pointer"
                 >
                   ยกเลิก
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold rounded-lg text-xs transition shadow-xs cursor-pointer"
+                  className="px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white font-medium rounded text-xs transition cursor-pointer"
                 >
                   บันทึกข้อมูล
                 </button>
@@ -555,73 +555,73 @@ export default function ProductCategoryMasterPage() {
 
       {/* Modal 2: GROUP MANAGEMENT Modal */}
       {isGroupModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden">
-            <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-              <div className="flex items-center gap-2 font-extrabold text-sm text-slate-900">
-                <Settings2 size={16} className="text-indigo-600" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-md border border-slate-200 shadow-xl w-full max-w-md overflow-hidden">
+            <div className="px-3.5 py-2.5 bg-white border-b border-slate-200 flex items-center justify-between">
+              <div className="flex items-center gap-1.5 font-medium text-xs text-slate-900">
+                <Settings2 size={15} className="text-indigo-600" />
                 <span>จัดการหมวดงานหลัก (Work Groups Master)</span>
               </div>
               <button
                 type="button"
                 onClick={() => setIsGroupModalOpen(false)}
-                className="text-slate-400 hover:text-slate-700 transition cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 transition cursor-pointer"
               >
                 <X size={16} />
               </button>
             </div>
 
-            <div className="p-4 space-y-4">
+            <div className="p-3.5 space-y-3">
               {/* Add Group Form */}
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-slate-700 block">เพิ่มหมวดงานหลักใหม่:</label>
-                <div className="flex items-center gap-2">
+              <div className="space-y-1">
+                <label className="text-xs text-slate-700 block">เพิ่มหมวดงานหลักใหม่:</label>
+                <div className="flex items-center gap-1.5">
                   <input
                     type="text"
-                    placeholder="เช่น หมวดงานครุภัณฑ์, หมวดงานภูมิทัศน์..."
+                    placeholder="เช่น หมวดงานครุภัณฑ์..."
                     value={newGroupName}
-                    onChange={e => setNewGroupName(e.target.value)}
-                    onKeyDown={e => {
+                    onChange={(e) => setNewGroupName(e.target.value)}
+                    onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault();
                         handleAddGroup();
                       }
                     }}
-                    className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:bg-white focus:border-indigo-500"
+                    className="flex-1 px-2.5 py-1 bg-white border border-slate-300 rounded text-xs text-slate-900 focus:outline-none focus:border-slate-500"
                   />
                   <button
                     type="button"
                     onClick={handleAddGroup}
-                    className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs flex items-center gap-1 transition cursor-pointer"
+                    className="px-3 py-1 bg-indigo-700 hover:bg-indigo-800 text-white font-medium rounded text-xs flex items-center gap-1 transition cursor-pointer"
                   >
-                    <Plus size={14} />
+                    <Plus size={13} />
                     <span>เพิ่ม</span>
                   </button>
                 </div>
               </div>
 
               {/* Group List */}
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-slate-700 block">รายการหมวดงานหลักปัจจุบัน ({groups.length}):</label>
-                <div className="divide-y divide-slate-100 border border-slate-200 rounded-lg overflow-hidden bg-slate-50/50 max-h-60 overflow-y-auto">
-                  {groups.map(group => {
-                    const countInGroup = categories.filter(c => c.group === group).length;
+              <div className="space-y-1">
+                <label className="text-xs text-slate-700 block">รายการหมวดงานหลักปัจจุบัน ({groups.length}):</label>
+                <div className="divide-y divide-slate-100 border border-slate-200 rounded overflow-hidden bg-white max-h-56 overflow-y-auto">
+                  {groups.map((group) => {
+                    const countInGroup = categories.filter((c) => c.group === group).length;
                     return (
-                      <div key={group} className="px-3 py-2 flex items-center justify-between bg-white hover:bg-slate-50 transition">
-                        <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
+                      <div key={group} className="px-3 py-1.5 flex items-center justify-between hover:bg-slate-50 transition">
+                        <div className="flex items-center gap-1.5 text-xs font-normal text-slate-800">
                           {getGroupIcon(group)}
                           <span>{group}</span>
-                          <span className="text-[10px] font-mono font-semibold px-1.5 py-0.2 bg-slate-100 text-slate-600 rounded border border-slate-200">
+                          <span className="text-[10px] font-mono px-1 py-0.2 bg-slate-100 text-slate-600 rounded border border-slate-200">
                             {countInGroup} รายการ
                           </span>
                         </div>
                         <button
                           type="button"
                           onClick={() => handleDeleteGroup(group)}
-                          className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition cursor-pointer"
+                          className="w-5 h-5 rounded border border-rose-200 text-rose-600 hover:bg-rose-50 flex items-center justify-center transition cursor-pointer"
                           title="ลบหมวดงานนี้"
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={11} />
                         </button>
                       </div>
                     );
@@ -629,11 +629,11 @@ export default function ProductCategoryMasterPage() {
                 </div>
               </div>
 
-              <div className="flex justify-end pt-2 border-t border-slate-100">
+              <div className="flex justify-end pt-2 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setIsGroupModalOpen(false)}
-                  className="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-lg text-xs transition cursor-pointer"
+                  className="px-3 py-1 bg-slate-800 hover:bg-slate-900 text-white font-medium rounded text-xs transition cursor-pointer"
                 >
                   เสร็จสิ้น
                 </button>

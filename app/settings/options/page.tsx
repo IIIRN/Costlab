@@ -204,65 +204,68 @@ export default function SystemOptionsSettingsPage() {
   }
 
   return (
-    <div className="p-3 sm:p-5 max-w-5xl mx-auto space-y-4 font-sans text-xs text-slate-800">
+    <div className="p-3 sm:p-5 max-w-5xl mx-auto space-y-3.5 font-sans text-xs text-slate-800">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
+      <div className="flex items-center justify-between border-b border-slate-200 pb-2.5 bg-white p-3 rounded-md border shadow-2xs">
         <div>
-          <h1 className="font-bold text-base text-slate-900 tracking-tight">ตั้งค่าตัวเลือก & เงื่อนไขระบบ</h1>
-          <p className="text-slate-500 text-xs mt-0.5">จัดการรายชื่อตัวเลือก Dropdown/Enum เพื่อใช้อัปเดตในแบบฟอร์มโดยไม่ต้องแก้ไขโค้ด</p>
+          <h1 className="text-sm font-medium text-slate-900 tracking-tight">ตั้งค่าตัวเลือก & เงื่อนไขระบบ (System Options)</h1>
+          <p className="text-slate-500 text-[11px] mt-0.5">จัดการรายชื่อตัวเลือก Dropdown/Enum สำหรับแบบฟอร์มบันทึกบิลและรายการในระบบ</p>
         </div>
         <button
+          type="button"
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-1.5 px-4 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold rounded-md transition disabled:opacity-50 cursor-pointer shrink-0"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded transition disabled:opacity-50 cursor-pointer shrink-0 text-xs"
         >
-          {saving ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
+          {saving ? <RefreshCw size={13} className="animate-spin" /> : <Save size={13} />}
           <span>{saving ? "กำลังบันทึก..." : "บันทึกตัวเลือกระบบ"}</span>
         </button>
       </div>
 
       {/* Notifications */}
       {successMsg && (
-        <div className="p-3 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 font-semibold flex items-center gap-2">
-          <CheckCircle2 size={15} className="text-emerald-700 shrink-0" />
+        <div className="p-2.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center gap-2">
+          <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
           <span>{successMsg}</span>
         </div>
       )}
       {errorMsg && (
-        <div className="p-3 rounded-md bg-rose-50 border border-rose-200 text-rose-800 font-semibold flex items-center gap-2">
+        <div className="p-2.5 rounded-md bg-rose-50 border border-rose-200 text-rose-900 text-xs flex items-center gap-2">
           <span className="shrink-0">⚠️</span>
           <span>{errorMsg}</span>
         </div>
       )}
 
       {/* Option Categories List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {DEFAULT_CATEGORIES.map(cat => {
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {DEFAULT_CATEGORIES.map((cat) => {
+          const IconComp = cat.icon || Sliders;
           const currentList = options[cat.key] || cat.defaultValues;
           return (
-            <div key={cat.key} className="bg-white border border-slate-200 rounded-md p-3.5 space-y-2.5">
-              <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
-                <h3 className="font-bold text-slate-800 text-xs">{cat.label}</h3>
+            <div key={cat.key} className="bg-white border border-slate-200 rounded-md p-3 space-y-2 shadow-2xs">
+              <div className="flex items-center gap-1.5 border-b border-slate-100 pb-2">
+                <IconComp size={13} className="text-emerald-700 shrink-0" />
+                <h2 className="text-xs font-medium text-slate-900 m-0">{cat.label}</h2>
               </div>
 
               {/* Items Chip Grid */}
-              <div className="flex flex-wrap gap-1.5 min-h-[40px] items-center p-2 bg-slate-50 rounded-md border border-slate-200">
+              <div className="flex flex-wrap gap-1 min-h-[36px] items-center p-2 bg-slate-50 rounded border border-slate-200">
                 {currentList.length === 0 ? (
-                  <span className="text-slate-400 italic text-xs">ไม่มีรายการตัวเลือก</span>
+                  <span className="text-slate-400 italic text-[11px]">ไม่มีรายการตัวเลือก</span>
                 ) : (
                   currentList.map((item, idx) => (
                     <span
                       key={`${item}-${idx}`}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-white border border-slate-300 text-slate-800 font-semibold rounded text-xs"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-white border border-slate-300 text-slate-800 rounded text-xs font-normal"
                     >
                       <span>{item}</span>
                       <button
                         type="button"
                         onClick={() => handleRemoveItem(cat.key, idx)}
-                        className="text-slate-400 hover:text-rose-600 transition cursor-pointer"
+                        className="text-slate-400 hover:text-rose-600 transition cursor-pointer p-0.5"
                         title="ลบรายการนี้"
                       >
-                        <Trash2 size={12} />
+                        <Trash2 size={11} />
                       </button>
                     </span>
                   ))
@@ -270,13 +273,13 @@ export default function SystemOptionsSettingsPage() {
               </div>
 
               {/* Add New Input */}
-              <div className="flex items-center gap-2 pt-1">
+              <div className="flex items-center gap-1.5 pt-0.5">
                 <input
                   type="text"
                   placeholder="พิมพ์ตัวเลือกใหม่..."
                   value={newItemInputs[cat.key] || ""}
-                  onChange={e => setNewItemInputs(prev => ({ ...prev, [cat.key]: e.target.value }))}
-                  onKeyDown={e => {
+                  onChange={(e) => setNewItemInputs((prev) => ({ ...prev, [cat.key]: e.target.value }))}
+                  onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
                       handleAddItem(cat.key);
@@ -287,9 +290,9 @@ export default function SystemOptionsSettingsPage() {
                 <button
                   type="button"
                   onClick={() => handleAddItem(cat.key)}
-                  className="px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded flex items-center gap-1 transition cursor-pointer text-xs"
+                  className="px-2.5 py-1 bg-slate-800 hover:bg-slate-900 text-white rounded flex items-center gap-1 transition cursor-pointer text-xs"
                 >
-                  <Plus size={14} />
+                  <Plus size={13} />
                   <span>เพิ่ม</span>
                 </button>
               </div>

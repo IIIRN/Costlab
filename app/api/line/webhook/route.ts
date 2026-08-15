@@ -1,10 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
 import { replyTextMessage, recordDiscoveredLineGroup } from "@/lib/line";
 import { handleLineCommand } from "@/lib/line-commands";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
+
+    // 1. Internal Management Actions (Config Update & Test Message from Dashboard)
+    if (body.action === "update_config") {
+      const config = body.config || {};
+      const { error } = await supabaseAdmin.from("system_options").upsert({
+        id: "line_config",
+        data: config,
+        updated_at: new Date().toISOString(),
+      });
+
+      if (error) {
+        console.error("❌ Failed saving line_config to Supabase:", error);
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+      }
+      return NextResponse.json({ success: true, message: "บันทึกการตั้งค่า LINE Bot เรียบร้อยแล้ว" });
+    }
+
+    if (body.action === "test_message") {
+      const { targetId, text } = body;
+      const { sendTextMessageDetailed } = await import("@/lib/line");
+      const result = await sendTextMessageDetailed(targetId, text);
+      return NextResponse.json(result);
+    }
+
+    // 2. Standard LINE Webhook Event Processing
     const events = body.events || [];
 
     if (!Array.isArray(events) || events.length === 0) {
@@ -42,7 +68,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ status: "ok" });
   } catch (error: any) {
     console.error("❌ LINE Webhook error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
 

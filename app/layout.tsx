@@ -7,6 +7,7 @@ import { APP_NAME, TABLES } from "@/lib/config";
 import { getRows } from "@/lib/db";
 import { cookies } from "next/headers";
 import { ToastProvider } from "@/components/ToastProvider";
+import { LineAuthProvider } from "@/components/LineAuthProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -43,15 +44,6 @@ export const viewport: Viewport = {
   viewportFit: "cover"
 };
 
-import { Prompt } from "next/font/google";
-
-const promptFont = Prompt({
-  subsets: ["thai", "latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
-  display: "swap",
-  variable: "--font-prompt",
-});
-
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   let peopleRows: any[] = [];
   try {
@@ -64,20 +56,23 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const employeeId = cookieStore.get("auth_employee_id")?.value;
   const name = cookieStore.get("auth_name")?.value;
   const role = cookieStore.get("auth_role")?.value;
+  const pictureUrl = cookieStore.get("auth_picture_url")?.value;
   
-  const currentUser = employeeId ? { id: employeeId, name: name || "", role: role || "User" } : null;
+  const currentUser = employeeId ? { id: employeeId, name: name || "", role: role || "User", pictureUrl: pictureUrl || "" } : null;
 
   return (
-    <html lang="th" className={promptFont.variable} suppressHydrationWarning>
-      <body className={promptFont.className}>
+    <html lang="th" suppressHydrationWarning>
+      <body>
         <PreventZoom />
-        <ToastProvider>
-          {!currentUser ? (
-            <LoginScreen peopleRows={peopleRows} />
-          ) : (
-            <AppShell peopleRows={peopleRows} currentUser={currentUser}>{children}</AppShell>
-          )}
-        </ToastProvider>
+        <LineAuthProvider>
+          <ToastProvider>
+            {!currentUser ? (
+              <LoginScreen peopleRows={peopleRows} />
+            ) : (
+              <AppShell peopleRows={peopleRows} currentUser={currentUser}>{children}</AppShell>
+            )}
+          </ToastProvider>
+        </LineAuthProvider>
       </body>
     </html>
   );

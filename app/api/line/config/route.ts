@@ -1,74 +1,54 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { LINE_CONFIG } from "@/lib/line/config";
 
 export const dynamic = "force-dynamic";
 
-const DEFAULT_CONFIG = {
-  LINE_CHANNEL_ACCESS_TOKEN: process.env.LINE_CHANNEL_ACCESS_TOKEN || LINE_CONFIG.CHANNEL_ACCESS_TOKEN || "",
-  LINE_CHANNEL_SECRET: process.env.LINE_CHANNEL_SECRET || "",
-  LINE_USER_ID_OWN: process.env.LINE_USER_ID_OWN || LINE_CONFIG.USER_ID_OWN || "",
-  LINE_USER_ID_APPROVER: process.env.LINE_USER_ID_APPROVER || LINE_CONFIG.USER_ID_APPROVER || "",
-  LINE_GROUP_ID_TASK: process.env.LINE_GROUP_ID_TASK || LINE_CONFIG.GROUP_ID_TASK || "",
-  LINE_GROUP_ID_SUMMARY: process.env.LINE_GROUP_ID_SUMMARY || LINE_CONFIG.GROUP_ID_SUMMARY || "",
-  LINE_GROUP_ID_PW: process.env.LINE_GROUP_ID_PW || LINE_CONFIG.GROUP_ID_PW || "",
-  LINE_GROUP_ID_PLAN: process.env.LINE_GROUP_ID_PLAN || LINE_CONFIG.GROUP_ID_PLAN || "",
-  LINE_GROUP_ID_FINANCE: process.env.LINE_GROUP_ID_FINANCE || LINE_CONFIG.GROUP_ID_FINANCE || "",
-  LINE_GROUP_ID_PAID: process.env.LINE_GROUP_ID_PAID || LINE_CONFIG.GROUP_ID_PAID || "",
-};
-
 export async function GET() {
   try {
-    const [configRes, groupRes] = await Promise.all([
-      supabaseAdmin.from("system_options").select("*").eq("id", "line_config").maybeSingle(),
-      supabaseAdmin.from("system_options").select("*").eq("id", "line_group_activity").maybeSingle()
-    ]);
+    let liffId = process.env.NEXT_PUBLIC_LINE_LIFF_ID || process.env.LINE_LIFF_ID || "";
 
-    const data = configRes.data;
-    const groupData = groupRes.data;
-    const discoveredGroups = Object.values(groupData?.data?.groups || {});
+    const { data } = await supabaseAdmin
+      .from("system_options")
+      .select("data")
+      .eq("id", "line_config")
+      .maybeSingle();
 
-    if (configRes.error) {
-      console.warn("⚠️ Failed to load line_config from system_options:", configRes.error.message);
-      return NextResponse.json({ success: true, config: DEFAULT_CONFIG, source: "env", discoveredGroups });
+    const config = data?.data || {};
+
+    if (config?.LINE_LIFF_ID) {
+      const configLiffId = String(config.LINE_LIFF_ID).trim();
+      if (configLiffId) {
+        liffId = configLiffId;
+      }
     }
 
-    if (data && data.data && typeof data.data === "object") {
-      const mergedConfig = { ...DEFAULT_CONFIG, ...data.data };
-      return NextResponse.json({ success: true, config: mergedConfig, source: "supabase", discoveredGroups });
-    }
-
-    return NextResponse.json({ success: true, config: DEFAULT_CONFIG, source: "env", discoveredGroups });
+    return NextResponse.json({ success: true, liffId, config });
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, liffId: "", config: {}, error: error?.message || "Failed to fetch LINE config" }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { config } = body;
+    const body = await req.json().catch(() => ({}));
+    const config = body.config || body;
 
     if (!config || typeof config !== "object") {
-      return NextResponse.json({ success: false, error: "Invalid config payload" }, { status: 400 });
+      return NextResponse.json({ success: false, error: "Missing config object" }, { status: 400 });
     }
 
-    const { error } = await supabaseAdmin
-      .from("system_options")
-      .upsert({
-        id: "line_config",
-        data: config,
-        updated_at: new Date().toISOString(),
-      });
+    const { error } = await supabaseAdmin.from("system_options").upsert({
+      id: "line_config",
+      data: config,
+      updated_at: new Date().toISOString(),
+    });
 
     if (error) {
-      console.error("❌ Failed to save line_config to Supabase:", error);
       return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, message: "บันทึกการตั้งค่า LINE ลง Supabase สำเร็จ!" });
+    return NextResponse.json({ success: true, message: "บันทึกการตั้งค่า LINE System เรียบร้อยแล้ว" });
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: error?.message || "Failed to update LINE config" }, { status: 500 });
   }
 }
-
