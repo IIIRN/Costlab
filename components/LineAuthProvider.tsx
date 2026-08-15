@@ -89,7 +89,7 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
   async function checkAndLoginLineUser(profile: LineProfile) {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/auth/line", {
+      const res = await fetch("/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -159,7 +159,7 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
     setRegistering(true);
     setRegisterError("");
     try {
-      const res = await fetch("/api/auth/line", {
+      const res = await fetch("/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
