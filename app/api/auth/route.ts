@@ -4,13 +4,6 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const dynamic = "force-dynamic";
 
-const DEFAULT_USERS = [
-  { id: "PT101", username: "PT101", displayName: "คุณแมน", role: "Admin", status: "Active", phone: "081-999-9999", createdAt: "2026-01-01" },
-  { id: "PT102", username: "PT102", displayName: "คุณซ้อ", role: "Manager", status: "Active", phone: "081-888-8888", createdAt: "2026-01-01" },
-  { id: "PT103", username: "PT103", displayName: "บัญชี/การเงิน", role: "Manager", status: "Active", phone: "081-777-7777", createdAt: "2026-01-02" },
-  { id: "PT104", username: "PT104", displayName: "ช่างรับเหมา 1", role: "User", status: "Active", phone: "081-666-6666", createdAt: "2026-01-05" },
-];
-
 function normalizePhone(p?: string) {
   return String(p || "").replace(/\D/g, "");
 }
@@ -23,11 +16,11 @@ async function getUsersList(): Promise<any[]> {
       .eq("id", "users_list")
       .maybeSingle();
 
-    if (data?.data && Array.isArray(data.data) && data.data.length > 0) {
+    if (data?.data && Array.isArray(data.data)) {
       return data.data;
     }
   } catch (e) {}
-  return DEFAULT_USERS;
+  return [];
 }
 
 async function saveUsersList(users: any[]) {
