@@ -45,9 +45,12 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
       const override = statusOverrides[Number(row._sheetRow)];
       return override ? { ...row, "สถานะ": override } : row;
     });
-    // แสดงเฉพาะบิลที่ "อนุมัติ" แล้ว (ยังไม่เบิก)
+    // แสดงบิลสถานะ "ตั้งเบิก" และ "อนุมัติ" (ยังไม่เบิก/ปิดงาน)
     return filterWithdrawRows(currentRows, filters)
-      .filter(row => normalizedStatus(row["สถานะ"]) === "อนุมัติ")
+      .filter(row => {
+        const st = normalizedStatus(row["สถานะ"]);
+        return st === "ตั้งเบิก" || st === "อนุมัติ";
+      })
       .sort((a, b) => Number(b._sheetRow || 0) - Number(a._sheetRow || 0));
   }, [rows, filters, statusOverrides]);
 
@@ -133,19 +136,28 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
   return (
     <div className="w-full flex flex-col gap-4 p-4 sm:p-5 max-w-[1600px] mx-auto font-sans text-sm text-slate-800">
       {/* 1. EXECUTIVE SUMMARY KPI CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="bg-white rounded-md p-3 border border-slate-200">
-          <span className="text-xs font-semibold text-slate-500">รายการตั้งเบิกคงเหลือ</span>
+          <span className="text-xs font-semibold text-slate-500">รายการรอดำเนินการรวม</span>
           <div className="text-lg font-bold text-slate-900 mt-1">{displayRows.length} รายการ</div>
         </div>
 
-        <div className="bg-white rounded-md p-3 border border-slate-200">
-          <span className="text-xs font-semibold text-slate-500">รวมยอดยังไม่เบิก</span>
-          <div className="text-lg font-bold text-slate-900 mt-1">{money(amount)}</div>
+        <div className="bg-white rounded-md p-3 border border-amber-200 bg-amber-50/40">
+          <span className="text-xs font-semibold text-amber-800">📌 สถานะ: ตั้งเบิก</span>
+          <div className="text-lg font-bold text-amber-900 mt-1">
+            {displayRows.filter(r => normalizedStatus(r["สถานะ"]) === "ตั้งเบิก").length} รายการ
+          </div>
+        </div>
+
+        <div className="bg-white rounded-md p-3 border border-emerald-200 bg-emerald-50/40">
+          <span className="text-xs font-semibold text-emerald-800">✅ สถานะ: อนุมัติแล้ว</span>
+          <div className="text-lg font-bold text-emerald-900 mt-1">
+            {displayRows.filter(r => normalizedStatus(r["สถานะ"]) === "อนุมัติ").length} รายการ
+          </div>
         </div>
 
         <div className="bg-white rounded-md p-3 border border-slate-200">
-          <span className="text-xs font-semibold text-slate-500">ยอดโอนยังไม่เบิก</span>
+          <span className="text-xs font-semibold text-slate-500">ยอดโอนเงินรวม</span>
           <div className="text-lg font-bold text-emerald-700 mt-1">{money(transfer)}</div>
         </div>
       </div>

@@ -21,9 +21,9 @@ export async function WithdrawDashboard({ filters = {} }: { filters?: WithdrawFi
   const isAdmin = cookieStore.get("auth_role")?.value === "Admin";
   
   const rows = hydrateDataRows(dataRows).filter(row => {
-    // แสดงเฉพาะบิลที่ "อนุมัติ" / "อนุมัติแล้ว" รอเบิก
+    // แสดงบิลสถานะ "ตั้งเบิก" และ "อนุมัติ"
     const status = normalizeBillStatus(row["สถานะ"]);
-    if (status !== "อนุมัติ") return false;
+    if (status !== "ตั้งเบิก" && status !== "อนุมัติ") return false;
     return hasValue(row["ลำดับ"]) || hasValue(row["ID Project"]) || hasValue(row["ร้าน/บุคคล"]) || hasValue(row["สินค้า/ทำงาน"]);
   });
   return <WithdrawDashboardClient rows={rows} peopleRows={peopleRows} initialFilters={filters} isAdmin={isAdmin} />;

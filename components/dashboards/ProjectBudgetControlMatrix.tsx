@@ -253,10 +253,10 @@ export function ProjectBudgetControlMatrix({
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-900 tracking-tight">
-                รายงานวิเคราะห์ความเสี่ยงงบประมาณโครงการ (Budget Risk & Control Dashboard)
+                รายงานวิเคราะห์ความเสี่ยงงบประมาณโครงการ
               </h2>
               <p className="text-xs text-slate-600 mt-0.5">
-                วิเคราะห์วงเงินคุมงบ (Budget Cap) vs ยอดเบิกจ่ายจริง (Actual) พร้อมกราฟแสดงผลและระบบแจ้งเตือนความเสี่ยง
+                วิเคราะห์วงเงินคุมงบ
               </p>
             </div>
           </div>
@@ -268,9 +268,8 @@ export function ProjectBudgetControlMatrix({
             <button
               type="button"
               onClick={() => setViewMode("all")}
-              className={`px-3 py-1.5 rounded font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                viewMode === "all" ? "bg-slate-900 text-white" : "text-slate-700 hover:text-slate-900"
-              }`}
+              className={`px-3 py-1.5 rounded font-bold transition flex items-center gap-1.5 cursor-pointer ${viewMode === "all" ? "bg-slate-900 text-white" : "text-slate-700 hover:text-slate-900"
+                }`}
             >
               <LayoutGrid size={14} />
               <span>แสดงทั้งหมด</span>
@@ -278,9 +277,8 @@ export function ProjectBudgetControlMatrix({
             <button
               type="button"
               onClick={() => setViewMode("chart")}
-              className={`px-3 py-1.5 rounded font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                viewMode === "chart" ? "bg-slate-900 text-white" : "text-slate-700 hover:text-slate-900"
-              }`}
+              className={`px-3 py-1.5 rounded font-bold transition flex items-center gap-1.5 cursor-pointer ${viewMode === "chart" ? "bg-slate-900 text-white" : "text-slate-700 hover:text-slate-900"
+                }`}
             >
               <BarChart3 size={14} />
               <span>กราฟวิเคราะห์</span>
@@ -288,9 +286,8 @@ export function ProjectBudgetControlMatrix({
             <button
               type="button"
               onClick={() => setViewMode("table")}
-              className={`px-3 py-1.5 rounded font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                viewMode === "table" ? "bg-slate-900 text-white" : "text-slate-700 hover:text-slate-900"
-              }`}
+              className={`px-3 py-1.5 rounded font-bold transition flex items-center gap-1.5 cursor-pointer ${viewMode === "table" ? "bg-slate-900 text-white" : "text-slate-700 hover:text-slate-900"
+                }`}
             >
               <TableIcon size={14} />
               <span>ตารางคุมงบ</span>
@@ -330,8 +327,8 @@ export function ProjectBudgetControlMatrix({
             </div>
           </div>
           <div>
-            <div className="text-xl font-extrabold text-slate-900">{money(totalProjectCap)} ฿</div>
-            <div className="text-xs text-slate-500 mt-0.5 font-semibold">วงเงินงบประมาณตั้งต้นของโครงการ</div>
+            <div className="text-xl font-semibold text-slate-900">{money(totalProjectCap)} ฿</div>
+            <div className="text-xs text-slate-500 mt-0.5 font-medium">วงเงินงบประมาณตั้งต้นของโครงการ</div>
           </div>
         </div>
 
@@ -344,8 +341,8 @@ export function ProjectBudgetControlMatrix({
             </div>
           </div>
           <div>
-            <div className="text-xl font-extrabold text-sky-800">{money(totalCategoryCapAllocated)} ฿</div>
-            <div className="text-xs text-slate-500 mt-0.5 font-semibold">
+            <div className="text-xl font-semibold text-sky-800">{money(totalCategoryCapAllocated)} ฿</div>
+            <div className="text-xs text-slate-500 mt-0.5 font-medium">
               {totalProjectCap > 0 ? `จัดสรรไปแล้ว ${((totalCategoryCapAllocated / totalProjectCap) * 100).toFixed(1)}%` : "กระจายงบตามหมวดสินค้า"}
             </div>
           </div>
@@ -360,8 +357,8 @@ export function ProjectBudgetControlMatrix({
             </div>
           </div>
           <div>
-            <div className="text-xl font-extrabold text-emerald-800">{money(totalActualSpent)} ฿</div>
-            <div className="text-xs text-slate-500 mt-0.5 font-semibold">จากรายการบิลตั้งเบิก {projectBills.length} บิล</div>
+            <div className="text-xl font-semibold text-emerald-800">{money(totalActualSpent)} ฿</div>
+            <div className="text-xs text-slate-500 mt-0.5 font-medium">จากรายการบิลตั้งเบิก {projectBills.length} บิล</div>
           </div>
         </div>
 
@@ -369,32 +366,29 @@ export function ProjectBudgetControlMatrix({
         <div className="bg-white p-4 rounded-lg border border-slate-200 flex flex-col justify-between space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-600 uppercase">สถานะความเสี่ยงงบประมาณ</span>
-            <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold ${
-              overallUsagePercent > 100 ? "bg-rose-50 border border-rose-200 text-rose-700" : "bg-emerald-50 border border-emerald-200 text-emerald-700"
-            }`}>
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold ${overallUsagePercent > 100 ? "bg-rose-50 border border-rose-200 text-rose-700" : "bg-emerald-50 border border-emerald-200 text-emerald-700"
+              }`}>
               {overallUsagePercent > 100 ? <ShieldAlert size={16} className="animate-pulse" /> : <ShieldCheck size={16} />}
             </div>
           </div>
           <div>
             <div className="flex items-center justify-between">
-              <span className={`text-xl font-extrabold ${overallUsagePercent > 100 ? "text-rose-700" : "text-slate-900"}`}>
+              <span className={`text-xl font-semibold ${overallUsagePercent > 100 ? "text-rose-700" : "text-slate-900"}`}>
                 {overallUsagePercent}%
               </span>
-              <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${
-                overallUsagePercent > 100
+              <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${overallUsagePercent > 100
                   ? "bg-rose-100 text-rose-900 border-rose-300"
                   : overallUsagePercent >= 85
-                  ? "bg-amber-100 text-amber-900 border-amber-300"
-                  : "bg-emerald-100 text-emerald-900 border-emerald-300"
-              }`}>
+                    ? "bg-amber-100 text-amber-900 border-amber-300"
+                    : "bg-emerald-100 text-emerald-900 border-emerald-300"
+                }`}>
                 {overallUsagePercent > 100 ? "เกินงบโครงการ" : overallUsagePercent >= 85 ? "เฝ้าระวังงบ" : "ปกติ"}
               </span>
             </div>
             <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden border border-slate-200 mt-2">
               <div
-                className={`h-full rounded-full transition-all duration-500 ${
-                  overallUsagePercent > 100 ? "bg-rose-600" : overallUsagePercent >= 85 ? "bg-amber-500" : "bg-emerald-600"
-                }`}
+                className={`h-full rounded-full transition-all duration-500 ${overallUsagePercent > 100 ? "bg-rose-600" : overallUsagePercent >= 85 ? "bg-amber-500" : "bg-emerald-600"
+                  }`}
                 style={{ width: `${Math.min(100, overallUsagePercent)}%` }}
               />
             </div>
@@ -424,9 +418,8 @@ export function ProjectBudgetControlMatrix({
                     จ่ายแล้ว: <strong className="text-emerald-800">{money(cat.actualSpent)}</strong> / Cap: {money(cat.budgetCap)} ฿
                   </span>
                 </div>
-                <span className={`px-2 py-0.5 rounded text-xs font-bold shrink-0 border ${
-                  cat.isOver ? "bg-rose-100 text-rose-900 border-rose-300" : "bg-amber-100 text-amber-950 border-amber-300"
-                }`}>
+                <span className={`px-2 py-0.5 rounded text-xs font-bold shrink-0 border ${cat.isOver ? "bg-rose-100 text-rose-900 border-rose-300" : "bg-amber-100 text-amber-950 border-amber-300"
+                  }`}>
                   {cat.isOver ? `เกิน ${money(Math.abs(cat.remaining))}` : `ใช้ไป ${cat.usagePercent}%`}
                 </span>
               </div>
@@ -482,9 +475,8 @@ export function ProjectBudgetControlMatrix({
                       <div className="space-y-1">
                         <div className="w-full bg-slate-100 h-3.5 rounded-full overflow-hidden p-0.5 border border-slate-300 flex">
                           <div
-                            className={`h-full rounded-full transition-all duration-500 ${
-                              wg.isOver ? "bg-rose-600" : wg.isWarning ? "bg-amber-500" : "bg-emerald-600"
-                            }`}
+                            className={`h-full rounded-full transition-all duration-500 ${wg.isOver ? "bg-rose-600" : wg.isWarning ? "bg-amber-500" : "bg-emerald-600"
+                              }`}
                             style={{ width: `${Math.min(100, wg.usagePercent)}%` }}
                           />
                         </div>
@@ -533,7 +525,7 @@ export function ProjectBudgetControlMatrix({
                             </span>
                             <span className="truncate">{cat.label}</span>
                           </span>
-                          <span className="font-extrabold text-emerald-800 text-xs shrink-0">
+                          <span className="font-semibold text-emerald-800 text-xs shrink-0">
                             {money(cat.actualSpent)} ฿
                           </span>
                         </div>
@@ -578,7 +570,7 @@ export function ProjectBudgetControlMatrix({
                         {getGroupIcon(wg.groupTitle)}
                         <span>{wg.groupTitle}</span>
                       </span>
-                      <span className="font-extrabold text-slate-900 text-xs">{groupShare.toFixed(1)}%</span>
+                      <span className="font-semibold text-slate-900 text-xs">{groupShare.toFixed(1)}%</span>
                     </div>
 
                     <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden border border-slate-200">
@@ -657,10 +649,10 @@ export function ProjectBudgetControlMatrix({
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               {getGroupIcon(groupTitle)}
-                              <span className="text-slate-950 font-extrabold text-sm">{groupTitle}</span>
+                              <span className="text-slate-950 font-semibold text-sm">{groupTitle}</span>
                               <span className="text-xs text-slate-600 font-bold">({groupItems.length} รายการ)</span>
                             </div>
-                            <span className="text-xs text-emerald-800 font-extrabold">
+                            <span className="text-xs text-emerald-800 font-semibold">
                               รวมเบิกจ่ายหมวดนี้: {money(groupItems.reduce((s, i) => s + i.actualSpent, 0))} ฿
                             </span>
                           </div>
@@ -687,9 +679,8 @@ export function ProjectBudgetControlMatrix({
 
                           {/* Remaining / Over */}
                           <td
-                            className={`py-2.5 px-3.5 text-right font-bold ${
-                              cat.isOver ? "text-rose-700 font-extrabold" : cat.remaining > 0 ? "text-cyan-800" : "text-slate-500"
-                            }`}
+                            className={`py-2.5 px-3.5 text-right font-bold ${cat.isOver ? "text-rose-700 font-semibold" : cat.remaining > 0 ? "text-cyan-800" : "text-slate-500"
+                              }`}
                           >
                             {cat.budgetCap > 0
                               ? cat.remaining < 0
@@ -707,9 +698,8 @@ export function ProjectBudgetControlMatrix({
                                 </div>
                                 <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-300">
                                   <div
-                                    className={`h-full rounded-full transition-all duration-300 ${
-                                      cat.isOver ? "bg-rose-600" : cat.isWarning ? "bg-amber-500" : "bg-emerald-600"
-                                    }`}
+                                    className={`h-full rounded-full transition-all duration-300 ${cat.isOver ? "bg-rose-600" : cat.isWarning ? "bg-amber-500" : "bg-emerald-600"
+                                      }`}
                                     style={{ width: `${Math.min(100, cat.usagePercent)}%` }}
                                   />
                                 </div>

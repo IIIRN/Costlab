@@ -645,7 +645,7 @@ export async function handleLineCommand(
           vendor_or_person: String(b["ร้าน/บุคคล"] || b.vendor_or_person || "-"),
           description: String(b["สินค้า/ทำงาน"] || b.description || "-"),
           amount: Number(b["ยอดเงิน"] || b.amount || 0),
-          status: String(b["สถานะ"] || b.status || "รออนุมัติ"),
+          status: String(b["สถานะ"] || b.status || "ตั้งเบิก"),
           requester: String(resolvedRequester),
           image_url: String(b["รูปถ่ายบิล"] || b.image_url || ""),
           image_urls: typeof b["รูปถ่ายบิล"] === "string" ? b["รูปถ่ายบิล"].split(",") : undefined

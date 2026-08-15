@@ -40,9 +40,10 @@ type ProjectAnalyticsDashboardClientProps = {
 };
 
 type RowDimension = "project" | "vendor" | "category" | "product_category" | "requester" | "month";
-type ColumnDimension = "category" | "product_category" | "project" | "month" | "status";
+type ColumnDimension = "category" | "product_category" | "project" | "month" | "status" | "requester";
 type MetricType = "transfer" | "amount" | "count";
 type MainViewTab = "pivot" | "budget_matrix";
+type PivotPreset = "proj_cat" | "proj_prod" | "vendor_cat" | "month_proj" | "req_cat" | "req_proj" | "custom";
 
 const THAI_MONTHS_SHORT = [
   "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
@@ -98,9 +99,7 @@ export function ProjectAnalyticsDashboardClient({
   const [mainTab, setMainTab] = useState<MainViewTab>("pivot");
 
   // Pivot Controls State
-  const [pivotPreset, setPivotPreset] = useState<"proj_cat" | "proj_prod" | "vendor_cat" | "month_proj" | "custom">(
-    "proj_cat"
-  );
+  const [pivotPreset, setPivotPreset] = useState<PivotPreset>("proj_cat");
   const [rowDimension, setRowDimension] = useState<RowDimension>("project");
   const [colDimension, setColDimension] = useState<ColumnDimension>("category");
   const [metricType, setMetricType] = useState<MetricType>("transfer");
@@ -150,7 +149,7 @@ export function ProjectAnalyticsDashboardClient({
   }, [projectRows]);
 
   // Apply Presets handler
-  function handleSelectPreset(preset: "proj_cat" | "proj_prod" | "vendor_cat" | "month_proj" | "custom") {
+  function handleSelectPreset(preset: PivotPreset) {
     setPivotPreset(preset);
     if (preset === "proj_cat") {
       setRowDimension("project");
@@ -164,6 +163,12 @@ export function ProjectAnalyticsDashboardClient({
     } else if (preset === "month_proj") {
       setRowDimension("project");
       setColDimension("month");
+    } else if (preset === "req_cat") {
+      setRowDimension("requester");
+      setColDimension("category");
+    } else if (preset === "req_proj") {
+      setRowDimension("requester");
+      setColDimension("project");
     }
   }
 
@@ -391,7 +396,7 @@ export function ProjectAnalyticsDashboardClient({
           <div className="hidden md:flex items-center gap-2 text-xs">
             <div className="bg-emerald-50 border border-emerald-200 rounded-md px-3 py-1.5 text-right">
               <span className="text-xs text-emerald-800 block font-semibold">ยอดโอนเงินรวม</span>
-              <span className="font-extrabold text-emerald-900">{money(totalTransferSum)} ฿</span>
+              <span className="font-semibold text-emerald-900">{money(totalTransferSum)} ฿</span>
             </div>
           </div>
         </div>
@@ -451,6 +456,28 @@ export function ProjectAnalyticsDashboardClient({
                   }`}
                 >
                   โครงการ × รายเดือน
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectPreset("req_cat")}
+                  className={`px-3 py-1 rounded-md transition text-xs font-bold cursor-pointer border ${
+                    pivotPreset === "req_cat"
+                      ? "bg-slate-900 text-white border-slate-900"
+                      : "bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-300"
+                  }`}
+                >
+                  👤 ผู้เบิก × หมวดหมู่
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectPreset("req_proj")}
+                  className={`px-3 py-1 rounded-md transition text-xs font-bold cursor-pointer border ${
+                    pivotPreset === "req_proj"
+                      ? "bg-slate-900 text-white border-slate-900"
+                      : "bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-300"
+                  }`}
+                >
+                  👤 ผู้เบิก × โครงการ
                 </button>
                 <button
                   type="button"
@@ -535,7 +562,9 @@ export function ProjectAnalyticsDashboardClient({
                     <option value="category">หมวดหมู่หลัก (Categories)</option>
                     <option value="product_category">ประเภทสินค้า Master Data</option>
                     <option value="project">โครงการ (Projects)</option>
+                    <option value="requester">ผู้เบิก (Requesters)</option>
                     <option value="month">รายเดือน (Monthly)</option>
+                    <option value="status">สถานะบิล</option>
                   </select>
                 </div>
               </div>
@@ -604,7 +633,7 @@ export function ProjectAnalyticsDashboardClient({
                       <div key={item.rKey} className="bg-slate-50 border border-slate-200 rounded-md p-2.5 space-y-1">
                         <div className="flex items-center justify-between text-xs">
                           <span className="font-bold text-slate-900 truncate max-w-[60%]">{item.rKey}</span>
-                          <div className="flex items-center gap-2 font-extrabold">
+                          <div className="flex items-center gap-2 font-semibold">
                             <span className="text-emerald-800">
                               {metricType === "count" ? `${item.val} บิล` : `${money(item.val)} ฿`}
                             </span>
@@ -653,7 +682,7 @@ export function ProjectAnalyticsDashboardClient({
                             </span>
                             <span className="truncate">{item.rKey}</span>
                           </span>
-                          <span className="font-extrabold text-emerald-800 text-xs shrink-0">
+                          <span className="font-semibold text-emerald-800 text-xs shrink-0">
                             {metricType === "count" ? `${item.val} บิล` : `${money(item.val)} ฿`}
                           </span>
                         </div>
@@ -685,7 +714,7 @@ export function ProjectAnalyticsDashboardClient({
                 </p>
               </div>
 
-              <span className="text-xs font-extrabold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-md border border-emerald-200">
+              <span className="text-xs font-semibold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-md border border-emerald-200">
                 รวมสุทธิ Pivot: {metricType === "count" ? `${grandTotalValue} บิล` : `${money(grandTotalValue)} ฿`}
               </span>
             </div>
@@ -754,9 +783,9 @@ export function ProjectAnalyticsDashboardClient({
 
                             let heatmapBg = "bg-white";
                             if (hasVal) {
-                              if (intensity > 0.6) heatmapBg = "bg-emerald-50 text-emerald-950 font-extrabold";
-                              else if (intensity > 0.3) heatmapBg = "bg-slate-50 text-slate-900 font-bold";
-                              else heatmapBg = "bg-white text-slate-800 font-semibold";
+                              if (intensity > 0.6) heatmapBg = "bg-emerald-50 text-emerald-950 font-semibold";
+                              else if (intensity > 0.3) heatmapBg = "bg-slate-50 text-slate-900 font-medium";
+                              else heatmapBg = "bg-white text-slate-800 font-medium";
                             }
 
                             return (
@@ -797,7 +826,7 @@ export function ProjectAnalyticsDashboardClient({
                                 });
                               }
                             }}
-                            className="py-2.5 px-3.5 text-right font-extrabold text-slate-900 bg-slate-50 border-l border-slate-200 cursor-pointer hover:bg-slate-100 transition"
+                            className="py-2.5 px-3.5 text-right font-semibold text-slate-900 bg-slate-50 border-l border-slate-200 cursor-pointer hover:bg-slate-100 transition"
                           >
                             {metricType === "count" ? `${rowSum} บิล` : money(rowSum)}
                           </td>
@@ -809,9 +838,9 @@ export function ProjectAnalyticsDashboardClient({
 
                 {/* Matrix Footer Totals (Column Summary) */}
                 {pivotMatrixData.rowKeys.length > 0 && (
-                  <tfoot className="sticky bottom-0 z-20 bg-slate-100 text-slate-900 font-bold text-xs border-t-2 border-slate-400">
+                  <tfoot className="sticky bottom-0 z-20 bg-slate-100 text-slate-900 font-semibold text-xs border-t-2 border-slate-400">
                     <tr>
-                      <td className="py-3 px-3.5 sticky left-0 z-30 font-extrabold border-r border-slate-300 bg-slate-200 text-slate-950">
+                      <td className="py-3 px-3.5 sticky left-0 z-30 font-semibold border-r border-slate-300 bg-slate-200 text-slate-950">
                         รวมแนวตั้ง (Column Total)
                       </td>
                       {pivotMatrixData.colKeys.map((cKey) => {
@@ -829,7 +858,7 @@ export function ProjectAnalyticsDashboardClient({
                                 });
                               }
                             }}
-                            className={`py-3 px-3 text-right border-r border-slate-200 transition font-extrabold bg-slate-100 ${
+                            className={`py-3 px-3 text-right border-r border-slate-200 transition font-semibold bg-slate-100 ${
                               hasVal ? "cursor-pointer text-emerald-800 hover:bg-emerald-100" : "text-slate-400"
                             }`}
                           >
@@ -845,7 +874,7 @@ export function ProjectAnalyticsDashboardClient({
                           </td>
                         );
                       })}
-                      <td className="py-3 px-3.5 text-right font-black text-sm text-emerald-950 bg-emerald-200 border-l border-slate-300">
+                      <td className="py-3 px-3.5 text-right font-semibold text-sm text-emerald-950 bg-emerald-200 border-l border-slate-300">
                         {metricType === "count" ? `${grandTotalValue} บิล` : money(grandTotalValue)}
                       </td>
                     </tr>
@@ -904,8 +933,8 @@ export function ProjectAnalyticsDashboardClient({
                         {b["ร้านค้า"] || b["ผู้รับเหมา"] || b["ร้าน/บุคคล"] || "-"}
                       </td>
                       <td className="py-2 px-3 font-medium text-slate-800">{b["รายละเอียดงาน"] || b["สินค้า/ทำงาน"] || b["รายการ"] || "-"}</td>
-                      <td className="py-2 px-3 text-right font-bold text-slate-900">{money(getRowAmount(b))} ฿</td>
-                      <td className="py-2 px-3 text-right font-extrabold text-emerald-800 bg-emerald-50">
+                      <td className="py-2 px-3 text-right font-semibold text-slate-900">{money(getRowAmount(b))} ฿</td>
+                      <td className="py-2 px-3 text-right font-semibold text-emerald-800 bg-emerald-50">
                         {money(getRowTransferAmount(b))} ฿
                       </td>
                       <td className="py-2 px-3 text-center text-slate-700 font-semibold">
@@ -920,7 +949,7 @@ export function ProjectAnalyticsDashboardClient({
             {/* Modal Footer */}
             <div className="px-5 py-3 border-t border-slate-200 bg-slate-100 flex items-center justify-between text-xs font-bold">
               <span className="text-slate-600">รวม {drilldownModal.rows.length} รายการ</span>
-              <span className="text-emerald-800 font-extrabold text-sm">
+              <span className="text-emerald-800 font-semibold text-sm">
                 ยอดโอนสุทธิรวม: {money(drilldownModal.rows.reduce((sum, b) => sum + getRowTransferAmount(b), 0))} ฿
               </span>
             </div>

@@ -396,7 +396,7 @@ export function createBillNotificationFlex(bill: {
         },
         {
           type: "text",
-          text: `สถานะ: ${bill.status || "รอตรวจสอบ"}`,
+          text: `สถานะ: ${bill.status || "ตั้งเบิก"}`,
           color: "#94A3B8",
           size: "xs",
           margin: "xs",
