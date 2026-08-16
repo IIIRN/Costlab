@@ -42,6 +42,16 @@ export function UserSwitcher({ currentUser, theme = "dark", isCollapsed = false,
     if (!confirmed) return;
     setLoading(true);
     try {
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("line_user_logged_out", "true");
+      }
+      try {
+        const liff = (await import("@line/liff")).default;
+        if (liff && liff.isLoggedIn()) {
+          liff.logout();
+        }
+      } catch (e) {}
+
       await fetch("/api/auth", { method: "DELETE" });
       window.location.href = "/";
     } finally {

@@ -69,7 +69,9 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
       setLiffInstance(liff);
       setIsLiffReady(true);
 
-      if (liff.isLoggedIn()) {
+      const isLoggedOutSession = typeof window !== "undefined" && sessionStorage.getItem("line_user_logged_out") === "true";
+
+      if (liff.isLoggedIn() && !isLoggedOutSession) {
         const profile = await liff.getProfile();
         const pData: LineProfile = {
           userId: profile.userId,
@@ -78,7 +80,12 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
           statusMessage: profile.statusMessage,
         };
         setLineProfile(pData);
-        await checkAndLoginLineUser(pData);
+
+        // Only trigger auto-login check if missing auth cookie or on login page
+        const hasAuthCookie = typeof document !== "undefined" && document.cookie.includes("auth_employee_id=");
+        if (!hasAuthCookie) {
+          await checkAndLoginLineUser(pData);
+        }
       }
     } catch (err: any) {
       console.warn("⚠️ LIFF SDK init error:", err);
@@ -101,7 +108,15 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
 
       const data = await res.json();
       if (res.ok && data.success) {
-        window.location.href = "/";
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem("line_user_logged_out");
+        }
+        const hasAuthCookie = typeof document !== "undefined" && document.cookie.includes("auth_employee_id=");
+        const isLoginPage = typeof window !== "undefined" && (window.location.pathname.startsWith("/login") || !hasAuthCookie);
+
+        if (isLoginPage) {
+          window.location.href = "/";
+        }
       } else {
         // User not found in DB ➡️ Prompt for Phone Registration / Account Linking
         setShowPhoneModal(true);
@@ -115,6 +130,9 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
 
   // 4. Trigger LINE Login (Redirects to LINE OAuth if not logged in)
   async function loginWithLine() {
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("line_user_logged_out");
+    }
     let currentLiffId = liffId;
     let currentLiff = liffInstance;
 
