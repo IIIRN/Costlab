@@ -6,10 +6,11 @@ import { ReportsDashboardClient } from "@/components/dashboards/ReportsDashboard
 export const dynamic = "force-dynamic";
 
 export default async function ReportsPage() {
-  const [dataRows, projectRows, storeRows, contractorRows, peopleRows] = await Promise.all([
+  const [dataRows, projectRows, storeRows, contractorRows, contractWorkRows, peopleRows] = await Promise.all([
     getRows(TABLES.DATA),
     getRows(TABLES.PROJECT),
     getRows(TABLES.STORE),
+    getRows(TABLES.CONTRACTOR),
     getRows(TABLES.CONTRACT_WORK),
     getRows(TABLES.PEOPLE),
   ]);
@@ -22,6 +23,7 @@ export default async function ReportsPage() {
       initialProjectRows={projectRows}
       initialStoreRows={storeRows}
       initialContractorRows={contractorRows}
+      initialContractWorkRows={contractWorkRows}
       initialPeopleRows={peopleRows}
     />
   );
