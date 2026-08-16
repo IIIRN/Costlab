@@ -50,11 +50,42 @@ export async function POST(request: Request) {
 
       const users = await getUsersList();
       let matchedUser = users.find(u =>
-        u.status === "Active" && (
+        u.status !== "Inactive" && (
           u.lineUserId === lineUserId ||
-          u.line_user_id === lineUserId
+          u.line_user_id === lineUserId ||
+          u.LINE_USER_ID === lineUserId
         )
       );
+
+      // Fallback: Search in master_members (PEOPLE table)
+      if (!matchedUser) {
+        try {
+          const { data: member } = await supabaseAdmin
+            .from("master_members")
+            .select("*")
+            .or(`line_user_id.eq.${lineUserId},lineUserId.eq.${lineUserId}`)
+            .maybeSingle();
+
+          if (member) {
+            matchedUser = {
+              id: String(member.id || member.id_Contractor || member["รหัสพนักงาน"] || lineUserId),
+              username: String(member["เบอร์โทรศัพท์"] || member.phone || member.id || lineUserId),
+              displayName: String(member["ชื่อเล่น"] || member["ชื่อ-นามสกุล"] || member.name || lineUserId),
+              role: String(member["สิทธิ์การใช้งาน"] || member.role || "User"),
+              status: "Active",
+              phone: String(member["เบอร์โทรศัพท์"] || member.phone || ""),
+              lineUserId: lineUserId,
+              pictureUrl: String(pictureUrl || member.pictureUrl || member.image_url || member.image || "")
+            };
+
+            // Sync into users_list so future lookups are instant
+            users.push(matchedUser);
+            await saveUsersList(users);
+          }
+        } catch (e) {
+          console.warn("⚠️ Failed to search master_members for LINE user:", e);
+        }
+      }
 
       if (!matchedUser) {
         return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
@@ -68,11 +99,12 @@ export async function POST(request: Request) {
       const empId = matchedUser.username || matchedUser.id;
       const userName = matchedUser.displayName || matchedUser.name || empId;
       const userRole = matchedUser.role || "User";
+      const finalPicUrl = pictureUrl || matchedUser.pictureUrl || "";
 
       cookieStore.set("auth_employee_id", empId, { expires, path: "/" });
       cookieStore.set("auth_name", userName, { expires, path: "/" });
       cookieStore.set("auth_role", userRole, { expires, path: "/" });
-      if (pictureUrl) cookieStore.set("auth_picture_url", pictureUrl, { expires, path: "/" });
+      if (finalPicUrl) cookieStore.set("auth_picture_url", finalPicUrl, { expires, path: "/" });
       cookieStore.set("auth_line_user_id", lineUserId, { expires, path: "/" });
 
       return NextResponse.json({
