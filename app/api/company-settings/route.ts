@@ -23,7 +23,10 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json({ success: true, settings });
+    return NextResponse.json(
+      { success: true, settings },
+      { headers: { "Cache-Control": "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400" } }
+    );
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     return NextResponse.json({ success: true, settings: DEFAULT_COMPANY_SETTINGS, warning: msg });
