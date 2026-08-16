@@ -1,9 +1,6 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --font-mono: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --font-serif: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --color-app-bg: #f4f7f6;
   --color-app-panel: #ffffff;
   --color-app-line: #e2e8f0;
@@ -36,20 +33,6 @@
     --shadow-soft: 0 3px 10px rgb(11 53 49 / 0.05);
   }
 
-  *,
-  *::before,
-  *::after,
-  button,
-  input,
-  select,
-  textarea,
-  code,
-  pre,
-  kbd,
-  samp {
-    font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji" !important;
-  }
-
   html,
   body {
     min-height: 100%;
@@ -64,7 +47,6 @@
     margin: 0;
     background: var(--bg);
     color: var(--text);
-    font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji" !important;
     font-size: 14px;
     line-height: 1.45;
   }
