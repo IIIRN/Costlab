@@ -23,6 +23,8 @@ import { money, toNumber } from "@/lib/numbers";
 import { isCreditActive, isDeductActive, isVatActive } from "@/lib/project-summary";
 import type { SheetRow } from "@/lib/types";
 
+import { useSearchParams } from "next/navigation";
+
 type MainDashboardClientProps = {
   initialDataRows: SheetRow[];
   initialProjectRows: SheetRow[];
@@ -33,6 +35,9 @@ type Preset = "today" | "yesterday" | "month" | "previousMonth" | "all" | "custo
 const COST_COLUMNS = ["ค่าของ", "ค่าแรง", "พนักงาน", "น้ำมัน", "ซ่อมรถ", "เครื่องจักร", "เครื่องมือ", "อื่นๆ"];
 
 export function MainDashboardClient({ initialDataRows, initialProjectRows }: MainDashboardClientProps) {
+  const searchParams = useSearchParams();
+  const urlSearch = (searchParams.get("search") || "").trim().toLowerCase();
+
   const [dataRows, setDataRows] = useState(initialDataRows);
   const [projectRows, setProjectRows] = useState(initialProjectRows);
   const [preset, setPreset] = useState<Preset>("all");
@@ -42,8 +47,23 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
   const [activeTab, setActiveTab] = useState<"vat" | "natural" | "equipment">("vat");
 
   const range = useMemo(() => getRange(preset, from, to), [preset, from, to]);
-  const filteredDataRows = useMemo(() => filterRowsByDate(dataRows, range, ["ว/ด/ป", "วันที่"]), [dataRows, range]);
-  const filteredProjectRows = useMemo(() => filterRowsByDate(projectRows, range, ["วันที่"]), [projectRows, range]);
+  const dateFilteredDataRows = useMemo(() => filterRowsByDate(dataRows, range, ["ว/ด/ป", "วันที่"]), [dataRows, range]);
+  const dateFilteredProjectRows = useMemo(() => filterRowsByDate(projectRows, range, ["วันที่"]), [projectRows, range]);
+
+  const filteredDataRows = useMemo(() => {
+    if (!urlSearch) return dateFilteredDataRows;
+    return dateFilteredDataRows.filter(row =>
+      Object.values(row).some(v => String(v || "").toLowerCase().includes(urlSearch))
+    );
+  }, [dateFilteredDataRows, urlSearch]);
+
+  const filteredProjectRows = useMemo(() => {
+    if (!urlSearch) return dateFilteredProjectRows;
+    return dateFilteredProjectRows.filter(row =>
+      Object.values(row).some(v => String(v || "").toLowerCase().includes(urlSearch))
+    );
+  }, [dateFilteredProjectRows, urlSearch]);
+
   const summary = useMemo(() => buildMainSummary(filteredDataRows, filteredProjectRows), [filteredDataRows, filteredProjectRows]);
 
   async function refreshData() {

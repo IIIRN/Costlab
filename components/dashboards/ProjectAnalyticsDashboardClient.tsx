@@ -376,8 +376,8 @@ export function ProjectAnalyticsDashboardClient({
             <span>งบประมาณรวม</span>
             <Briefcase size={16} className="text-slate-400" />
           </div>
-          <div className="text-xl sm:text-2xl font-black text-slate-900 font-mono">
-            {money(summaryMetrics.totalBudget)} <span className="text-xs font-bold text-slate-500">บาท</span>
+          <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+            {money(summaryMetrics.totalBudget)} <span className="text-xs font-semibold text-slate-500">บาท</span>
           </div>
           <div className="text-xs text-slate-500 font-medium">
             {summaryMetrics.projectCount} โครงการเปิดดำเนินการ
@@ -390,8 +390,8 @@ export function ProjectAnalyticsDashboardClient({
             <span>เบิกจ่ายสะสมจริง</span>
             <Receipt size={16} className="text-slate-400" />
           </div>
-          <div className="text-xl sm:text-2xl font-black text-slate-900 font-mono">
-            {money(summaryMetrics.totalSpent)} <span className="text-xs font-bold text-slate-500">บาท</span>
+          <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+            {money(summaryMetrics.totalSpent)} <span className="text-xs font-semibold text-slate-500">บาท</span>
           </div>
           <div className="text-xs text-emerald-700 font-semibold">
             โอนเงินสุทธิ: {money(summaryMetrics.totalTransfer)} บาท
@@ -414,10 +414,10 @@ export function ProjectAnalyticsDashboardClient({
               <AlertTriangle size={16} className="text-rose-600" />
             )}
           </div>
-          <div className={`text-xl sm:text-2xl font-black font-mono ${
+          <div className={`text-xl sm:text-2xl font-bold tracking-tight ${
             summaryMetrics.remainingBudget >= 0 ? "text-emerald-700" : "text-rose-600"
           }`}>
-            {money(summaryMetrics.remainingBudget)} <span className="text-xs font-bold">บาท</span>
+            {money(summaryMetrics.remainingBudget)} <span className="text-xs font-semibold">บาท</span>
           </div>
           <div className={`text-xs font-bold ${
             summaryMetrics.remainingBudget >= 0 ? "text-emerald-700" : "text-rose-700"
@@ -433,7 +433,7 @@ export function ProjectAnalyticsDashboardClient({
             <TrendingUp size={16} className="text-slate-400" />
           </div>
           <div className="flex items-baseline gap-1">
-            <span className={`text-xl sm:text-2xl font-black font-mono ${
+            <span className={`text-xl sm:text-2xl font-bold tracking-tight ${
               summaryMetrics.burnRate > 100 ? "text-rose-600" : summaryMetrics.burnRate > 85 ? "text-amber-600" : "text-slate-900"
             }`}>
               {summaryMetrics.burnRate.toFixed(1)}%
@@ -592,7 +592,7 @@ export function ProjectAnalyticsDashboardClient({
                   {/* Project Header */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/80 pb-2">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-xs bg-slate-900 text-white px-2 py-0.5 rounded">
+                      <span className="font-sans font-bold text-xs bg-slate-900 text-white px-2 py-0.5 rounded tracking-wide">
                         {p.id}
                       </span>
                       <span className="font-bold text-sm text-slate-900">{p.name || p.id}</span>
@@ -630,7 +630,7 @@ export function ProjectAnalyticsDashboardClient({
                           style={{ width: `${Math.max(budgetPercent, 1)}%` }}
                         />
                       </div>
-                      <span className="w-32 text-right text-xs font-bold font-mono text-slate-900 shrink-0">
+                      <span className="w-32 text-right text-xs font-semibold text-slate-800 shrink-0">
                         {p.budgetCap > 0 ? `${money(p.budgetCap)} ฿` : "ไม่ได้ตั้งงบ"}
                       </span>
                     </div>
@@ -646,7 +646,7 @@ export function ProjectAnalyticsDashboardClient({
                           style={{ width: `${Math.max(spentPercent, 1)}%` }}
                         />
                       </div>
-                      <span className={`w-32 text-right text-xs font-black font-mono shrink-0 ${
+                      <span className={`w-32 text-right text-xs font-bold shrink-0 ${
                         p.burnRate > 100 ? "text-rose-600" : "text-emerald-700"
                       }`}>
                         {money(p.spent)} ฿
@@ -658,13 +658,13 @@ export function ProjectAnalyticsDashboardClient({
                   <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200/70 font-semibold text-slate-700">
                     <div>
                       <span>งบคงเหลือส่วนต่าง: </span>
-                      <span className={`font-bold font-mono text-sm ${p.remaining >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
+                      <span className={`font-bold text-sm ${p.remaining >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
                         {money(p.remaining)} ฿
                       </span>
                     </div>
                     <div>
                       <span>โอนจ่ายรวมสุทธิ: </span>
-                      <span className="font-bold font-mono text-slate-900">{money(p.transfer)} ฿</span>
+                      <span className="font-bold text-slate-900">{money(p.transfer)} ฿</span>
                     </div>
                   </div>
                 </div>
@@ -804,7 +804,7 @@ export function ProjectAnalyticsDashboardClient({
                         onClick={() => setDrilldownModal({ title: `รายการเดือน: ${m.label}`, rows: m.rows })}
                         className="flex-1 flex flex-col items-center gap-2 group cursor-pointer"
                       >
-                        <span className="text-xs font-extrabold font-mono text-slate-900 opacity-90">
+                        <span className="text-xs font-extrabold font-sans text-slate-900 opacity-90">
                           {money(m.amount)}
                         </span>
 
@@ -831,7 +831,7 @@ export function ProjectAnalyticsDashboardClient({
                       className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs hover:bg-slate-100 transition cursor-pointer"
                     >
                       <div className="font-bold text-slate-700">{m.label}</div>
-                      <div className="font-black font-mono text-slate-900 text-sm mt-0.5">{money(m.amount)} ฿</div>
+                      <div className="font-extrabold font-sans text-slate-900 text-sm mt-0.5">{money(m.amount)} ฿</div>
                       <div className="text-xs text-slate-500 font-medium mt-0.5">{m.rows.length} รายการบิล</div>
                     </div>
                   ))}
@@ -882,14 +882,14 @@ export function ProjectAnalyticsDashboardClient({
                 <div key={p.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2.5">
                   <div className="flex items-center justify-between text-xs font-bold">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono bg-slate-900 text-white px-2 py-0.5 rounded">
+                      <span className="font-sans font-bold bg-slate-900 text-white px-2 py-0.5 rounded tracking-wide">
                         {p.id}
                       </span>
                       <span className="text-slate-900 text-sm">{p.name || p.id}</span>
                     </div>
 
                     <div className="text-slate-900 text-xs">
-                      รวมจ่ายจริง: <span className="font-black font-mono text-sm">{money(p.spent)} ฿</span>
+                      รวมจ่ายจริง: <span className="font-extrabold font-sans text-sm">{money(p.spent)} ฿</span>
                     </div>
                   </div>
 

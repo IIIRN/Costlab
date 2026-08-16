@@ -45,6 +45,11 @@ export function BillsDashboardClient({
     status: "",
     search: initialSearch,
   });
+
+  useEffect(() => {
+    setFilters(prev => ({ ...prev, search: initialSearch }));
+  }, [initialSearch]);
+
   const [page, setPage] = useState(initialPage);
   const [pageSize, setPageSize] = useState(initialPageSize);
   const [sortDesc, setSortDesc] = useState(initialSort === "latest");
@@ -145,8 +150,8 @@ export function BillsDashboardClient({
         </div>
       </div>
 
-      {/* 2. FILTER TOOLBAR (Compact Mobile Layout) */}
-      <div className="flex border border-slate-200 rounded-md p-2.5 bg-white flex-col gap-2 text-xs">
+      {/* 2. FILTER TOOLBAR (Hidden on Mobile - Mobile uses Top Header Add & Search Controls) */}
+      <div className="hidden md:flex border border-slate-200 rounded-md p-2.5 bg-white flex-col gap-2 text-xs">
         {/* Search Bar & Mobile Filter Toggle Header */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 w-full">
           <div className="flex items-center gap-2 flex-1">

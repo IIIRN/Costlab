@@ -58,6 +58,10 @@ export function ManageTableClient({
   const [localSearch, setLocalSearch] = useState(search);
   const [sortDesc, setSortDesc] = useState(true);
 
+  useEffect(() => {
+    setLocalSearch(search);
+  }, [search]);
+
   const filteredAndSortedRows = useMemo(() => {
     let result = [...rows];
     if (localSearch.trim()) {

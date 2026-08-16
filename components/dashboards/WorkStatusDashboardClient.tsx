@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   ArrowRight,
   Building2,
@@ -24,9 +25,16 @@ type WorkStatusDashboardClientProps = {
 };
 
 export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClientProps) {
-  const [searchTerm, setSearchTerm] = useState("");
+  const searchParams = useSearchParams();
+  const urlSearch = searchParams.get("search") || "";
+
+  const [searchTerm, setSearchTerm] = useState(urlSearch);
   const [filterTab, setFilterTab] = useState<"all" | "active" | "complete">("all");
   const [viewMode, setViewMode] = useState<"table" | "grid">("table");
+
+  useEffect(() => {
+    setSearchTerm(urlSearch);
+  }, [urlSearch]);
 
   const filteredProjects = useMemo(() => {
     let list = projects;
