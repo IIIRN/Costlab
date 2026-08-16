@@ -101,13 +101,7 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
 
       const data = await res.json();
       if (res.ok && data.success) {
-        // Prevent infinite reload loop: Only redirect if on login page or missing auth cookie
-        const isLoginPage = typeof window !== "undefined" && window.location.pathname.startsWith("/login");
-        const hasAuthCookie = typeof document !== "undefined" && document.cookie.includes("auth_employee_id=");
-
-        if (isLoginPage || !hasAuthCookie) {
-          window.location.href = "/";
-        }
+        window.location.href = "/";
       } else {
         // User not found in DB ➡️ Prompt for Phone Registration / Account Linking
         setShowPhoneModal(true);
@@ -120,31 +114,55 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   // 4. Trigger LINE Login (Redirects to LINE OAuth if not logged in)
-  function loginWithLine() {
-    if (!liffId) {
+  async function loginWithLine() {
+    let currentLiffId = liffId;
+    let currentLiff = liffInstance;
+
+    // Retry loading config dynamically if liffId state hasn't populated yet
+    if (!currentLiffId || !currentLiff) {
+      setIsLoading(true);
+      try {
+        const res = await fetch("/api/line/config");
+        const data = await res.json();
+        const activeLiffId = data?.liffId || process.env.NEXT_PUBLIC_LINE_LIFF_ID || "";
+        if (activeLiffId) {
+          currentLiffId = activeLiffId;
+          setLiffId(activeLiffId);
+          const liff = (await import("@line/liff")).default;
+          await liff.init({ liffId: activeLiffId });
+          setLiffInstance(liff);
+          setIsLiffReady(true);
+          currentLiff = liff;
+        }
+      } catch (err) {
+        console.warn("⚠️ Failed to re-fetch LIFF config on login:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    if (!currentLiffId) {
       alert("⚠️ กรุณากำหนดค่า LIFF ID ในการตั้งค่า LINE System (/settings/line-system) ครับ");
       return;
     }
 
-    if (liffInstance) {
-      if (!liffInstance.isLoggedIn()) {
-        liffInstance.login();
+    if (currentLiff) {
+      if (!currentLiff.isLoggedIn()) {
+        currentLiff.login();
       } else {
-        liffInstance
-          .getProfile()
-          .then((profile: any) => {
-            const pData: LineProfile = {
-              userId: profile.userId,
-              displayName: profile.displayName,
-              pictureUrl: profile.pictureUrl,
-              statusMessage: profile.statusMessage,
-            };
-            setLineProfile(pData);
-            checkAndLoginLineUser(pData);
-          })
-          .catch((err: any) => {
-            alert(`⚠️ ไม่สามารถดึงโปรไฟล์ LINE ได้: ${err?.message || "โปรดลองใหม่อีกครั้ง"}`);
-          });
+        try {
+          const profile = await currentLiff.getProfile();
+          const pData: LineProfile = {
+            userId: profile.userId,
+            displayName: profile.displayName,
+            pictureUrl: profile.pictureUrl,
+            statusMessage: profile.statusMessage,
+          };
+          setLineProfile(pData);
+          await checkAndLoginLineUser(pData);
+        } catch (err: any) {
+          alert(`⚠️ ไม่สามารถดึงโปรไฟล์ LINE ได้: ${err?.message || "โปรดลองใหม่อีกครั้ง"}`);
+        }
       }
     } else {
       alert("⚠️ ระบบกำลังเชื่อมต่อ LIFF SDK กรุณาลองใหม่อีกครั้งในครู่เดียวครับ");
