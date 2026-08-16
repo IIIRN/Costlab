@@ -44,6 +44,7 @@ type ReportsDashboardClientProps = {
   initialProjectRows: SheetRow[];
   initialStoreRows: SheetRow[];
   initialContractorRows: SheetRow[];
+  initialContractWorkRows?: SheetRow[];
   initialPeopleRows: SheetRow[];
 };
 
@@ -136,6 +137,7 @@ export function ReportsDashboardClient({
   initialProjectRows,
   initialStoreRows,
   initialContractorRows,
+  initialContractWorkRows = [],
   initialPeopleRows,
 }: ReportsDashboardClientProps) {
   const [dataRows, setDataRows] = useState<SheetRow[]>(initialDataRows);
@@ -169,8 +171,9 @@ export function ReportsDashboardClient({
     }
     loadMasterCategories();
   }, []);
-  const [activeTab, setActiveTab] = useState<ActiveTab>("material");
+  const [activeTab, setActiveTab] = useState<ActiveTab>("labor");
   const [selectedProjectId, setSelectedProjectId] = useState<string>("all");
+  const [selectedRequester, setSelectedRequester] = useState<string>("all");
   const [selectedContractor, setSelectedContractor] = useState<string>("all");
   const [selectedStore, setSelectedStore] = useState<string>("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -211,6 +214,80 @@ export function ReportsDashboardClient({
     return val;
   }
 
+  // Contractor map: id_Contractor/id_Conwork/code -> Display Name
+  const contractorMap = useMemo(() => {
+    const map: Record<string, { code: string; name: string }> = {};
+
+    // 1. Populate from Master Contractors table (5. รับเหมา)
+    (initialContractorRows || []).forEach((c) => {
+      const code = String(c["id_Contractor"] || c["id"] || c["รหัส"] || c["ID"] || "").trim();
+      const nickname = String(c["ชื่อเล่น"] || "").trim();
+      const fullName = String(c["ชื่อ-นามสกุล"] || "").trim();
+      const name = nickname || fullName || String(c["รายละเอียดงาน"] || "").trim();
+
+      if (code) {
+        map[code.toLowerCase()] = {
+          code,
+          name: name || code,
+        };
+      }
+      if (nickname) {
+        map[nickname.toLowerCase()] = {
+          code: code || nickname,
+          name: nickname,
+        };
+      }
+      if (fullName && !map[fullName.toLowerCase()]) {
+        map[fullName.toLowerCase()] = {
+          code: code || fullName,
+          name: nickname || fullName,
+        };
+      }
+    });
+
+    // 2. Cross-reference with Open Hire Work Contracts table (งานรับเหมา)
+    (initialContractWorkRows || []).forEach((cw) => {
+      const conworkCode = String(cw["id_Conwork"] || cw["รหัสงาน"] || "").trim();
+      const contractorRef = String(cw["id_Contractor"] || cw["ผู้รับเหมา"] || cw["ร้าน/บุคคล"] || "").trim();
+
+      if (conworkCode) {
+        let name = conworkCode;
+
+        if (contractorRef) {
+          const resolved = map[contractorRef.toLowerCase()];
+          if (resolved) {
+            name = resolved.name;
+          } else {
+            name = contractorRef;
+          }
+        }
+
+        map[conworkCode.toLowerCase()] = {
+          code: conworkCode,
+          name,
+        };
+      }
+    });
+
+    return map;
+  }, [initialContractorRows, initialContractWorkRows]);
+
+  function getContractorInfo(raw: unknown): { code: string; name: string } {
+    const val = String(raw || "").trim();
+    if (!val) return { code: "-", name: "-" };
+
+    const mapped = contractorMap[val.toLowerCase()];
+    if (mapped) {
+      return { code: mapped.code, name: mapped.name };
+    }
+
+    if (/^CW\d+/i.test(val)) {
+      return { code: val, name: val };
+    }
+
+    return { code: "-", name: val };
+  }
+
   // Extract unique projects list
   const projectsList = useMemo(() => {
     return projectRows
@@ -221,6 +298,53 @@ export function ReportsDashboardClient({
       })
       .filter((p) => p.id || p.name);
   }, [projectRows]);
+
+  // Unique Requesters List for Dropdown Filter
+  const requestersList = useMemo(() => {
+    const map = new Map<string, string>();
+    dataRows.forEach((r) => {
+      const raw = String(r["ผู้เบิก"] || "").trim();
+      if (raw) {
+        const displayName = getRequesterDisplayName(raw);
+        map.set(raw, displayName);
+      }
+    });
+    return Array.from(map.entries())
+      .map(([val, name]) => ({
+        val,
+        label: name !== val && !val.includes(name) ? `${val} (${name})` : name,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label, "th"));
+  }, [dataRows, peopleMap]);
+
+  // Unique Contractors List for Dropdown Filter
+  const contractorsDropdownList = useMemo(() => {
+    const map = new Map<string, string>();
+    dataRows.forEach((r) => {
+      const raw = String(r["ชื่อผู้รับเหมา"] || r["ผู้รับเหมา"] || r["ร้าน/บุคคล"] || "").trim();
+      if (raw && (isLaborRow(r) || raw.toLowerCase().startsWith("cw"))) {
+        const info = getContractorInfo(raw);
+        const label = info.code !== "-" && info.name !== "-" && info.code !== info.name
+          ? `${info.code} - ${info.name}`
+          : info.name !== "-" ? info.name : raw;
+        map.set(raw, label);
+      }
+    });
+    (initialContractorRows || []).forEach((c) => {
+      const code = String(c["id_Contractor"] || c["รหัส"] || c["ID"] || "").trim();
+      const nickname = String(c["ชื่อเล่น"] || "").trim();
+      const fullName = String(c["ชื่อ-นามสกุล"] || "").trim();
+      const name = nickname || fullName;
+      const key = code || name;
+      if (key && !map.has(key)) {
+        const label = code && name ? `${code} - ${name}` : code || name;
+        map.set(key, label);
+      }
+    });
+    return Array.from(map.entries())
+      .map(([val, label]) => ({ val, label }))
+      .sort((a, b) => a.label.localeCompare(b.label, "th"));
+  }, [dataRows, initialContractorRows, contractorMap]);
 
   // Extract unique contractors list
   const contractorsList = useMemo(() => {
@@ -259,17 +383,44 @@ export function ReportsDashboardClient({
     return filterBillsByProject(dataRows, selectedProjectId);
   }, [dataRows, selectedProjectId]);
 
-  // Search filter
+  // Master Search & Multi-Dropdown Filter
   const searchFilteredRows = useMemo(() => {
-    if (!searchTerm.trim()) return projectFilteredRows;
+    let list = projectFilteredRows;
+
+    if (selectedRequester !== "all") {
+      list = list.filter((r) => {
+        const rawReq = String(r["ผู้เบิก"] || "").trim();
+        const displayReq = getRequesterDisplayName(rawReq);
+        return rawReq === selectedRequester || displayReq === selectedRequester;
+      });
+    }
+
+    if (selectedContractor !== "all") {
+      const target = selectedContractor.toLowerCase();
+      list = list.filter((r) => {
+        const rawC = String(r["ชื่อผู้รับเหมา"] || r["ผู้รับเหมา"] || r["ร้าน/บุคคล"] || "").trim();
+        const info = getContractorInfo(rawC);
+        return (
+          rawC.toLowerCase().includes(target) ||
+          info.code.toLowerCase().includes(target) ||
+          info.name.toLowerCase().includes(target)
+        );
+      });
+    }
+
+    if (!searchTerm.trim()) return list;
+
     const q = searchTerm.toLowerCase().trim();
-    return projectFilteredRows.filter((r) => {
+    return list.filter((r) => {
       const reqName = getRequesterDisplayName(r["ผู้เบิก"]);
+      const cInfo = getContractorInfo(r["ผู้รับเหมา"] || r["ร้าน/บุคคล"] || r["ชื่อผู้รับเหมา"]);
       return (
         String(r["ลำดับ"] || "").toLowerCase().includes(q) ||
         String(r["ร้าน/บุคคล"] || "").toLowerCase().includes(q) ||
         String(r["ร้านค้า"] || "").toLowerCase().includes(q) ||
         String(r["ผู้รับเหมา"] || "").toLowerCase().includes(q) ||
+        cInfo.code.toLowerCase().includes(q) ||
+        cInfo.name.toLowerCase().includes(q) ||
         String(r["สินค้า/ทำงาน"] || "").toLowerCase().includes(q) ||
         String(r["รายละเอียดงาน"] || "").toLowerCase().includes(q) ||
         String(r["ประเภท"] || "").toLowerCase().includes(q) ||
@@ -277,7 +428,7 @@ export function ReportsDashboardClient({
         reqName.toLowerCase().includes(q)
       );
     });
-  }, [projectFilteredRows, searchTerm, peopleMap]);
+  }, [projectFilteredRows, selectedRequester, selectedContractor, searchTerm, peopleMap, contractorMap]);
 
   // Tab 1: Material rows
   const materialRows = useMemo(() => {
@@ -428,19 +579,42 @@ export function ReportsDashboardClient({
     };
   }, [materialRows]);
 
+function calcNetLabor(r: SheetRow): number {
+  const directLaborCol = toNumber(r["แรง"]);
+  if (directLaborCol > 0) return directLaborCol;
+
+  const baseLabor = toNumber(r["ค่าแรง"]) || getRowAmount(r);
+  const status = String(r["statusค่าแรง"] || "").trim();
+  const deduct = toNumber(r["หัก"]);
+
+  if (status === "บริษัท") {
+    return Math.round(baseLabor * 1.04 * 100) / 100;
+  }
+  if (deduct > 0) {
+    return Math.round(baseLabor * (1 - deduct / 100) * 100) / 100;
+  }
+  return baseLabor;
+}
+
   // Metrics for Tab 3 (Labor)
   const laborMetrics = useMemo(() => {
     const totalLabor = laborRows.reduce((sum, r) => sum + (toNumber(r["ค่าแรง"]) || getRowAmount(r)), 0);
+    const totalNetLabor = laborRows.reduce((sum, r) => sum + calcNetLabor(r), 0);
     const totalTransfer = laborRows.reduce((sum, r) => sum + getRowTransferAmount(r), 0);
     const totalOpenHire = laborRows.reduce((sum, r) => sum + toNumber(r["เปิดจ้าง"]), 0);
     const totalAccumPaid = laborRows.reduce((sum, r) => sum + toNumber(r["จ่ายสะสม"]), 0);
+    const totalStaff = laborRows.reduce((sum, r) => sum + toNumber(r["พนักงาน"]), 0);
+    const totalOther = laborRows.reduce((sum, r) => sum + toNumber(r["อื่นๆ"]), 0);
 
     return {
       count: laborRows.length,
       totalLabor,
+      totalNetLabor,
       totalTransfer,
       totalOpenHire,
       totalAccumPaid,
+      totalStaff,
+      totalOther,
     };
   }, [laborRows]);
 
@@ -674,21 +848,58 @@ export function ReportsDashboardClient({
       )}
 
       {/* 3. CONTROL TOOLBAR & FILTERS */}
-      <div className="border border-slate-200 rounded-md p-3 bg-white flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <span className="font-semibold text-slate-700">โครงการ:</span>
-          <select
-            value={selectedProjectId}
-            onChange={(e) => setSelectedProjectId(e.target.value)}
-            className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1 rounded-md focus:outline-none w-full sm:w-64"
-          >
-            <option value="all">ทุกโครงการ ({projectsList.length} โครงการ)</option>
-            {projectsList.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.label}
-              </option>
-            ))}
-          </select>
+      <div className="border border-slate-200 rounded-md p-3 bg-white flex flex-col lg:flex-row items-center justify-between gap-3 text-xs">
+        <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+          {/* Project Dropdown */}
+          <div className="flex items-center gap-1.5">
+            <span className="font-bold text-slate-700">โครงการ:</span>
+            <select
+              value={selectedProjectId}
+              onChange={(e) => setSelectedProjectId(e.target.value)}
+              className="bg-white border border-slate-300 text-xs font-bold text-slate-900 px-2.5 py-1 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-400 max-w-[210px]"
+            >
+              <option value="all">ทุกโครงการ ({projectsList.length} โครงการ)</option>
+              {projectsList.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Requester Dropdown */}
+          <div className="flex items-center gap-1.5">
+            <span className="font-bold text-slate-700">ผู้เบิก:</span>
+            <select
+              value={selectedRequester}
+              onChange={(e) => setSelectedRequester(e.target.value)}
+              className="bg-white border border-slate-300 text-xs font-bold text-slate-900 px-2.5 py-1 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-400 max-w-[190px]"
+            >
+              <option value="all">ผู้เบิกทุกคน ({requestersList.length} คน)</option>
+              {requestersList.map((r) => (
+                <option key={r.val} value={r.val}>
+                  {r.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Contractor Dropdown */}
+          <div className="flex items-center gap-1.5">
+            <span className="font-bold text-slate-700">ผู้รับเหมา:</span>
+            <select
+              value={selectedContractor}
+              onChange={(e) => setSelectedContractor(e.target.value)}
+              className="bg-white border border-slate-300 text-xs font-bold text-slate-900 px-2.5 py-1 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-400 max-w-[210px]"
+            >
+              <option value="all">ผู้รับเหมาทุกคน ({contractorsDropdownList.length} ราย)</option>
+              {contractorsDropdownList.map((c) => (
+                <option key={c.val} value={c.val}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="relative flex items-center w-full sm:w-72">
@@ -950,59 +1161,6 @@ export function ReportsDashboardClient({
             </div>
           </div>
 
-          {/* Grouped Category Cards */}
-          <div className="space-y-3.5">
-            {Object.entries(productCategoryMetrics.groupedMap).map(([groupTitle, items]) => {
-              const groupTransferSum = items.reduce((s, item) => s + item.transfer, 0);
-
-              return (
-                <div key={groupTitle} className="bg-white border border-slate-200 rounded-lg overflow-hidden space-y-2">
-                  <div className="flex items-center justify-between border-b border-slate-200 bg-slate-100 px-3.5 py-2 text-xs font-bold text-slate-900">
-                    <span className="flex items-center gap-1.5">
-                      <FolderKanban size={15} className="text-emerald-700" />
-                      <span className="font-bold text-slate-900">{groupTitle}</span>
-                      <span className="text-xs text-slate-600 font-semibold">({items.length} รายการ)</span>
-                    </span>
-                    <span className="text-xs font-bold text-emerald-800">
-                      รวมหมวดนี้: {money(groupTransferSum)} ฿
-                    </span>
-                  </div>
-
-                  <div className="p-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
-                    {items.map((cat) => {
-                      const isSelected = selectedProductCategory === cat.code;
-                      return (
-                        <div
-                          key={cat.code}
-                          onClick={() => setSelectedProductCategory(isSelected ? "all" : cat.code)}
-                          className={`rounded-md p-2.5 border transition cursor-pointer flex flex-col justify-between space-y-1 ${
-                            isSelected
-                              ? "border-emerald-600 bg-emerald-50 text-slate-900 font-bold"
-                              : "border-slate-200 bg-white hover:border-emerald-400 hover:bg-slate-50"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between gap-1">
-                            <span className="text-xs font-bold text-slate-900 truncate">
-                              {cat.label}
-                            </span>
-                            <span className="text-[11px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded shrink-0">
-                              {cat.count} บิล
-                            </span>
-                          </div>
-
-                          <div className="mt-1 flex items-baseline justify-between text-xs">
-                            <div className="text-xs font-bold text-slate-900">{money(cat.transfer)}</div>
-                            <span className="text-xs text-emerald-800 font-bold">{cat.percent.toFixed(1)}%</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
           <div className="border border-slate-200 rounded-lg bg-white overflow-hidden">
             <div className="overflow-auto max-h-[calc(100vh-210px)] relative">
               <table className="w-full text-left text-xs text-slate-800 border-collapse font-sans">
@@ -1075,73 +1233,129 @@ export function ReportsDashboardClient({
         </div>
       )}
 
-      {/* 7. TAB 3: สรุปค่าแรง (LABOR BREAKDOWN) */}
+      {/* 7. TAB 3: สรุปค่าแรง (LABOR BREAKDOWN - EXCEL SPREADSHEET MATCH) */}
       {activeTab === "labor" && (
-        <div className="border border-slate-200 rounded-md bg-white overflow-hidden">
-          <div className="px-3 py-2 border-b border-slate-200 bg-slate-50 flex items-center justify-between text-xs font-bold text-slate-700">
-            <span>สรุปค่าแรงงานและผู้รับเหมา (Labor Expenses Breakdown)</span>
-            <span className="text-emerald-700">
-              โอนรวมสุทธิ: {money(laborMetrics.totalTransfer)}
-            </span>
+        <div className="border border-slate-200 rounded-lg bg-white overflow-hidden shadow-2xs space-y-0 font-sans">
+          {/* Top Excel Summary Header Bar */}
+          <div className="p-3 bg-slate-100 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-bold text-slate-800">
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-1 rounded bg-amber-100 text-amber-900 border border-amber-300 font-bold">
+                {selectedProjectId === "all" ? "สรุปค่าแรงงานและผู้รับเหมาทุกโครงการ" : projectsList.find(p => p.id === selectedProjectId)?.label || selectedProjectId}
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="px-3 py-1 bg-[#00e676]/20 border border-[#00c853] text-[#006020] rounded font-extrabold text-xs">
+                ค่าแรงรวม: {money(laborMetrics.totalLabor)} ฿
+              </div>
+              <div className="px-3 py-1 bg-[#00e676] text-slate-900 rounded font-black text-xs shadow-2xs">
+                โอนเงินรวม: {money(laborMetrics.totalTransfer)} ฿
+              </div>
+            </div>
           </div>
 
           <div className="overflow-auto max-h-[calc(100vh-210px)] relative">
-            <table className="w-full text-left text-xs text-slate-700 border-collapse font-sans">
-              <thead className="sticky top-0 z-20 bg-slate-900 text-white font-bold border-b border-slate-900">
+            <table className="w-full text-left text-[11px] sm:text-xs text-slate-800 border-collapse font-sans">
+              <thead className="sticky top-0 z-20 bg-slate-900 text-white font-bold border-b border-slate-900 whitespace-nowrap">
                 <tr>
-                  <th className="py-2.5 px-3 border-r border-slate-800">ลำดับ</th>
-                  <th className="py-2.5 px-3 border-r border-slate-800">ผู้เบิก</th>
-                  <th className="py-2.5 px-3 border-r border-slate-800">บิล</th>
-                  <th className="py-2.5 px-3 border-r border-slate-800">ชื่อผู้รับเหมา/ช่าง</th>
-                  <th className="py-2.5 px-3 border-r border-slate-800">รายละเอียดงาน</th>
-                  <th className="py-2.5 px-3 text-right border-r border-slate-800">เปิดจ้าง</th>
-                  <th className="py-2.5 px-3 text-right border-r border-slate-800">ค่าแรง</th>
-                  <th className="py-2.5 px-3 text-right border-r border-slate-800">จ่ายสะสม</th>
-                  <th className="py-2.5 px-3 text-right border-r border-slate-800 text-emerald-300">โอนเงิน</th>
-                  <th className="py-2.5 px-3">ว/ด/ป</th>
+                  <th className="py-2.5 px-2 border-r border-slate-800 text-center w-12">ลำดับ</th>
+                  <th className="py-2.5 px-2.5 border-r border-slate-800">เบิก</th>
+                  <th className="py-2.5 px-2.5 border-r border-slate-800">บิล</th>
+                  <th className="py-2.5 px-2.5 border-r border-slate-800">ผู้รับเหมา</th>
+                  <th className="py-2.5 px-2.5 border-r border-slate-800">รายละเอียดงาน</th>
+                  <th className="py-2.5 px-2.5 border-r border-slate-800">ประเภท</th>
+                  <th className="py-2.5 px-2.5 text-right border-r border-slate-800 bg-[#00e676]/20 text-[#004d1a]">ค่าแรง</th>
+                  <th className="py-2.5 px-2 text-center border-r border-slate-800">หัก</th>
+                  <th className="py-2.5 px-2.5 border-r border-slate-800">statusค่าแรง</th>
+                  <th className="py-2.5 px-2.5 text-right border-r border-slate-800 text-amber-300">แรง</th>
+                  <th className="py-2.5 px-2.5 text-right border-r border-slate-800">เปิดจ้าง</th>
+                  <th className="py-2.5 px-2.5 text-right border-r border-slate-800">จ่ายสะสม</th>
+                  <th className="py-2.5 px-2.5 text-right border-r border-slate-800">พนักงาน</th>
+                  <th className="py-2.5 px-2.5 text-right border-r border-slate-800">อื่นๆ</th>
+                  <th className="py-2.5 px-2.5 text-right border-r border-slate-800 text-[#00e676] bg-slate-950 font-black">โอนเงิน</th>
+                  <th className="py-2.5 px-2.5 text-center">ว/ด/ป</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
-                {laborRows.map((r, i) => (
-                  <tr key={i} className="hover:bg-slate-50 transition">
-                    <td className="py-2 px-3 font-semibold text-slate-500">{r["ลำดับ"] || i + 1}</td>
-                    <td className="py-2 px-3 font-bold text-slate-900">{getRequesterDisplayName(r["ผู้เบิก"])}</td>
-                    <td className="py-2 px-3 font-medium">{r["บิล"] || "-"}</td>
-                    <td className="py-2 px-3 font-bold text-slate-900">
-                      {r["ชื่อผู้รับเหมา"] || r["ผู้รับเหมา"] || r["ร้าน/บุคคล"] || "-"}
-                    </td>
-                    <td className="py-2 px-3">{r["รายละเอียดงาน"] || r["สินค้า/ทำงาน"] || "-"}</td>
-                    <td className="py-2 px-3 text-right font-semibold">{money(toNumber(r["เปิดจ้าง"]))}</td>
-                    <td className="py-2 px-3 text-right font-bold text-slate-900">
-                      {money(toNumber(r["ค่าแรง"]) || getRowAmount(r))}
-                    </td>
-                    <td className="py-2 px-3 text-right font-semibold">{money(toNumber(r["จ่ายสะสม"]))}</td>
-                    <td className="py-2 px-3 text-right font-bold text-emerald-700 bg-emerald-50/40">
-                      {money(getRowTransferAmount(r))}
-                    </td>
-                    <td className="py-2 px-3 text-slate-600 font-semibold whitespace-nowrap">{formatDateThai(r["ว/ด/ป"] || r["วันที่"])}</td>
-                  </tr>
-                ))}
+              <tbody className="divide-y divide-slate-200">
+                {laborRows.map((r, i) => {
+                  const laborAmt = toNumber(r["ค่าแรง"]) || getRowAmount(r);
+                  const netLabor = calcNetLabor(r);
+                  const transferAmt = getRowTransferAmount(r);
+                  const openHire = toNumber(r["เปิดจ้าง"]);
+                  const accumPaid = toNumber(r["จ่ายสะสม"]);
+                  const staffAmt = toNumber(r["พนักงาน"]);
+                  const otherAmt = toNumber(r["อื่นๆ"]);
+                  const rawContractor = String(r["id_Contractor"] || r["CW Code"] || r["ผู้รับเหมา"] || r["ร้าน/บุคคล"] || r["ชื่อผู้รับเหมา"] || "").trim();
+                  const cInfo = getContractorInfo(rawContractor);
+
+                  // Show ONLY the contractor name (e.g. น(เหล็ก), บอย(ขนส่ง), กร Survey, แก้ว(PW1))
+                  const contractorName = cInfo.name !== "-" 
+                    ? cInfo.name 
+                    : String(r["ชื่อผู้รับเหมา"] || r["ร้าน/บุคคล"] || rawContractor || "-").trim();
+
+                  const laborStatus = String(r["statusค่าแรง"] || "").trim() || "บุคคลธรรมดา";
+
+                  return (
+                    <tr key={i} className="hover:bg-amber-50/60 transition">
+                      <td className="py-2 px-2 text-center font-semibold text-slate-600">{r["ลำดับ"] || i + 1}</td>
+                      <td className="py-2 px-2.5 font-bold text-slate-900">{getRequesterDisplayName(r["ผู้เบิก"])}</td>
+                      <td className="py-2 px-2.5 font-semibold text-slate-700">{r["บิล"] || r["บิลหลัก/ย่อย"] || "-"}</td>
+                      <td className="py-2 px-2.5 font-bold text-slate-900">{contractorName || "-"}</td>
+                      <td className="py-2 px-2.5 font-medium text-slate-800">{r["รายละเอียดงาน"] || r["สินค้า/ทำงาน"] || "-"}</td>
+                      <td className="py-2 px-2.5 font-bold text-emerald-800">{getRowCategory(r) || "2.ค่าแรง"}</td>
+                      <td className="py-2 px-2.5 text-right font-bold text-emerald-900 bg-emerald-50/70">{money(laborAmt)}</td>
+                      <td className="py-2 px-2 text-center font-semibold text-slate-700">{r["หัก"] ? `${r["หัก"]}` : "-"}</td>
+                      <td className="py-2 px-2.5 font-semibold text-slate-700">{laborStatus}</td>
+                      <td className="py-2 px-2.5 text-right font-bold text-slate-900">{money(netLabor)}</td>
+                      <td className="py-2 px-2.5 text-right font-semibold text-slate-700">{openHire > 0 ? money(openHire) : "-"}</td>
+                      <td className="py-2 px-2.5 text-right font-semibold text-slate-700">{accumPaid > 0 ? money(accumPaid) : "-"}</td>
+                      <td className="py-2 px-2.5 text-right font-semibold text-purple-700">{staffAmt > 0 ? money(staffAmt) : "-"}</td>
+                      <td className="py-2 px-2.5 text-right font-semibold text-rose-700">{otherAmt > 0 ? money(otherAmt) : "-"}</td>
+                      <td className="py-2 px-2.5 text-right font-black text-slate-900 bg-emerald-100/90">{money(transferAmt)}</td>
+                      <td className="py-2 px-2.5 text-center text-slate-600 font-semibold whitespace-nowrap">{formatDateThai(r["ว/ด/ป"] || r["วันที่"])}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
               {laborRows.length > 0 && (
-                <tfoot className="sticky bottom-0 z-20 border-t-2 border-slate-300 bg-slate-100 font-bold text-xs">
-                  <tr>
-                    <td colSpan={5} className="py-2 px-3 font-bold text-slate-900 border-r border-slate-300">
+                <tfoot className="sticky bottom-0 z-20 shadow-md border-t-2 border-slate-400">
+                  <tr className="font-bold text-xs">
+                    <td
+                      colSpan={6}
+                      style={{ color: "#0f172a", backgroundColor: "#e2e8f0" }}
+                      className="py-2.5 px-3 font-bold text-slate-900 border-r border-slate-300 tracking-wider text-xs"
+                    >
                       รวมสุทธิค่าแรง ({laborRows.length} รายการ)
                     </td>
-                    <td className="py-2 px-3 text-right font-bold border-r border-slate-300">
-                      {money(laborMetrics.totalOpenHire)}
-                    </td>
-                    <td className="py-2 px-3 text-right font-bold border-r border-slate-300">
+                    <td
+                      style={{ color: "#064e3b", backgroundColor: "#d1fae5" }}
+                      className="py-2.5 px-2.5 text-right font-bold border-r border-emerald-300 text-xs"
+                    >
                       {money(laborMetrics.totalLabor)}
                     </td>
-                    <td className="py-2 px-3 text-right font-bold border-r border-slate-300">
+                    <td style={{ backgroundColor: "#f1f5f9" }} className="py-2 px-2 text-center text-xs font-bold border-r border-slate-300">-</td>
+                    <td style={{ backgroundColor: "#f1f5f9" }} className="py-2 px-2.5 text-center text-xs font-bold border-r border-slate-300">-</td>
+                    <td style={{ backgroundColor: "#f1f5f9" }} className="py-2.5 px-2.5 text-right font-bold text-slate-900 border-r border-slate-300 text-xs">
+                      {money(laborMetrics.totalNetLabor)}
+                    </td>
+                    <td style={{ backgroundColor: "#f1f5f9" }} className="py-2.5 px-2.5 text-right font-bold text-slate-800 border-r border-slate-300 text-xs">
+                      {money(laborMetrics.totalOpenHire)}
+                    </td>
+                    <td style={{ backgroundColor: "#f1f5f9" }} className="py-2.5 px-2.5 text-right font-bold text-slate-800 border-r border-slate-300 text-xs">
                       {money(laborMetrics.totalAccumPaid)}
                     </td>
-                    <td className="py-2 px-3 text-right font-bold text-emerald-800 bg-emerald-100 border-r border-emerald-300">
+                    <td style={{ backgroundColor: "#f3e8ff" }} className="py-2.5 px-2.5 text-right font-bold text-purple-900 border-r border-purple-200 text-xs">
+                      {money(laborMetrics.totalStaff)}
+                    </td>
+                    <td style={{ backgroundColor: "#ffe4e6" }} className="py-2.5 px-2.5 text-right font-bold text-rose-900 border-r border-rose-200 text-xs">
+                      {money(laborMetrics.totalOther)}
+                    </td>
+                    <td
+                      style={{ color: "#ffffff", backgroundColor: "#15803d" }}
+                      className="py-2.5 px-2.5 text-right font-black text-sm border-r border-emerald-800 text-xs"
+                    >
                       {money(laborMetrics.totalTransfer)}
                     </td>
-                    <td className="py-2 px-3 border-r border-slate-300 text-center">-</td>
+                    <td style={{ backgroundColor: "#e2e8f0" }} className="py-2.5 px-2.5 border-r border-slate-300 text-center text-xs font-bold">-</td>
                   </tr>
                 </tfoot>
               )}
@@ -1153,22 +1367,26 @@ export function ReportsDashboardClient({
       {/* 8. TAB 4: สรุปประเภท (8 CATEGORIES) */}
       {activeTab === "category" && (
         <div className="space-y-3">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {categoryMetrics.breakdown.map((cat) => (
-              <div
-                key={cat.key}
-                onClick={() => setSelectedCategory(selectedCategory === cat.key ? "all" : cat.key)}
-                className={`p-2.5 rounded-md border transition cursor-pointer flex flex-col justify-between ${
-                  selectedCategory === cat.key ? "border-slate-800 bg-slate-50 font-bold" : "border-slate-200 hover:border-slate-300 bg-white"
-                }`}
+          <div className="border border-slate-200 rounded-lg p-3.5 bg-white flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-slate-800">เลือกประเภทหมวดหมู่:</span>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="bg-white border border-slate-300 text-xs font-bold text-slate-900 px-3 py-1.5 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-400 min-w-[240px]"
               >
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-slate-800">{cat.label}</span>
-                  <span className="text-[10px] text-slate-400">{cat.count} รายการ</span>
-                </div>
-                <div className="text-xs font-bold text-slate-900 mt-1">{money(cat.transfer)}</div>
-              </div>
-            ))}
+                <option value="all">แสดงทุกหมวดหมู่ (8 หมวด)</option>
+                {CATEGORIES_LIST.map((c) => (
+                  <option key={c.key} value={c.key}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="font-bold text-slate-800 text-xs">
+              ยอดโอนรวมหมวดหมู่: <span className="text-purple-800 text-sm font-bold">{money(categoryMetrics.grandTotal)} ฿</span>
+            </div>
           </div>
 
           <div className="border border-slate-200 rounded-md bg-white overflow-hidden">

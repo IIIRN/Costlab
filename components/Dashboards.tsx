@@ -1,7 +1,7 @@
 import { TABLES } from "@/lib/config";
 import { MainDashboardClient } from "@/components/dashboards/MainDashboardClient";
 import { isCommittedBill, isUnpaidBill, normalizeBillStatus } from "@/lib/bill-status";
-import { computeBillTransferAmount, isCreditActive, isDeductActive, isVatActive } from "@/lib/project-summary";
+import { computeBillTransferAmount, hydrateProjectRowsForList, isCreditActive, isDeductActive, isVatActive } from "@/lib/project-summary";
 import { WithdrawDashboardClient, type WithdrawFilters } from "@/components/dashboards/WithdrawDashboardClient";
 import { WorkStatusDashboardClient } from "@/components/dashboards/WorkStatusDashboardClient";
 import { BillFollowDashboardClient } from "@/components/dashboards/BillFollowDashboardClient";
@@ -73,7 +73,6 @@ export async function WorkStatusDashboard() {
     safeRows(TABLES.CUSTOMER),
     safeRows(TABLES.COMPANY),
   ]);
-  const hydratedDataRows = hydrateDataRows(dataRows);
 
   const customerMap = customerRows.reduce<Record<string, string>>((acc, row) => {
     const id = String(row["id_cus"] || row["id"] || row["รหัสลูกค้า"] || "").trim();
@@ -89,16 +88,10 @@ export async function WorkStatusDashboard() {
     return acc;
   }, {});
 
-  const rawRows: SheetRow[] = projectRows.map((row) => {
-    const projectId = String(row["ID Project"] || row.id || "").trim();
-    const relatedBills = hydratedDataRows.filter(
-      (b) => String(b["ID Project"] || "").trim() === projectId && isCommittedBill(b)
-    );
-    const billTotal = sumColumns(relatedBills, ["ยอดเงิน"]);
-    const totalAll = hasValue(row["รวม ALL"]) ? toNumber(row["รวม ALL"]) : billTotal;
-    const workTotal = toNumber(row["ยอดงาน"]);
-    const vatTotal = hasValue(row["ยอดรวม vat"]) ? toNumber(row["ยอดรวม vat"]) : workTotal * 1.07;
+  // Hydrate projects with exact same budget logic as project-all (views/project-all)
+  const hydratedProjects = hydrateProjectRowsForList(projectRows, dataRows);
 
+  const rawRows: SheetRow[] = hydratedProjects.map((row) => {
     const rawCus = String(row["ชื่อลูกค้า"] || row["ลูกค้า"] || "").trim();
     const cusName = customerMap[rawCus.toLowerCase()] || rawCus;
 
@@ -109,8 +102,6 @@ export async function WorkStatusDashboard() {
       ...row,
       "ชื่อลูกค้า": cusName,
       "บริษัท": compName,
-      "รวม ALL": totalAll,
-      "ยอดรวม vat": vatTotal,
     };
   });
 

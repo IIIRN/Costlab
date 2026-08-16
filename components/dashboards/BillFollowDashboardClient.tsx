@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   AlertCircle,
   Building2,
@@ -59,13 +59,21 @@ export function BillFollowDashboardClient({
   peopleRows = [],
 }: BillFollowDashboardClientProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlSearch = searchParams.get("search") || "";
+
   const [activeTab, setActiveTab] = useState<"all" | "vat" | "natural" | "company" | "credit">("all");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState(urlSearch);
   const [selectedRequester, setSelectedRequester] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [pageSize, setPageSize] = useState(20);
   const [page, setPage] = useState(1);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+
+  useEffect(() => {
+    setSearchTerm(urlSearch);
+    setPage(1);
+  }, [urlSearch]);
 
   // Quick Action & Notification States
   const [savingRowId, setSavingRowId] = useState<string | null>(null);
@@ -132,6 +140,7 @@ export function BillFollowDashboardClient({
   }, [activeCategoryRows, selectedRequester, selectedDate, searchTerm]);
 
   // Financial totals
+  const allPendingTotal = useMemo(() => allPendingRows.reduce((sum, r) => sum + toNumber(r["ยอดเงิน"]), 0), [allPendingRows]);
   const vatTotal = useMemo(() => vatRows.reduce((sum, r) => sum + toNumber(r["ยอดเงิน"]), 0), [vatRows]);
   const naturalTotal = useMemo(() => naturalDeductRows.reduce((sum, r) => sum + toNumber(r["ยอดเงิน"]), 0), [naturalDeductRows]);
   const companyTotal = useMemo(() => companyDeductRows.reduce((sum, r) => sum + toNumber(r["ยอดเงิน"]), 0), [companyDeductRows]);
@@ -278,89 +287,167 @@ export function BillFollowDashboardClient({
         </div>
       )}
 
-      {/* 1. EXECUTIVE SUMMARY KPI CARDS (Hidden on Mobile for clean layout) */}
-      <div className="hidden md:grid md:grid-cols-4 gap-3">
-        {/* Vat Card */}
+      {/* 1. EXECUTIVE SUMMARY KPI CARDS (5 Interactive Cards for Category Tabs) */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2.5 sm:gap-3">
+        {/* Card 1: All Bills Total Card */}
+        <div
+          onClick={() => handleTabChange("all")}
+          className={`rounded-xl p-3 border transition cursor-pointer shadow-2xs ${
+            activeTab === "all"
+              ? "border-2 border-[#0b3531] bg-[#f2f9f6] shadow-sm"
+              : "bg-white border-slate-200 hover:border-slate-300 text-slate-800"
+          }`}
+        >
+          <div className="flex items-center justify-between text-[11px] sm:text-xs">
+            <span className={`font-bold truncate ${activeTab === "all" ? "text-[#0b3531]" : "text-slate-700"}`}>ตามบิลทั้งหมด</span>
+            <span className={`shrink-0 ml-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded-full ${
+              activeTab === "all" ? "bg-[#0b3531] text-[#d4f54e]" : "bg-slate-100 text-slate-500"
+            }`}>{allPendingRows.length} รายการ</span>
+          </div>
+          <div className="flex items-baseline justify-between mt-2">
+            <span className={`text-base sm:text-lg font-bold ${activeTab === "all" ? "text-[#0b3531]" : "text-slate-900"}`}>{money(allPendingTotal)}</span>
+          </div>
+        </div>
+
+        {/* Card 2: Vat Card */}
         <div
           onClick={() => handleTabChange("vat")}
-          className={`bg-white rounded-md p-2.5 sm:p-3 border transition cursor-pointer shadow-2xs ${
-            activeTab === "vat" ? "border-slate-900 bg-slate-50 font-bold" : "border-slate-200 hover:border-slate-300"
+          className={`rounded-xl p-3 border transition cursor-pointer shadow-2xs ${
+            activeTab === "vat"
+              ? "border-2 border-[#0b3531] bg-[#f2f9f6] shadow-sm"
+              : "bg-white border-slate-200 hover:border-slate-300 text-slate-800"
           }`}
         >
           <div className="flex items-center justify-between text-[11px] sm:text-xs">
-            <span className="font-semibold text-slate-700 truncate">ตาม VAT (ยังไม่ได้บิล)</span>
-            <span className="text-slate-400 shrink-0 ml-1">{vatRows.length} รายการ</span>
+            <span className={`font-bold truncate ${activeTab === "vat" ? "text-[#0b3531]" : "text-slate-700"}`}>ตาม VAT (ยังไม่ได้บิล)</span>
+            <span className={`shrink-0 ml-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded-full ${
+              activeTab === "vat" ? "bg-[#0b3531] text-[#d4f54e]" : "bg-slate-100 text-slate-500"
+            }`}>{vatRows.length} รายการ</span>
           </div>
-          <div className="flex items-baseline justify-between mt-1.5 sm:mt-2">
-            <span className="text-sm sm:text-base font-bold text-slate-900">{money(vatTotal)}</span>
+          <div className="flex items-baseline justify-between mt-2">
+            <span className={`text-base sm:text-lg font-bold ${activeTab === "vat" ? "text-[#0b3531]" : "text-slate-900"}`}>{money(vatTotal)}</span>
           </div>
         </div>
 
-        {/* Natural Deduct 3% Card */}
+        {/* Card 3: Natural Deduct 3% Card */}
         <div
           onClick={() => handleTabChange("natural")}
-          className={`bg-white rounded-md p-2.5 sm:p-3 border transition cursor-pointer shadow-2xs ${
-            activeTab === "natural" ? "border-slate-900 bg-slate-50 font-bold" : "border-slate-200 hover:border-slate-300"
+          className={`rounded-xl p-3 border transition cursor-pointer shadow-2xs ${
+            activeTab === "natural"
+              ? "border-2 border-[#0b3531] bg-[#f2f9f6] shadow-sm"
+              : "bg-white border-slate-200 hover:border-slate-300 text-slate-800"
           }`}
         >
           <div className="flex items-center justify-between text-[11px] sm:text-xs">
-            <span className="font-semibold text-slate-700 truncate">ตาม หัก 3% (บุคคล)</span>
-            <span className="text-slate-400 shrink-0 ml-1">{naturalDeductRows.length} รายการ</span>
+            <span className={`font-bold truncate ${activeTab === "natural" ? "text-[#0b3531]" : "text-slate-700"}`}>ตาม หัก 3% (บุคคล)</span>
+            <span className={`shrink-0 ml-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded-full ${
+              activeTab === "natural" ? "bg-[#0b3531] text-[#d4f54e]" : "bg-slate-100 text-slate-500"
+            }`}>{naturalDeductRows.length} รายการ</span>
           </div>
-          <div className="flex items-baseline justify-between mt-1.5 sm:mt-2">
-            <span className="text-sm sm:text-base font-bold text-slate-900">{money(naturalTotal)}</span>
+          <div className="flex items-baseline justify-between mt-2">
+            <span className={`text-base sm:text-lg font-bold ${activeTab === "natural" ? "text-[#0b3531]" : "text-slate-900"}`}>{money(naturalTotal)}</span>
           </div>
         </div>
 
-        {/* Company Deduct 3% Card */}
+        {/* Card 4: Company Deduct 3% Card */}
         <div
           onClick={() => handleTabChange("company")}
-          className={`bg-white rounded-md p-2.5 sm:p-3 border transition cursor-pointer shadow-2xs ${
-            activeTab === "company" ? "border-slate-900 bg-slate-50 font-bold" : "border-slate-200 hover:border-slate-300"
+          className={`rounded-xl p-3 border transition cursor-pointer shadow-2xs ${
+            activeTab === "company"
+              ? "border-2 border-[#0b3531] bg-[#f2f9f6] shadow-sm"
+              : "bg-white border-slate-200 hover:border-slate-300 text-slate-800"
           }`}
         >
           <div className="flex items-center justify-between text-[11px] sm:text-xs">
-            <span className="font-semibold text-slate-700 truncate">ตาม หัก 3% (บริษัท)</span>
-            <span className="text-slate-400 shrink-0 ml-1">{companyDeductRows.length} รายการ</span>
+            <span className={`font-bold truncate ${activeTab === "company" ? "text-[#0b3531]" : "text-slate-700"}`}>ตาม หัก 3% (บริษัท)</span>
+            <span className={`shrink-0 ml-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded-full ${
+              activeTab === "company" ? "bg-[#0b3531] text-[#d4f54e]" : "bg-slate-100 text-slate-500"
+            }`}>{companyDeductRows.length} รายการ</span>
           </div>
-          <div className="flex items-baseline justify-between mt-1.5 sm:mt-2">
-            <span className="text-sm sm:text-base font-bold text-slate-900">{money(companyTotal)}</span>
+          <div className="flex items-baseline justify-between mt-2">
+            <span className={`text-base sm:text-lg font-bold ${activeTab === "company" ? "text-[#0b3531]" : "text-slate-900"}`}>{money(companyTotal)}</span>
           </div>
         </div>
 
-        {/* Credit Card */}
+        {/* Card 5: Credit Card */}
         <div
           onClick={() => handleTabChange("credit")}
-          className={`bg-white rounded-md p-2.5 sm:p-3 border transition cursor-pointer shadow-2xs ${
-            activeTab === "credit" ? "border-slate-900 bg-slate-50 font-bold" : "border-slate-200 hover:border-slate-300"
+          className={`col-span-2 md:col-span-1 rounded-xl p-3 border transition cursor-pointer shadow-2xs ${
+            activeTab === "credit"
+              ? "border-2 border-[#0b3531] bg-[#f2f9f6] shadow-sm"
+              : "bg-white border-slate-200 hover:border-slate-300 text-slate-800"
           }`}
         >
           <div className="flex items-center justify-between text-[11px] sm:text-xs">
-            <span className="font-semibold text-slate-700 truncate">ตาม เครดิต (รอจ่าย)</span>
-            <span className="text-slate-400 shrink-0 ml-1">{creditRows.length} รายการ</span>
+            <span className={`font-bold truncate ${activeTab === "credit" ? "text-[#0b3531]" : "text-slate-700"}`}>ตาม เครดิต (รอจ่าย)</span>
+            <span className={`shrink-0 ml-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded-full ${
+              activeTab === "credit" ? "bg-[#0b3531] text-[#d4f54e]" : "bg-slate-100 text-slate-500"
+            }`}>{creditRows.length} รายการ</span>
           </div>
-          <div className="flex items-baseline justify-between mt-1.5 sm:mt-2">
-            <span className="text-sm sm:text-base font-bold text-slate-900">{money(creditTotal)}</span>
+          <div className="flex items-baseline justify-between mt-2">
+            <span className={`text-base sm:text-lg font-bold ${activeTab === "credit" ? "text-[#0b3531]" : "text-slate-900"}`}>{money(creditTotal)}</span>
           </div>
         </div>
       </div>
 
-      {/* 2. FILTER & ACTION TOOLBAR (Compact Mobile Layout) */}
-      <div className="border border-slate-200 rounded-md p-2.5 bg-white flex flex-col gap-2 text-xs">
-        {/* Search Bar & Mobile Filter Toggle Header */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 w-full">
-          <div className="flex items-center gap-2 flex-1">
-            <div className="relative flex items-center flex-1">
+      {/* 2. FILTER & ACTION TOOLBAR (Clean High-Efficiency Layout) */}
+      <div className="border border-slate-200 rounded-xl p-3 bg-white flex flex-col gap-2.5 text-xs shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 w-full">
+          {/* Dropdown Filters (Requester & Date) */}
+          <div className={`flex-wrap items-center gap-2.5 ${showMobileFilters ? "flex" : "hidden md:flex"}`}>
+            {/* Requester dropdown */}
+            <div className="flex items-center gap-1.5">
+              <span className="font-semibold text-slate-700 whitespace-nowrap">ผู้เบิก:</span>
+              <select
+                value={selectedRequester}
+                onChange={(e) => {
+                  setSelectedRequester(e.target.value);
+                  setPage(1);
+                }}
+                className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1.5 rounded-lg focus:outline-none cursor-pointer"
+              >
+                <option value="">ทั้งหมด ({allPendingRows.length} รายการ)</option>
+                {peopleRows.map((row) => {
+                  const key = String(row["รหัสพนักงาน"] || row["ชื่อเล่น"] || row._sheetRow || "").trim();
+                  const label = row["ชื่อเล่น"] ? `${key} - ${row["ชื่อเล่น"]}` : key;
+                  return key ? (
+                    <option key={key} value={key}>
+                      {label}
+                    </option>
+                  ) : null;
+                })}
+              </select>
+            </div>
+
+            {/* Date Picker */}
+            <div className="flex items-center gap-1.5">
+              <span className="font-semibold text-slate-700 whitespace-nowrap">วันที่:</span>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => {
+                  setSelectedDate(e.target.value);
+                  setPage(1);
+                }}
+                className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1.5 rounded-lg focus:outline-none cursor-pointer"
+              />
+            </div>
+          </div>
+
+          {/* Search Input Box & Actions */}
+          <div className="flex items-center justify-between sm:justify-end gap-2 w-full md:w-auto ml-auto">
+            {/* Desktop Search Input (Hidden on Mobile) */}
+            <div className="hidden md:flex relative items-center w-72 shrink-0">
               <Search size={14} className="absolute left-2.5 text-slate-400 pointer-events-none" />
               <input
                 type="text"
-                placeholder="ค้นหาลำดับ, ร้านค้า, Project, รายการ..."
+                placeholder="ค้นหาลำดับ, ร้านค้า, Project..."
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
                   setPage(1);
                 }}
-                className="w-full bg-white text-slate-800 text-xs pl-8 pr-7 py-1.5 rounded-md border border-slate-300 focus:outline-none focus:border-slate-500 placeholder:text-slate-400"
+                className="w-full bg-white text-slate-800 text-xs pl-8 pr-7 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:border-slate-500 placeholder:text-slate-400"
               />
               {searchTerm && (
                 <X
@@ -374,117 +461,28 @@ export function BillFollowDashboardClient({
               )}
             </div>
 
+            {/* Mobile Filter Toggle Button */}
             <button
               type="button"
               onClick={() => setShowMobileFilters(!showMobileFilters)}
-              className="md:hidden px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md border border-slate-300 flex items-center gap-1 shrink-0 cursor-pointer"
+              className="md:hidden px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg border border-slate-300 flex items-center gap-1.5 shrink-0 cursor-pointer shadow-2xs"
             >
-              <Filter size={13} />
+              <Filter size={13} className="text-slate-500" />
               <span>{showMobileFilters ? "ซ่อนตัวกรอง" : "ตัวกรอง"}</span>
             </button>
+
+            {/* Batch Copy Button for Selected Requester */}
+            {selectedRequester && filteredRows.length > 0 && (
+              <button
+                type="button"
+                onClick={copyRequesterBatchText}
+                className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs rounded-lg transition cursor-pointer shrink-0 flex items-center gap-1.5 shadow-2xs"
+                title="คัดลอกข้อความสรุปบิลค้างทั้งหมดของผู้เบิกรายนี้"
+              >
+                <span>คัดลอกส่ง LINE ({filteredRows.length})</span>
+              </button>
+            )}
           </div>
-
-          {/* Batch Copy Button for Selected Requester */}
-          {selectedRequester && filteredRows.length > 0 && (
-            <button
-              type="button"
-              onClick={copyRequesterBatchText}
-              className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs rounded-md transition cursor-pointer shrink-0"
-              title="คัดลอกข้อความสรุปบิลค้างทั้งหมดของผู้เบิกรายนี้"
-            >
-              คัดลอกส่ง LINE ({filteredRows.length} รายการ)
-            </button>
-          )}
-        </div>
-
-        {/* Expandable Filter Controls */}
-        <div className={`flex-wrap items-center gap-2.5 pt-1.5 border-t border-slate-100 md:border-t-0 md:pt-0 ${showMobileFilters ? "flex" : "hidden md:flex"}`}>
-          {/* Requester dropdown */}
-          <div className="flex items-center gap-1.5">
-            <span className="font-semibold text-slate-700 whitespace-nowrap">ผู้เบิก:</span>
-            <select
-              value={selectedRequester}
-              onChange={(e) => {
-                setSelectedRequester(e.target.value);
-                setPage(1);
-              }}
-              className="bg-white border border-slate-300 text-xs text-slate-800 px-2 py-1 rounded-md focus:outline-none cursor-pointer"
-            >
-              <option value="">ทั้งหมด ({allPendingRows.length} รายการ)</option>
-              {peopleRows.map((row) => {
-                const key = String(row["รหัสพนักงาน"] || row["ชื่อเล่น"] || row._sheetRow || "").trim();
-                const label = row["ชื่อเล่น"] ? `${key} - ${row["ชื่อเล่น"]}` : key;
-                return key ? (
-                  <option key={key} value={key}>
-                    {label}
-                  </option>
-                ) : null;
-              })}
-            </select>
-          </div>
-
-          {/* Date Picker */}
-          <div className="flex items-center gap-1.5">
-            <span className="font-semibold text-slate-700 whitespace-nowrap">วันที่:</span>
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => {
-                setSelectedDate(e.target.value);
-                setPage(1);
-              }}
-              className="bg-white border border-slate-300 text-xs text-slate-800 px-2 py-1 rounded-md focus:outline-none cursor-pointer"
-            />
-          </div>
-        </div>
-
-        {/* Category Filter Tabs */}
-        <div className="flex flex-wrap items-center gap-1 border-b sm:border-b-0 border-slate-200">
-          <button
-            type="button"
-            onClick={() => handleTabChange("all")}
-            className={`px-2.5 py-1 rounded-md text-xs font-semibold transition cursor-pointer ${
-              activeTab === "all" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"
-            }`}
-          >
-            ทั้งหมด ({allPendingRows.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => handleTabChange("vat")}
-            className={`px-2.5 py-1 rounded-md text-xs font-semibold transition cursor-pointer ${
-              activeTab === "vat" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"
-            }`}
-          >
-            ตาม VAT ({vatRows.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => handleTabChange("natural")}
-            className={`px-2.5 py-1 rounded-md text-xs font-semibold transition cursor-pointer ${
-              activeTab === "natural" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"
-            }`}
-          >
-            หัก 3% บุคคล ({naturalDeductRows.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => handleTabChange("company")}
-            className={`px-2.5 py-1 rounded-md text-xs font-semibold transition cursor-pointer ${
-              activeTab === "company" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"
-            }`}
-          >
-            หัก 3% บริษัท ({companyDeductRows.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => handleTabChange("credit")}
-            className={`px-2.5 py-1 rounded-md text-xs font-semibold transition cursor-pointer ${
-              activeTab === "credit" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"
-            }`}
-          >
-            เครดิต ({creditRows.length})
-          </button>
         </div>
       </div>
 

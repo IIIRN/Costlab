@@ -14,6 +14,7 @@ import { getHeaders, getRows } from "@/lib/db";
 import { getViewById, getViewColumns } from "@/lib/views";
 import { CategoryManagementClient } from "@/components/forms/CategoryManagementClient";
 import { getSystemOptionsFromSupabase } from "@/lib/supabase-db";
+import { hydrateProjectRowsForList } from "@/lib/project-summary";
 import type { SheetRow } from "@/lib/types";
 
 export async function renderViewForId(id: string, query?: Record<string, string | string[] | undefined>) {
@@ -506,59 +507,6 @@ const PROJECT_TOTAL_COLUMNS = [
   "เครื่องมือ",
   "อื่นๆ"
 ];
-
-function hydrateProjectRowsForList(projectRows: Awaited<ReturnType<typeof getRows>>, dataRows: Awaited<ReturnType<typeof getRows>>) {
-  const totals = dataRows.reduce<Record<string, number>>((accumulator, row) => {
-    if (!isCommittedBill(row)) return accumulator;
-    const projectId = String(row["ID Project"] || "").trim();
-    if (!projectId) return accumulator;
-    const amount = toNumber(row["ยอดเงิน"]) || PROJECT_TOTAL_COLUMNS.slice(1).reduce((sum, column) => sum + toNumber(row[column]), 0);
-    accumulator[projectId] = (accumulator[projectId] || 0) + amount;
-    return accumulator;
-  }, {});
-
-  return projectRows.map(row => {
-    const projectId = String(row["ID Project"] || "").trim();
-    const output = { ...row };
-    
-    // Always compute "รวม ALL" dynamically from committed data rows
-    output["รวม ALL"] = totals[projectId] ?? 0;
-
-    const workAmount = toNumber(output["ยอดงาน"]);
-    const vatAmount = toNumber(output["ยอดรวม vat"]);
-    if (workAmount > 0 && (!hasRowValue(output["ยอดรวม vat"]) || vatAmount === 0)) {
-      output["ยอดรวม vat"] = Math.round(workAmount * 1.07);
-    } else if (vatAmount > 0 && (!hasRowValue(output["ยอดงาน"]) || workAmount === 0)) {
-      output["ยอดงาน"] = Math.round(vatAmount / 1.07);
-    }
-
-    // Calculate overall budget cap "งบไม่เกิน"
-    const currentCap = toNumber(output["งบไม่เกิน"]);
-    const recalculatedWorkAmount = toNumber(output["ยอดงาน"]);
-    const recalculatedVatAmount = toNumber(output["ยอดรวม vat"]);
-
-    const categorySum = Object.keys(output)
-      .filter(k => k.startsWith("งบไม่เกิน") && k !== "งบไม่เกิน")
-      .reduce((sum, k) => sum + toNumber(output[k]), 0);
-
-    if (categorySum > 0) {
-      // Priority 1: Sub-category allocations exist (e.g. 3,000,000 in Category Budget Matrix)
-      output["งบไม่เกิน"] = categorySum;
-    } else if (
-      currentCap === 0 ||
-      (recalculatedVatAmount > 0 && currentCap === recalculatedVatAmount && recalculatedWorkAmount > 0 && recalculatedWorkAmount !== recalculatedVatAmount)
-    ) {
-      // Priority 2: No sub-category allocations, and currentCap is empty/0 or incorrectly set to vatAmount
-      if (recalculatedWorkAmount > 0) {
-        output["งบไม่เกิน"] = recalculatedWorkAmount;
-      } else if (recalculatedVatAmount > 0) {
-        output["งบไม่เกิน"] = Math.round(recalculatedVatAmount / 1.07);
-      }
-    }
-
-    return output;
-  });
-}
 
 function hasRowValue(value: unknown) {
   return value !== null && value !== undefined && String(value).trim() !== "";

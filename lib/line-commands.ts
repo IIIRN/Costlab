@@ -499,6 +499,7 @@ export async function handleLineCommand(
       const isSubBatch = rawText.includes("ย่อย") || rawTarget.includes("ย่อย");
       const isMainBatch = rawText.includes("หลัก") || rawTarget.includes("หลัก");
       const cleanTarget = rawTarget.replace(/^หลัก:|^ย่อย:|^บิลหลัก:|^บิลย่อย:|^บิล:|^ลำดับที่:|^บิลลำดับที่:|^หลักลำดับที่:|^ย่อยลำดับที่:/i, "").trim();
+      const targetIdList = cleanTarget.split(/[,,\s]+/).map(id => id.trim()).filter(Boolean);
 
       const { normalizeBillStatus } = await import("@/lib/bill-status");
       const { getRowsFromSupabase, updateRowInSupabase } = await import("@/lib/supabase-db");
@@ -548,8 +549,8 @@ export async function handleLineCommand(
 
         const bId = String(b["ลำดับ"] || b.id || b._sheetRow || "").trim();
 
-        // Exact match by Bill ID takes priority (for single-bill button actions)
-        if (bId === target) return true;
+        // Exact match by Bill ID or ID in targetIdList takes priority (for single/multi bill button actions)
+        if (targetIdList.length > 0 && targetIdList.includes(bId)) return true;
 
         if (!target || target === "ทั้งหมด" || target === "หลัก" || target === "ย่อย") return true;
 
@@ -559,6 +560,7 @@ export async function handleLineCommand(
         const bDesc = String(b["สินค้า/ทำงาน"] || b.description || "").trim();
 
         return (
+          targetIdList.includes(bReq) ||
           bReq === target ||
           bReq === matchedEmpId ||
           bReqName.toLowerCase().includes(target.toLowerCase()) ||

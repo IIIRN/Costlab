@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ArrowDownWideNarrow, ArrowUpWideNarrow, ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import { FormModal } from "@/components/FormModal";
 import { FORM_SCHEMAS } from "@/lib/schemas";
@@ -21,10 +22,16 @@ export function ContractOpenDashboardClient({
   initialRows,
   form,
 }: ContractOpenDashboardClientProps) {
-  const [searchTerm, setSearchTerm] = useState("");
+  const searchParams = useSearchParams();
+  const urlSearch = searchParams.get("search") || "";
+  const [searchTerm, setSearchTerm] = useState(urlSearch);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [sortDesc, setSortDesc] = useState(true);
+
+  useEffect(() => {
+    setSearchTerm(urlSearch);
+  }, [urlSearch]);
 
   const activeForm = form || {
     tableName: "contract_works",
@@ -65,6 +72,17 @@ export function ContractOpenDashboardClient({
 
   return (
     <div className="w-full flex flex-col gap-3 p-3 sm:p-5 max-w-[1600px] mx-auto font-sans text-sm text-slate-800">
+      {/* Active FormModal Listener for Header Lime Green + Button */}
+      <FormModal
+        key="form-modal-contract-open-global"
+        form={activeForm}
+        buttonLabel="เปิดจ้างงาน"
+        title="เปิดจ้างงานรับเหมา"
+        submitPath="/api/rows"
+        openEventName="open-contract-form"
+        hideLauncher={true}
+      />
+
       {/* 1. SUMMARY KPI CARDS (Hidden on Mobile for clean layout) */}
       <div className="hidden md:grid md:grid-cols-4 gap-3">
         <div className="bg-white rounded-md p-2.5 sm:p-3 border border-slate-200 shadow-2xs">
@@ -88,8 +106,8 @@ export function ContractOpenDashboardClient({
         </div>
       </div>
 
-      {/* 2. FILTER TOOLBAR (Compact Mobile Layout) */}
-      <div className="border border-slate-200 rounded-md p-2.5 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+      {/* 2. FILTER TOOLBAR (Desktop Only since Header has Search and Add + on Mobile) */}
+      <div className="hidden md:flex border border-slate-200 rounded-md p-2.5 bg-white flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
         {/* Search Input */}
         <div className="relative flex items-center flex-1">
           <Search size={14} className="absolute left-2.5 text-slate-400 pointer-events-none" />
@@ -117,14 +135,13 @@ export function ContractOpenDashboardClient({
             <span>{sortDesc ? "ล่าสุดก่อน" : "เก่าสุดก่อน"}</span>
           </button>
 
-          <FormModal
-            key="form-modal-contract-open"
-            form={activeForm}
-            buttonLabel="เปิดจ้างงาน"
-            title="เปิดจ้างงานรับเหมา"
-            submitPath="/api/rows"
-            openEventName="open-contract-form"
-          />
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent("open-contract-form"))}
+            className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-md text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-2xs whitespace-nowrap"
+          >
+            <span>+ เปิดจ้างงาน</span>
+          </button>
         </div>
       </div>
 

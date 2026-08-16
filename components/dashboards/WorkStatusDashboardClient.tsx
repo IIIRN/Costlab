@@ -61,7 +61,7 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
 
   // Overall financial statistics
   const totalBudget = useMemo(() => {
-    return projects.reduce((sum, p) => sum + toNumber(p["งบไม่เกิน"] || p["ยอดงาน"]), 0);
+    return projects.reduce((sum, p) => sum + toNumber(p["งบไม่เกิน"]), 0);
   }, [projects]);
 
   const totalSpent = useMemo(() => {
@@ -230,7 +230,7 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
                   const owner = String(p["รับผิดชอบ"] || p.responsible_person || "-");
 
                   const spent = toNumber(p["รวม ALL"]);
-                  const budget = toNumber(p["งบไม่เกิน"] || p["ยอดงาน"]);
+                  const budget = toNumber(p["งบไม่เกิน"]);
                   const remaining = budget - spent;
 
                   const rawColor = String(p.color || "").toLowerCase().trim();
@@ -335,7 +335,7 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
             const owner = String(p["รับผิดชอบ"] || p.responsible_person || "-");
 
             const spent = toNumber(p["รวม ALL"]);
-            const budget = toNumber(p["งบไม่เกิน"] || p["ยอดงาน"]);
+            const budget = toNumber(p["งบไม่เกิน"]);
 
             const rawColor = String(p.color || "").toLowerCase().trim();
             const isComplete = rawColor === "black" || rawColor === "เสร็จแล้ว" || rawColor === "completed";

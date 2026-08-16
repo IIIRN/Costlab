@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { ChevronLeft, ChevronRight, Eye, List, Pencil, Plus, Save, Trash2, X, Search, ArrowDownUp } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, List, Pencil, Plus, Save, Trash2, X, Search, ArrowDownUp, Download, Upload, FileSpreadsheet } from "lucide-react";
 import { BillImageThumbnail } from "@/components/BillImageThumbnail";
 import { showConfirm, showToast } from "@/components/ToastProvider";
 import type { RowValue, SheetRow } from "@/lib/types";
@@ -255,6 +255,142 @@ export function ManageTableClient({
     }
   }
 
+  function exportToCSV() {
+    if (!rows || rows.length === 0) {
+      showToast("error", "ไม่มีข้อมูลสำหรับส่งออก");
+      return;
+    }
+
+    const exportCols = visibleColumns.filter(c => c !== "_sheetRow");
+    
+    // Header line
+    const headerLine = exportCols.map(c => `"${c.replace(/"/g, '""')}"`).join(",");
+
+    // Data lines
+    const dataLines = filteredAndSortedRows.map(row => {
+      return exportCols.map(col => {
+        const rawVal = row[col] !== undefined && row[col] !== null ? String(row[col]) : "";
+        return `"${rawVal.replace(/"/g, '""')}"`;
+      }).join(",");
+    });
+
+    // Combine with UTF-8 BOM (\uFEFF) for Excel Thai compatibility
+    const csvContent = "\uFEFF" + [headerLine, ...dataLines].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `${viewName || tableName || "export"}_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    showToast("success", `ส่งออกข้อมูล ${filteredAndSortedRows.length} รายการเป็น CSV เรียบร้อยแล้ว`);
+  }
+
+  function handleImportCSV(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const text = e.target?.result as string;
+        if (!text) throw new Error("ไฟล์เป็นแผ่นว่างเปล่า");
+
+        const parsedRows = parseCSVText(text);
+        if (parsedRows.length === 0) throw new Error("ไม่พบข้อมูลในไฟล์ CSV");
+
+        setBusy("add");
+        let successCount = 0;
+
+        for (const rowData of parsedRows) {
+          try {
+            await requestJson("/api/rows", {
+              method: "POST",
+              body: JSON.stringify({ tableName, row: rowData })
+            });
+            successCount++;
+          } catch (err) {
+            console.error("CSV Row Import error:", err);
+          }
+        }
+
+        showToast("success", `นำเข้าข้อมูลสำเร็จ ${successCount} จาก ${parsedRows.length} รายการ`);
+        await reloadRows();
+      } catch (err) {
+        showToast("error", err instanceof Error ? err.message : "นำเข้าไฟล์ CSV ไม่สำเร็จ");
+      } finally {
+        setBusy(null);
+        event.target.value = "";
+      }
+    };
+    reader.readAsText(file, "UTF-8");
+  }
+
+  function parseCSVText(text: string): Record<string, string>[] {
+    const cleanText = text.replace(/^\uFEFF/, "");
+    const lines: string[][] = [];
+    let currentLine: string[] = [];
+    let currentCell = "";
+    let insideQuote = false;
+
+    for (let i = 0; i < cleanText.length; i++) {
+      const char = cleanText[i];
+      const nextChar = cleanText[i + 1];
+
+      if (char === '"') {
+        if (insideQuote && nextChar === '"') {
+          currentCell += '"';
+          i++;
+        } else {
+          insideQuote = !insideQuote;
+        }
+      } else if (char === ',' && !insideQuote) {
+        currentLine.push(currentCell.trim());
+        currentCell = "";
+      } else if ((char === '\r' || char === '\n') && !insideQuote) {
+        if (char === '\r' && nextChar === '\n') i++;
+        currentLine.push(currentCell.trim());
+        if (currentLine.some(cell => cell.length > 0)) {
+          lines.push(currentLine);
+        }
+        currentLine = [];
+        currentCell = "";
+      } else {
+        currentCell += char;
+      }
+    }
+    if (currentCell.length > 0 || currentLine.length > 0) {
+      currentLine.push(currentCell.trim());
+      if (currentLine.some(cell => cell.length > 0)) {
+        lines.push(currentLine);
+      }
+    }
+
+    if (lines.length < 2) return [];
+
+    const headers = lines[0].map(h => h.replace(/^"+|"+$/g, '').trim());
+    const dataRowsResult: Record<string, string>[] = [];
+
+    for (let r = 1; r < lines.length; r++) {
+      const rowValues = lines[r];
+      const rowObj: Record<string, string> = {};
+      headers.forEach((h, colIdx) => {
+        if (h) {
+          let val = rowValues[colIdx] ?? "";
+          val = val.replace(/^"+|"+$/g, '').trim();
+          rowObj[h] = val;
+        }
+      });
+      dataRowsResult.push(rowObj);
+    }
+
+    return dataRowsResult;
+  }
+
   return (
     <div className="w-full flex flex-col gap-3 p-3 sm:p-4 max-w-[1600px] mx-auto font-sans text-xs text-slate-800">
       {/* 1. COMPACT PAGE HEADER */}
@@ -285,10 +421,10 @@ export function ManageTableClient({
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            className="px-3.5 py-1.5 bg-[#d4f54e] hover:bg-[#c2e438] text-[#0b3531] text-xs font-bold rounded-lg shadow-2xs border border-[#b8df28] transition cursor-pointer flex items-center gap-1.5 shrink-0"
+            className="px-3 py-1.5 bg-[#d4f54e] hover:bg-[#c2e438] text-[#0b3531] text-xs font-bold rounded-lg shadow-2xs border border-[#b8df28] transition cursor-pointer flex items-center gap-1.5 shrink-0"
             disabled={Boolean(busy)}
             onClick={openAddForm}
           >
@@ -296,10 +432,34 @@ export function ManageTableClient({
             <span>เพิ่มข้อมูล</span>
           </button>
 
+          {/* Export CSV Button */}
+          <button
+            type="button"
+            onClick={exportToCSV}
+            className="px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
+            title="ส่งออกไฟล์ CSV (UTF-8)"
+          >
+            <Download size={14} className="text-emerald-600 shrink-0" />
+            <span>ส่งออก CSV</span>
+          </button>
+
+          {/* Import CSV Button */}
+          <label className="px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap">
+            <Upload size={14} className="text-indigo-600 shrink-0" />
+            <span>นำเข้า CSV</span>
+            <input
+              type="file"
+              accept=".csv"
+              className="hidden"
+              onChange={handleImportCSV}
+              disabled={Boolean(busy)}
+            />
+          </label>
+
           <button
             type="button"
             onClick={() => setSortDesc(!sortDesc)}
-            className="px-2.5 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
+            className="px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
             title="สลับการเรียงลำดับ"
           >
             <ArrowDownUp size={14} className="text-slate-600 shrink-0" />
@@ -310,7 +470,7 @@ export function ManageTableClient({
             <>
               <button
                 type="button"
-                className="px-3.5 py-1.5 bg-[#0b3531] hover:bg-[#072724] text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+                className="px-3 py-1.5 bg-[#0b3531] hover:bg-[#072724] text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
                 disabled={busy === "edit"}
                 onClick={saveEdit}
               >
@@ -319,7 +479,7 @@ export function ManageTableClient({
               </button>
               <button
                 type="button"
-                className="px-2.5 py-1 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-md text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+                className="px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
                 disabled={Boolean(busy)}
                 onClick={cancelEdit}
               >
@@ -330,7 +490,7 @@ export function ManageTableClient({
           ) : editOpenEventName ? null : (
             <button
               type="button"
-              className="px-2.5 py-1 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-md text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+              className="px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
               disabled={Boolean(busy) || !rows.length}
               onClick={beginEdit}
             >
@@ -343,7 +503,7 @@ export function ManageTableClient({
             <>
               <button
                 type="button"
-                className="px-3 py-1 bg-rose-700 hover:bg-rose-800 text-white rounded-md text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+                className="px-3 py-1.5 bg-rose-700 hover:bg-rose-800 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
                 disabled={busy === "delete" || !selectedRows.length}
                 onClick={confirmDelete}
               >
@@ -352,7 +512,7 @@ export function ManageTableClient({
               </button>
               <button
                 type="button"
-                className="px-2.5 py-1 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-md text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+                className="px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
                 disabled={Boolean(busy)}
                 onClick={() => { setDeleteMode(false); setSelectedRows([]); }}
               >
@@ -363,11 +523,11 @@ export function ManageTableClient({
           ) : (
             <button
               type="button"
-              className="px-2.5 py-1 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-md text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+              className="px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
               disabled={Boolean(busy) || !rows.length}
               onClick={beginDelete}
             >
-              <Trash2 size={14} />
+              <Trash2 size={14} className="text-slate-600 shrink-0" />
               <span>เลือกลบ</span>
             </button>
           )}

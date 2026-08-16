@@ -1,5 +1,6 @@
 import type { SheetRow } from "@/lib/types";
 import { toNumber } from "@/lib/numbers";
+import { computeBillTransferAmount } from "@/lib/project-summary";
 
 export function hasValue(val: unknown): boolean {
   return val !== null && val !== undefined && String(val).trim() !== "";
@@ -18,7 +19,7 @@ export function getRowTransferAmount(row: SheetRow): number {
   if (!row) return 0;
   const direct = toNumber(row["ยอดโอน"] || row["โอนเงิน"]);
   if (direct > 0) return direct;
-  return getRowAmount(row);
+  return computeBillTransferAmount(row);
 }
 
 export function getRowCategory(row: SheetRow): string {

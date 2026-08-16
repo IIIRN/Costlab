@@ -66,6 +66,59 @@ export function getCategoryExpense(rows: SheetRow[], cat: string): number {
   }, 0);
 }
 
+export function hydrateProjectRowsForList(projectRows: SheetRow[], dataRows: SheetRow[]) {
+  const totals = dataRows.reduce<Record<string, number>>((accumulator, row) => {
+    if (!isCommittedBill(row)) return accumulator;
+    const projectId = String(row["ID Project"] || "").trim();
+    if (!projectId) return accumulator;
+    const amount = toNumber(row["ยอดเงิน"]) || AMOUNT_COLUMNS.reduce((sum, column) => sum + toNumber(row[column]), 0);
+    accumulator[projectId] = (accumulator[projectId] || 0) + amount;
+    return accumulator;
+  }, {});
+
+  return projectRows.map(row => {
+    const projectId = String(row["ID Project"] || "").trim();
+    const output = { ...row };
+    
+    // Always compute "รวม ALL" dynamically from committed data rows
+    output["รวม ALL"] = totals[projectId] ?? 0;
+
+    const workAmount = toNumber(output["ยอดงาน"]);
+    const vatAmount = toNumber(output["ยอดรวม vat"]);
+    if (workAmount > 0 && (!hasValue(output["ยอดรวม vat"]) || vatAmount === 0)) {
+      output["ยอดรวม vat"] = Math.round(workAmount * 1.07);
+    } else if (vatAmount > 0 && (!hasValue(output["ยอดงาน"]) || workAmount === 0)) {
+      output["ยอดงาน"] = Math.round(vatAmount / 1.07);
+    }
+
+    // Calculate overall budget cap "งบไม่เกิน"
+    const currentCap = toNumber(output["งบไม่เกิน"]);
+    const recalculatedWorkAmount = toNumber(output["ยอดงาน"]);
+    const recalculatedVatAmount = toNumber(output["ยอดรวม vat"]);
+
+    const categorySum = Object.keys(output)
+      .filter(k => k.startsWith("งบไม่เกิน") && k !== "งบไม่เกิน")
+      .reduce((sum, k) => sum + toNumber(output[k]), 0);
+
+    if (categorySum > 0) {
+      // Priority 1: Sub-category allocations exist (e.g. 3,000,000 in Category Budget Matrix)
+      output["งบไม่เกิน"] = categorySum;
+    } else if (
+      currentCap === 0 ||
+      (recalculatedVatAmount > 0 && currentCap === recalculatedVatAmount && recalculatedWorkAmount > 0 && recalculatedWorkAmount !== recalculatedVatAmount)
+    ) {
+      // Priority 2: No sub-category allocations, and currentCap is empty/0 or incorrectly set to vatAmount
+      if (recalculatedWorkAmount > 0) {
+        output["งบไม่เกิน"] = recalculatedWorkAmount;
+      } else if (recalculatedVatAmount > 0) {
+        output["งบไม่เกิน"] = Math.round(recalculatedVatAmount / 1.07);
+      }
+    }
+
+    return output;
+  });
+}
+
 export function hydrateProjectSummary(project: SheetRow, projectDataRows: SheetRow[]): {
   project: SheetRow;
   totals: {
@@ -95,7 +148,18 @@ export function hydrateProjectSummary(project: SheetRow, projectDataRows: SheetR
   const totalVat = rawTotalVat > 0 ? rawTotalVat : (rawWorkTotal > 0 ? rawWorkTotal * 1.07 : 0);
   const workTotal = rawWorkTotal > 0 ? rawWorkTotal : (totalVat > 0 ? totalVat / 1.07 : 0);
   const totalAll = hasValue(project["รวม ALL"]) && toNumber(project["รวม ALL"]) > 0 ? toNumber(project["รวม ALL"]) : projectTotal;
-  const budget = rawBudget > 0 ? rawBudget : (totalVat > 0 ? totalVat : workTotal > 0 ? workTotal : totalAll);
+
+  // Check Category Budget Matrix sum for consistency with project-all
+  const categorySum = Object.keys(project)
+    .filter(k => k.startsWith("งบไม่เกิน") && k !== "งบไม่เกิน")
+    .reduce((sum, k) => sum + toNumber(project[k]), 0);
+
+  let budget = rawBudget;
+  if (categorySum > 0) {
+    budget = categorySum;
+  } else if (rawBudget <= 0) {
+    budget = workTotal > 0 ? workTotal : (totalVat > 0 ? Math.round(totalVat / 1.07) : totalAll);
+  }
 
   return {
     project: {
@@ -103,7 +167,7 @@ export function hydrateProjectSummary(project: SheetRow, projectDataRows: SheetR
       _raw: { ...project },
       "ยอดงาน": hasValue(project["ยอดงาน"]) && toNumber(project["ยอดงาน"]) > 0 ? project["ยอดงาน"] : workTotal,
       "ยอดรวม vat": hasValue(project["ยอดรวม vat"]) || hasValue(project["ยอดรวม VAT"]) ? (project["ยอดรวม vat"] || project["ยอดรวม VAT"]) : totalVat,
-      "งบไม่เกิน": hasValue(project["งบไม่เกิน"]) && toNumber(project["งบไม่เกิน"]) > 0 ? project["งบไม่เกิน"] : budget,
+      "งบไม่เกิน": budget,
       "รวม ALL": totalAll
     },
     totals: {

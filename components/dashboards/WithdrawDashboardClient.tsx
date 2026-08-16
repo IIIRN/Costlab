@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Banknote, Check, ChevronLeft, ChevronRight, Filter, List, LoaderCircle, Search, X } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { money, toNumber } from "@/lib/numbers";
 import type { SheetRow } from "@/lib/types";
 import { formatDateDisplay, normalizeDateToIso, parseDateStrict } from "@/lib/dates";
@@ -26,6 +26,9 @@ const PAGE_SIZE_OPTIONS = [20, 50, 100, 200];
 
 export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {}, isAdmin = false }: WithdrawDashboardClientProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlSearch = searchParams.get("search") || "";
+
   const [effectiveIsAdmin, setEffectiveIsAdmin] = useState(isAdmin);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
@@ -41,6 +44,12 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
 
   const columns = useMemo(() => effectiveIsAdmin ? ALL_COLUMNS : ALL_COLUMNS.filter(c => c !== "จัดการ"), [effectiveIsAdmin]);
   const [filters, setFilters] = useState(() => normalizeFilters(initialFilters));
+
+  useEffect(() => {
+    if (urlSearch !== (filters.search || "")) {
+      setFilters(prev => ({ ...prev, search: urlSearch }));
+    }
+  }, [urlSearch]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [statusOverrides, setStatusOverrides] = useState<Record<number, string>>({});
@@ -93,6 +102,14 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
   async function approveRow(row: SheetRow) {
     const sheetRow = Number(row._sheetRow);
     if (!Number.isInteger(sheetRow) || sheetRow < 2) return;
+
+    // Guard: Prevent duplicate submission if already requested/approved
+    const currentSt = normalizedStatus(row["สถานะ"]);
+    if (currentSt === "ตั้งเบิก" || currentSt === "อนุมัติ" || currentSt === "เบิกแล้ว") {
+      setActionError("⚠️ รายการนี้ได้รับการตั้งเบิกหรืออนุมัติเรียบร้อยแล้ว ไม่สามารถสั่งตั้งเบิกซ้ำได้");
+      return;
+    }
+
     const nextStatus = "ตั้งเบิก";
     setApprovingRow(sheetRow);
     setActionError("");
@@ -217,9 +234,10 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
 
       {/* 2. FILTER TOOLBAR (Compact Mobile Layout) */}
       <div className="border border-slate-200 rounded-md p-2.5 bg-white flex flex-col gap-2 text-xs">
-        {/* Search Bar & Mobile Filter Toggle Header */}
+        {/* Search Bar & Mobile Status Update Header */}
         <div className="flex items-center gap-2 w-full">
-          <div className="relative flex items-center flex-1">
+          {/* Desktop Search Bar (Hidden on Mobile since Search is in Top Header) */}
+          <div className="hidden md:flex relative items-center flex-1">
             <Search size={14} className="absolute left-2.5 text-slate-400 pointer-events-none" />
             <input
               type="text"
@@ -233,93 +251,131 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
             )}
           </div>
 
+          {/* Mobile Status Update Button (Replaces Search Bar on Mobile) */}
+          <div className="flex md:hidden items-center gap-1.5 flex-1 min-w-0">
+            {selectedRows.size > 0 ? (
+              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                <button
+                  type="button"
+                  onClick={() => approveSelected("ตั้งเบิก")}
+                  disabled={isBatchApproving}
+                  className="flex-1 px-2.5 py-1.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-md transition cursor-pointer flex items-center justify-center gap-1 shadow-2xs truncate"
+                >
+                  {isBatchApproving ? (
+                    <><LoaderCircle className="spin" size={13} /> กำลังอัพเดท...</>
+                  ) : (
+                    <><Check size={13} /> ตั้งเบิกที่เลือก ({selectedRows.size})</>
+                  )}
+                </button>
+                {effectiveIsAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => approveSelected("อนุมัติ")}
+                    disabled={isBatchApproving}
+                    className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-md transition cursor-pointer flex items-center justify-center gap-1 shadow-2xs shrink-0"
+                  >
+                    <Check size={13} /> อนุมัติ ({selectedRows.size})
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="flex-1 px-2.5 py-1.5 bg-slate-50 text-slate-500 text-xs font-medium rounded-md border border-slate-200 flex items-center gap-1.5 truncate">
+                <Check size={13} className="text-slate-400 shrink-0" />
+                <span className="truncate">อัพเดทสถานะ (เลือกรายการในตาราง)</span>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Filter Toggle Button */}
           <button
             type="button"
             onClick={() => setShowMobileFilters(!showMobileFilters)}
             className="md:hidden px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md border border-slate-300 flex items-center gap-1 shrink-0 cursor-pointer"
           >
             <Filter size={13} />
-            <span>{showMobileFilters ? "ซ่อนตัวกรอง" : "ตัวกรอง"}</span>
+            <span>{showMobileFilters ? "ซ่อน" : "ตัวกรอง"}</span>
           </button>
         </div>
 
         {/* Expandable Filter Controls */}
-        <div className={`flex-wrap items-center gap-2.5 pt-1 border-t border-slate-100 md:border-t-0 md:pt-0 ${showMobileFilters ? "flex" : "hidden md:flex"}`}>
-          {/* Requester dropdown */}
-          <div className="flex items-center gap-1.5">
-            <span className="font-semibold text-slate-700 whitespace-nowrap">ผู้เบิก:</span>
-            <select
-              value={filters.requester}
-              onChange={event => updateFilter("requester", event.target.value)}
-              className="bg-white border border-slate-300 text-xs text-slate-800 px-2 py-1 rounded-md focus:outline-none cursor-pointer"
-            >
-              <option value="">ทั้งหมด</option>
-              {peopleRows.map(row => {
-                const key = String(row["รหัสพนักงาน"] || row["ชื่อเล่น"] || row._sheetRow || "");
-                const label = row["ชื่อเล่น"] ? `${key} - ${row["ชื่อเล่น"]}` : key;
-                return key ? <option key={key} value={key}>{label}</option> : null;
-              })}
-            </select>
+        <div className={`flex-wrap items-center justify-between gap-2.5 pt-1 border-t border-slate-100 md:border-t-0 md:pt-0 ${showMobileFilters ? "flex" : "hidden md:flex"}`}>
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Requester dropdown */}
+            <div className="flex items-center gap-1.5">
+              <span className="font-semibold text-slate-700 whitespace-nowrap">ผู้เบิก:</span>
+              <select
+                value={filters.requester}
+                onChange={event => updateFilter("requester", event.target.value)}
+                className="bg-white border border-slate-300 text-xs text-slate-800 px-2 py-1 rounded-md focus:outline-none cursor-pointer"
+              >
+                <option value="">ทั้งหมด</option>
+                {peopleRows.map(row => {
+                  const key = String(row["รหัสพนักงาน"] || row["ชื่อเล่น"] || row._sheetRow || "");
+                  const label = row["ชื่อเล่น"] ? `${key} - ${row["ชื่อเล่น"]}` : key;
+                  return key ? <option key={key} value={key}>{label}</option> : null;
+                })}
+              </select>
+            </div>
+
+            {/* Date Picker */}
+            <div className="flex items-center gap-1.5">
+              <span className="font-semibold text-slate-700 whitespace-nowrap">วันที่:</span>
+              <input
+                type="date"
+                value={filters.date}
+                onChange={event => updateFilter("date", event.target.value)}
+                className="bg-white border border-slate-300 text-xs text-slate-800 px-2 py-1 rounded-md focus:outline-none cursor-pointer"
+              />
+            </div>
+
+            {/* Bill Type */}
+            <div className="flex items-center gap-1.5">
+              <span className="font-semibold text-slate-700 whitespace-nowrap">ประเภท:</span>
+              <select
+                value={filters.bill}
+                onChange={event => updateFilter("bill", event.target.value)}
+                className="bg-white border border-slate-300 text-xs text-slate-800 px-2 py-1 rounded-md focus:outline-none cursor-pointer"
+              >
+                <option value="">ทั้งหมด</option>
+                <option value="หลัก">หลัก</option>
+                <option value="ย่อย">ย่อย</option>
+              </select>
+            </div>
           </div>
 
-          {/* Date Picker */}
-          <div className="flex items-center gap-1.5">
-            <span className="font-semibold text-slate-700 whitespace-nowrap">วันที่:</span>
-            <input
-              type="date"
-              value={filters.date}
-              onChange={event => updateFilter("date", event.target.value)}
-              className="bg-white border border-slate-300 text-xs text-slate-800 px-2 py-1 rounded-md focus:outline-none cursor-pointer"
-            />
-          </div>
-
-          {/* Bill Type */}
-          <div className="flex items-center gap-1.5">
-            <span className="font-semibold text-slate-700 whitespace-nowrap">ประเภท:</span>
-            <select
-              value={filters.bill}
-              onChange={event => updateFilter("bill", event.target.value)}
-              className="bg-white border border-slate-300 text-xs text-slate-800 px-2 py-1 rounded-md focus:outline-none cursor-pointer"
-            >
-              <option value="">ทั้งหมด</option>
-              <option value="หลัก">หลัก</option>
-              <option value="ย่อย">ย่อย</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Batch Approve Action Buttons */}
-        {selectedRows.size > 0 && (
-          <div className="flex items-center gap-2 pt-1 border-t border-slate-100 shrink-0">
-            <button
-              type="button"
-              onClick={() => approveSelected("ตั้งเบิก")}
-              disabled={isBatchApproving}
-              className="px-3 py-1 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold rounded-md transition cursor-pointer flex items-center gap-1.5"
-            >
-              {isBatchApproving ? (
-                <><LoaderCircle className="spin" size={14} /> กำลังอัพเดท...</>
-              ) : (
-                <><Check size={14} /> ตั้งเบิกที่เลือก ({selectedRows.size})</>
-              )}
-            </button>
-
-            {effectiveIsAdmin && (
+          {/* Batch Approve Action Buttons placed on the RIGHT side in the SAME filter row (Desktop Only, to prevent mobile duplication) */}
+          {selectedRows.size > 0 && (
+            <div className="hidden md:flex items-center gap-2 ml-auto shrink-0">
               <button
                 type="button"
-                onClick={() => approveSelected("อนุมัติ")}
+                onClick={() => approveSelected("ตั้งเบิก")}
                 disabled={isBatchApproving}
-                className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-md transition cursor-pointer flex items-center gap-1.5"
+                className="px-3 py-1 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold rounded-md transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
               >
                 {isBatchApproving ? (
                   <><LoaderCircle className="spin" size={14} /> กำลังอัพเดท...</>
                 ) : (
-                  <><Check size={14} /> อนุมัติที่เลือก ({selectedRows.size}) ➡️ ส่งต่อผู้อนุมัติ</>
+                  <><Check size={14} /> ตั้งเบิกที่เลือก ({selectedRows.size})</>
                 )}
               </button>
-            )}
-          </div>
-        )}
+
+              {effectiveIsAdmin && (
+                <button
+                  type="button"
+                  onClick={() => approveSelected("อนุมัติ")}
+                  disabled={isBatchApproving}
+                  className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-md transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                >
+                  {isBatchApproving ? (
+                    <><LoaderCircle className="spin" size={14} /> กำลังอัพเดท...</>
+                  ) : (
+                    <><Check size={14} /> อนุมัติที่เลือก ({selectedRows.size}) ➡️ ส่งต่อผู้อนุมัติ</>
+                  )}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {actionError ? <div className="p-3 bg-rose-50 text-rose-700 rounded-xl border border-rose-200 text-xs font-bold">{actionError}</div> : null}
@@ -396,25 +452,33 @@ function filterWithdrawRows(rows: SheetRow[], filters: Required<WithdrawFilters>
 }
 
 function WithdrawTable({
-  approvingRow,
-  columns,
-  onApprove,
-  requesterNames,
   rows,
+  columns,
+  requesterNames,
+  approvingRow,
+  onApprove,
   selectedRows,
   onSelectRow,
   onSelectAll
 }: {
-  approvingRow: number | null;
-  columns: string[];
-  onApprove: (row: SheetRow) => void;
-  requesterNames: Record<string, string>;
   rows: SheetRow[];
+  columns: string[];
+  requesterNames: Record<string, string>;
+  approvingRow: number | null;
+  onApprove: (row: SheetRow) => void;
   selectedRows: Set<number>;
   onSelectRow: (rowId: number) => void;
   onSelectAll: (rowIds: number[]) => void;
 }) {
   if (!rows.length) return <div className="p-8 text-center text-slate-400 text-xs font-medium">ไม่พบรายการตั้งเบิก</div>;
+
+  // Filter rows eligible for selection (only status 'รอตั้งเบิก' or 'รออนุมัติ')
+  const eligibleRows = rows.filter(r => {
+    const st = normalizedStatus(r["สถานะ"]);
+    return st === "รอตั้งเบิก" || st === "รออนุมัติ";
+  });
+
+  const allEligibleSelected = eligibleRows.length > 0 && eligibleRows.every(r => selectedRows.has(Number(r._sheetRow)));
 
   return (
     <div className="overflow-x-auto">
@@ -424,12 +488,14 @@ function WithdrawTable({
             <th className="py-2.5 px-3 w-10 text-center border-r border-slate-200">
               <input 
                 type="checkbox" 
-                checked={rows.length > 0 && rows.every(r => selectedRows.has(Number(r._sheetRow)))}
+                checked={allEligibleSelected}
+                disabled={eligibleRows.length === 0}
                 onChange={e => {
-                  if (e.target.checked) onSelectAll(rows.map(r => Number(r._sheetRow)));
+                  if (e.target.checked) onSelectAll(eligibleRows.map(r => Number(r._sheetRow)));
                   else onSelectAll([]);
                 }}
-                className="rounded border-slate-300 text-slate-900 focus:ring-slate-500 cursor-pointer"
+                className="rounded border-slate-300 text-slate-900 focus:ring-slate-500 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                title={eligibleRows.length === 0 ? "ไม่มีรายการที่สามารถเลือกตั้งเบิกได้" : "เลือกทั้งหมดที่รอตั้งเบิก"}
               />
             </th>
             {columns.map(column => (
@@ -443,6 +509,8 @@ function WithdrawTable({
           {rows.map((row, index) => {
             const sheetRowId = Number(row._sheetRow);
             const isSelected = selectedRows.has(sheetRowId);
+            const status = normalizedStatus(row["สถานะ"]);
+            const isSelectable = status === "รอตั้งเบิก" || status === "รออนุมัติ";
 
             return (
               <tr key={`${sheetRowId}-${index}`} className="hover:bg-slate-50 transition-colors">
@@ -450,8 +518,14 @@ function WithdrawTable({
                   <input 
                     type="checkbox" 
                     checked={isSelected}
-                    onChange={() => onSelectRow(sheetRowId)}
-                    className="rounded border-slate-300 text-slate-900 focus:ring-slate-500 cursor-pointer"
+                    disabled={!isSelectable}
+                    onChange={() => {
+                      if (isSelectable) onSelectRow(sheetRowId);
+                    }}
+                    className={`rounded border-slate-300 text-slate-900 focus:ring-slate-500 ${
+                      isSelectable ? "cursor-pointer" : "cursor-not-allowed opacity-30 bg-slate-100"
+                    }`}
+                    title={!isSelectable ? `รายการสถานะ "${row["สถานะ"] || status}" ตั้งเบิกเรียบร้อยแล้ว ไม่สามารถเลือกซ้ำได้` : "เลือกรายการนี้เพื่อตั้งเบิก"}
                   />
                 </td>
 

@@ -112,7 +112,7 @@ export function ProjectDetailEditor({ fields, project, customerDisplay, companyD
           </header>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {fields.filter(f => !f.startsWith("งบไม่เกิน") && f !== "คุมงบประเภทงาน").map(field => (
+            {fields.filter(f => (!f.startsWith("งบไม่เกิน") || f === "งบไม่เกิน") && f !== "คุมงบประเภทงาน").map(field => (
               <label className="flex flex-col gap-1.5" key={field}>
                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{field}</span>
                 {readonlyField(field) ? (
@@ -200,10 +200,16 @@ export function ProjectDetailEditor({ fields, project, customerDisplay, companyD
         if (workNum > 0 && (!current["ยอดรวม vat"] || toNumber(current["ยอดรวม vat"]) === 0)) {
           next["ยอดรวม vat"] = String(Math.round(workNum * 1.07));
         }
+        if (workNum > 0 && (!current["งบไม่เกิน"] || toNumber(current["งบไม่เกิน"]) === 0)) {
+          next["งบไม่เกิน"] = String(workNum);
+        }
       } else if (field === "ยอดรวม vat") {
         const vatNum = toNumber(value);
         if (vatNum > 0 && (!current["ยอดงาน"] || toNumber(current["ยอดงาน"]) === 0)) {
           next["ยอดงาน"] = String(Math.round(vatNum / 1.07));
+        }
+        if (vatNum > 0 && (!current["งบไม่เกิน"] || toNumber(current["งบไม่เกิน"]) === 0)) {
+          next["งบไม่เกิน"] = String(vatNum);
         }
       }
       return next;
