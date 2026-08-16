@@ -95,6 +95,9 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
   // 3. Attempt LINE Auto-Login
   async function checkAndLoginLineUser(profile: LineProfile) {
     setIsLoading(true);
+    const hadAuthCookieBefore = typeof document !== "undefined" && document.cookie.includes("auth_employee_id=");
+    const isLoginPagePath = typeof window !== "undefined" && window.location.pathname.startsWith("/login");
+
     try {
       const res = await fetch("/api/auth", {
         method: "POST",
@@ -111,10 +114,8 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
         if (typeof window !== "undefined") {
           sessionStorage.removeItem("line_user_logged_out");
         }
-        const hasAuthCookie = typeof document !== "undefined" && document.cookie.includes("auth_employee_id=");
-        const isLoginPage = typeof window !== "undefined" && (window.location.pathname.startsWith("/login") || !hasAuthCookie);
 
-        if (isLoginPage) {
+        if (!hadAuthCookieBefore || isLoginPagePath) {
           window.location.href = "/";
         }
       } else {
