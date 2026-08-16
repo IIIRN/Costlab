@@ -108,6 +108,7 @@ export function BillImageThumbnail({ value, compact = false }: BillImageThumbnai
           src={firstImageUrl}
           alt="รูปถ่าย"
           loading="lazy"
+          decoding="async"
           onError={() => setImgError(true)}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200"
         />

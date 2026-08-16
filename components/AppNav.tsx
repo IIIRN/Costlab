@@ -34,7 +34,7 @@ export function AppNav({ icons = {}, isCollapsed = false }: AppNavProps) {
     const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
     const Icon = icons[view.id];
     return (
-      <Link key={view.id} className={active ? "active" : ""} href={href} title={view.name}>
+      <Link key={view.id} className={active ? "active" : ""} href={href} prefetch={false} title={view.name}>
         <span className="nav-icon" aria-hidden="true">
           {Icon ? <Icon size={18} strokeWidth={2.2} /> : view.name.slice(0, 1)}
         </span>
@@ -53,6 +53,7 @@ export function AppNav({ icons = {}, isCollapsed = false }: AppNavProps) {
       <Link
         className={isOptionsActive ? "active" : ""}
         href="/settings/options"
+        prefetch={false}
         title="ตั้งค่าตัวเลือกระบบ"
       >
         <span className="nav-icon" aria-hidden="true">
@@ -64,6 +65,7 @@ export function AppNav({ icons = {}, isCollapsed = false }: AppNavProps) {
       <Link
         className={isSettingsActive ? "active" : ""}
         href="/settings"
+        prefetch={false}
         title="สถานะ Supabase"
       >
         <span className="nav-icon" aria-hidden="true">
@@ -75,6 +77,7 @@ export function AppNav({ icons = {}, isCollapsed = false }: AppNavProps) {
       <Link
         className={isLineSystemActive ? "active" : ""}
         href="/settings/line-system"
+        prefetch={false}
         title="ระบบ LINE Bot & Webhook"
       >
         <span className="nav-icon" aria-hidden="true">
@@ -86,6 +89,7 @@ export function AppNav({ icons = {}, isCollapsed = false }: AppNavProps) {
       <Link
         className={isUsersActive ? "active" : ""}
         href="/settings/users"
+        prefetch={false}
         title="จัดการผู้ใช้ระบบ"
       >
         <span className="nav-icon" aria-hidden="true">
