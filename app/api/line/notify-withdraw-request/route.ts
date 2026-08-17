@@ -6,7 +6,8 @@ import {
   getLineConfigIds,
   createWithdrawRequesterFlex,
   createWithdrawOwnerFlex,
-  createWithdrawApproverFlex
+  createWithdrawApproverFlex,
+  createWithdrawCompletedRequesterFlex
 } from "@/lib/line";
 
 export async function POST(req: NextRequest) {
@@ -59,6 +60,26 @@ export async function POST(req: NextRequest) {
 
       const result = await sendFlexMessageDetailed(ownerId, altText, flex);
       return NextResponse.json({ success: result.success, error: result.error, target: ownerId });
+    }
+
+    if (targetRole === "completed" || targetRole === "closed") {
+      const firstBill = bills[0];
+      const requesterKey = firstBill["ผู้เบิก"] || firstBill.requester || "";
+      const targetUserId = await getLineUserIdByRequester(requesterKey);
+      const fallbackGroup = await getLineTargetGroup("finance");
+      const sendTo = targetUserId || fallbackGroup;
+
+      if (!sendTo) {
+        return NextResponse.json({ error: "No LINE User ID or Group target found for requester" }, { status: 400 });
+      }
+
+      const flex = createWithdrawCompletedRequesterFlex(bills);
+      const altText = bills.length === 1
+        ? `🎉 รายการเบิกเงินสำเร็จเรียบร้อย #${bills[0]._sheetRow || bills[0].id || bills[0]["ลำดับ"] || ""} (฿${amountStr})`
+        : `🎉 รายการเบิกเงินสำเร็จเรียบร้อย ${bills.length} รายการ (รวม ฿${amountStr})`;
+
+      const result = await sendFlexMessageDetailed(sendTo, altText, flex);
+      return NextResponse.json({ success: result.success, error: result.error, target: sendTo });
     }
 
     // Default: requester

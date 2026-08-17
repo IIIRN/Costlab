@@ -61,7 +61,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="th" suppressHydrationWarning>
-      <body>
+      <body suppressHydrationWarning>
         <PreventZoom />
         <LineAuthProvider>
           <ToastProvider>

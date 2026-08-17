@@ -45,7 +45,6 @@ const RELATED_COLUMNS = [
   "บิล",
   "ประเภท",
   "ยอดเงิน",
-  "ผู้รับเหมา",
   "ผู้เบิก",
   "ว/ด/ป",
   "สถานะ"
@@ -55,11 +54,12 @@ export default async function ContractDetailPage({ params }: ContractDetailPageP
   const { contractId } = await params;
   const decodedContractId = decodeURIComponent(contractId).trim();
 
-  const [contractRows, rawDataRows, contractorRows, form] = await Promise.all([
+  const [contractRows, rawDataRows, contractorRows, form, peopleRows] = await Promise.all([
     getRows(TABLES.CONTRACT_WORK, 15_000).then(rows => hydrateContractRows(rows)).catch(() => []),
     getRows(TABLES.DATA, 15_000).catch(() => []),
     getRows(TABLES.CONTRACTOR, 15_000).catch(() => []),
-    getFormPayload(TABLES.CONTRACT_WORK).catch(() => null)
+    getFormPayload(TABLES.CONTRACT_WORK).catch(() => null),
+    getRows(TABLES.PEOPLE, 15_000).catch(() => [])
   ]);
 
   const dataRows = await hydrateBillRows(rawDataRows);
@@ -79,7 +79,13 @@ export default async function ContractDetailPage({ params }: ContractDetailPageP
     "ที่อยู่": rawContract["ที่อยู่"] || contractor?.["ที่อยู่"] || "",
   };
 
-  const relatedRows = dataRows.filter(row => relatedToContract(row, decodedContractId) && isCommittedBill(row));
+  const relatedRows = dataRows
+    .filter(row => relatedToContract(row, decodedContractId, contract) && isCommittedBill(row))
+    .map(row => ({
+      ...row,
+      "ผู้รับเหมา": row["ผู้รับเหมา"] || contract["ชื่อเล่น"] || contract["ชื่อ-นามสกุล"] || row["ร้าน/บุคคล"] || "-",
+      "ผู้เบิก": resolveRequesterName(row["ผู้เบิก"], peopleRows)
+    }));
   const displayName = valueOf(contract, ["ชื่อเล่น", "ชื่อ-นามสกุล", "id_Contractor"]) || decodedContractId;
   const projectName = valueOf(contract, ["ชื่อ Project", "ID Project"]) || "-";
   const paid = toAmount(valueOf(contract, ["ยอดเงินจ่าย"]));
@@ -176,8 +182,59 @@ export default async function ContractDetailPage({ params }: ContractDetailPageP
   );
 }
 
-function relatedToContract(row: SheetRow, contractId: string) {
-  return String(row["ผู้รับเหมา"] || row.id_Conwork || "").trim() === contractId;
+function relatedToContract(row: SheetRow, contractId: string, contract?: SheetRow) {
+  const cId = contractId.trim().toLowerCase();
+  if (!cId) return false;
+
+  const rawContractorRef = String(
+    row["_rawContractor"] || row["_rawVendor"] || row["id_Conwork"] || row.conwork_id || row["ผู้รับเหมา"] || row["ร้าน/บุคคล"] || ""
+  ).trim().toLowerCase();
+
+  const vendorOrPerson = String(row["ร้าน/บุคคล"] || row.vendor_or_person || "").trim().toLowerCase();
+  const contractorField = String(row["ผู้รับเหมา"] || row.contractor_id || "").trim().toLowerCase();
+  const conworkField = String(row["id_Conwork"] || row.conwork_id || "").trim().toLowerCase();
+  const detailsField = String(row["รายละเอียดงาน"] || row["สินค้า/ทำงาน"] || row.description || "").trim().toLowerCase();
+
+  // If this bill explicitly specifies a DIFFERENT CW contract ID (e.g. CW940969 while viewing CW940967), exclude it!
+  const allRefs = [rawContractorRef, contractorField, vendorOrPerson, conworkField, detailsField];
+  const explicitCwRef = allRefs.map(r => r.match(/cw\d+/i)?.[0]?.toLowerCase()).find(Boolean);
+
+  if (explicitCwRef) {
+    return explicitCwRef === cId;
+  }
+
+  // If no explicit CW... ID, match by exact contract ID
+  if (
+    vendorOrPerson === cId ||
+    contractorField === cId ||
+    conworkField === cId ||
+    (cId.length >= 4 && detailsField.includes(cId))
+  ) {
+    return true;
+  }
+
+  // Match by contractor name & project ONLY if no explicit contract ID is present
+  if (contract) {
+    const contractorId = String(contract["id_Contractor"] || contract.id_Contractor || "").trim().toLowerCase();
+    const nickname = String(contract["ชื่อเล่น"] || "").trim().toLowerCase();
+    const fullName = String(contract["ชื่อ-นามสกุล"] || "").trim().toLowerCase();
+    const projectId = String(contract["ID Project"] || contract.project_id || "").trim().toLowerCase();
+    const rowProjId = String(row["ID Project"] || row.project_id || "").trim().toLowerCase();
+
+    const matchesContractor = Boolean(
+      (contractorId && (vendorOrPerson === contractorId || contractorField === contractorId)) ||
+      (nickname && (vendorOrPerson === nickname || contractorField === nickname || (nickname.length >= 3 && detailsField.includes(nickname)))) ||
+      (fullName && (vendorOrPerson === fullName || contractorField === fullName))
+    );
+
+    const matchesProject = Boolean(!projectId || !rowProjId || rowProjId === projectId);
+
+    if (matchesContractor && matchesProject) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function valueOf(row: SheetRow, columns: string[]) {
@@ -201,4 +258,35 @@ function formatDetailValue(field: string, value: unknown) {
   if (value === null || value === undefined || value === "") return "-";
   if (amountField(field)) return money(toAmount(String(value)));
   return String(value);
+}
+
+function resolveRequesterName(rawRequester: unknown, peopleRows: SheetRow[]): string {
+  const str = String(rawRequester || "").trim();
+  if (!str) return "-";
+
+  const strClean = str.toLowerCase().replace(/^pt/i, "").trim();
+
+  const found = peopleRows.find((p) => {
+    const pId = String(p["รหัสพนักงาน"] || p["id"] || "").trim().toLowerCase();
+    const pIdClean = pId.replace(/^pt/i, "").trim();
+    const pPhone = String(p["เบอร์โทร"] || p["เบอร์โทรศัพท์"] || p["phone"] || "").trim();
+    const pNickname = String(p["ชื่อเล่น"] || "").trim().toLowerCase();
+    const pFullName = String(p["ชื่อ-นามสกุล"] || "").trim().toLowerCase();
+
+    return (
+      pId === str.toLowerCase() ||
+      (pIdClean && pIdClean === strClean) ||
+      (pPhone && pPhone === str) ||
+      (pNickname && pNickname === str.toLowerCase()) ||
+      (pFullName && pFullName === str.toLowerCase())
+    );
+  });
+
+  if (found) {
+    const nickname = String(found["ชื่อเล่น"] || "").trim();
+    const fullName = String(found["ชื่อ-นามสกุล"] || found["name"] || "").trim();
+    return nickname || fullName || str;
+  }
+
+  return str;
 }

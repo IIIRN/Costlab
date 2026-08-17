@@ -94,6 +94,16 @@ export async function POST(request: Request) {
       if (pictureUrl && matchedUser.pictureUrl !== pictureUrl) {
         matchedUser.pictureUrl = pictureUrl;
         await saveUsersList(users);
+
+        // Also sync latest profile picture to master_members table
+        try {
+          await supabaseAdmin
+            .from("master_members")
+            .update({ pictureUrl: pictureUrl, image_url: pictureUrl })
+            .or(`line_user_id.eq.${lineUserId},lineUserId.eq.${lineUserId}`);
+        } catch (e) {
+          console.warn("⚠️ Failed to sync pictureUrl to master_members:", e);
+        }
       }
 
       const empId = matchedUser.username || matchedUser.id;
@@ -167,6 +177,59 @@ export async function POST(request: Request) {
           user: existingUser,
           message: `ผูกบัญชี LINE กับผู้ใช้งาน "${userName}" สำเร็จ!`
         });
+      }
+
+      // Check master_members (employee table) by phone number
+      try {
+        const { data: member } = await supabaseAdmin
+          .from("master_members")
+          .select("*")
+          .or(`"เบอร์โทรศัพท์".eq.${phone},phone.eq.${phone}`)
+          .maybeSingle();
+
+        if (member) {
+          // Sync LINE User ID into master_members
+          await supabaseAdmin
+            .from("master_members")
+            .update({
+              line_user_id: lineUserId,
+              lineUserId: lineUserId
+            })
+            .eq("id", member.id);
+
+          const matchedUser = {
+            id: String(member.id || member.id_Contractor || member["รหัสพนักงาน"] || phone),
+            username: String(member["เบอร์โทรศัพท์"] || member.phone || member.id || phone),
+            displayName: String(member["ชื่อเล่น"] || member["ชื่อ-นามสกุล"] || member.name || displayName || phone),
+            role: String(member["สิทธิ์การใช้งาน"] || member.role || "User"),
+            status: "Active",
+            phone: phone,
+            lineUserId: lineUserId,
+            pictureUrl: pictureUrl || String(member.pictureUrl || member.image_url || "")
+          };
+
+          users.push(matchedUser);
+          await saveUsersList(users);
+
+          const empId = matchedUser.username || matchedUser.id;
+          const userName = matchedUser.displayName || empId;
+          const userRole = matchedUser.role || "User";
+
+          cookieStore.set("auth_employee_id", empId, { expires, path: "/" });
+          cookieStore.set("auth_name", userName, { expires, path: "/" });
+          cookieStore.set("auth_role", userRole, { expires, path: "/" });
+          if (pictureUrl) cookieStore.set("auth_picture_url", pictureUrl, { expires, path: "/" });
+          cookieStore.set("auth_line_user_id", lineUserId, { expires, path: "/" });
+
+          return NextResponse.json({
+            success: true,
+            isLinked: true,
+            user: matchedUser,
+            message: `ผูกบัญชี LINE กับพนักงาน "${userName}" (${userRole}) สำเร็จ!`
+          });
+        }
+      } catch (e) {
+        console.warn("⚠️ Failed searching master_members during registration:", e);
       }
 
       const newUserId = phone;

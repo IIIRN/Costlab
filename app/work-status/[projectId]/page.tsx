@@ -57,18 +57,22 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
   const { projectId } = await params;
   const decodedProjectId = decodeURIComponent(projectId);
 
-  const [projectRows, dataRows, customerRows, companyRows] = await Promise.all([
+  const [projectRows, dataRows, customerRows, companyRows, peopleRows] = await Promise.all([
     getRows(TABLES.PROJECT).catch(() => []),
     getRows(TABLES.DATA).catch(() => []),
     getRows(TABLES.CUSTOMER).catch(() => []),
     getRows(TABLES.COMPANY).catch(() => []),
+    getRows(TABLES.PEOPLE).catch(() => []),
   ]);
 
   const project = projectRows.find((row) => String(row["ID Project"] || "").trim() === decodedProjectId.trim());
   if (!project) notFound();
 
   const relatedRows = rowsForProject(dataRows, project["ID Project"]);
-  const summaryRows = relatedRows.filter(isCommittedBill);
+  const summaryRows = relatedRows.filter(isCommittedBill).map((row) => ({
+    ...row,
+    "ผู้เบิก": resolveRequesterName(row["ผู้เบิก"], peopleRows)
+  }));
   const { project: hydratedProject, totals } = hydrateProjectSummary(project, relatedRows);
   const expenseBreakdown = buildExpenseBreakdown(summaryRows);
 
@@ -109,6 +113,37 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
       expenseCategories={EXPENSE_CATEGORIES}
     />
   );
+}
+
+function resolveRequesterName(rawRequester: unknown, peopleRows: SheetRow[]): string {
+  const str = String(rawRequester || "").trim();
+  if (!str) return "-";
+
+  const strClean = str.toLowerCase().replace(/^pt/i, "").trim();
+
+  const found = peopleRows.find((p) => {
+    const pId = String(p["รหัสพนักงาน"] || p["id"] || "").trim().toLowerCase();
+    const pIdClean = pId.replace(/^pt/i, "").trim();
+    const pPhone = String(p["เบอร์โทร"] || p["เบอร์โทรศัพท์"] || p["phone"] || "").trim();
+    const pNickname = String(p["ชื่อเล่น"] || "").trim().toLowerCase();
+    const pFullName = String(p["ชื่อ-นามสกุล"] || "").trim().toLowerCase();
+
+    return (
+      pId === str.toLowerCase() ||
+      (pIdClean && pIdClean === strClean) ||
+      (pPhone && pPhone === str) ||
+      (pNickname && pNickname === str.toLowerCase()) ||
+      (pFullName && pFullName === str.toLowerCase())
+    );
+  });
+
+  if (found) {
+    const nickname = String(found["ชื่อเล่น"] || "").trim();
+    const fullName = String(found["ชื่อ-นามสกุล"] || found["name"] || "").trim();
+    return nickname || fullName || str;
+  }
+
+  return str;
 }
 
 function buildExpenseBreakdown(summaryRows: SheetRow[]) {

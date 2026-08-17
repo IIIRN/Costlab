@@ -12,24 +12,33 @@ import type { SheetRow } from "@/lib/types";
 export async function GET(request: NextRequest) {
   const tableName = request.nextUrl.searchParams.get("tableName");
   const viewName = request.nextUrl.searchParams.get("viewName") || "";
-  const limit = Number(request.nextUrl.searchParams.get("limit") || 120);
+  const page = Math.max(1, Number(request.nextUrl.searchParams.get("page") || 1));
+  const limit = Math.max(1, Math.min(500, Number(request.nextUrl.searchParams.get("limit") || 50)));
   const search = request.nextUrl.searchParams.get("search") || "";
   if (!tableName) return NextResponse.json({ error: "Missing tableName" }, { status: 400 });
 
-  let rows = await getRows(tableName);
+  let allRows = await getRows(tableName);
   if (search) {
     const q = search.toLowerCase();
-    rows = rows.filter(row => Object.values(row).some(value => String(value || "").toLowerCase().includes(q)));
+    allRows = allRows.filter(row => Object.values(row).some(value => String(value || "").toLowerCase().includes(q)));
   }
+
+  const totalCount = allRows.length;
+  const totalPages = Math.ceil(totalCount / limit) || 1;
+  const startIndex = (page - 1) * limit;
+  const paginatedRows = allRows.slice(startIndex, startIndex + limit);
   const keyColumn = TABLE_KEYS[tableName] || "_RowNumber";
-  rows = rows.slice(0, limit);
 
   return NextResponse.json({
     tableName,
     viewName,
-    columns: VIEW_COLUMNS[viewName] || Object.keys(rows[0] || {}),
+    columns: VIEW_COLUMNS[viewName] || Object.keys(allRows[0] || {}),
     keyColumn,
-    rows
+    page,
+    limit,
+    totalCount,
+    totalPages,
+    rows: paginatedRows
   });
 }
 
@@ -139,6 +148,7 @@ export async function DELETE(request: NextRequest) {
     const deletingRows = allRows.filter(row =>
       keySet.has(String(row._sheetRow)) ||
       keySet.has(String(row[keyCol])) ||
+      (row["ลำดับ"] !== undefined && keySet.has(String(row["ลำดับ"]))) ||
       (row.id !== undefined && keySet.has(String(row.id))) ||
       (row.id_Conwork !== undefined && keySet.has(String(row.id_Conwork))) ||
       (row.id_store !== undefined && keySet.has(String(row.id_store))) ||
@@ -193,9 +203,8 @@ function ensureBillVendorType(row: SheetRow) {
   }
 }
 
-function validateBillDelete(deletingRows: SheetRow[]) {
-  const blocked = deletingRows.filter(row => !canEditOrDeleteBill(row["สถานะ"]));
-  if (blocked.length) throw new Error("ลบได้เฉพาะบิลที่มีสถานะรออนุมัติ หรือตั้งเบิก");
+function validateBillDelete(_deletingRows: SheetRow[]) {
+  // Allow deleting bills
 }
 
 function canManageTable(tableName: string) {
