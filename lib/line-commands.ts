@@ -587,6 +587,9 @@ export async function handleLineCommand(
           "สถานะ": newStatus,
           status: newStatus
         });
+        b["สถานะ"] = newStatus;
+        b.status = newStatus;
+      }
 
       // When Owner Approves successfully, forward Multi-Item Flex Message to Approvers (LINE_USER_ID_APPROVER list)
       if (isApprove && approverIds.length > 0) {
@@ -600,6 +603,36 @@ export async function handleLineCommand(
           await sendFlexMessageDetailed(approverId, altText, flexForApprover);
         }
       }
+
+      // When Approver Closes bills successfully (!isApprove && !isReject), notify each Requester via LINE Flex Message
+      if (!isApprove && !isReject && targetBills.length > 0) {
+        const { getLineUserIdByRequester, getLineTargetGroup, createWithdrawCompletedRequesterFlex, sendFlexMessageDetailed } = await import("@/lib/line");
+
+        const billsByRequester = new Map<string, any[]>();
+        for (const b of targetBills) {
+          const reqKey = String(b["ผู้เบิก"] || b.requester || "").trim();
+          if (!billsByRequester.has(reqKey)) {
+            billsByRequester.set(reqKey, []);
+          }
+          billsByRequester.get(reqKey)!.push(b);
+        }
+
+        for (const [reqKey, reqBills] of billsByRequester.entries()) {
+          const targetUserId = await getLineUserIdByRequester(reqKey);
+          const fallbackGroup = await getLineTargetGroup("finance");
+          const sendTo = targetUserId || fallbackGroup;
+
+          if (sendTo) {
+            const flexForRequester = createWithdrawCompletedRequesterFlex(reqBills);
+            const totalAmt = reqBills.reduce((sum, b) => sum + Number(b["ยอดเงิน"] || b.amount || 0), 0);
+            const totalAmtStr = totalAmt.toLocaleString("th-TH");
+            const altText = reqBills.length === 1
+              ? `🎉 รายการเบิกเงินสำเร็จเรียบร้อย #${reqBills[0]["ลำดับ"] || reqBills[0].id || ""} (฿${totalAmtStr})`
+              : `🎉 รายการเบิกเงินสำเร็จเรียบร้อย ${reqBills.length} รายการ (รวม ฿${totalAmtStr})`;
+
+            await sendFlexMessageDetailed(sendTo, altText, flexForRequester);
+          }
+        }
       }
 
       const formattedTotal = totalAmount.toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });

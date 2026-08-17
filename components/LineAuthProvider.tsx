@@ -64,7 +64,26 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
   // 2. Load & Init @line/liff SDK
   async function loadLiffSdk(id: string) {
     try {
-      const liff = (await import("@line/liff")).default;
+      let liff: any;
+      try {
+        // @ts-ignore
+        liff = (await import("@line/liff")).default;
+      } catch (err) {
+        if (typeof window !== "undefined" && (window as any).liff) {
+          liff = (window as any).liff;
+        } else {
+          await new Promise<void>((resolve, reject) => {
+            const script = document.createElement("script");
+            script.src = "https://static.line-scdn.net/liff/edge/2/sdk.js";
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error("Failed to load LIFF CDN"));
+            document.head.appendChild(script);
+          });
+          liff = (window as any).liff;
+        }
+      }
+
+      if (!liff) return;
       await liff.init({ liffId: id });
       setLiffInstance(liff);
       setIsLiffReady(true);
@@ -105,6 +124,7 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({
           action: "login",
           lineUserId: profile.userId,
+          displayName: profile.displayName,
           pictureUrl: profile.pictureUrl,
         }),
       });
@@ -147,6 +167,7 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
         if (activeLiffId) {
           currentLiffId = activeLiffId;
           setLiffId(activeLiffId);
+          // @ts-ignore
           const liff = (await import("@line/liff")).default;
           await liff.init({ liffId: activeLiffId });
           setLiffInstance(liff);

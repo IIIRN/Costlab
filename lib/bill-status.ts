@@ -21,9 +21,8 @@ export function validateBillStatusTransition(currentStatus: unknown, nextStatus:
   }
 }
 
-export function canEditOrDeleteBill(status: unknown) {
-  const normStatus = normalizeBillStatus(status);
-  return normStatus === "" || normStatus === "รอตั้งเบิก" || normStatus === "ตั้งเบิก" || normStatus === "รออนุมัติ";
+export function canEditOrDeleteBill(_status: unknown) {
+  return true;
 }
 
 export function isValidBill(row: SheetRow) {

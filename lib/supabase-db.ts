@@ -979,3 +979,43 @@ export async function uploadFileToSupabaseStorage(bucketName: string, path: stri
 
   return publicUrlData.publicUrl;
 }
+
+/**
+ * Delete uploaded image/attachment files from Supabase Storage buckets to save disk space
+ */
+export async function deleteStorageFilesFromSupabase(urls: (string | null | undefined)[]) {
+  if (!isSupabaseConfigured() || !urls.length) return;
+
+  const filePathsByBucket: Record<string, string[]> = {};
+
+  for (const rawUrl of urls) {
+    if (!rawUrl || typeof rawUrl !== "string" || rawUrl.startsWith("data:")) continue;
+
+    const items = rawUrl.split(",").map(s => s.trim()).filter(Boolean);
+
+    for (const item of items) {
+      const match = item.match(/\/storage\/v1\/object\/public\/([^\/]+)\/(.+)$/i);
+      if (match) {
+        const bucket = match[1];
+        const filePath = match[2];
+        if (!filePathsByBucket[bucket]) filePathsByBucket[bucket] = [];
+        filePathsByBucket[bucket].push(filePath);
+      }
+    }
+  }
+
+  for (const [bucket, paths] of Object.entries(filePathsByBucket)) {
+    if (paths.length > 0) {
+      try {
+        const { error } = await supabaseAdmin.storage.from(bucket).remove(paths);
+        if (error) {
+          console.warn(`Failed to delete files from Supabase Storage bucket '${bucket}':`, error.message);
+        } else {
+          console.log(`Successfully deleted ${paths.length} storage file(s) from bucket '${bucket}'.`);
+        }
+      } catch (err) {
+        console.warn(`Exception deleting files from storage bucket '${bucket}':`, err);
+      }
+    }
+  }
+}

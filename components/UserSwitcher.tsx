@@ -46,6 +46,7 @@ export function UserSwitcher({ currentUser, theme = "dark", isCollapsed = false,
         sessionStorage.setItem("line_user_logged_out", "true");
       }
       try {
+        // @ts-ignore
         const liff = (await import("@line/liff")).default;
         if (liff && liff.isLoggedIn()) {
           liff.logout();

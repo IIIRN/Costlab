@@ -4,6 +4,7 @@ import type { RefOption, TableRow, SheetRow } from "@/lib/types";
 import {
   deleteRowFromSupabase,
   deleteRowsFromSupabase,
+  deleteStorageFilesFromSupabase,
   getRowsFromSupabase,
   getSystemOptionsFromSupabase,
   insertAuditLogToSupabase,
@@ -144,10 +145,13 @@ export async function deleteRows(tableName: string, targetKeys: (number | string
     const allRows = targetRows && targetRows.length ? targetRows : (await getRows(tableName).catch(() => []));
     const idsToDelete = new Set<string | number>();
 
+    const imageUrls: string[] = [];
+
     for (const itemKey of keys) {
       const foundRow = allRows.find(r =>
         String(r._sheetRow) === itemKey ||
         String(r[keyColumn]) === itemKey ||
+        String(r["ลำดับ"]) === itemKey ||
         String(r.id) === itemKey ||
         String(r.id_Conwork) === itemKey ||
         String(r.id_store) === itemKey ||
@@ -157,12 +161,24 @@ export async function deleteRows(tableName: string, targetKeys: (number | string
         String(r.id_cus) === itemKey ||
         String(r.id_Company) === itemKey
       );
+      if (foundRow) {
+        const imgField = foundRow["รูปถ่ายบิล"] || foundRow["รูปถ่าย"] || foundRow["รูปภาพ"] || foundRow.image || foundRow.image_url;
+        if (typeof imgField === "string" && imgField.trim()) {
+          imageUrls.push(imgField.trim());
+        }
+      }
       const targetVal = foundRow?.id ?? foundRow?.[keyColumn] ?? foundRow?.id_Conwork ?? foundRow?.id_bank ?? foundRow?.id_store ?? foundRow?.id_Contractor ?? foundRow?.id_cus ?? foundRow?.id_Company ?? foundRow?.id_car ?? itemKey;
       if (typeof targetVal === "string" || typeof targetVal === "number") {
         if (String(targetVal).trim() !== "") {
           idsToDelete.add(targetVal);
         }
       }
+    }
+
+    if (imageUrls.length > 0) {
+      await deleteStorageFilesFromSupabase(imageUrls).catch(err => {
+        console.warn("Storage files cleanup warning:", err);
+      });
     }
 
     if (idsToDelete.size > 0) {

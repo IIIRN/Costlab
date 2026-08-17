@@ -257,6 +257,9 @@ function applyBillFormulasFast(
 
   const rawContractorId = String(row["ผู้รับเหมา"] || row.contractor_id || row.conwork_id || "").trim();
   const rawVendorStr = String(row["ร้าน/บุคคล"] || "").trim();
+  if (!row["_rawVendor"]) row["_rawVendor"] = rawVendorStr;
+  if (!row["_rawContractor"]) row["_rawContractor"] = rawContractorId;
+
   const contractKey = rawContractorId || (rawVendorStr.startsWith("CW") ? rawVendorStr : "");
   let contract: SheetRow | undefined;
   if (contractKey) {
@@ -277,7 +280,13 @@ function applyBillFormulasFast(
   row["ยอดโอน(มีหัก)"] = hasValue(row["หัก"]) ? computeBillTransferAmount(row) : "";
   row["ยอดโอน(vat,หัก)"] = hasValue(row["vat"]) && hasValue(row["หัก"]) ? computeBillTransferAmount(row) : "";
   row["ยอดโอน"] = computeBillTransferAmount(row);
-  row["ร้าน/บุคคล"] = vendorNameFast(row, context.storeMap, contract);
+  
+  const vendorNameResult = vendorNameFast(row, context.storeMap, contract);
+  row["ร้าน/บุคคล"] = vendorNameResult;
+  if (contract || rawContractorId || rawVendorStr.startsWith("CW") || String(row["ร้านค้า/ผู้รับเหมา"]).trim() === "ผู้รับเหมา") {
+    row["ผู้รับเหมา"] = vendorNameResult;
+  }
+
   const pFast = String(row["สินค้า"] || row.product || "").trim();
   const dFast = String(row["รายละเอียดงาน"] || row.work_details || "").trim();
   row["สินค้า/ทำงาน"] = pFast && dFast ? `${pFast} / ${dFast}` : (pFast || dFast || row["สินค้า/ทำงาน"] || row.description || "");

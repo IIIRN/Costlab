@@ -1540,7 +1540,7 @@ export type MultiBillFlexOptions = {
   headerBgColor?: string;
   badgeText?: string;
   themeColor?: string;
-  mode?: "requester" | "owner" | "approver" | "search";
+  mode?: "requester" | "owner" | "approver" | "search" | "completed";
 };
 
 export function createMultiBillFlex(
@@ -1683,6 +1683,16 @@ export function createMultiBillFlex(
           label: "ปิดงาน",
           text: `ปิดงานบิลลำดับที่: ${bId}`
         }
+      });
+    } else if (mode === "completed") {
+      actionLinks.push({
+        type: "text",
+        text: "[เบิกสำเร็จ]",
+        size: "xxs",
+        color: "#059669",
+        align: "end",
+        weight: "bold",
+        flex: 3
       });
     } else {
       actionLinks.push(
@@ -1928,6 +1938,20 @@ export function createMultiBillFlex(
         }
       }
     ];
+  } else if (mode === "completed") {
+    footerButtons = [
+      {
+        type: "button",
+        style: "primary",
+        color: "#059669",
+        height: "sm",
+        action: {
+          type: "message",
+          label: `🎉 รายการเบิกเงินสำเร็จเรียบร้อย (${bills.length} รายการ)`,
+          text: `เบิกสำเร็จ:${sheetRowStr}`
+        }
+      }
+    ];
   } else {
     // Mode search
     footerButtons = [
@@ -1984,23 +2008,50 @@ export function createMultiBillFlex(
 }
 
 export function createWithdrawRequesterFlex(billsInput: Record<string, any> | Array<Record<string, any>>): Record<string, any> {
-  return createMultiBillFlex(billsInput, {
+  const bills = (Array.isArray(billsInput) ? billsInput : [billsInput]).map(b => ({
+    ...b,
+    "สถานะ": b["สถานะ"] || b.status || "ตั้งเบิก",
+    status: b.status || b["สถานะ"] || "ตั้งเบิก"
+  }));
+  return createMultiBillFlex(bills, {
     title: "📄 แจ้งเตือนรายการตั้งเบิกเงิน",
     mode: "requester"
   });
 }
 
 export function createWithdrawOwnerFlex(billsInput: Record<string, any> | Array<Record<string, any>>): Record<string, any> {
-  return createMultiBillFlex(billsInput, {
+  const bills = (Array.isArray(billsInput) ? billsInput : [billsInput]).map(b => ({
+    ...b,
+    "สถานะ": b["สถานะ"] || b.status || "รออนุมัติ",
+    status: b.status || b["สถานะ"] || "รออนุมัติ"
+  }));
+  return createMultiBillFlex(bills, {
     title: "📋 คำขออนุมัติเบิกเงิน (ส่งจากผู้เบิก)",
     mode: "owner"
   });
 }
 
 export function createWithdrawApproverFlex(billsInput: Record<string, any> | Array<Record<string, any>>): Record<string, any> {
-  return createMultiBillFlex(billsInput, {
+  const bills = (Array.isArray(billsInput) ? billsInput : [billsInput]).map(b => ({
+    ...b,
+    "สถานะ": !b["สถานะ"] || b["สถานะ"] === "ตั้งเบิก" || b["สถานะ"] === "รอตั้งเบิก" || b["สถานะ"] === "รออนุมัติ" ? "อนุมัติ" : b["สถานะ"],
+    status: !b.status || b.status === "ตั้งเบิก" || b.status === "รอตั้งเบิก" || b.status === "รออนุมัติ" ? "อนุมัติ" : b.status
+  }));
+  return createMultiBillFlex(bills, {
     title: "✅ รายการอนุมัติสำเร็จ (รอปิดงาน)",
     mode: "approver"
+  });
+}
+
+export function createWithdrawCompletedRequesterFlex(billsInput: Record<string, any> | Array<Record<string, any>>): Record<string, any> {
+  const bills = (Array.isArray(billsInput) ? billsInput : [billsInput]).map(b => ({
+    ...b,
+    "สถานะ": "เบิกแล้ว",
+    status: "เบิกแล้ว"
+  }));
+  return createMultiBillFlex(bills, {
+    title: "🎉 รายการเบิกเงินสำเร็จเรียบร้อย (ปิดงาน)",
+    mode: "completed"
   });
 }
 

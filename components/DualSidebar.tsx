@@ -302,7 +302,7 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
                       <Link
                         key={view.id}
                         href={href}
-                        prefetch={false}
+                        prefetch={true}
                         className={`flex items-center gap-2.5 px-2.5 py-2 rounded-md transition-all duration-150 text-xs font-sans ${
                           active
                             ? "bg-[#d4f54e] text-[#0b3531] font-semibold"
@@ -342,7 +342,7 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
                       <Link
                         key={view.id}
                         href={href}
-                        prefetch={false}
+                        prefetch={true}
                         className={`flex items-center gap-2.5 px-2.5 py-2 rounded-md transition-all duration-150 text-xs font-sans ${
                           active
                             ? "bg-[#d4f54e] text-[#0b3531] font-semibold"
@@ -373,7 +373,7 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
                 <div className="space-y-1">
                   <Link
                     href="/settings/general"
-                    prefetch={false}
+                    prefetch={true}
                     className={`flex items-center gap-2.5 px-2.5 py-2 rounded-md transition-all duration-150 text-xs font-sans ${
                       isGeneralSettingsActive
                         ? "bg-[#d4f54e] text-[#0b3531] font-semibold"
@@ -392,7 +392,7 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
 
                   <Link
                     href="/settings"
-                    prefetch={false}
+                    prefetch={true}
                     className={`flex items-center gap-2.5 px-2.5 py-2 rounded-md transition-all duration-150 text-xs font-sans ${
                       pathname === "/settings"
                         ? "bg-[#d4f54e] text-[#0b3531] font-semibold"
@@ -411,7 +411,7 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
 
                   <Link
                     href="/settings/product-categories"
-                    prefetch={false}
+                    prefetch={true}
                     className={`flex items-center gap-2.5 px-2.5 py-2 rounded-md transition-all duration-150 text-xs font-sans ${
                       pathname.startsWith("/settings/product-categories")
                         ? "bg-[#d4f54e] text-[#0b3531] font-semibold"
@@ -430,7 +430,7 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
 
                   <Link
                     href="/settings/options"
-                    prefetch={false}
+                    prefetch={true}
                     className={`flex items-center gap-2.5 px-2.5 py-2 rounded-md transition-all duration-150 text-xs font-sans ${
                       pathname.startsWith("/settings/options")
                         ? "bg-[#d4f54e] text-[#0b3531] font-semibold"
@@ -449,7 +449,7 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
 
                   <Link
                     href="/settings/line-system"
-                    prefetch={false}
+                    prefetch={true}
                     className={`flex items-center gap-2.5 px-2.5 py-2 rounded-md transition-all duration-150 text-xs font-sans ${
                       pathname.startsWith("/settings/line-system") || pathname.startsWith("/line-system")
                         ? "bg-[#d4f54e] text-[#0b3531] font-semibold"
@@ -468,7 +468,7 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
 
                   <Link
                     href="/settings/users"
-                    prefetch={false}
+                    prefetch={true}
                     className={`flex items-center gap-2.5 px-2.5 py-2 rounded-md transition-all duration-150 text-xs font-sans ${
                       pathname.startsWith("/settings/users") || pathname.startsWith("/users")
                         ? "bg-[#d4f54e] text-[#0b3531] font-semibold"
