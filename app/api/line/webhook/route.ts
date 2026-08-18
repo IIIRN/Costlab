@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { replyTextMessage, recordDiscoveredLineGroup } from "@/lib/line";
+import { replyTextMessage, recordDiscoveredLineGroup, recordSystemErrorLog } from "@/lib/line";
 import { handleLineCommand } from "@/lib/line-commands";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
 
       if (error) {
         console.error("❌ Failed saving line_config to Supabase:", error);
+        await recordSystemErrorLog("Webhook Config Save", error.message, "ERROR", { config });
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
       }
       return NextResponse.json({ success: true, message: "บันทึกการตั้งค่า LINE Bot เรียบร้อยแล้ว" });
@@ -68,6 +69,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ status: "ok" });
   } catch (error: any) {
     console.error("❌ LINE Webhook error:", error);
+    await recordSystemErrorLog("LINE Webhook", error?.message || "Webhook Exception", "ERROR", {
+      error: String(error)
+    });
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

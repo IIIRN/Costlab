@@ -36,6 +36,8 @@ export async function GET() {
   }
 }
 
+import { clearCache } from "@/lib/cache";
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -58,6 +60,9 @@ export async function POST(request: Request) {
         console.error("Failed to save system_options to Supabase:", error);
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
       }
+
+      clearCache("sys_opt:all_options");
+      clearCache("sys_opt:all");
     }
 
     return NextResponse.json({ success: true, message: "บันทึกตัวเลือกระบบสำเร็จ" });
