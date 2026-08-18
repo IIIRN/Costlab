@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "No Owner LINE User ID configured" }, { status: 400 });
       }
 
-      const flex = createWithdrawOwnerFlex(bills);
+      const flex = createWithdrawOwnerFlex(bills, peopleMap);
       const altText = bills.length === 1
         ? `📋 คำขออนุมัติเบิกเงิน #${bills[0]._sheetRow || bills[0].id || bills[0]["ลำดับ"] || ""} (฿${amountStr})`
         : `📋 คำขออนุมัติเบิกเงิน ${bills.length} รายการ (รวม ฿${amountStr})`;
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "No LINE User ID or Group target found for requester" }, { status: 400 });
       }
 
-      const flex = createWithdrawCompletedRequesterFlex(bills);
+      const flex = createWithdrawCompletedRequesterFlex(bills, peopleMap);
       const altText = bills.length === 1
         ? `🎉 รายการเบิกเงินสำเร็จเรียบร้อย #${bills[0]._sheetRow || bills[0].id || bills[0]["ลำดับ"] || ""} (฿${amountStr})`
         : `🎉 รายการเบิกเงินสำเร็จเรียบร้อย ${bills.length} รายการ (รวม ฿${amountStr})`;
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No LINE User ID or Group target found for requester" }, { status: 400 });
     }
 
-    const flex = createWithdrawRequesterFlex(bills);
+    const flex = createWithdrawRequesterFlex(bills, peopleMap);
     const altText = bills.length === 1
       ? `📄 แจ้งเตือนรายการตั้งเบิกเงิน #${bills[0]._sheetRow || bills[0].id || bills[0]["ลำดับ"] || ""} (฿${amountStr})`
       : `📄 แจ้งเตือนรายการตั้งเบิกเงิน ${bills.length} รายการ (รวม ฿${amountStr})`;
