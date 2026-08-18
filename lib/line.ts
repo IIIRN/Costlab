@@ -649,7 +649,7 @@ export function createMorningTasksCarouselFlex(data: {
         backgroundColor: "#F8FAFC",
         cornerRadius: "6px",
         contents: [
-          { type: "text", text: `#${b.id} ${b.requester || "สมชาย"}`, size: "xs", weight: "bold", color: "#0F172A", flex: 6, wrap: true },
+          { type: "text", text: `#${b.id} ${b.requester || "-"}`, size: "xs", weight: "bold", color: "#0F172A", flex: 6, wrap: true },
           { type: "text", text: `฿${Number(b.amount || 0).toLocaleString("th-TH")}`, size: "xs", weight: "bold", color: "#059669", flex: 4, align: "end" }
         ]
       })) : [
@@ -856,7 +856,8 @@ export function createBillSearchResultFlex(
   isMain: boolean = false,
   totalCount?: number,
   totalSumAmount?: number,
-  filterQuery: string = ""
+  filterQuery: string = "",
+  peopleMap?: Map<string, string> | Record<string, string>
 ): Record<string, any> {
   const count = totalCount ?? bills.length;
   const grandTotal = totalSumAmount ?? bills.reduce((sum, b) => sum + Number(b.amount || 0), 0);
@@ -936,7 +937,8 @@ export function createBillSearchResultFlex(
         contents: pageBills.map((b, idx) => {
           const amt = Number(b.amount || 0).toLocaleString("th-TH");
           const billId = String(b.id || b.bill_no || startNum + idx);
-          const requesterName = b.requester || b.vendor_or_person || "สมชาย";
+          const rawReq = b.requester || b.vendor_or_person || "-";
+          const requesterName = resolveRequesterNameFromMap(rawReq, peopleMap);
 
           // Parse single or multiple images
           let imgList: string[] = [];
@@ -1543,9 +1545,128 @@ export type MultiBillFlexOptions = {
   mode?: "requester" | "owner" | "approver" | "search" | "completed";
 };
 
+let cachedPeopleMap: Map<string, string> | null = null;
+let cachedPeopleMapTime = 0;
+const CACHE_TTL_MS = 60_000;
+
+export async function getPeopleMap(forceRefresh = false): Promise<Map<string, string>> {
+  const now = Date.now();
+  if (!forceRefresh && cachedPeopleMap && (now - cachedPeopleMapTime < CACHE_TTL_MS)) {
+    return cachedPeopleMap;
+  }
+
+  const peopleMap = new Map<string, string>();
+  try {
+    const { data: members } = await supabaseAdmin.from("master_members").select("*");
+    if (members && members.length > 0) {
+      for (const m of members) {
+        const empId = String(m.id || m["รหัสพนักงาน"] || "").trim();
+        const nickname = String(m["ชื่อเล่น"] || "").trim();
+        const fullName = String(m["ชื่อ-นามสกุล"] || m.name || "").trim();
+        const empName = nickname || fullName;
+
+        if (empName) {
+          if (empId) {
+            peopleMap.set(empId, empName);
+            peopleMap.set(empId.toLowerCase(), empName);
+            const cleanId = empId.toLowerCase().replace(/^pt[-_]?/i, "").trim();
+            if (cleanId) peopleMap.set(cleanId, empName);
+          }
+          const lineUserId = String(m.line_user_id || m["LINE User ID"] || "").trim();
+          if (lineUserId) {
+            peopleMap.set(lineUserId, empName);
+          }
+          if (nickname) {
+            peopleMap.set(nickname, empName);
+            peopleMap.set(nickname.toLowerCase(), empName);
+          }
+          if (fullName) {
+            peopleMap.set(fullName, empName);
+            peopleMap.set(fullName.toLowerCase(), empName);
+          }
+          const phone = String(m["เบอร์โทร"] || m["เบอร์โทรศัพท์"] || m.phone || "").trim();
+          if (phone) peopleMap.set(phone, empName);
+        }
+      }
+    }
+
+    const { data: users } = await supabaseAdmin.from("users").select("*");
+    if (users && users.length > 0) {
+      for (const u of users) {
+        const empId = String(u.id || u.employee_id || u.username || "").trim();
+        const nickname = String(u.nickname || "").trim();
+        const name = String(u.name || "").trim();
+        const empName = nickname || name || u.username;
+
+        if (empName) {
+          if (empId) {
+            if (!peopleMap.has(empId)) peopleMap.set(empId, empName);
+            if (!peopleMap.has(empId.toLowerCase())) peopleMap.set(empId.toLowerCase(), empName);
+            const cleanId = empId.toLowerCase().replace(/^pt[-_]?/i, "").trim();
+            if (cleanId && !peopleMap.has(cleanId)) peopleMap.set(cleanId, empName);
+          }
+          const lineUserId = String(u.line_user_id || "").trim();
+          if (lineUserId && !peopleMap.has(lineUserId)) {
+            peopleMap.set(lineUserId, empName);
+          }
+        }
+      }
+    }
+
+    cachedPeopleMap = peopleMap;
+    cachedPeopleMapTime = now;
+  } catch (e) {
+    console.warn("⚠️ Failed to fetch people map for Flex resolution:", e);
+  }
+
+  return peopleMap;
+}
+
+export async function getOperatorDisplayName(userId?: string, fallbackRole = "เจ้าของโครงการ"): Promise<string> {
+  if (!userId) return "ระบบ Web Dashboard";
+  const pMap = await getPeopleMap();
+  const resolved = resolveRequesterNameFromMap(userId, pMap);
+  if (resolved && resolved !== userId && resolved !== "-") {
+    return resolved;
+  }
+  return fallbackRole;
+}
+
+export function resolveRequesterNameFromMap(
+  rawRequester: unknown,
+  peopleMap?: Map<string, string> | Record<string, string>
+): string {
+  const str = String(rawRequester || "").trim();
+  if (!str) return "-";
+
+  if (peopleMap) {
+    if (peopleMap instanceof Map) {
+      if (peopleMap.has(str)) return peopleMap.get(str)!;
+      if (peopleMap.has(str.toLowerCase())) return peopleMap.get(str.toLowerCase())!;
+      const clean = str.toLowerCase().replace(/^pt[-_]?/i, "").trim();
+      if (clean && peopleMap.has(clean)) return peopleMap.get(clean)!;
+    } else if (typeof peopleMap === "object") {
+      if (peopleMap[str]) return peopleMap[str];
+      if (peopleMap[str.toLowerCase()]) return peopleMap[str.toLowerCase()];
+      const clean = str.toLowerCase().replace(/^pt[-_]?/i, "").trim();
+      if (clean && peopleMap[clean]) return peopleMap[clean];
+    }
+  }
+
+  if (cachedPeopleMap) {
+    if (cachedPeopleMap.has(str)) return cachedPeopleMap.get(str)!;
+    if (cachedPeopleMap.has(str.toLowerCase())) return cachedPeopleMap.get(str.toLowerCase())!;
+    const clean = str.toLowerCase().replace(/^pt[-_]?/i, "").trim();
+    if (clean && cachedPeopleMap.has(clean)) return cachedPeopleMap.get(clean)!;
+  }
+
+  return str;
+}
+
 export function createMultiBillFlex(
   billsInput: Record<string, any> | Array<Record<string, any>>,
-  options: MultiBillFlexOptions
+  options: MultiBillFlexOptions,
+  peopleMap?: Map<string, string> | Record<string, string>
 ): Record<string, any> {
   const bills = Array.isArray(billsInput) ? billsInput : [billsInput];
   if (bills.length === 0) {
@@ -1559,13 +1680,22 @@ export function createMultiBillFlex(
     };
   }
 
+  function getRequesterDisplayName(b: Record<string, any>): string {
+    if (b.requester_name || b["ชื่อผู้เบิก"] || b.requesterName) {
+      return String(b.requester_name || b["ชื่อผู้เบิก"] || b.requesterName);
+    }
+    const raw = String(b["ผู้เบิก"] || b.requester || "").trim();
+    if (!raw) return "-";
+    return resolveRequesterNameFromMap(raw, peopleMap);
+  }
+
   const mode = options.mode || "search";
 
   const totalAmount = bills.reduce((sum, b) => sum + Number(b["ยอดเงิน"] || b.amount || 0), 0);
   const formattedTotal = totalAmount.toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   const firstBill = bills[0];
-  const firstReq = firstBill["ผู้เบิก"] || firstBill.requester || "";
+  const firstReq = getRequesterDisplayName(firstBill);
   const sheetRowIds = bills.map(b => String(b._sheetRow || b.id || b["ลำดับ"] || "").trim()).filter(Boolean);
   const sheetRowStr = sheetRowIds.join(",");
 
@@ -1599,7 +1729,7 @@ export function createMultiBillFlex(
       },
       {
         type: "text",
-        text: `พบทั้งหมด ${bills.length} รายการ${firstReq ? ` | ผู้เบิก: ${firstReq}` : ""}`,
+        text: `พบทั้งหมด ${bills.length} รายการ${firstReq && firstReq !== "-" ? ` | ผู้เบิก: ${firstReq}` : ""}`,
         color: "#047857",
         size: "xs",
         margin: "xs"
@@ -1611,7 +1741,7 @@ export function createMultiBillFlex(
   const itemsContents = bills.slice(0, 10).map((b, idx) => {
     const bId = String(b._sheetRow || b.id || b["ลำดับ"] || idx + 1);
     const amt = Number(b["ยอดเงิน"] || b.amount || 0).toLocaleString("th-TH");
-    const requesterName = b["ผู้เบิก"] || b.requester || "-";
+    const requesterName = getRequesterDisplayName(b);
     const vendorName = b["ร้าน/บุคคล"] || b.vendor_or_person || "-";
     const billType = b["บิล"] || b.bill || b.bill_type || "ทั่วไป";
     const projName = b["ชื่อ Project"] || b.project_name || "โครงการทั่วไป";
@@ -2007,7 +2137,10 @@ export function createMultiBillFlex(
   };
 }
 
-export function createWithdrawRequesterFlex(billsInput: Record<string, any> | Array<Record<string, any>>): Record<string, any> {
+export function createWithdrawRequesterFlex(
+  billsInput: Record<string, any> | Array<Record<string, any>>,
+  peopleMap?: Map<string, string> | Record<string, string>
+): Record<string, any> {
   const bills = (Array.isArray(billsInput) ? billsInput : [billsInput]).map(b => ({
     ...b,
     "สถานะ": b["สถานะ"] || b.status || "ตั้งเบิก",
@@ -2016,10 +2149,13 @@ export function createWithdrawRequesterFlex(billsInput: Record<string, any> | Ar
   return createMultiBillFlex(bills, {
     title: "📄 แจ้งเตือนรายการตั้งเบิกเงิน",
     mode: "requester"
-  });
+  }, peopleMap);
 }
 
-export function createWithdrawOwnerFlex(billsInput: Record<string, any> | Array<Record<string, any>>): Record<string, any> {
+export function createWithdrawOwnerFlex(
+  billsInput: Record<string, any> | Array<Record<string, any>>,
+  peopleMap?: Map<string, string> | Record<string, string>
+): Record<string, any> {
   const bills = (Array.isArray(billsInput) ? billsInput : [billsInput]).map(b => ({
     ...b,
     "สถานะ": b["สถานะ"] || b.status || "รออนุมัติ",
@@ -2028,10 +2164,13 @@ export function createWithdrawOwnerFlex(billsInput: Record<string, any> | Array<
   return createMultiBillFlex(bills, {
     title: "📋 คำขออนุมัติเบิกเงิน (ส่งจากผู้เบิก)",
     mode: "owner"
-  });
+  }, peopleMap);
 }
 
-export function createWithdrawApproverFlex(billsInput: Record<string, any> | Array<Record<string, any>>): Record<string, any> {
+export function createWithdrawApproverFlex(
+  billsInput: Record<string, any> | Array<Record<string, any>>,
+  peopleMap?: Map<string, string> | Record<string, string>
+): Record<string, any> {
   const bills = (Array.isArray(billsInput) ? billsInput : [billsInput]).map(b => ({
     ...b,
     "สถานะ": !b["สถานะ"] || b["สถานะ"] === "ตั้งเบิก" || b["สถานะ"] === "รอตั้งเบิก" || b["สถานะ"] === "รออนุมัติ" ? "อนุมัติ" : b["สถานะ"],
@@ -2040,10 +2179,13 @@ export function createWithdrawApproverFlex(billsInput: Record<string, any> | Arr
   return createMultiBillFlex(bills, {
     title: "✅ รายการอนุมัติสำเร็จ (รอปิดงาน)",
     mode: "approver"
-  });
+  }, peopleMap);
 }
 
-export function createWithdrawCompletedRequesterFlex(billsInput: Record<string, any> | Array<Record<string, any>>): Record<string, any> {
+export function createWithdrawCompletedRequesterFlex(
+  billsInput: Record<string, any> | Array<Record<string, any>>,
+  peopleMap?: Map<string, string> | Record<string, string>
+): Record<string, any> {
   const bills = (Array.isArray(billsInput) ? billsInput : [billsInput]).map(b => ({
     ...b,
     "สถานะ": "เบิกแล้ว",
@@ -2052,7 +2194,7 @@ export function createWithdrawCompletedRequesterFlex(billsInput: Record<string, 
   return createMultiBillFlex(bills, {
     title: "🎉 รายการเบิกเงินสำเร็จเรียบร้อย (ปิดงาน)",
     mode: "completed"
-  });
+  }, peopleMap);
 }
 
 export async function getLineQuotaInfo() {

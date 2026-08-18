@@ -10,7 +10,8 @@ import {
   createTaskSummaryFlex,
   createMemberTaskTableFlex,
   createBillSearchResultFlex,
-  isLineApproverAuthorized
+  isLineApproverAuthorized,
+  getOperatorDisplayName
 } from "@/lib/line";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { insertRowToSupabase } from "@/lib/supabase-db";
@@ -139,7 +140,7 @@ export async function handleLineCommand(
 
       // B) Create Task with safe row insertion and generated non-null ID
       const isUrgent = rawText.startsWith("งานด่วน:");
-      let assignee = "สมชาย";
+      let assignee = "-";
       let details = content;
       const match = content.match(/\[(.*?)\]$/) || content.match(/-(.*?)$/);
       if (match) {
@@ -636,9 +637,12 @@ export async function handleLineCommand(
       }
 
       const formattedTotal = totalAmount.toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const defaultRole = isApprove ? "เจ้าของโครงการ" : "ผู้อนุมัติ";
+      const operatorName = await getOperatorDisplayName(userId, defaultRole);
+
       await replyTextMessage(
         replyToken,
-        `✅ ${isApprove ? "อนุมัติ" : "ปิดงาน"}บิล${isSubBatch ? "ย่อย" : isMainBatch ? "หลัก" : ""}ของ "${rawTarget}" เรียบร้อยแล้ว!\n\n📊 จำนวน: ${targetBills.length} รายการ\n💰 ยอดเงินรวม: ฿${formattedTotal}\n👮‍♂️ ผู้ดำเนินการ: ${isApprove ? "Owner/Admin" : "Approver"} (${userId ? userId.slice(-6) : "Web"})${isApprove && approverIds.length > 0 ? `\n📲 ส่ง Flex ต่อไปยังผู้อนุมัติ (${approverIds.length} ท่าน) เพื่อปิดงานแล้ว` : ""}`
+        `✅ ${isApprove ? "อนุมัติ" : "ปิดงาน"}บิล${isSubBatch ? "ย่อย" : isMainBatch ? "หลัก" : ""}ของ "${rawTarget}" เรียบร้อยแล้ว!\n\n📊 จำนวน: ${targetBills.length} รายการ\n💰 ยอดเงินรวม: ฿${formattedTotal}\n👮‍♂️ ผู้ดำเนินการ: ${operatorName}${isApprove && approverIds.length > 0 ? `\n📲 ส่ง Flex ต่อไปยังผู้อนุมัติ (${approverIds.length} ท่าน) เพื่อปิดงานแล้ว` : ""}`
       );
       return true;
     }
