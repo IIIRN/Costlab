@@ -11,7 +11,8 @@ import {
   createMemberTaskTableFlex,
   createBillSearchResultFlex,
   isLineApproverAuthorized,
-  getOperatorDisplayName
+  getOperatorDisplayName,
+  getPeopleMap
 } from "@/lib/line";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { insertRowToSupabase } from "@/lib/supabase-db";
@@ -441,7 +442,8 @@ export async function handleLineCommand(
         return true;
       }
 
-      const flexForOwner = createWithdrawOwnerFlex(pendingBills);
+      const peopleMap = await getPeopleMap();
+      const flexForOwner = createWithdrawOwnerFlex(pendingBills, peopleMap);
       const totalAmount = pendingBills.reduce((sum, b) => sum + Number(b["ยอดเงิน"] || b.amount || 0), 0);
       const amountStr = totalAmount.toLocaleString("th-TH");
 
@@ -594,7 +596,8 @@ export async function handleLineCommand(
 
       // When Owner Approves successfully, forward Multi-Item Flex Message to Approvers (LINE_USER_ID_APPROVER list)
       if (isApprove && approverIds.length > 0) {
-        const flexForApprover = createWithdrawApproverFlex(targetBills);
+        const peopleMap = await getPeopleMap();
+        const flexForApprover = createWithdrawApproverFlex(targetBills, peopleMap);
         const totalAmtStr = totalAmount.toLocaleString("th-TH");
         const altText = targetBills.length === 1
           ? `✅ รายการอนุมัติสำเร็จ (รอปิดงาน) #${targetBills[0]["ลำดับ"] || targetBills[0].id || ""} (฿${totalAmtStr})`
@@ -624,7 +627,8 @@ export async function handleLineCommand(
           const sendTo = targetUserId || fallbackGroup;
 
           if (sendTo) {
-            const flexForRequester = createWithdrawCompletedRequesterFlex(reqBills);
+            const peopleMap = await getPeopleMap();
+            const flexForRequester = createWithdrawCompletedRequesterFlex(reqBills, peopleMap);
             const totalAmt = reqBills.reduce((sum, b) => sum + Number(b["ยอดเงิน"] || b.amount || 0), 0);
             const totalAmtStr = totalAmt.toLocaleString("th-TH");
             const altText = reqBills.length === 1

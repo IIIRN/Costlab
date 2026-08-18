@@ -1560,19 +1560,27 @@ export async function getPeopleMap(forceRefresh = false): Promise<Map<string, st
     const { data: members } = await supabaseAdmin.from("master_members").select("*");
     if (members && members.length > 0) {
       for (const m of members) {
-        const empId = String(m.id || m["รหัสพนักงาน"] || "").trim();
-        const nickname = String(m["ชื่อเล่น"] || "").trim();
-        const fullName = String(m["ชื่อ-นามสกุล"] || m.name || "").trim();
+        const dataObj = (m.data && typeof m.data === "object") ? m.data : {};
+        const empId = String(m.id || m["รหัสพนักงาน"] || dataObj.id || dataObj["รหัสพนักงาน"] || "").trim();
+        const nickname = String(m.nickname || m["ชื่อเล่น"] || dataObj.nickname || dataObj["ชื่อเล่น"] || "").trim();
+        const fullName = String(m.full_name || m["ชื่อ-นามสกุล"] || m.name || dataObj.full_name || dataObj["ชื่อ-นามสกุล"] || dataObj.name || "").trim();
         const empName = nickname || fullName;
 
         if (empName) {
           if (empId) {
             peopleMap.set(empId, empName);
             peopleMap.set(empId.toLowerCase(), empName);
-            const cleanId = empId.toLowerCase().replace(/^pt[-_]?/i, "").trim();
-            if (cleanId) peopleMap.set(cleanId, empName);
+            peopleMap.set(empId.toUpperCase(), empName);
+            const cleanId = empId.toLowerCase().replace(/^(pt|pe)[-_]?/i, "").trim();
+            if (cleanId) {
+              peopleMap.set(cleanId, empName);
+              peopleMap.set(`pt${cleanId}`, empName);
+              peopleMap.set(`PT${cleanId}`, empName);
+              peopleMap.set(`pe${cleanId}`, empName);
+              peopleMap.set(`PE${cleanId}`, empName);
+            }
           }
-          const lineUserId = String(m.line_user_id || m["LINE User ID"] || "").trim();
+          const lineUserId = String(m.line_user_id || m["LINE User ID"] || dataObj.line_user_id || dataObj["LINE User ID"] || "").trim();
           if (lineUserId) {
             peopleMap.set(lineUserId, empName);
           }
@@ -1584,7 +1592,7 @@ export async function getPeopleMap(forceRefresh = false): Promise<Map<string, st
             peopleMap.set(fullName, empName);
             peopleMap.set(fullName.toLowerCase(), empName);
           }
-          const phone = String(m["เบอร์โทร"] || m["เบอร์โทรศัพท์"] || m.phone || "").trim();
+          const phone = String(m.phone || m["เบอร์โทร"] || m["เบอร์โทรศัพท์"] || dataObj.phone || dataObj["เบอร์โทร"] || "").trim();
           if (phone) peopleMap.set(phone, empName);
         }
       }
@@ -1593,19 +1601,27 @@ export async function getPeopleMap(forceRefresh = false): Promise<Map<string, st
     const { data: users } = await supabaseAdmin.from("users").select("*");
     if (users && users.length > 0) {
       for (const u of users) {
-        const empId = String(u.id || u.employee_id || u.username || "").trim();
-        const nickname = String(u.nickname || "").trim();
-        const name = String(u.name || "").trim();
+        const dataObj = (u.data && typeof u.data === "object") ? u.data : {};
+        const empId = String(u.id || u.employee_id || u.username || dataObj.id || dataObj.employee_id || "").trim();
+        const nickname = String(u.nickname || dataObj.nickname || "").trim();
+        const name = String(u.name || dataObj.name || "").trim();
         const empName = nickname || name || u.username;
 
         if (empName) {
           if (empId) {
             if (!peopleMap.has(empId)) peopleMap.set(empId, empName);
             if (!peopleMap.has(empId.toLowerCase())) peopleMap.set(empId.toLowerCase(), empName);
-            const cleanId = empId.toLowerCase().replace(/^pt[-_]?/i, "").trim();
-            if (cleanId && !peopleMap.has(cleanId)) peopleMap.set(cleanId, empName);
+            if (!peopleMap.has(empId.toUpperCase())) peopleMap.set(empId.toUpperCase(), empName);
+            const cleanId = empId.toLowerCase().replace(/^(pt|pe)[-_]?/i, "").trim();
+            if (cleanId) {
+              if (!peopleMap.has(cleanId)) peopleMap.set(cleanId, empName);
+              if (!peopleMap.has(`pt${cleanId}`)) peopleMap.set(`pt${cleanId}`, empName);
+              if (!peopleMap.has(`PT${cleanId}`)) peopleMap.set(`PT${cleanId}`, empName);
+              if (!peopleMap.has(`pe${cleanId}`)) peopleMap.set(`pe${cleanId}`, empName);
+              if (!peopleMap.has(`PE${cleanId}`)) peopleMap.set(`PE${cleanId}`, empName);
+            }
           }
-          const lineUserId = String(u.line_user_id || "").trim();
+          const lineUserId = String(u.line_user_id || dataObj.line_user_id || "").trim();
           if (lineUserId && !peopleMap.has(lineUserId)) {
             peopleMap.set(lineUserId, empName);
           }
@@ -1639,25 +1655,62 @@ export function resolveRequesterNameFromMap(
   const str = String(rawRequester || "").trim();
   if (!str) return "-";
 
-  if (peopleMap) {
-    if (peopleMap instanceof Map) {
-      if (peopleMap.has(str)) return peopleMap.get(str)!;
-      if (peopleMap.has(str.toLowerCase())) return peopleMap.get(str.toLowerCase())!;
-      const clean = str.toLowerCase().replace(/^pt[-_]?/i, "").trim();
-      if (clean && peopleMap.has(clean)) return peopleMap.get(clean)!;
-    } else if (typeof peopleMap === "object") {
-      if (peopleMap[str]) return peopleMap[str];
-      if (peopleMap[str.toLowerCase()]) return peopleMap[str.toLowerCase()];
-      const clean = str.toLowerCase().replace(/^pt[-_]?/i, "").trim();
-      if (clean && peopleMap[clean]) return peopleMap[clean];
-    }
-  }
+  const lookupToken = (key: string): string | null => {
+    if (!key) return null;
+    const kLower = key.toLowerCase();
+    const kUpper = key.toUpperCase();
+    const clean = kLower.replace(/^(pt|pe)[-_]?/i, "").trim();
 
-  if (cachedPeopleMap) {
-    if (cachedPeopleMap.has(str)) return cachedPeopleMap.get(str)!;
-    if (cachedPeopleMap.has(str.toLowerCase())) return cachedPeopleMap.get(str.toLowerCase())!;
-    const clean = str.toLowerCase().replace(/^pt[-_]?/i, "").trim();
-    if (clean && cachedPeopleMap.has(clean)) return cachedPeopleMap.get(clean)!;
+    const mapsToCheck: Array<Map<string, string> | Record<string, string> | undefined> = [
+      peopleMap,
+      cachedPeopleMap || undefined
+    ];
+
+    for (const map of mapsToCheck) {
+      if (!map) continue;
+      if (map instanceof Map) {
+        if (map.has(key)) return map.get(key)!;
+        if (map.has(kLower)) return map.get(kLower)!;
+        if (map.has(kUpper)) return map.get(kUpper)!;
+        if (clean && map.has(clean)) return map.get(clean)!;
+        if (clean && map.has(`pt${clean}`)) return map.get(`pt${clean}`)!;
+        if (clean && map.has(`PT${clean}`)) return map.get(`PT${clean}`)!;
+        if (clean && map.has(`pe${clean}`)) return map.get(`pe${clean}`)!;
+        if (clean && map.has(`PE${clean}`)) return map.get(`PE${clean}`)!;
+      } else if (typeof map === "object") {
+        if (map[key]) return map[key];
+        if (map[kLower]) return map[kLower];
+        if (map[kUpper]) return map[kUpper];
+        if (clean && map[clean]) return map[clean];
+        if (clean && map[`pt${clean}`]) return map[`pt${clean}`];
+        if (clean && map[`PT${clean}`]) return map[`PT${clean}`];
+        if (clean && map[`pe${clean}`]) return map[`pe${clean}`];
+        if (clean && map[`PE${clean}`]) return map[`PE${clean}`];
+      }
+    }
+    return null;
+  };
+
+  // 1. Direct lookup
+  const directMatch = lookupToken(str);
+  if (directMatch) return directMatch;
+
+  // 2. Composite token splitting (e.g., "PT104 / CW1" or "PT104 CW1")
+  const parts = str.split(/(\s*[\/\,\s]\s*)/);
+  if (parts.length > 1) {
+    let resolvedAny = false;
+    const resolvedParts = parts.map(part => {
+      const trimmed = part.trim();
+      const match = lookupToken(trimmed);
+      if (match) {
+        resolvedAny = true;
+        return match;
+      }
+      return part;
+    });
+    if (resolvedAny) {
+      return resolvedParts.join("");
+    }
   }
 
   return str;
