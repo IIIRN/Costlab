@@ -171,18 +171,22 @@ export function ProjectDetailClient({
       </div>
 
       {/* 3. FINANCIAL SUMMARY */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="border border-slate-200 rounded-md p-3 bg-white">
-          <div className="text-[11px] text-slate-400 font-medium mb-1">งบประมาณ</div>
-          <div className="text-base font-bold text-slate-900">{money(totals.budget)}</div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
+        <div className="border border-slate-200 rounded-xl md:rounded-md p-3 sm:p-4 bg-white shadow-2xs">
+          <div className="text-[11px] text-slate-400 font-medium mb-0.5">งบประมาณ</div>
+          <div className="text-base sm:text-lg font-bold text-slate-900">{money(totals.budget)}</div>
         </div>
-        <div className="border border-slate-200 rounded-md p-3 bg-white">
-          <div className="text-[11px] text-slate-400 font-medium mb-1">เบิกจ่ายรวม</div>
-          <div className="text-base font-bold text-indigo-700">{money(totals.totalAll)}</div>
+
+        <div className="border border-slate-200 rounded-xl md:rounded-md p-3 sm:p-4 bg-white shadow-2xs">
+          <div className="flex items-center justify-between text-[11px] text-slate-400 font-medium mb-0.5">
+            <span>เบิกจ่ายรวม</span>
+            <span className="font-bold text-indigo-700">{percentUsed}%</span>
+          </div>
+          <div className="text-base sm:text-lg font-bold text-indigo-700">{money(totals.totalAll)}</div>
           {totals.budget > 0 && (
             <div className="mt-1.5 w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
               <div
-                className={`h-full rounded-full ${
+                className={`h-full rounded-full transition-all duration-300 ${
                   percentUsed > 90 ? "bg-rose-500" : percentUsed > 75 ? "bg-amber-500" : "bg-emerald-500"
                 }`}
                 style={{ width: `${percentUsed}%` }}
@@ -190,20 +194,22 @@ export function ProjectDetailClient({
             </div>
           )}
         </div>
-        <div className="border border-slate-200 rounded-md p-3 bg-white">
-          <div className="text-[11px] text-slate-400 font-medium mb-1">ยอดคงเหลือ</div>
-          <div className={`text-base font-bold ${totals.remaining < 0 ? "text-rose-600" : "text-emerald-700"}`}>
+
+        <div className="border border-slate-200 rounded-xl md:rounded-md p-3 sm:p-4 bg-white shadow-2xs">
+          <div className="text-[11px] text-slate-400 font-medium mb-0.5">ยอดคงเหลือ</div>
+          <div className={`text-base sm:text-lg font-bold ${totals.remaining < 0 ? "text-rose-600" : "text-emerald-700"}`}>
             {money(totals.remaining)}
+            {totals.remaining < 0 && <span className="text-[10px] text-rose-500 ml-1">เกินงบ</span>}
           </div>
         </div>
       </div>
 
-      {/* 4. WORKSPACE TABS */}
-      <div className="flex items-center gap-1 border-b border-slate-200 text-xs font-semibold">
+      {/* 4. WORKSPACE TABS (Scrollable on mobile) */}
+      <div className="flex items-center gap-1 border-b border-slate-200 text-xs font-semibold overflow-x-auto no-scrollbar whitespace-nowrap">
         <button
           type="button"
           onClick={() => setActiveTab("bills")}
-          className={`px-3 py-2 border-b-2 transition ${
+          className={`px-3 py-2 border-b-2 transition shrink-0 cursor-pointer ${
             activeTab === "bills"
               ? "border-slate-900 text-slate-900 font-bold"
               : "border-transparent text-slate-500 hover:text-slate-800"
@@ -215,7 +221,7 @@ export function ProjectDetailClient({
         <button
           type="button"
           onClick={() => setActiveTab("expenses")}
-          className={`px-3 py-2 border-b-2 transition ${
+          className={`px-3 py-2 border-b-2 transition shrink-0 cursor-pointer ${
             activeTab === "expenses"
               ? "border-slate-900 text-slate-900 font-bold"
               : "border-transparent text-slate-500 hover:text-slate-800"
@@ -227,7 +233,7 @@ export function ProjectDetailClient({
         <button
           type="button"
           onClick={() => setActiveTab("products")}
-          className={`px-3 py-2 border-b-2 transition ${
+          className={`px-3 py-2 border-b-2 transition shrink-0 cursor-pointer ${
             activeTab === "products"
               ? "border-slate-900 text-slate-900 font-bold"
               : "border-transparent text-slate-500 hover:text-slate-800"
@@ -239,7 +245,7 @@ export function ProjectDetailClient({
         <button
           type="button"
           onClick={() => setActiveTab("edit")}
-          className={`px-3 py-2 border-b-2 transition ${
+          className={`px-3 py-2 border-b-2 transition shrink-0 cursor-pointer ${
             activeTab === "edit"
               ? "border-slate-900 text-slate-900 font-bold"
               : "border-transparent text-slate-500 hover:text-slate-800"

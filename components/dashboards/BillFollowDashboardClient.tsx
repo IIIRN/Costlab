@@ -287,208 +287,355 @@ export function BillFollowDashboardClient({
         </div>
       )}
 
-      {/* 1. EXECUTIVE SUMMARY KPI CARDS (5 Interactive Cards for Category Tabs) */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-2.5 sm:gap-3">
+      {/* 1. EXECUTIVE SUMMARY KPI CARDS (Horizontal Scrollable Tabs on Mobile, Grid on Desktop) */}
+      <div className="flex sm:grid sm:grid-cols-2 md:grid-cols-5 gap-2 sm:gap-3 overflow-x-auto no-scrollbar pb-1">
         {/* Card 1: All Bills Total Card */}
         <div
           onClick={() => handleTabChange("all")}
-          className={`rounded-xl p-3 border transition cursor-pointer shadow-2xs ${
+          className={`min-w-[140px] sm:min-w-0 flex-1 rounded-xl p-2.5 sm:p-3 border transition cursor-pointer shadow-2xs shrink-0 active:scale-95 ${
             activeTab === "all"
               ? "border-2 border-[#0b3531] bg-[#f2f9f6] shadow-sm"
               : "bg-white border-slate-200 hover:border-slate-300 text-slate-800"
           }`}
         >
-          <div className="flex items-center justify-between text-[11px] sm:text-xs">
-            <span className={`font-bold truncate ${activeTab === "all" ? "text-[#0b3531]" : "text-slate-700"}`}>ตามบิลทั้งหมด</span>
-            <span className={`shrink-0 ml-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded-full ${
+          <div className="flex items-center justify-between text-[10px] sm:text-xs">
+            <span className={`font-bold truncate ${activeTab === "all" ? "text-[#0b3531]" : "text-slate-700"}`}>ทั้งหมด</span>
+            <span className={`shrink-0 ml-1 font-mono text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
               activeTab === "all" ? "bg-[#0b3531] text-[#d4f54e]" : "bg-slate-100 text-slate-500"
-            }`}>{allPendingRows.length} รายการ</span>
+            }`}>{allPendingRows.length}</span>
           </div>
-          <div className="flex items-baseline justify-between mt-2">
-            <span className={`text-base sm:text-lg font-bold ${activeTab === "all" ? "text-[#0b3531]" : "text-slate-900"}`}>{money(allPendingTotal)}</span>
+          <div className="flex items-baseline justify-between mt-1">
+            <span className={`text-sm sm:text-lg font-bold truncate ${activeTab === "all" ? "text-[#0b3531]" : "text-slate-900"}`}>{money(allPendingTotal)}</span>
           </div>
         </div>
 
         {/* Card 2: Vat Card */}
         <div
           onClick={() => handleTabChange("vat")}
-          className={`rounded-xl p-3 border transition cursor-pointer shadow-2xs ${
+          className={`min-w-[140px] sm:min-w-0 flex-1 rounded-xl p-2.5 sm:p-3 border transition cursor-pointer shadow-2xs shrink-0 active:scale-95 ${
             activeTab === "vat"
               ? "border-2 border-[#0b3531] bg-[#f2f9f6] shadow-sm"
               : "bg-white border-slate-200 hover:border-slate-300 text-slate-800"
           }`}
         >
-          <div className="flex items-center justify-between text-[11px] sm:text-xs">
-            <span className={`font-bold truncate ${activeTab === "vat" ? "text-[#0b3531]" : "text-slate-700"}`}>ตาม VAT (ยังไม่ได้บิล)</span>
-            <span className={`shrink-0 ml-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded-full ${
+          <div className="flex items-center justify-between text-[10px] sm:text-xs">
+            <span className={`font-bold truncate ${activeTab === "vat" ? "text-[#0b3531]" : "text-slate-700"}`}>ตาม VAT</span>
+            <span className={`shrink-0 ml-1 font-mono text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
               activeTab === "vat" ? "bg-[#0b3531] text-[#d4f54e]" : "bg-slate-100 text-slate-500"
-            }`}>{vatRows.length} รายการ</span>
+            }`}>{vatRows.length}</span>
           </div>
-          <div className="flex items-baseline justify-between mt-2">
-            <span className={`text-base sm:text-lg font-bold ${activeTab === "vat" ? "text-[#0b3531]" : "text-slate-900"}`}>{money(vatTotal)}</span>
+          <div className="flex items-baseline justify-between mt-1">
+            <span className={`text-sm sm:text-lg font-bold truncate ${activeTab === "vat" ? "text-[#0b3531]" : "text-slate-900"}`}>{money(vatTotal)}</span>
           </div>
         </div>
 
         {/* Card 3: Natural Deduct 3% Card */}
         <div
           onClick={() => handleTabChange("natural")}
-          className={`rounded-xl p-3 border transition cursor-pointer shadow-2xs ${
+          className={`min-w-[140px] sm:min-w-0 flex-1 rounded-xl p-2.5 sm:p-3 border transition cursor-pointer shadow-2xs shrink-0 active:scale-95 ${
             activeTab === "natural"
               ? "border-2 border-[#0b3531] bg-[#f2f9f6] shadow-sm"
               : "bg-white border-slate-200 hover:border-slate-300 text-slate-800"
           }`}
         >
-          <div className="flex items-center justify-between text-[11px] sm:text-xs">
-            <span className={`font-bold truncate ${activeTab === "natural" ? "text-[#0b3531]" : "text-slate-700"}`}>ตาม หัก 3% (บุคคล)</span>
-            <span className={`shrink-0 ml-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded-full ${
+          <div className="flex items-center justify-between text-[10px] sm:text-xs">
+            <span className={`font-bold truncate ${activeTab === "natural" ? "text-[#0b3531]" : "text-slate-700"}`}>หัก 3% บุคคล</span>
+            <span className={`shrink-0 ml-1 font-mono text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
               activeTab === "natural" ? "bg-[#0b3531] text-[#d4f54e]" : "bg-slate-100 text-slate-500"
-            }`}>{naturalDeductRows.length} รายการ</span>
+            }`}>{naturalDeductRows.length}</span>
           </div>
-          <div className="flex items-baseline justify-between mt-2">
-            <span className={`text-base sm:text-lg font-bold ${activeTab === "natural" ? "text-[#0b3531]" : "text-slate-900"}`}>{money(naturalTotal)}</span>
+          <div className="flex items-baseline justify-between mt-1">
+            <span className={`text-sm sm:text-lg font-bold truncate ${activeTab === "natural" ? "text-[#0b3531]" : "text-slate-900"}`}>{money(naturalTotal)}</span>
           </div>
         </div>
 
         {/* Card 4: Company Deduct 3% Card */}
         <div
           onClick={() => handleTabChange("company")}
-          className={`rounded-xl p-3 border transition cursor-pointer shadow-2xs ${
+          className={`min-w-[140px] sm:min-w-0 flex-1 rounded-xl p-2.5 sm:p-3 border transition cursor-pointer shadow-2xs shrink-0 active:scale-95 ${
             activeTab === "company"
               ? "border-2 border-[#0b3531] bg-[#f2f9f6] shadow-sm"
               : "bg-white border-slate-200 hover:border-slate-300 text-slate-800"
           }`}
         >
-          <div className="flex items-center justify-between text-[11px] sm:text-xs">
-            <span className={`font-bold truncate ${activeTab === "company" ? "text-[#0b3531]" : "text-slate-700"}`}>ตาม หัก 3% (บริษัท)</span>
-            <span className={`shrink-0 ml-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded-full ${
+          <div className="flex items-center justify-between text-[10px] sm:text-xs">
+            <span className={`font-bold truncate ${activeTab === "company" ? "text-[#0b3531]" : "text-slate-700"}`}>หัก 3% บริษัท</span>
+            <span className={`shrink-0 ml-1 font-mono text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
               activeTab === "company" ? "bg-[#0b3531] text-[#d4f54e]" : "bg-slate-100 text-slate-500"
-            }`}>{companyDeductRows.length} รายการ</span>
+            }`}>{companyDeductRows.length}</span>
           </div>
-          <div className="flex items-baseline justify-between mt-2">
-            <span className={`text-base sm:text-lg font-bold ${activeTab === "company" ? "text-[#0b3531]" : "text-slate-900"}`}>{money(companyTotal)}</span>
+          <div className="flex items-baseline justify-between mt-1">
+            <span className={`text-sm sm:text-lg font-bold truncate ${activeTab === "company" ? "text-[#0b3531]" : "text-slate-900"}`}>{money(companyTotal)}</span>
           </div>
         </div>
 
         {/* Card 5: Credit Card */}
         <div
           onClick={() => handleTabChange("credit")}
-          className={`col-span-2 md:col-span-1 rounded-xl p-3 border transition cursor-pointer shadow-2xs ${
+          className={`min-w-[140px] sm:min-w-0 flex-1 rounded-xl p-2.5 sm:p-3 border transition cursor-pointer shadow-2xs shrink-0 active:scale-95 ${
             activeTab === "credit"
               ? "border-2 border-[#0b3531] bg-[#f2f9f6] shadow-sm"
               : "bg-white border-slate-200 hover:border-slate-300 text-slate-800"
           }`}
         >
-          <div className="flex items-center justify-between text-[11px] sm:text-xs">
-            <span className={`font-bold truncate ${activeTab === "credit" ? "text-[#0b3531]" : "text-slate-700"}`}>ตาม เครดิต (รอจ่าย)</span>
-            <span className={`shrink-0 ml-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded-full ${
+          <div className="flex items-center justify-between text-[10px] sm:text-xs">
+            <span className={`font-bold truncate ${activeTab === "credit" ? "text-[#0b3531]" : "text-slate-700"}`}>ตาม เครดิต</span>
+            <span className={`shrink-0 ml-1 font-mono text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
               activeTab === "credit" ? "bg-[#0b3531] text-[#d4f54e]" : "bg-slate-100 text-slate-500"
-            }`}>{creditRows.length} รายการ</span>
+            }`}>{creditRows.length}</span>
           </div>
-          <div className="flex items-baseline justify-between mt-2">
-            <span className={`text-base sm:text-lg font-bold ${activeTab === "credit" ? "text-[#0b3531]" : "text-slate-900"}`}>{money(creditTotal)}</span>
+          <div className="flex items-baseline justify-between mt-1">
+            <span className={`text-sm sm:text-lg font-bold truncate ${activeTab === "credit" ? "text-[#0b3531]" : "text-slate-900"}`}>{money(creditTotal)}</span>
           </div>
         </div>
       </div>
 
       {/* 2. FILTER & ACTION TOOLBAR (Clean High-Efficiency Layout) */}
-      <div className="border border-slate-200 rounded-xl p-3 bg-white flex flex-col gap-2.5 text-xs shadow-2xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 w-full">
-          {/* Dropdown Filters (Requester & Date) */}
-          <div className={`flex-wrap items-center gap-2.5 ${showMobileFilters ? "flex" : "hidden md:flex"}`}>
-            {/* Requester dropdown */}
-            <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-slate-700 whitespace-nowrap">ผู้เบิก:</span>
-              <select
-                value={selectedRequester}
-                onChange={(e) => {
-                  setSelectedRequester(e.target.value);
+      <div className="border border-slate-200 rounded-xl md:rounded-md p-2 sm:p-3 bg-white flex flex-col gap-2 text-xs shadow-2xs">
+        <div className="flex items-center justify-between gap-2 w-full">
+          {/* Universal Search Box */}
+          <div className="relative flex items-center flex-1 min-w-0">
+            <Search size={14} className="absolute left-2.5 text-slate-400 pointer-events-none shrink-0" />
+            <input
+              type="text"
+              placeholder="ค้นหาลำดับ, ร้านค้า, Project..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setPage(1);
+              }}
+              className="w-full bg-slate-50 md:bg-white text-slate-800 text-xs pl-8 pr-7 py-1.5 rounded-lg md:rounded-md border border-slate-200 md:border-slate-300 focus:outline-none focus:bg-white focus:border-slate-400 placeholder:text-slate-400"
+            />
+            {searchTerm && (
+              <X
+                size={14}
+                className="absolute right-2 text-slate-400 cursor-pointer hover:text-slate-600"
+                onClick={() => {
+                  setSearchTerm("");
                   setPage(1);
                 }}
-                className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1.5 rounded-lg focus:outline-none cursor-pointer"
-              >
-                <option value="">ทั้งหมด ({allPendingRows.length} รายการ)</option>
-                {peopleRows.map((row) => {
-                  const key = String(row["รหัสพนักงาน"] || row["ชื่อเล่น"] || row._sheetRow || "").trim();
-                  const label = row["ชื่อเล่น"] ? `${key} - ${row["ชื่อเล่น"]}` : key;
-                  return key ? (
-                    <option key={key} value={key}>
-                      {label}
-                    </option>
-                  ) : null;
-                })}
-              </select>
-            </div>
-
-            {/* Date Picker */}
-            <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-slate-700 whitespace-nowrap">วันที่:</span>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => {
-                  setSelectedDate(e.target.value);
-                  setPage(1);
-                }}
-                className="bg-white border border-slate-300 text-xs text-slate-800 px-2.5 py-1.5 rounded-lg focus:outline-none cursor-pointer"
               />
-            </div>
+            )}
           </div>
 
-          {/* Search Input Box & Actions */}
-          <div className="flex items-center justify-between sm:justify-end gap-2 w-full md:w-auto ml-auto">
-            {/* Desktop Search Input (Hidden on Mobile) */}
-            <div className="hidden md:flex relative items-center w-72 shrink-0">
-              <Search size={14} className="absolute left-2.5 text-slate-400 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="ค้นหาลำดับ, ร้านค้า, Project..."
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setPage(1);
-                }}
-                className="w-full bg-white text-slate-800 text-xs pl-8 pr-7 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:border-slate-500 placeholder:text-slate-400"
-              />
-              {searchTerm && (
-                <X
-                  size={14}
-                  className="absolute right-2 text-slate-400 cursor-pointer hover:text-slate-600"
-                  onClick={() => {
-                    setSearchTerm("");
-                    setPage(1);
-                  }}
-                />
-              )}
-            </div>
-
-            {/* Mobile Filter Toggle Button */}
+          {/* Controls: Filter Toggle & Batch LINE Copy */}
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               type="button"
               onClick={() => setShowMobileFilters(!showMobileFilters)}
-              className="md:hidden px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg border border-slate-300 flex items-center gap-1.5 shrink-0 cursor-pointer shadow-2xs"
+              className={`md:hidden px-2.5 py-1.5 font-semibold rounded-lg border text-xs flex items-center gap-1 shrink-0 cursor-pointer active:scale-95 transition ${
+                showMobileFilters || selectedRequester || selectedDate
+                  ? "bg-slate-900 text-white border-slate-900 shadow-2xs"
+                  : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200"
+              }`}
             >
-              <Filter size={13} className="text-slate-500" />
-              <span>{showMobileFilters ? "ซ่อนตัวกรอง" : "ตัวกรอง"}</span>
+              <Filter size={13} className={showMobileFilters || selectedRequester || selectedDate ? "text-[#d4f54e]" : "text-slate-500"} />
+              <span>{showMobileFilters ? "ซ่อน" : "ตัวกรอง"}</span>
             </button>
 
-            {/* Batch Copy Button for Selected Requester */}
             {selectedRequester && filteredRows.length > 0 && (
               <button
                 type="button"
                 onClick={copyRequesterBatchText}
-                className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs rounded-lg transition cursor-pointer shrink-0 flex items-center gap-1.5 shadow-2xs"
+                className="px-2.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs rounded-lg transition cursor-pointer shrink-0 flex items-center gap-1 shadow-2xs active:scale-95"
                 title="คัดลอกข้อความสรุปบิลค้างทั้งหมดของผู้เบิกรายนี้"
               >
-                <span>คัดลอกส่ง LINE ({filteredRows.length})</span>
+                <span>LINE ({filteredRows.length})</span>
               </button>
             )}
           </div>
         </div>
+
+        {/* Expandable Dropdown Filters (Requester & Date) */}
+        <div className={`flex-wrap items-center gap-2.5 pt-2 border-t border-slate-100 ${showMobileFilters ? "flex" : "hidden md:flex"}`}>
+          {/* Requester dropdown */}
+          <div className="flex items-center gap-1.5">
+            <span className="font-semibold text-slate-700 whitespace-nowrap">ผู้เบิก:</span>
+            <select
+              value={selectedRequester}
+              onChange={(e) => {
+                setSelectedRequester(e.target.value);
+                setPage(1);
+              }}
+              className="bg-white border border-slate-300 text-xs text-slate-800 px-2 py-1 rounded-md focus:outline-none cursor-pointer"
+            >
+              <option value="">ทั้งหมด ({allPendingRows.length} รายการ)</option>
+              {peopleRows.map((row) => {
+                const key = String(row["รหัสพนักงาน"] || row["ชื่อเล่น"] || row._sheetRow || "").trim();
+                const label = row["ชื่อเล่น"] ? `${key} - ${row["ชื่อเล่น"]}` : key;
+                return key ? (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ) : null;
+              })}
+            </select>
+          </div>
+
+          {/* Date Picker */}
+          <div className="flex items-center gap-1.5">
+            <span className="font-semibold text-slate-700 whitespace-nowrap">วันที่:</span>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => {
+                setSelectedDate(e.target.value);
+                setPage(1);
+              }}
+              className="bg-white border border-slate-300 text-xs text-slate-800 px-2 py-1 rounded-md focus:outline-none cursor-pointer"
+            />
+          </div>
+        </div>
       </div>
 
-      {/* 3. HIGH-DENSITY TABLE */}
-      <div className="border border-slate-200 rounded-md bg-white overflow-hidden">
-        <div className="overflow-x-auto">
+      {/* 3. WORK TABLE / MOBILE ULTRA-COMPACT CARDS FEED */}
+      <div className="md:border md:border-slate-200 md:rounded-md md:bg-white md:overflow-hidden md:shadow-2xs">
+        {/* MOBILE ULTRA-COMPACT CARD FEED */}
+        <div className="block md:hidden space-y-2">
+          {!paginatedRows.length ? (
+            <div className="p-8 text-center text-slate-400 text-xs font-medium bg-white rounded-xl border border-slate-200 shadow-2xs">
+              ไม่พบรายการตามบิลที่ค้นหา
+            </div>
+          ) : (
+            paginatedRows.map((row, index) => {
+              const billId = String(row["ลำดับ"] || row._sheetRow || index);
+              const vendor = String(row["ร้าน/บุคคล"] || "-");
+              const project = String(row["ชื่อ Project"] || "-");
+              const item = String(row["สินค้า/ทำงาน"] || row["รายการ"] || "-");
+              const date = formatDateDisplay(row["ว/ด/ป"]);
+              const requesterCode = String(row["ผู้เบิก"] || "").trim();
+              const requesterName = requesterNames[requesterCode] || requesterCode || "-";
+              const amount = toNumber(row["ยอดเงิน"]);
+              const daysElapsed = calculateDaysElapsed(row["ว/ด/ป"]);
+
+              const hasVat = toNumber(row.vat) > 0;
+              const hasDeduct = toNumber(row["หัก"]) > 0;
+              const isCompany = String(row["statusค่าแรง"] || "").trim() === "บริษัท";
+              const hasCredit = Boolean(row["เครดิต"]);
+
+              const isSaving = savingRowId === billId;
+              const isCopied = copiedId === billId;
+              const isCompleted = completedRowIds.has(billId) || (toNumber(row.vat) > 0 && Boolean(row["วันได้บิล"])) || (toNumber(row["หัก"]) > 0 && Boolean(row["วันออก 3%"])) || (Boolean(row["เครดิต"]) && Boolean(row["วันจ่าย"]));
+
+              // Card aging border highlight
+              const agingBorderClass =
+                daysElapsed >= 15
+                  ? "border-l-[3.5px] border-l-rose-500"
+                  : daysElapsed >= 8
+                  ? "border-l-[3.5px] border-l-amber-500"
+                  : "border-l-[3.5px] border-l-slate-300";
+
+              return (
+                <div
+                  key={`mob-bill-follow-${billId}-${index}`}
+                  className={`bg-white rounded-xl border border-slate-200 p-2.5 shadow-2xs space-y-1.5 transition ${agingBorderClass}`}
+                >
+                  {/* Row 1: Bill ID + Project Name ── Amount */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <Link
+                        href={`/bills/${encodeURIComponent(billId)}`}
+                        className="font-bold text-[10px] bg-slate-900 text-white px-1.5 py-0.2 rounded shrink-0 hover:bg-slate-800 active:scale-95 transition"
+                        title="ดูรายละเอียดบิล"
+                      >
+                        #{billId}
+                      </Link>
+                      <span className="font-bold text-xs text-slate-900 truncate">
+                        {project}
+                      </span>
+                    </div>
+
+                    <span className="text-xs sm:text-sm font-bold text-slate-900 shrink-0">
+                      {money(amount)} <span className="text-[10px] font-normal text-slate-400">฿</span>
+                    </span>
+                  </div>
+
+                  {/* Row 2: Vendor • Item • Requester • Date ── Aging Tag */}
+                  <div className="flex items-center justify-between gap-2 text-[11px] text-slate-600">
+                    <div className="flex items-center gap-1.5 min-w-0 truncate">
+                      <span className="font-semibold text-slate-800 truncate">{vendor}</span>
+                      {item && item !== "-" && (
+                        <>
+                          <span className="text-slate-300">•</span>
+                          <span className="text-slate-500 truncate">{item}</span>
+                        </>
+                      )}
+                      <span className="text-slate-300">•</span>
+                      <span className="text-slate-400 shrink-0">{requesterName}</span>
+                    </div>
+
+                    <span className={`px-1.5 py-0.2 rounded text-[10px] font-semibold shrink-0 ${
+                      daysElapsed >= 15
+                        ? "bg-rose-50 text-rose-700 border border-rose-200"
+                        : daysElapsed >= 8
+                        ? "bg-amber-50 text-amber-700 border border-amber-200"
+                        : "bg-slate-100 text-slate-600 border border-slate-200"
+                    }`}>
+                      ค้าง {daysElapsed} วัน
+                    </span>
+                  </div>
+
+                  {/* Row 3: Conditions Badges ── Quick Actions */}
+                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100/80">
+                    {/* Condition badges */}
+                    <div className="flex flex-wrap items-center gap-1">
+                      {hasVat && (
+                        <span className="px-1.5 py-0.2 rounded text-[9.5px] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+                          VAT {row.vat}
+                        </span>
+                      )}
+                      {hasDeduct && (
+                        <span className="px-1.5 py-0.2 rounded text-[9.5px] font-semibold bg-purple-50 text-purple-700 border border-purple-200">
+                          หัก {row["หัก"]}% {isCompany ? "(บ.)" : "(บุคคล)"}
+                        </span>
+                      )}
+                      {hasCredit && (
+                        <span className="px-1.5 py-0.2 rounded text-[9.5px] font-semibold bg-orange-50 text-orange-700 border border-orange-200">
+                          เครดิต {row["เครดิต"]} วัน
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Quick Actions: LINE text & Mark Received */}
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => copyLineText(row)}
+                        className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs transition border cursor-pointer active:scale-95 ${
+                          isCopied
+                            ? "bg-slate-900 text-white border-slate-900"
+                            : "bg-white text-slate-600 hover:bg-slate-50 border-slate-200 shadow-2xs"
+                        }`}
+                        title="คัดลอกข้อความส่ง LINE ติดตาม"
+                      >
+                        <MessageSquare size={12} />
+                      </button>
+
+                      {isCompleted ? (
+                        <span className="px-2 py-1 bg-slate-100 text-slate-400 font-semibold text-[10.5px] rounded-lg border border-slate-200">
+                          ได้บิลแล้ว
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={isSaving}
+                          onClick={() => handleMarkReceived(row, (activeTab === "natural" || activeTab === "company") ? "deduct" : activeTab)}
+                          className="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-[10.5px] rounded-lg transition cursor-pointer disabled:opacity-50 active:scale-95 shadow-2xs"
+                          title="กดเพื่อบันทึกว่าได้รับบิลแล้ว"
+                        >
+                          {isSaving ? "บันทึก..." : "ได้บิลแล้ว"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* DESKTOP HIGH-DENSITY TABLE */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-700 border-collapse font-sans">
             <thead>
               <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-200 text-xs">
@@ -649,57 +796,97 @@ export function BillFollowDashboardClient({
           </table>
         </div>
 
-        {/* 4. PAGINATION TOOLBAR */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 border-t border-slate-200 text-xs text-slate-600 bg-slate-50">
-          <div>
-            แสดง {visibleStart}-{visibleEnd} จาก {filteredRows.length} รายการ
-          </div>
+        {/* 4. SLEEK PAGINATION */}
+        {filteredRows.length > 0 && (
+          <>
+            {/* Mobile Minimal Pagination (Clean Minimal Footer) */}
+            <div className="block md:hidden pt-1 pb-3">
+              {totalPages <= 1 ? (
+                <div className="text-center text-[11px] text-slate-400 font-medium select-none">
+                  • แสดงครบทั้งหมด {filteredRows.length} รายการ •
+                </div>
+              ) : (
+                <div className="flex items-center justify-between p-2 text-xs bg-white rounded-xl border border-slate-200 shadow-2xs">
+                  <button
+                    type="button"
+                    disabled={currentPage <= 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    className="px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 disabled:opacity-30 transition font-semibold text-slate-700 flex items-center gap-1 cursor-pointer active:bg-slate-200"
+                  >
+                    <ChevronLeft size={14} />
+                    <span>ก่อนหน้า</span>
+                  </button>
 
-          <div className="flex items-center gap-3">
-            {/* Rows per page */}
-            <div className="flex items-center gap-1">
-              <span className="text-slate-500 font-medium">แสดงต่อหน้า:</span>
-              {PAGE_SIZE_OPTIONS.map((opt) => (
-                <button
-                  key={opt}
-                  type="button"
-                  onClick={() => {
-                    setPageSize(opt);
-                    setPage(1);
-                  }}
-                  className={`px-2 py-0.5 rounded text-xs font-semibold transition cursor-pointer ${
-                    opt === pageSize ? "bg-slate-900 text-white" : "bg-white border border-slate-300 text-slate-700 hover:bg-slate-100"
-                  }`}
-                >
-                  {opt}
-                </button>
-              ))}
+                  <span className="font-semibold text-slate-700 text-xs">
+                    หน้า {currentPage} / {totalPages} <span className="font-normal text-slate-400 text-[11px]">({filteredRows.length} รายการ)</span>
+                  </span>
+
+                  <button
+                    type="button"
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    className="px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 disabled:opacity-30 transition font-semibold text-slate-700 flex items-center gap-1 cursor-pointer active:bg-slate-200"
+                  >
+                    <span>ถัดไป</span>
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
+              )}
             </div>
 
-            {/* Page prev next navigation */}
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                disabled={currentPage <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="p-1 rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 transition cursor-pointer text-slate-700"
-              >
-                <ChevronLeft size={15} />
-              </button>
-              <span className="font-semibold text-slate-800 px-1">
-                {currentPage} / {totalPages}
-              </span>
-              <button
-                type="button"
-                disabled={currentPage >= totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                className="p-1 rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 transition cursor-pointer text-slate-700"
-              >
-                <ChevronRight size={15} />
-              </button>
+            {/* Desktop Full Pagination */}
+            <div className="hidden md:flex flex-row items-center justify-between gap-3 p-3 border-t border-slate-200 text-xs text-slate-600 bg-slate-50">
+              <div>
+                แสดง {visibleStart}-{visibleEnd} จาก {filteredRows.length} รายการ
+              </div>
+
+              <div className="flex items-center gap-3">
+                {/* Rows per page */}
+                <div className="flex items-center gap-1">
+                  <span className="text-slate-500 font-medium">แสดงต่อหน้า:</span>
+                  {PAGE_SIZE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => {
+                        setPageSize(opt);
+                        setPage(1);
+                      }}
+                      className={`px-2 py-0.5 rounded text-xs font-semibold transition cursor-pointer ${
+                        opt === pageSize ? "bg-slate-900 text-white" : "bg-white border border-slate-300 text-slate-700 hover:bg-slate-100"
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Page prev next navigation */}
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    disabled={currentPage <= 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    className="p-1 rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 transition cursor-pointer text-slate-700"
+                  >
+                    <ChevronLeft size={15} />
+                  </button>
+                  <span className="font-semibold text-slate-800 px-1">
+                    {currentPage} / {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    className="p-1 rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 transition cursor-pointer text-slate-700"
+                  >
+                    <ChevronRight size={15} />
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          </>
+        )}
       </div>
     </div>
   );

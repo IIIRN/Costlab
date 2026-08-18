@@ -78,95 +78,68 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
 
   return (
     <div className="w-full flex flex-col gap-5 p-4 sm:p-6 max-w-[1600px] mx-auto font-sans">
-      {/* 1. EXECUTIVE SUMMARY STRIP */}
-      <div className="bg-white rounded-lg p-4 border border-slate-200/90 shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        {/* Left: Summary Metrics */}
-        <div className="flex flex-wrap items-center gap-4 text-xs">
-          <div className="flex items-center gap-2 pr-4 border-r border-slate-200">
-            <span className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
-              <FolderKanban size={18} />
+      {/* 1. EXECUTIVE SUMMARY STRIP (2x2 on mobile, flex on desktop) */}
+      <div className="bg-white rounded-xl md:rounded-lg p-3 sm:p-4 border border-slate-200/90 shadow-2xs">
+        <div className="grid grid-cols-2 lg:flex lg:flex-wrap items-center justify-between gap-3 text-xs">
+          {/* Total Projects */}
+          <div className="flex items-center gap-2 pr-2 sm:pr-4 border-r border-slate-100 sm:border-slate-200">
+            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold shrink-0">
+              <FolderKanban size={15} />
             </span>
-            <div>
-              <div className="text-[10px] text-slate-400 font-semibold uppercase">โครงการทั้งหมด</div>
-              <div className="text-base font-bold text-slate-900">{projects.length} รายการ</div>
+            <div className="min-w-0">
+              <div className="text-[10px] text-slate-400 font-semibold truncate">โครงการทั้งหมด</div>
+              <div className="text-sm sm:text-base font-bold text-slate-900">{projects.length} <span className="text-[10px] font-normal text-slate-400">งาน</span></div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 pr-4 border-r border-slate-200">
-            <span className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-              <Clock3 size={18} />
+          {/* Active Projects */}
+          <div className="flex items-center gap-2 pr-0 sm:pr-4 lg:border-r border-slate-200">
+            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold shrink-0">
+              <Clock3 size={15} />
             </span>
-            <div>
-              <div className="text-[10px] text-emerald-600 font-semibold uppercase">กำลังทำอยู่</div>
-              <div className="text-base font-bold text-emerald-700">{activeProjects.length} รายการ</div>
+            <div className="min-w-0">
+              <div className="text-[10px] text-emerald-600 font-semibold truncate">กำลังทำอยู่</div>
+              <div className="text-sm sm:text-base font-bold text-emerald-700">{activeProjects.length} <span className="text-[10px] font-normal text-emerald-500">งาน</span></div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 pr-4 border-r border-slate-200">
-            <span className="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center font-bold">
-              <CheckCircle2 size={18} />
+          {/* Completed Projects */}
+          <div className="flex items-center gap-2 pr-2 sm:pr-4 border-r border-slate-100 sm:border-slate-200 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100">
+            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center font-bold shrink-0">
+              <CheckCircle2 size={15} />
             </span>
-            <div>
-              <div className="text-[10px] text-slate-400 font-semibold uppercase">เสร็จสิ้นแล้ว</div>
-              <div className="text-base font-bold text-slate-700">{completeProjects.length} รายการ</div>
+            <div className="min-w-0">
+              <div className="text-[10px] text-slate-400 font-semibold truncate">เสร็จสิ้นแล้ว</div>
+              <div className="text-sm sm:text-base font-bold text-slate-700">{completeProjects.length} <span className="text-[10px] font-normal text-slate-400">งาน</span></div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
-              <Wallet size={18} />
+          {/* Total Spent vs Budget */}
+          <div className="flex items-center gap-2 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100">
+            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold shrink-0">
+              <Wallet size={15} />
             </span>
-            <div>
-              <div className="text-[10px] text-indigo-600 font-semibold uppercase">ยอดเบิกจ่ายรวม / งบรวม</div>
-              <div className="text-base font-bold text-slate-900">
-                {money(totalSpent)} <span className="text-xs font-normal text-slate-400">/ {money(totalBudget)}</span>
+            <div className="min-w-0">
+              <div className="text-[10px] text-indigo-600 font-semibold truncate">ยอดเบิกจ่ายรวม</div>
+              <div className="text-sm sm:text-base font-bold text-slate-900 truncate">
+                {money(totalSpent)} <span className="text-[10px] font-normal text-slate-400">/ {money(totalBudget)}</span>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Right: View Switcher (Table vs Grid) */}
-        <div className="flex items-center gap-2 self-start lg:self-auto">
-          <div className="flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200/60">
-            <button
-              type="button"
-              onClick={() => setViewMode("table")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                viewMode === "table"
-                  ? "bg-white text-slate-900 shadow-2xs"
-                  : "text-slate-500 hover:text-slate-900"
-              }`}
-            >
-              <List size={15} />
-              <span>มุมมองตาราง</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("grid")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                viewMode === "grid"
-                  ? "bg-white text-slate-900 shadow-2xs"
-                  : "text-slate-500 hover:text-slate-900"
-              }`}
-            >
-              <LayoutGrid size={15} />
-              <span>มุมมองการ์ด</span>
-            </button>
           </div>
         </div>
       </div>
 
       {/* 2. FILTER TABS & SEARCH TOOLBAR */}
-      <div className="bg-white rounded-lg p-3.5 border border-slate-200/90 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        {/* Status Filter Tabs */}
-        <div className="flex items-center gap-1.5">
+      <div className="bg-white rounded-xl md:rounded-lg p-2 sm:p-3 border border-slate-200/90 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        {/* Status Filter Tabs (Scrollable on mobile) */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
           <button
             type="button"
             onClick={() => setFilterTab("all")}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap active:scale-95 cursor-pointer ${
               filterTab === "all"
                 ? "bg-slate-900 text-white shadow-2xs"
-                : "text-slate-600 hover:bg-slate-100"
+                : "text-slate-600 hover:bg-slate-100 bg-slate-50 border border-slate-200/60"
             }`}
           >
             ทั้งหมด ({filteredProjects.length})
@@ -174,21 +147,21 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
           <button
             type="button"
             onClick={() => setFilterTab("active")}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap active:scale-95 cursor-pointer ${
               filterTab === "active"
-                ? "bg-emerald-600 text-white shadow-2xs"
-                : "text-emerald-700 hover:bg-emerald-50"
+                ? "bg-emerald-700 text-white shadow-2xs"
+                : "text-emerald-700 hover:bg-emerald-50 bg-emerald-50/50 border border-emerald-200/60"
             }`}
           >
-            🟢 กำลังทำอยู่ ({activeProjects.length})
+            🟢 กำลังทำ ({activeProjects.length})
           </button>
           <button
             type="button"
             onClick={() => setFilterTab("complete")}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap active:scale-95 cursor-pointer ${
               filterTab === "complete"
                 ? "bg-slate-700 text-white shadow-2xs"
-                : "text-slate-600 hover:bg-slate-100"
+                : "text-slate-600 hover:bg-slate-100 bg-slate-50 border border-slate-200/60"
             }`}
           >
             🏁 เสร็จแล้ว ({completeProjects.length})
@@ -196,143 +169,241 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
         </div>
 
         {/* Live Search Input Box */}
-        <div className="relative flex items-center w-full sm:w-80">
-          <Search size={15} className="absolute left-3 text-slate-400 pointer-events-none z-10" />
+        <div className="relative flex items-center flex-1 sm:max-w-xs min-w-0">
+          <Search size={14} className="absolute left-2.5 text-slate-400 pointer-events-none shrink-0" />
           <input
             type="text"
-            placeholder="ค้นหาชื่อ Project, ID, ลูกค้า, ผู้รับผิดชอบ..."
+            placeholder="ค้นหาชื่อ Project, ID, ลูกค้า..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ paddingLeft: "36px" }}
-            className="w-full bg-slate-100/80 hover:bg-slate-100 focus:bg-white text-slate-800 text-xs font-medium rounded-xl border border-slate-200 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200 transition-all placeholder:text-slate-400"
+            className="w-full bg-slate-50 md:bg-white text-slate-800 text-xs pl-8 pr-7 py-1.5 rounded-lg md:rounded-md border border-slate-200 md:border-slate-300 focus:outline-none focus:bg-white focus:border-slate-400 placeholder:text-slate-400"
           />
         </div>
       </div>
 
-      {/* 3. MAIN WORKFLOW CONTENT (TABLE OR GRID) */}
-      {viewMode === "table" ? (
-        /* PROFESSIONAL HIGH-DENSITY WORK TABLE */
-        <div className="bg-white rounded-lg border border-slate-200/90 shadow-2xs overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-700 border-collapse">
-              <thead>
-                <tr className="bg-slate-100/90 text-slate-600 font-bold border-b border-slate-200 uppercase tracking-wider text-[11px]">
-                  <th className="py-3 px-3.5 w-24">รหัส (ID)</th>
-                  <th className="py-3 px-3.5 min-w-[220px]">ชื่อโครงการ (Project)</th>
-                  <th className="py-3 px-3.5">ลูกค้า</th>
-                  <th className="py-3 px-3.5">บริษัท</th>
-                  <th className="py-3 px-3.5">ผู้รับผิดชอบ</th>
-                  <th className="py-3 px-3.5 w-28 text-center">สถานะ</th>
-                  <th className="py-3 px-3.5 text-right">ยอดเบิกจ่ายรวม</th>
-                  <th className="py-3 px-3.5 text-right">งบไม่เกิน</th>
-                  <th className="py-3 px-3.5 text-right">คงเหลือ</th>
-                  <th className="py-3 px-3.5 w-16 text-center">จัดการ</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {displayList.map((p) => {
-                  const id = String(p["ID Project"] || p.id || "-");
-                  const name = String(p["ชื่อ Project"] || p.name || "-");
-                  const customer = String(p["ชื่อลูกค้า"] || p.customer_name || "-");
-                  const company = String(p["บริษัท"] || p.company || "-");
-                  const owner = String(p["รับผิดชอบ"] || p.responsible_person || "-");
+      {/* 3. MAIN WORKFLOW CONTENT (MOBILE CARD FEED & DESKTOP TABLE/GRID) */}
+      {/* MOBILE HIGH-DENSITY PROJECT CARDS FEED */}
+      <div className="block md:hidden space-y-2">
+        {!displayList.length ? (
+          <div className="bg-white rounded-xl p-8 text-center text-slate-400 border border-slate-200 text-xs font-medium">
+            ไม่พบโครงการที่ค้นหา
+          </div>
+        ) : (
+          displayList.map((p) => {
+            const id = String(p["ID Project"] || p.id || "-");
+            const name = String(p["ชื่อ Project"] || p.name || "-");
+            const customer = String(p["ชื่อลูกค้า"] || p.customer_name || "-");
+            const company = String(p["บริษัท"] || p.company || "-");
+            const owner = String(p["รับผิดชอบ"] || p.responsible_person || "-");
 
-                  const spent = toNumber(p["รวม ALL"]);
-                  const budget = toNumber(p["งบไม่เกิน"]);
-                  const remaining = budget - spent;
+            const spent = toNumber(p["รวม ALL"]);
+            const budget = toNumber(p["งบไม่เกิน"]);
+            const remaining = budget - spent;
+            const percentUsed = budget > 0 ? Math.min(100, Math.round((spent / budget) * 100)) : 0;
 
-                  const rawColor = String(p.color || "").toLowerCase().trim();
-                  const isComplete = rawColor === "black" || rawColor === "เสร็จแล้ว" || rawColor === "completed";
-                  const isRed = rawColor === "red";
+            const rawColor = String(p.color || "").toLowerCase().trim();
+            const isComplete = rawColor === "black" || rawColor === "เสร็จแล้ว" || rawColor === "completed";
+            const isRed = rawColor === "red";
 
-                  return (
-                    <tr key={id} className="hover:bg-slate-50/80 transition-colors group">
-                      {/* Project ID */}
-                      <td className="py-2.5 px-3.5 font-mono font-bold text-slate-800">
-                        #{id}
-                      </td>
+            return (
+              <Link
+                key={`mob-project-${id}`}
+                href={`/work-status/${encodeURIComponent(id)}`}
+                className="block bg-white rounded-xl p-3 border border-slate-200 shadow-2xs space-y-2 hover:border-slate-300 active:scale-98 transition cursor-pointer"
+              >
+                {/* Header: Project ID + Status Tag */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="font-bold text-[10px] bg-slate-900 text-white px-1.5 py-0.2 rounded shrink-0">
+                      #{id}
+                    </span>
+                    <span className="font-bold text-xs text-slate-900 truncate">
+                      {name}
+                    </span>
+                  </div>
 
-                      {/* Project Name */}
-                      <td className="py-2.5 px-3.5 font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
-                        <Link href={`/work-status/${encodeURIComponent(id)}`} className="hover:underline">
-                          {name}
-                        </Link>
-                      </td>
+                  <span
+                    className={`px-2 py-0.2 rounded text-[10px] font-bold shrink-0 ${
+                      isComplete
+                        ? "bg-slate-100 text-slate-600 border border-slate-200"
+                        : isRed
+                        ? "bg-rose-50 text-rose-700 border border-rose-200"
+                        : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                    }`}
+                  >
+                    {isComplete ? "เสร็จแล้ว" : isRed ? "เร่งด่วน" : "กำลังทำ"}
+                  </span>
+                </div>
 
-                      {/* Customer */}
-                      <td className="py-2.5 px-3.5 text-slate-600">{customer}</td>
+                {/* Subtitle: Customer • Company • Owner */}
+                <div className="text-[11px] text-slate-500 flex items-center justify-between">
+                  <span className="truncate">{customer} {company !== "-" ? `(${company})` : ""}</span>
+                  <span className="text-slate-400 shrink-0 ml-2 font-medium">{owner}</span>
+                </div>
 
-                      {/* Company */}
-                      <td className="py-2.5 px-3.5 text-slate-600">{company}</td>
+                {/* Financial Progress Strip */}
+                <div className="bg-slate-50 p-2 rounded-lg space-y-1">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-slate-500">เบิกแล้ว: <strong className="text-slate-900">{money(spent)}</strong></span>
+                    <span className="text-slate-400">งบ: <strong>{money(budget)}</strong></span>
+                  </div>
+                  {budget > 0 && (
+                    <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${
+                          percentUsed > 90 ? "bg-rose-500" : percentUsed > 75 ? "bg-amber-500" : "bg-emerald-500"
+                        }`}
+                        style={{ width: `${percentUsed}%` }}
+                      />
+                    </div>
+                  )}
+                </div>
 
-                      {/* Owner */}
-                      <td className="py-2.5 px-3.5 text-slate-600">{owner}</td>
+                {/* Footer: Remaining & Detail Link */}
+                <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-100">
+                  <div className="text-slate-500">
+                    คงเหลือ:{" "}
+                    <span className={`font-bold ${remaining < 0 ? "text-rose-600" : "text-emerald-700"}`}>
+                      {money(remaining)} ฿
+                    </span>
+                  </div>
 
-                      {/* Status Tag */}
-                      <td className="py-2.5 px-3.5 text-center">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-semibold ${
-                            isComplete
-                              ? "bg-slate-100 text-slate-700 border border-slate-200"
-                              : isRed
-                              ? "bg-rose-50 text-rose-700 border border-rose-200"
-                              : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                  <span className="text-slate-600 font-semibold text-[11px] flex items-center gap-0.5 group-hover:text-slate-900">
+                    <span>ดูรายละเอียด</span>
+                    <ArrowRight size={12} />
+                  </span>
+                </div>
+              </Link>
+            );
+          })
+        )}
+      </div>
+
+      {/* DESKTOP CONTENT (TABLE OR GRID) */}
+      <div className="hidden md:block">
+        {viewMode === "table" ? (
+          /* PROFESSIONAL HIGH-DENSITY WORK TABLE */
+          <div className="bg-white rounded-lg border border-slate-200/90 shadow-2xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-slate-700 border-collapse">
+                <thead>
+                  <tr className="bg-slate-100/90 text-slate-600 font-bold border-b border-slate-200 uppercase tracking-wider text-[11px]">
+                    <th className="py-3 px-3.5 w-24">รหัส (ID)</th>
+                    <th className="py-3 px-3.5 min-w-[220px]">ชื่อโครงการ (Project)</th>
+                    <th className="py-3 px-3.5">ลูกค้า</th>
+                    <th className="py-3 px-3.5">บริษัท</th>
+                    <th className="py-3 px-3.5">ผู้รับผิดชอบ</th>
+                    <th className="py-3 px-3.5 w-28 text-center">สถานะ</th>
+                    <th className="py-3 px-3.5 text-right">ยอดเบิกจ่ายรวม</th>
+                    <th className="py-3 px-3.5 text-right">งบไม่เกิน</th>
+                    <th className="py-3 px-3.5 text-right">คงเหลือ</th>
+                    <th className="py-3 px-3.5 w-16 text-center">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {displayList.map((p) => {
+                    const id = String(p["ID Project"] || p.id || "-");
+                    const name = String(p["ชื่อ Project"] || p.name || "-");
+                    const customer = String(p["ชื่อลูกค้า"] || p.customer_name || "-");
+                    const company = String(p["บริษัท"] || p.company || "-");
+                    const owner = String(p["รับผิดชอบ"] || p.responsible_person || "-");
+
+                    const spent = toNumber(p["รวม ALL"]);
+                    const budget = toNumber(p["งบไม่เกิน"]);
+                    const remaining = budget - spent;
+
+                    const rawColor = String(p.color || "").toLowerCase().trim();
+                    const isComplete = rawColor === "black" || rawColor === "เสร็จแล้ว" || rawColor === "completed";
+                    const isRed = rawColor === "red";
+
+                    return (
+                      <tr key={id} className="hover:bg-slate-50/80 transition-colors group">
+                        {/* Project ID */}
+                        <td className="py-2.5 px-3.5 font-mono font-bold text-slate-800">
+                          #{id}
+                        </td>
+
+                        {/* Project Name */}
+                        <td className="py-2.5 px-3.5 font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                          <Link href={`/work-status/${encodeURIComponent(id)}`} className="hover:underline">
+                            {name}
+                          </Link>
+                        </td>
+
+                        {/* Customer */}
+                        <td className="py-2.5 px-3.5 text-slate-600">{customer}</td>
+
+                        {/* Company */}
+                        <td className="py-2.5 px-3.5 text-slate-600">{company}</td>
+
+                        {/* Owner */}
+                        <td className="py-2.5 px-3.5 text-slate-600">{owner}</td>
+
+                        {/* Status Tag */}
+                        <td className="py-2.5 px-3.5 text-center">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-semibold ${
+                              isComplete
+                                ? "bg-slate-100 text-slate-700 border border-slate-200"
+                                : isRed
+                                ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            }`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                isComplete ? "bg-slate-600" : isRed ? "bg-rose-600 animate-pulse" : "bg-emerald-600"
+                              }`}
+                            />
+                            {isComplete ? "เสร็จแล้ว" : isRed ? "เร่งด่วน" : "กำลังทำ"}
+                          </span>
+                        </td>
+
+                        {/* Spent */}
+                        <td className="py-2.5 px-3.5 text-right font-bold text-slate-900">
+                          {money(spent)}
+                        </td>
+
+                        {/* Budget */}
+                        <td className="py-2.5 px-3.5 text-right font-medium text-slate-500">
+                          {money(budget)}
+                        </td>
+
+                        {/* Remaining */}
+                        <td
+                          className={`py-2.5 px-3.5 text-right font-bold ${
+                            remaining < 0 ? "text-rose-600 font-bold" : "text-emerald-700"
                           }`}
                         >
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              isComplete ? "bg-slate-600" : isRed ? "bg-rose-600 animate-pulse" : "bg-emerald-600"
-                            }`}
-                          />
-                          {isComplete ? "เสร็จแล้ว" : isRed ? "เร่งด่วน" : "กำลังทำ"}
-                        </span>
-                      </td>
+                          {money(remaining)}
+                        </td>
 
-                      {/* Spent */}
-                      <td className="py-2.5 px-3.5 text-right font-bold text-slate-900">
-                        {money(spent)}
-                      </td>
+                        {/* Action detail link */}
+                        <td className="py-2.5 px-3.5 text-center">
+                          <Link
+                            href={`/work-status/${encodeURIComponent(id)}`}
+                            className="w-7 h-7 rounded-lg bg-slate-100 group-hover:bg-indigo-600 text-slate-600 group-hover:text-white flex items-center justify-center transition mx-auto shadow-2xs"
+                            title="ดูรายละเอียดโครงการ"
+                          >
+                            <Eye size={15} />
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
 
-                      {/* Budget */}
-                      <td className="py-2.5 px-3.5 text-right font-medium text-slate-500">
-                        {money(budget)}
-                      </td>
-
-                      {/* Remaining */}
-                      <td
-                        className={`py-2.5 px-3.5 text-right font-bold ${
-                          remaining < 0 ? "text-rose-600 font-bold" : "text-emerald-700"
-                        }`}
-                      >
-                        {money(remaining)}
-                      </td>
-
-                      {/* Action detail link */}
-                      <td className="py-2.5 px-3.5 text-center">
-                        <Link
-                          href={`/work-status/${encodeURIComponent(id)}`}
-                          className="w-7 h-7 rounded-lg bg-slate-100 group-hover:bg-indigo-600 text-slate-600 group-hover:text-white flex items-center justify-center transition mx-auto shadow-2xs"
-                          title="ดูรายละเอียดโครงการ"
-                        >
-                          <Eye size={15} />
-                        </Link>
+                  {!displayList.length && (
+                    <tr>
+                      <td colSpan={10} className="py-10 text-center text-slate-400">
+                        ไม่พบโครงการที่ค้นหา
                       </td>
                     </tr>
-                  );
-                })}
-
-                {!displayList.length && (
-                  <tr>
-                    <td colSpan={10} className="py-10 text-center text-slate-400">
-                      ไม่พบโครงการที่ค้นหา
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      ) : (
+        ) : (
         /* COMPACT CARD GRID VIEW */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {displayList.map((p) => {
@@ -399,6 +470,7 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
           )}
         </div>
       )}
+      </div>
     </div>
   );
 }

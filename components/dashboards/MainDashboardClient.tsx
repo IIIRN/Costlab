@@ -110,10 +110,10 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
           ))}
         </div>
 
-        {/* Custom Range & Refresh */}
-        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 text-xs">
-          <div className="flex items-center gap-1 flex-1 sm:flex-initial">
-            <span className="text-slate-500 font-medium text-[11px] shrink-0">เริ่ม:</span>
+        {/* Custom Range & Refresh on same line */}
+        <div className="flex items-center justify-between gap-1.5 text-xs">
+          <div className="flex items-center gap-1 flex-1 min-w-0">
+            <span className="text-slate-500 font-medium text-[10px] sm:text-[11px] shrink-0">เริ่ม:</span>
             <input
               type="date"
               value={from}
@@ -121,12 +121,12 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
                 setFrom(e.target.value);
                 setPreset("custom");
               }}
-              className="w-full sm:w-auto bg-slate-50 md:bg-white text-slate-800 font-medium px-2 py-1 rounded-lg border border-slate-300 focus:outline-none focus:border-slate-500 text-[11px] sm:text-xs"
+              className="w-full bg-slate-50 md:bg-white text-slate-800 font-medium px-1.5 py-1 rounded-lg border border-slate-300 focus:outline-none focus:border-slate-500 text-[10.5px] sm:text-xs"
             />
           </div>
 
-          <div className="flex items-center gap-1 flex-1 sm:flex-initial">
-            <span className="text-slate-500 font-medium text-[11px] shrink-0">ถึง:</span>
+          <div className="flex items-center gap-1 flex-1 min-w-0">
+            <span className="text-slate-500 font-medium text-[10px] sm:text-[11px] shrink-0">ถึง:</span>
             <input
               type="date"
               value={to}
@@ -134,7 +134,7 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
                 setTo(e.target.value);
                 setPreset("custom");
               }}
-              className="w-full sm:w-auto bg-slate-50 md:bg-white text-slate-800 font-medium px-2 py-1 rounded-lg border border-slate-300 focus:outline-none focus:border-slate-500 text-[11px] sm:text-xs"
+              className="w-full bg-slate-50 md:bg-white text-slate-800 font-medium px-1.5 py-1 rounded-lg border border-slate-300 focus:outline-none focus:border-slate-500 text-[10.5px] sm:text-xs"
             />
           </div>
 
@@ -142,22 +142,22 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
             type="button"
             onClick={refreshData}
             disabled={refreshing}
-            className="flex items-center gap-1 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg border border-slate-300 transition cursor-pointer text-[11px] sm:text-xs shrink-0 active:scale-95"
+            className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg border border-slate-300 transition cursor-pointer text-[10.5px] sm:text-xs shrink-0 active:scale-95 shadow-2xs"
           >
-            <RotateCw size={12} className={refreshing ? "animate-spin" : ""} />
-            <span>{refreshing ? "รีเฟรช..." : "รีเฟรช"}</span>
+            <RotateCw size={12} className={refreshing ? "animate-spin text-slate-900" : "text-slate-600"} />
+            <span className="hidden sm:inline">{refreshing ? "รีเฟรช..." : "รีเฟรช"}</span>
           </button>
         </div>
       </div>
 
-      {/* 2. EXECUTIVE METRICS STAT GRID (2 Columns on Mobile) */}
+      {/* 2. EXECUTIVE METRICS STAT GRID (2 Columns 2x2 on Mobile) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
         {/* Total Expenses */}
-        <div className="bg-white rounded-xl md:rounded-md p-3 sm:p-4 border border-slate-200 flex flex-col justify-between gap-1.5 shadow-2xs">
+        <div className="bg-white rounded-xl md:rounded-md p-2.5 sm:p-4 border border-slate-200 flex flex-col justify-between gap-1.5 shadow-2xs">
           <div className="flex items-center justify-between gap-1">
             <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">ยอดค่าใช้จ่ายรวม</span>
             <span className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center font-bold shrink-0 shadow-2xs">
-              <Wallet size={14} className="sm:w-4 sm:h-4" />
+              <Wallet size={13} className="sm:w-4 sm:h-4" />
             </span>
           </div>
           <div>
@@ -167,11 +167,11 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
         </div>
 
         {/* Revenue */}
-        <div className="bg-white rounded-xl md:rounded-md p-3 sm:p-4 border border-slate-200 flex flex-col justify-between gap-1.5 shadow-2xs">
+        <div className="bg-white rounded-xl md:rounded-md p-2.5 sm:p-4 border border-slate-200 flex flex-col justify-between gap-1.5 shadow-2xs">
           <div className="flex items-center justify-between gap-1">
             <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">ยอดงานรวมภาษี</span>
             <span className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center font-bold shrink-0 shadow-2xs">
-              <TrendingUp size={14} className="sm:w-4 sm:h-4" />
+              <TrendingUp size={13} className="sm:w-4 sm:h-4" />
             </span>
           </div>
           <div>
@@ -181,32 +181,32 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
         </div>
 
         {/* Project Status */}
-        <div className="bg-white rounded-xl md:rounded-md p-3 sm:p-4 border border-slate-200 flex flex-col justify-between gap-1.5 shadow-2xs">
+        <div className="bg-white rounded-xl md:rounded-md p-2.5 sm:p-4 border border-slate-200 flex flex-col justify-between gap-1.5 shadow-2xs">
           <div className="flex items-center justify-between gap-1">
             <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">สถานะโครงการ</span>
             <span className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-600 flex items-center justify-center font-bold shrink-0 shadow-2xs">
-              <FolderKanban size={14} className="sm:w-4 sm:h-4" />
+              <FolderKanban size={13} className="sm:w-4 sm:h-4" />
             </span>
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
             <div>
-              <div className="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate">กำลังทำ</div>
+              <div className="text-[9.5px] sm:text-[11px] text-slate-500 font-medium truncate">กำลังทำ</div>
               <div className="text-sm sm:text-lg font-bold text-indigo-900">{summary.activeProjects}</div>
             </div>
-            <div className="h-6 w-px bg-slate-200" />
+            <div className="h-5 sm:h-6 w-px bg-slate-200" />
             <div>
-              <div className="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate">เสร็จสิ้น</div>
+              <div className="text-[9.5px] sm:text-[11px] text-slate-500 font-medium truncate">เสร็จสิ้น</div>
               <div className="text-sm sm:text-lg font-bold text-slate-600">{summary.completeProjects}</div>
             </div>
           </div>
         </div>
 
         {/* Net Profit */}
-        <div className="bg-white rounded-xl md:rounded-md p-3 sm:p-4 border border-slate-200 flex flex-col justify-between gap-1.5 shadow-2xs">
+        <div className="bg-white rounded-xl md:rounded-md p-2.5 sm:p-4 border border-slate-200 flex flex-col justify-between gap-1.5 shadow-2xs">
           <div className="flex items-center justify-between gap-1">
             <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">กำไรสุทธิ (Profit)</span>
             <span className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center font-bold shrink-0 shadow-2xs">
-              <DollarSign size={14} className="sm:w-4 sm:h-4" />
+              <DollarSign size={13} className="sm:w-4 sm:h-4" />
             </span>
           </div>
           <div>
@@ -219,67 +219,67 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
                 />
               </div>
               <div className="text-[9px] sm:text-[10px] font-medium text-slate-500 text-right truncate">
-                อัตรากำไร: {summary.profitPercent.toFixed(1)}%
+                กำไร: {summary.profitPercent.toFixed(1)}%
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 3. STATUS COUNTERS STRIP */}
+      {/* 3. STATUS COUNTERS STRIP (Clickable Quick Nav on Mobile) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 text-xs">
-        <div className="bg-white p-2.5 sm:p-3 rounded-xl md:rounded-md border border-slate-200 flex items-center gap-2 sm:gap-2.5 shadow-2xs">
+        <a href="/bill-follow?tab=vat" className="bg-white p-2.5 sm:p-3 rounded-xl md:rounded-md border border-slate-200 flex items-center gap-2 sm:gap-2.5 shadow-2xs hover:border-sky-300 transition active:scale-95">
           <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-sky-50 border border-sky-200 text-sky-600 flex items-center justify-center font-bold shrink-0">
-            <FileCheck size={14} className="sm:w-4 sm:h-4" />
+            <FileCheck size={13} className="sm:w-4 sm:h-4" />
           </div>
           <div className="min-w-0">
             <div className="text-slate-500 text-[9px] sm:text-[10px] font-semibold truncate">ตาม VAT (รอได้บิล)</div>
-            <div className="font-bold text-slate-900 truncate text-xs sm:text-sm">{summary.vatCount} บิล</div>
+            <div className="font-bold text-slate-900 truncate text-xs sm:text-sm">{summary.vatCount} <span className="text-[10px] font-normal text-slate-400">บิล</span></div>
           </div>
-        </div>
+        </a>
 
-        <div className="bg-white p-2.5 sm:p-3 rounded-xl md:rounded-md border border-slate-200 flex items-center gap-2 sm:gap-2.5 shadow-2xs">
+        <a href="/bill-follow?tab=natural" className="bg-white p-2.5 sm:p-3 rounded-xl md:rounded-md border border-slate-200 flex items-center gap-2 sm:gap-2.5 shadow-2xs hover:border-purple-300 transition active:scale-95">
           <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-purple-50 border border-purple-200 text-purple-600 flex items-center justify-center font-bold shrink-0">
-            <UserCheck size={14} className="sm:w-4 sm:h-4" />
+            <UserCheck size={13} className="sm:w-4 sm:h-4" />
           </div>
           <div className="min-w-0">
             <div className="text-slate-500 text-[9px] sm:text-[10px] font-semibold truncate">ตาม หัก 3% บุคคล</div>
-            <div className="font-bold text-slate-900 truncate text-xs sm:text-sm">{summary.naturalDeductCount} บิล</div>
+            <div className="font-bold text-slate-900 truncate text-xs sm:text-sm">{summary.naturalDeductCount} <span className="text-[10px] font-normal text-slate-400">บิล</span></div>
           </div>
-        </div>
+        </a>
 
-        <div className="bg-white p-2.5 sm:p-3 rounded-xl md:rounded-md border border-slate-200 flex items-center gap-2 sm:gap-2.5 shadow-2xs">
+        <a href="/bill-follow?tab=company" className="bg-white p-2.5 sm:p-3 rounded-xl md:rounded-md border border-slate-200 flex items-center gap-2 sm:gap-2.5 shadow-2xs hover:border-blue-300 transition active:scale-95">
           <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center font-bold shrink-0">
-            <Building2 size={14} className="sm:w-4 sm:h-4" />
+            <Building2 size={13} className="sm:w-4 sm:h-4" />
           </div>
           <div className="min-w-0">
             <div className="text-slate-500 text-[9px] sm:text-[10px] font-semibold truncate">ตาม หัก 3% บริษัท</div>
-            <div className="font-bold text-slate-900 truncate text-xs sm:text-sm">{summary.companyDeductCount} บิล</div>
+            <div className="font-bold text-slate-900 truncate text-xs sm:text-sm">{summary.companyDeductCount} <span className="text-[10px] font-normal text-slate-400">บิล</span></div>
           </div>
-        </div>
+        </a>
 
-        <div className="bg-white p-2.5 sm:p-3 rounded-xl md:rounded-md border border-slate-200 flex items-center gap-2 sm:gap-2.5 shadow-2xs">
+        <a href="/bill-follow?tab=credit" className="bg-white p-2.5 sm:p-3 rounded-xl md:rounded-md border border-slate-200 flex items-center gap-2 sm:gap-2.5 shadow-2xs hover:border-orange-300 transition active:scale-95">
           <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-orange-50 border border-orange-200 text-orange-600 flex items-center justify-center font-bold shrink-0">
-            <Clock3 size={14} className="sm:w-4 sm:h-4" />
+            <Clock3 size={13} className="sm:w-4 sm:h-4" />
           </div>
           <div className="min-w-0">
             <div className="text-slate-500 text-[9px] sm:text-[10px] font-semibold truncate">ตาม เครดิต (รอจ่าย)</div>
-            <div className="font-bold text-slate-900 truncate text-xs sm:text-sm">{summary.creditCount} บิล</div>
+            <div className="font-bold text-slate-900 truncate text-xs sm:text-sm">{summary.creditCount} <span className="text-[10px] font-normal text-slate-400">บิล</span></div>
           </div>
-        </div>
+        </a>
       </div>
 
       {/* 4. TABBED BREAKDOWN TABLES */}
-      <div className="bg-white rounded-md border border-slate-200 overflow-hidden">
-        {/* Tabs Bar */}
-        <div className="p-3 border-b border-slate-200 flex flex-wrap items-center gap-2 bg-white">
+      <div className="bg-white rounded-xl md:rounded-md border border-slate-200 overflow-hidden shadow-2xs">
+        {/* Tabs Bar (Scrollable on mobile) */}
+        <div className="p-2 sm:p-3 border-b border-slate-200 flex items-center gap-1.5 bg-white overflow-x-auto no-scrollbar whitespace-nowrap">
           <button
             type="button"
             onClick={() => setActiveTab("vat")}
-            className={`px-3.5 py-1.5 rounded-md text-xs font-semibold transition cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg md:rounded-md text-xs font-semibold transition cursor-pointer shrink-0 active:scale-95 ${
               activeTab === "vat"
-                ? "bg-slate-900 text-white"
-                : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-50"
+                ? "bg-slate-900 text-white shadow-xs"
+                : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
             }`}
           >
             ค่าแรงบริษัท & ภาษี VAT
@@ -287,10 +287,10 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
           <button
             type="button"
             onClick={() => setActiveTab("natural")}
-            className={`px-3.5 py-1.5 rounded-md text-xs font-semibold transition cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg md:rounded-md text-xs font-semibold transition cursor-pointer shrink-0 active:scale-95 ${
               activeTab === "natural"
-                ? "bg-slate-900 text-white"
-                : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-50"
+                ? "bg-slate-900 text-white shadow-xs"
+                : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
             }`}
           >
             ค่าแรงบุคคล & ดำเนินงาน
@@ -298,10 +298,10 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
           <button
             type="button"
             onClick={() => setActiveTab("equipment")}
-            className={`px-3.5 py-1.5 rounded-md text-xs font-semibold transition cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg md:rounded-md text-xs font-semibold transition cursor-pointer shrink-0 active:scale-95 ${
               activeTab === "equipment"
-                ? "bg-slate-900 text-white"
-                : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-50"
+                ? "bg-slate-900 text-white shadow-xs"
+                : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
             }`}
           >
             เครื่องจักร เครื่องมือ & อื่นๆ
