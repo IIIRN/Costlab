@@ -4,6 +4,7 @@ import {
   getLineUserIdByRequester,
   getLineTargetGroup,
   getLineConfigIds,
+  getPeopleMap,
   createWithdrawRequesterFlex,
   createWithdrawOwnerFlex,
   createWithdrawApproverFlex,
@@ -23,6 +24,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing row or rows data" }, { status: 400 });
     }
 
+    const peopleMap = await getPeopleMap();
     const targetRole = body.targetRole || "requester";
     const totalAmount = bills.reduce((sum: number, b: any) => sum + Number(b["ยอดเงิน"] || b.amount || 0), 0);
     const amountStr = totalAmount.toLocaleString("th-TH");
@@ -33,7 +35,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "No Approver LINE User IDs configured" }, { status: 400 });
       }
 
-      const flex = createWithdrawApproverFlex(bills);
+      const flex = createWithdrawApproverFlex(bills, peopleMap);
       const altText = bills.length === 1
         ? `✅ รายการอนุมัติสำเร็จ (รอปิดงาน) #${bills[0]._sheetRow || bills[0].id || bills[0]["ลำดับ"] || ""} (฿${amountStr})`
         : `✅ รายการอนุมัติสำเร็จ ${bills.length} รายการ (รวม ฿${amountStr})`;

@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
 
     const pendingBills = bills.map(b => ({
       id: b.id || b["ลำดับ"],
-      requester: b["ผู้เบิก"] || b.requester || "สมชาย",
+      requester: b["ผู้เบิก"] || b.requester || "-",
       amount: b["ยอดเงิน"] || b.amount || 0
     }));
 
