@@ -119,21 +119,26 @@ export default async function ContractDetailPage({ params }: ContractDetailPageP
       </div>
 
       {/* FINANCIAL SUMMARY */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="border border-slate-200 rounded-md p-3 bg-white">
-          <div className="text-[11px] text-slate-400 font-medium mb-1">ยอดเงินจ้างรวม</div>
-          <div className="text-base font-bold text-slate-900">{money(total)}</div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
+        <div className="border border-slate-200 rounded-xl md:rounded-md p-3 sm:p-4 bg-white shadow-2xs">
+          <div className="text-[11px] text-slate-400 font-medium mb-0.5">ยอดเงินจ้างรวม</div>
+          <div className="text-base sm:text-lg font-bold text-slate-900">{money(total)}</div>
         </div>
-        <div className="border border-slate-200 rounded-md p-3 bg-white">
-          <div className="text-[11px] text-slate-400 font-medium mb-1">ยอดจ่ายแล้ว</div>
-          <div className="text-base font-bold text-emerald-700">{money(paid)}</div>
+
+        <div className="border border-slate-200 rounded-xl md:rounded-md p-3 sm:p-4 bg-white shadow-2xs">
+          <div className="flex items-center justify-between text-[11px] text-slate-400 font-medium mb-0.5">
+            <span>ยอดจ่ายแล้ว</span>
+            <span className="text-emerald-700 font-bold">{payPercent}%</span>
+          </div>
+          <div className="text-base sm:text-lg font-bold text-emerald-700">{money(paid)}</div>
           <div className="mt-1.5 w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-            <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${payPercent}%` }} />
+            <div className="bg-emerald-500 h-full rounded-full transition-all duration-300" style={{ width: `${payPercent}%` }} />
           </div>
         </div>
-        <div className="border border-slate-200 rounded-md p-3 bg-white">
-          <div className="text-[11px] text-slate-400 font-medium mb-1">ค่าแรงคงเหลือ</div>
-          <div className={`text-base font-bold ${remaining < 0 ? "text-rose-600" : "text-slate-900"}`}>
+
+        <div className="border border-slate-200 rounded-xl md:rounded-md p-3 sm:p-4 bg-white shadow-2xs">
+          <div className="text-[11px] text-slate-400 font-medium mb-0.5">ค่าแรงคงเหลือ</div>
+          <div className={`text-base sm:text-lg font-bold ${remaining < 0 ? "text-rose-600" : "text-amber-700"}`}>
             {money(remaining)}
             {remaining < 0 && <span className="text-[10px] text-rose-500 ml-1">จ่ายเกิน</span>}
           </div>
