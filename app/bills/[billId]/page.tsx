@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { BillDetailClient } from "@/components/dashboards/BillDetailClient";
 import { TABLES } from "@/lib/config";
 import { hydrateBillRows, hydrateContractRows, hydrateProjectRows } from "@/lib/formulas";
+import { getBillDocumentData } from "@/lib/bill-document";
 import { getRows } from "@/lib/db";
 import type { SheetRow } from "@/lib/types";
 
@@ -14,13 +15,14 @@ type BillDetailPageProps = {
 export default async function BillDetailPage({ params }: BillDetailPageProps) {
   const { billId } = await params;
   const decodedBillId = decodeURIComponent(billId).trim();
-  const [rawDataRows, rawProjectRows, rawContractRows, peopleRows, storeRows, contractorRows] = await Promise.all([
+  const [rawDataRows, rawProjectRows, rawContractRows, peopleRows, storeRows, contractorRows, rawCompanyRows] = await Promise.all([
     getRows(TABLES.DATA).catch(() => []),
     getRows(TABLES.PROJECT).catch(() => []),
     getRows(TABLES.CONTRACT_WORK).catch(() => []),
     getRows(TABLES.PEOPLE).catch(() => []),
     getRows(TABLES.STORE).catch(() => []),
     getRows(TABLES.CONTRACTOR).catch(() => []),
+    getRows(TABLES.COMPANY).catch(() => []),
   ]);
 
   const dataRows = await hydrateBillRows(rawDataRows);
@@ -28,6 +30,13 @@ export default async function BillDetailPage({ params }: BillDetailPageProps) {
   const contractRows = await hydrateContractRows(rawContractRows);
   const bill = dataRows.find((row) => billKey(row) === decodedBillId || String(row._sheetRow || "") === decodedBillId);
   if (!bill) notFound();
+
+  const documentData = await getBillDocumentData(bill, {
+    projects: rawProjectRows,
+    companies: rawCompanyRows,
+    contractors: contractorRows,
+    bills: dataRows,
+  });
 
   const projectId = text(bill["ID Project"]);
   const contractId = text(bill["ผู้รับเหมา"]);
@@ -103,6 +112,7 @@ export default async function BillDetailPage({ params }: BillDetailPageProps) {
       requesterLink={requesterLink}
       vendorDisplay={vendorDisplay}
       vendorLink={vendorLink}
+      documentData={documentData}
     />
   );
 }
