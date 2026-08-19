@@ -1,15 +1,17 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 import { BillImageThumbnail } from "@/components/BillImageThumbnail";
 import { BillWorkflowActions } from "@/components/BillWorkflowActions";
 import { DataTable } from "@/components/tables/DataTable";
 import { FormModal } from "@/components/FormModal";
+import { BillDocumentModal } from "@/components/documents/BillDocumentModal";
 import { FORM_SCHEMAS } from "@/lib/schemas";
 import { money, toNumber } from "@/lib/numbers";
 import type { SheetRow } from "@/lib/types";
+import type { BillDocumentModel } from "@/lib/bill-document";
 
 type BillDetailClientProps = {
   bill: SheetRow;
@@ -21,6 +23,7 @@ type BillDetailClientProps = {
   vendorDisplay?: string;
   vendorLink?: string;
   form?: any;
+  documentData?: BillDocumentModel | null;
 };
 
 export function BillDetailClient({
@@ -33,7 +36,9 @@ export function BillDetailClient({
   vendorDisplay,
   vendorLink,
   form,
+  documentData,
 }: BillDetailClientProps) {
+  const [isDocModalOpen, setIsDocModalOpen] = useState(false);
   const projectId = text(bill["ID Project"]);
   const projectName = text(bill["ชื่อ Project"]) || "ไม่ระบุโครงการ";
   const imageValue = bill["รูปถ่ายบิล"];
@@ -107,6 +112,16 @@ export function BillDetailClient({
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => setIsDocModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-md transition shadow-2xs cursor-pointer"
+            title="พิมพ์เอกสารสัญญาจ้าง / ใบสำคัญจ่าย / 50 ทวิ"
+          >
+            <FileText size={14} className="text-emerald-600 shrink-0" />
+            <span className="hidden sm:inline">พิมพ์สัญญา / 50 ทวิ</span>
+            <span className="sm:hidden">พิมพ์เอกสาร</span>
+          </button>
           <BillWorkflowActions row={bill} allowEdit redirectAfterDelete="/bills" />
         </div>
       </div>
@@ -261,6 +276,15 @@ export function BillDetailClient({
         hideLauncher
         relaxed
       />
+
+      {/* DOCUMENT PREVIEW & PRINT MODAL */}
+      {documentData && (
+        <BillDocumentModal
+          data={documentData}
+          isOpen={isDocModalOpen}
+          onClose={() => setIsDocModalOpen(false)}
+        />
+      )}
     </div>
   );
 }

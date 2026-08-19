@@ -16,7 +16,8 @@ import {
   User,
   CreditCard,
   Tag,
-  DollarSign
+  DollarSign,
+  FileText
 } from "lucide-react";
 import { BillImageThumbnail } from "@/components/BillImageThumbnail";
 import { formatDateDisplay } from "@/lib/dates";
@@ -137,6 +138,19 @@ export function BillDetailDrawer({
           </div>
 
           <div className="flex items-center gap-1.5">
+            {bill && (
+              <a
+                href={`/bills/${encodeURIComponent(String(bill["ลำดับ"] || bill._sheetRow || bill.id || ""))}/document`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold text-xs transition border border-slate-700"
+                title="พิมพ์สัญญาจ้าง / ใบสำคัญจ่าย / 50 ทวิ"
+              >
+                <FileText size={14} className="text-emerald-400" />
+                <span className="hidden sm:inline">พิมพ์เอกสาร</span>
+              </a>
+            )}
+
             {onEdit && (
               <button
                 type="button"
