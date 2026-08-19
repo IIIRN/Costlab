@@ -12,7 +12,7 @@ import type { SheetRow } from "@/lib/types";
 type ContractOpenDashboardClientProps = {
   columns: string[];
   initialRows: SheetRow[];
-  form: any;
+  form?: any;
 };
 
 const PAGE_SIZE_OPTIONS = [20, 50, 100, 200];
@@ -32,13 +32,6 @@ export function ContractOpenDashboardClient({
   useEffect(() => {
     setSearchTerm(urlSearch);
   }, [urlSearch]);
-
-  const activeForm = form || {
-    tableName: "contract_works",
-    schema: FORM_SCHEMAS["contract_works"] || [],
-    initialValues: {},
-    refOptions: {}
-  };
 
   const filteredRows = useMemo(() => {
     let list = initialRows;
@@ -75,7 +68,8 @@ export function ContractOpenDashboardClient({
       {/* Active FormModal Listener for Header Lime Green + Button */}
       <FormModal
         key="form-modal-contract-open-global"
-        form={activeForm}
+        tableName="Contract_work"
+        form={form}
         buttonLabel="เปิดจ้างงาน"
         title="เปิดจ้างงานรับเหมา"
         submitPath="/api/rows"

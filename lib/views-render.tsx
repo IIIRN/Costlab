@@ -7,7 +7,6 @@ import { isCommittedBill } from "@/lib/bill-status";
 import { FormModal } from "@/components/FormModal";
 import { ManageTableClient } from "@/components/ManageTableClient";
 import { TABLE_KEYS, TABLES } from "@/lib/config";
-import { getFormPayload } from "@/lib/form";
 import { hydrateContractRows } from "@/lib/formulas";
 import { money, toNumber } from "@/lib/numbers";
 import { getHeaders, getRows } from "@/lib/db";
@@ -307,17 +306,7 @@ async function renderView(
     ]);
 
     const headers = rawRows.length > 0 ? Object.keys(rawRows[0]).filter(col => !col.startsWith("_")) : [];
-
-    const preloadedRows = {
-      [TABLES.BANK]: bankRows,
-      [TABLES.COMPANY]: companyRows,
-      [TABLES.CUSTOMER]: customerRows,
-      [TABLES.DATA]: projectDataRows,
-      [TABLES.PROJECT]: projectRows,
-      [TABLES.CONTRACTOR]: contractorRows,
-    };
-
-    const form = initialForm ? initialForm : (usesSchemaForm(view.id) ? await getFormPayload(view.table, preloadedRows).catch(() => null) : null);
+    const isSchemaForm = usesSchemaForm(view.id);
 
     const hydratedRows = view.id === "contract-open"
       ? await hydrateContractRows(rawRows, { projects: projectRows, contractors: contractorRows, dataRows: projectDataRows })
@@ -329,8 +318,8 @@ async function renderView(
     const columns = getViewColumns(view.name, fallback);
     if (view.position === "menu") {
       const keyColumn = tableKeyColumn(view.id, view.table);
-      const schemaAddEventName = form ? `open-${view.id}-form` : undefined;
-      const schemaEditEventName = form ? `open-${view.id}-edit-form` : undefined;
+      const schemaAddEventName = isSchemaForm ? `open-${view.id}-form` : undefined;
+      const schemaEditEventName = isSchemaForm ? `open-${view.id}-edit-form` : undefined;
       return (
         <section className="p-3 sm:p-5 max-w-[1600px] mx-auto space-y-3 font-sans text-xs">
           <ManageTableClient
@@ -353,10 +342,11 @@ async function renderView(
               ...(bankRows.length ? { "ธนาคาร": bankLookup(bankRows) } : {})
             }}
           />
-          {form ? (
+          {isSchemaForm ? (
             <>
               <FormModal
-                form={form}
+                tableName={view.table}
+                form={initialForm}
                 title={`เพิ่ม ${displayName}`}
                 buttonLabel={`เพิ่ม ${displayName}`}
                 relaxed
@@ -365,7 +355,8 @@ async function renderView(
                 hideLauncher
               />
               <FormModal
-                form={form}
+                tableName={view.table}
+                form={initialForm}
                 title={`แก้ไข ${displayName}`}
                 buttonLabel={`แก้ไข ${displayName}`}
                 relaxed
@@ -382,7 +373,7 @@ async function renderView(
     return (
       <section className="p-3 sm:p-5 max-w-[1600px] mx-auto space-y-3 font-sans text-xs">
         {view.id === "contract-open" ? null : (
-          form ? <FormModal form={form} relaxed={view.id === "contract-open"} openEventName={view.id === "contract-open" ? "open-contract-form" : undefined} /> : null
+          isSchemaForm ? <FormModal tableName={view.table} form={initialForm} relaxed={view.id === "contract-open"} openEventName={view.id === "contract-open" ? "open-contract-form" : undefined} /> : null
         )}
         <DataTable
           columns={columns}

@@ -16,7 +16,7 @@ import type { SheetRow } from "@/lib/types";
 type BillsDashboardClientProps = {
   columns: string[];
   initialRows: SheetRow[];
-  form: any;
+  form?: any;
   isAdmin: boolean;
   peopleRows: SheetRow[];
   search: string;
@@ -66,13 +66,6 @@ export function BillsDashboardClient({
       return names;
     }, {});
   }, [peopleRows]);
-
-  const activeForm = form || {
-    tableName: "Data",
-    schema: FORM_SCHEMAS["Data"] || [],
-    initialValues: { "บิล": "ย่อย", "ร้านค้า/ผู้รับเหมา": "ร้านค้า", "ว/ด/ป": new Date().toISOString().slice(0, 10) },
-    refOptions: {}
-  };
 
   const filteredRows = useMemo(() => {
     const query = filters.search.trim().toLowerCase();
@@ -268,7 +261,8 @@ export function BillsDashboardClient({
             </button>
 
             <FormModal
-              form={activeForm}
+              tableName="Data"
+              form={form}
               title="เพิ่มบิล"
               buttonLabel="เพิ่มบิล"
               submitPath="/api/bills"
@@ -341,7 +335,8 @@ export function BillsDashboardClient({
 
       {/* Hidden Add Modal Trigger for Mobile & Global Events */}
       <FormModal
-        form={activeForm}
+        tableName="Data"
+        form={form}
         title="เพิ่มบิล"
         buttonLabel="เพิ่มบิล"
         submitPath="/api/bills"
@@ -351,7 +346,8 @@ export function BillsDashboardClient({
 
       {/* Hidden Edit Modal Trigger */}
       <FormModal
-        form={activeForm}
+        tableName="Data"
+        form={form}
         title="แก้ไขบิล"
         buttonLabel="แก้ไขบิล"
         submitPath="/api/rows"

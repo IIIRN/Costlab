@@ -11,20 +11,13 @@ import type { SheetRow } from "@/lib/types";
 const EDIT_EVENT = "open-contract-detail-edit-form";
 
 type ContractDetailEditButtonProps = {
-  form: any;
+  form?: any;
   row: SheetRow | undefined;
 };
 
 export function ContractDetailEditButton({ form, row }: ContractDetailEditButtonProps) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
-
-  const activeForm = form || {
-    tableName: "ContractWork",
-    schema: FORM_SCHEMAS["ContractWork"] || [],
-    initialValues: {},
-    refOptions: {}
-  };
 
   function handleEditClick() {
     const sheetRow = row?._sheetRow ?? row?.id_Conwork ?? row?.id;
@@ -83,7 +76,8 @@ export function ContractDetailEditButton({ form, row }: ContractDetailEditButton
 
       <FormModal
         key="contract-detail-edit-modal"
-        form={activeForm}
+        tableName="Contract_work"
+        form={form}
         buttonLabel="แก้ไขสัญญา"
         title="แก้ไขสัญญาจ้างงาน"
         submitPath="/api/rows"

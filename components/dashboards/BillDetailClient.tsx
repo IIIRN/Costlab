@@ -34,12 +34,6 @@ export function BillDetailClient({
   vendorLink,
   form,
 }: BillDetailClientProps) {
-  const activeForm = form || {
-    tableName: "Data",
-    schema: FORM_SCHEMAS["Data"] || [],
-    initialValues: { "บิล": "ย่อย", "ร้านค้า/ผู้รับเหมา": "ร้านค้า", "ว/ด/ป": new Date().toISOString().slice(0, 10) },
-    refOptions: {}
-  };
   const projectId = text(bill["ID Project"]);
   const projectName = text(bill["ชื่อ Project"]) || "ไม่ระบุโครงการ";
   const imageValue = bill["รูปถ่ายบิล"];
@@ -259,7 +253,8 @@ export function BillDetailClient({
 
       {/* EDIT FORM MODAL */}
       <FormModal
-        form={activeForm}
+        tableName="Data"
+        form={form}
         title="แก้ไขบิล"
         submitPath="/api/rows"
         openEventName="open-bill-edit-form"

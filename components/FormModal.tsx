@@ -38,8 +38,45 @@ type FormPayload = {
   refOptions: Record<string, RefOption[]>;
 };
 
+// Global in-memory cache and in-flight request tracker for schemas & refOptions
+const formSchemaCache = new Map<string, FormPayload>();
+const formSchemaInFlight = new Map<string, Promise<FormPayload | null>>();
+
+export async function prefetchFormSchema(tableName: string): Promise<FormPayload | null> {
+  if (!tableName) return null;
+  const normalized = tableName.trim();
+  if (formSchemaCache.has(normalized)) {
+    return formSchemaCache.get(normalized)!;
+  }
+  if (formSchemaInFlight.has(normalized)) {
+    return formSchemaInFlight.get(normalized)!;
+  }
+
+  const promise = fetch(`/api/form-schema?tableName=${encodeURIComponent(normalized)}`)
+    .then(async (res) => {
+      if (!res.ok) throw new Error("Failed to load form schema");
+      const data = (await res.json()) as FormPayload;
+      if (data && data.schema) {
+        formSchemaCache.set(normalized, data);
+        return data;
+      }
+      return null;
+    })
+    .catch((err) => {
+      console.warn(`Could not prefetch form schema for ${normalized}:`, err);
+      return null;
+    })
+    .finally(() => {
+      formSchemaInFlight.delete(normalized);
+    });
+
+  formSchemaInFlight.set(normalized, promise);
+  return promise;
+}
+
 type FormModalProps = {
-  form: FormPayload;
+  form?: FormPayload | null;
+  tableName?: string;
   title?: string;
   buttonLabel?: string;
   relaxed?: boolean;
@@ -100,23 +137,120 @@ function SectionHeaderIcon({ name }: { name: string }) {
   }
 }
 
-export function FormModal({ form, title = "เพิ่มข้อมูล", buttonLabel = "เพิ่มรายการ", relaxed = false, submitPath, openEventName, hideLauncher = false }: FormModalProps) {
+export function FormModal({
+  form,
+  tableName,
+  title = "เพิ่มข้อมูล",
+  buttonLabel = "เพิ่มรายการ",
+  relaxed = false,
+  submitPath,
+  openEventName,
+  hideLauncher = false
+}: FormModalProps) {
   const router = useRouter();
+  const resolvedTableName = tableName || form?.tableName || "Data";
+
+  const [activeForm, setActiveForm] = useState<FormPayload | null>(() => {
+    if (form) {
+      if (form.tableName) formSchemaCache.set(form.tableName, form);
+      return form;
+    }
+    return formSchemaCache.get(resolvedTableName) || null;
+  });
+  const [loadingSchema, setLoadingSchema] = useState(false);
   const [open, setOpen] = useState(false);
-  const [values, setValues] = useState<Record<string, string>>(() => getInitialStringValues(form));
+  const [values, setValues] = useState<Record<string, string>>(() => activeForm ? getInitialStringValues(activeForm) : {});
   const [editSheetRow, setEditSheetRow] = useState<string | number | null>(null);
   const [enumListSearch, setEnumListSearch] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const isEditing = editSheetRow !== null && editSheetRow !== undefined;
-  const isDataForm = form.tableName === TABLES.DATA || form.tableName === "Data";
+  const isDataForm = resolvedTableName === TABLES.DATA || resolvedTableName === "Data";
 
   const [resetKey, setResetKey] = useState(0);
 
-  const visibleFields = form.schema.filter(field => {
+  // Sync if prop form changes
+  useEffect(() => {
+    if (form) {
+      setActiveForm(form);
+      if (form.tableName) formSchemaCache.set(form.tableName, form);
+    }
+  }, [form]);
+
+  // Background prefetch schema on mount so form opens instantly with 0ms delay
+  useEffect(() => {
+    if (!activeForm && resolvedTableName) {
+      prefetchFormSchema(resolvedTableName).then(loaded => {
+        if (loaded) {
+          setActiveForm(loaded);
+          setValues(prev => Object.keys(prev).length === 0 ? getInitialStringValues(loaded) : prev);
+        }
+      });
+    }
+  }, [activeForm, resolvedTableName]);
+
+  function populateFormValues(targetForm: FormPayload, detail?: OpenFormDetail) {
+    const nextValues = detail?.row
+      ? getRowStringValues(targetForm, detail.row)
+      : getInitialStringValues(targetForm);
+    if (detail?.row) {
+      targetForm.schema.filter(f => f.type === "Ref" && f.refFill).forEach(field => {
+        const refVal = nextValues[field.name];
+        if (refVal) {
+          const options = targetForm.refOptions[field.name] || [];
+          const selectedOpt = options.find(opt =>
+            String(opt.value) === refVal ||
+            String(opt.label) === refVal ||
+            (opt.row && (
+              String(opt.row.id) === refVal ||
+              String(opt.row.id_Contractor) === refVal ||
+              String(opt.row.id_store) === refVal
+            ))
+          );
+          if (selectedOpt) {
+            Object.entries(field.refFill!).forEach(([targetField, sourceColumn]) => {
+              if (!hasValue(nextValues[targetField])) {
+                nextValues[targetField] = String(selectedOpt.row?.[sourceColumn] ?? "");
+              }
+            });
+          }
+        }
+      });
+    }
+    applyLocalFormulas(nextValues, targetForm.tableName);
+    setError("");
+    setSuccessMessage("");
+    setEnumListSearch({});
+    const targetRowKey = detail?.sheetRow ?? detail?.row?._sheetRow ?? detail?.row?.id ?? detail?.row?.id_bank ?? detail?.row?.id_store ?? detail?.row?.id_Contractor ?? detail?.row?.id_car ?? detail?.row?.id_cus ?? detail?.row?.id_Company;
+    setEditSheetRow(detail?.row ? (targetRowKey !== undefined && targetRowKey !== null ? (typeof targetRowKey === "number" || typeof targetRowKey === "string" ? targetRowKey : String(targetRowKey)) : 1) : null);
+    setValues(nextValues);
+    setResetKey(k => k + 1);
+  }
+
+  async function handleOpen(detail?: OpenFormDetail) {
+    if (activeForm) {
+      populateFormValues(activeForm, detail);
+      setOpen(true);
+      return;
+    }
+
+    setOpen(true);
+    setLoadingSchema(true);
+    try {
+      const loaded = await prefetchFormSchema(resolvedTableName);
+      if (loaded) {
+        setActiveForm(loaded);
+        populateFormValues(loaded, detail);
+      }
+    } finally {
+      setLoadingSchema(false);
+    }
+  }
+
+  const visibleFields = (activeForm?.schema || []).filter(field => {
     if (field.type === "Hidden") return false;
-    if ((form.tableName === TABLES.PROJECT || form.tableName === "Project") && (field.name.startsWith("งบไม่เกิน") || field.name === "คุมงบประเภทงาน")) {
+    if ((resolvedTableName === TABLES.PROJECT || resolvedTableName === "Project") && (field.name.startsWith("งบไม่เกิน") || field.name === "คุมงบประเภทงาน")) {
       return false;
     }
     return isFieldVisible(field, values);
@@ -126,78 +260,45 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
     if (!openEventName) return;
     const openFromExternalButton = (event: Event) => {
       const detail = event instanceof CustomEvent ? event.detail as OpenFormDetail | undefined : undefined;
-      const nextValues = detail?.row
-        ? getRowStringValues(form, detail.row)
-        : getInitialStringValues(form);
-      if (detail?.row) {
-        form.schema.filter(f => f.type === "Ref" && f.refFill).forEach(field => {
-          const refVal = nextValues[field.name];
-          if (refVal) {
-            const options = form.refOptions[field.name] || [];
-            const selectedOpt = options.find(opt =>
-              String(opt.value) === refVal ||
-              String(opt.label) === refVal ||
-              (opt.row && (
-                String(opt.row.id) === refVal ||
-                String(opt.row.id_Contractor) === refVal ||
-                String(opt.row.id_store) === refVal
-              ))
-            );
-            if (selectedOpt) {
-              Object.entries(field.refFill!).forEach(([targetField, sourceColumn]) => {
-                if (!hasValue(nextValues[targetField])) {
-                  nextValues[targetField] = String(selectedOpt.row?.[sourceColumn] ?? "");
-                }
-              });
-            }
-          }
-        });
-      }
-      applyLocalFormulas(nextValues, form.tableName);
-      setError("");
-      setSuccessMessage("");
-      setEnumListSearch({});
-      const targetRowKey = detail?.sheetRow ?? detail?.row?._sheetRow ?? detail?.row?.id ?? detail?.row?.id_bank ?? detail?.row?.id_store ?? detail?.row?.id_Contractor ?? detail?.row?.id_car ?? detail?.row?.id_cus ?? detail?.row?.id_Company;
-      setEditSheetRow(detail?.row ? (targetRowKey !== undefined && targetRowKey !== null ? (typeof targetRowKey === "number" || typeof targetRowKey === "string" ? targetRowKey : String(targetRowKey)) : 1) : null);
-      setValues(nextValues);
-      setResetKey(k => k + 1);
-      setOpen(true);
+      handleOpen(detail);
     };
     window.addEventListener(openEventName, openFromExternalButton as EventListener);
     return () => window.removeEventListener(openEventName, openFromExternalButton as EventListener);
-  }, [form, openEventName]);
+  }, [activeForm, openEventName, resolvedTableName]);
 
   function updateValue(field: FieldSchema, value: string) {
+    if (!activeForm) return;
     setValues(current => {
       const next = { ...current, [field.name]: value };
-      applyRefFill(next, field, form, value);
-      normalizeDependentValues(next, field.name, form);
-      if (form.tableName === TABLES.DATA && field.name === "จำนวนหัก") return next;
-      pruneHiddenConditionalValues(next, form);
-      applyLocalFormulas(next, form.tableName);
+      applyRefFill(next, field, activeForm, value);
+      normalizeDependentValues(next, field.name, activeForm);
+      if (activeForm.tableName === TABLES.DATA && field.name === "จำนวนหัก") return next;
+      pruneHiddenConditionalValues(next, activeForm);
+      applyLocalFormulas(next, activeForm.tableName);
       return next;
     });
   }
 
   function updateValueByName(fieldName: string, value: string) {
+    if (!activeForm) return;
     setValues(current => {
       const next = { ...current, [fieldName]: value };
-      const targetField = form.schema.find(f => f.name === fieldName);
+      const targetField = activeForm.schema.find(f => f.name === fieldName);
       if (targetField) {
-        applyRefFill(next, targetField, form, value);
-        normalizeDependentValues(next, fieldName, form);
+        applyRefFill(next, targetField, activeForm, value);
+        normalizeDependentValues(next, fieldName, activeForm);
       }
-      applyLocalFormulas(next, form.tableName);
+      applyLocalFormulas(next, activeForm.tableName);
       return next;
     });
   }
 
   async function submitForm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!submitPath) return;
+    if (!submitPath || !activeForm) return;
 
-    const submitValues = sanitizeValuesForSubmit(values, form);
-    const validationError = validateVisibleRequiredFields(submitValues, form);
+    const submitValues = sanitizeValuesForSubmit(values, activeForm);
+    const validationError = validateVisibleRequiredFields(submitValues, activeForm);
     if (validationError) {
       setError(validationError);
       return;
@@ -205,7 +306,7 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
 
     const formElement = event.currentTarget;
     const body = new FormData();
-    body.set("tableName", form.tableName);
+    body.set("tableName", activeForm.tableName);
     Object.entries(submitValues).forEach(([key, value]) => body.append(key, value));
     if (isEditing && editSheetRow !== null) body.set("sheetRow", String(editSheetRow));
 
@@ -232,7 +333,7 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
           : await fetch(submitPath, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ tableName: form.tableName, sheetRow: editSheetRow, values: submitValues })
+            body: JSON.stringify({ tableName: activeForm.tableName, sheetRow: editSheetRow, values: submitValues })
           })
         : await fetch(submitPath, {
           method: "POST",
@@ -244,9 +345,9 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
       if (isEditing) {
         setOpen(false);
         setEditSheetRow(null);
-        setValues(getInitialStringValues(form));
+        setValues(getInitialStringValues(activeForm));
         setResetKey(k => k + 1);
-        if (form.tableName === TABLES.DATA) {
+        if (activeForm.tableName === TABLES.DATA) {
           window.location.reload();
         } else {
           router.refresh();
@@ -254,7 +355,7 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
       } else {
         // Reset form to allow immediate creation of the next bill
         formElement.reset();
-        setValues(getInitialStringValues(form));
+        setValues(getInitialStringValues(activeForm));
         setEnumListSearch({});
         setError("");
         setSuccessMessage("บันทึกรายการเรียบร้อยแล้ว สามารถสร้างรายการถัดไปต่อได้เลย");
@@ -287,7 +388,9 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
           <button
             type="button"
             className="inline-flex items-center justify-center gap-1.5 h-9 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-lg shadow-xs transition-all cursor-pointer whitespace-nowrap"
-            onClick={() => setOpen(true)}
+            onClick={() => handleOpen()}
+            onMouseEnter={() => { if (!activeForm && resolvedTableName) prefetchFormSchema(resolvedTableName); }}
+            onTouchStart={() => { if (!activeForm && resolvedTableName) prefetchFormSchema(resolvedTableName); }}
           >
             <Plus size={15} className="text-white" />
             <span>{buttonLabel}</span>
@@ -303,7 +406,7 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
             role="dialog"
             aria-modal="true"
             aria-labelledby="form-modal-title"
-            aria-busy={saving}
+            aria-busy={saving || loadingSchema}
             onSubmit={submitForm}
           >
             {/* Clean Mobile App Header */}
@@ -326,141 +429,151 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
 
             {/* Form Content */}
             <div className="p-3.5 sm:p-6 overflow-y-auto flex-1 space-y-3.5 bg-slate-50/70 overscroll-contain">
-              {saving ? (
-                <div className="absolute inset-0 z-20 bg-white/80 backdrop-blur-2xs flex items-center justify-center">
-                  <LoadingState title="กำลังบันทึก" message="กำลังอัปโหลดและบันทึกข้อมูล..." compact />
+              {loadingSchema || !activeForm ? (
+                <div className="py-16 flex flex-col items-center justify-center gap-3 text-center">
+                  <div className="w-9 h-9 border-3 border-slate-200 border-t-slate-800 rounded-full animate-spin" />
+                  <div className="text-sm font-semibold text-slate-800">กำลังเตรียมฟอร์มข้อมูล...</div>
+                  <div className="text-xs text-slate-500">กำลังโหลดตัวเลือกและโครงสร้างฟอร์ม</div>
                 </div>
-              ) : null}
-
-              <fieldset className="space-y-4 border-0 p-0 m-0" disabled={saving}>
-
-                {/* Bill Category Budget Guardrail */}
-                {isDataForm ? (
-                  <BillCategoryBudgetGuardrail
-                    values={values}
-                    projectRows={(form.refOptions["ID Project"] || form.refOptions["ชื่อ Project"] || []).map(opt => opt.row).filter(Boolean) as SheetRow[]}
-                  />
-                ) : null}
-
-                {/* Categorized Fields Rendering for DATA form */}
-                {isDataForm ? (
-                  <div className="space-y-4">
-                    {DATA_FORM_SECTIONS.map(section => {
-                      const sectionFields = visibleFields.filter(f => section.fields.includes(f.name));
-                      if (!sectionFields.length) return null;
-                      return (
-                        <div key={section.id} className="bg-white rounded-lg p-4 border border-slate-200 shadow-2xs space-y-3">
-                          <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-                            <SectionHeaderIcon name={section.iconName} />
-                            <h4 className="text-xs font-bold text-slate-900 m-0">{section.title}</h4>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                            {sectionFields.map(field => (
-                              <div className={`${getFieldClassName(field)} space-y-1`} key={field.name}>
-                                <label className="text-[11px] font-medium text-slate-700 block">
-                                  {getFieldLabel(field)}
-                                  {field.required ? <span className="text-rose-600 font-medium ml-0.5">*</span> : ""}
-                                </label>
-                                {renderField(
-                                  field,
-                                  form,
-                                  values[field.name] || "",
-                                  values,
-                                  isEditing,
-                                  value => updateValue(field, value),
-                                  enumListSearch[field.name] || "",
-                                  value => setEnumListSearch(current => ({ ...current, [field.name]: value })),
-                                  resetKey
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-
-                    {/* Catch-all for any unsectioned fields */}
-                    {(() => {
-                      const assignedNames = new Set(DATA_FORM_SECTIONS.flatMap(s => s.fields));
-                      const unsectionedFields = visibleFields.filter(f => !assignedNames.has(f.name));
-                      if (!unsectionedFields.length) return null;
-                      return (
-                        <div className="bg-white rounded-lg p-4 border border-slate-200 shadow-2xs space-y-3">
-                          <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-                            <FileText size={16} className="text-slate-600" />
-                            <h4 className="text-xs font-bold text-slate-900 m-0">ข้อมูลเพิ่มเติม</h4>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                            {unsectionedFields.map(field => (
-                              <div className={`${getFieldClassName(field)} space-y-1`} key={field.name}>
-                                <label className="text-[11px] font-medium text-slate-700 block">
-                                  {getFieldLabel(field)}
-                                  {field.required ? <span className="text-rose-600 font-medium ml-0.5">*</span> : ""}
-                                </label>
-                                {renderField(
-                                  field,
-                                  form,
-                                  values[field.name] || "",
-                                  values,
-                                  isEditing,
-                                  value => updateValue(field, value),
-                                  enumListSearch[field.name] || "",
-                                  value => setEnumListSearch(current => ({ ...current, [field.name]: value })),
-                                  resetKey
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                ) : (
-                  /* Standard Grid for Non-Data forms */
-                  <div className="bg-white rounded-lg p-4 border border-slate-200 shadow-2xs">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                      {visibleFields.map(field => (
-                        <div className={`${getFieldClassName(field)} space-y-1.5`} key={field.name}>
-                          <label className="text-xs font-medium text-slate-700 block">{getFieldLabel(field)}{field.required ? <span className="text-rose-600 font-medium ml-0.5">*</span> : ""}</label>
-                          {renderField(
-                            field,
-                            form,
-                            values[field.name] || "",
-                            values,
-                            isEditing,
-                            value => updateValue(field, value),
-                            enumListSearch[field.name] || "",
-                            value => setEnumListSearch(current => ({ ...current, [field.name]: value })),
-                            resetKey
-                          )}
-                        </div>
-                      ))}
+              ) : (
+                <>
+                  {saving ? (
+                    <div className="absolute inset-0 z-20 bg-white/80 backdrop-blur-2xs flex items-center justify-center">
+                      <LoadingState title="กำลังบันทึก" message="กำลังอัปโหลดและบันทึกข้อมูล..." compact />
                     </div>
-                  </div>
-                )}
+                  ) : null}
 
-                {form.tableName === TABLES.PROJECT || form.tableName === "Project" ? (
-                  <ProjectBudgetAllocator values={values} onChange={updateValueByName} />
-                ) : null}
+                  <fieldset className="space-y-4 border-0 p-0 m-0" disabled={saving}>
 
-                {successMessage ? (
-                  <div className="p-3 bg-emerald-50 text-emerald-800 rounded-lg border border-emerald-200 text-xs font-bold flex items-center justify-between animate-in fade-in duration-150">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
-                      <span>{successMessage}</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setSuccessMessage("")}
-                      className="text-emerald-600 hover:text-emerald-800 transition cursor-pointer"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                ) : null}
+                    {/* Bill Category Budget Guardrail */}
+                    {isDataForm ? (
+                      <BillCategoryBudgetGuardrail
+                        values={values}
+                        projectRows={(activeForm.refOptions["ID Project"] || activeForm.refOptions["ชื่อ Project"] || []).map(opt => opt.row).filter(Boolean) as SheetRow[]}
+                      />
+                    ) : null}
 
-                {error ? <div className="p-3 bg-rose-50 text-rose-700 rounded-lg border border-rose-200 text-xs font-bold">{error}</div> : null}
-              </fieldset>
+                    {/* Categorized Fields Rendering for DATA form */}
+                    {isDataForm ? (
+                      <div className="space-y-4">
+                        {DATA_FORM_SECTIONS.map(section => {
+                          const sectionFields = visibleFields.filter(f => section.fields.includes(f.name));
+                          if (!sectionFields.length) return null;
+                          return (
+                            <div key={section.id} className="bg-white rounded-lg p-4 border border-slate-200 shadow-2xs space-y-3">
+                              <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+                                <SectionHeaderIcon name={section.iconName} />
+                                <h4 className="text-xs font-bold text-slate-900 m-0">{section.title}</h4>
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                                {sectionFields.map(field => (
+                                  <div className={`${getFieldClassName(field)} space-y-1`} key={field.name}>
+                                    <label className="text-[11px] font-medium text-slate-700 block">
+                                      {getFieldLabel(field)}
+                                      {field.required ? <span className="text-rose-600 font-medium ml-0.5">*</span> : ""}
+                                    </label>
+                                    {renderField(
+                                      field,
+                                      activeForm,
+                                      values[field.name] || "",
+                                      values,
+                                      isEditing,
+                                      value => updateValue(field, value),
+                                      enumListSearch[field.name] || "",
+                                      value => setEnumListSearch(current => ({ ...current, [field.name]: value })),
+                                      resetKey
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
+
+                        {/* Catch-all for any unsectioned fields */}
+                        {(() => {
+                          const assignedNames = new Set(DATA_FORM_SECTIONS.flatMap(s => s.fields));
+                          const unsectionedFields = visibleFields.filter(f => !assignedNames.has(f.name));
+                          if (!unsectionedFields.length) return null;
+                          return (
+                            <div className="bg-white rounded-lg p-4 border border-slate-200 shadow-2xs space-y-3">
+                              <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+                                <FileText size={16} className="text-slate-600" />
+                                <h4 className="text-xs font-bold text-slate-900 m-0">ข้อมูลเพิ่มเติม</h4>
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                                {unsectionedFields.map(field => (
+                                  <div className={`${getFieldClassName(field)} space-y-1`} key={field.name}>
+                                    <label className="text-[11px] font-medium text-slate-700 block">
+                                      {getFieldLabel(field)}
+                                      {field.required ? <span className="text-rose-600 font-medium ml-0.5">*</span> : ""}
+                                    </label>
+                                    {renderField(
+                                      field,
+                                      activeForm,
+                                      values[field.name] || "",
+                                      values,
+                                      isEditing,
+                                      value => updateValue(field, value),
+                                      enumListSearch[field.name] || "",
+                                      value => setEnumListSearch(current => ({ ...current, [field.name]: value })),
+                                      resetKey
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    ) : (
+                      /* Standard Grid for Non-Data forms */
+                      <div className="bg-white rounded-lg p-4 border border-slate-200 shadow-2xs">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                          {visibleFields.map(field => (
+                            <div className={`${getFieldClassName(field)} space-y-1.5`} key={field.name}>
+                              <label className="text-xs font-medium text-slate-700 block">{getFieldLabel(field)}{field.required ? <span className="text-rose-600 font-medium ml-0.5">*</span> : ""}</label>
+                              {renderField(
+                                field,
+                                activeForm,
+                                values[field.name] || "",
+                                values,
+                                isEditing,
+                                value => updateValue(field, value),
+                                enumListSearch[field.name] || "",
+                                value => setEnumListSearch(current => ({ ...current, [field.name]: value })),
+                                resetKey
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeForm.tableName === TABLES.PROJECT || activeForm.tableName === "Project" ? (
+                      <ProjectBudgetAllocator values={values} onChange={updateValueByName} />
+                    ) : null}
+
+                    {successMessage ? (
+                      <div className="p-3 bg-emerald-50 text-emerald-800 rounded-lg border border-emerald-200 text-xs font-bold flex items-center justify-between animate-in fade-in duration-150">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                          <span>{successMessage}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setSuccessMessage("")}
+                          className="text-emerald-600 hover:text-emerald-800 transition cursor-pointer"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ) : null}
+
+                    {error ? <div className="p-3 bg-rose-50 text-rose-700 rounded-lg border border-rose-200 text-xs font-bold">{error}</div> : null}
+                  </fieldset>
+                </>
+              )}
             </div>
 
             {/* Action Footer Bar (Mobile Full-Width Buttons & Summary) */}
@@ -477,7 +590,7 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
                   <span className="text-slate-300">|</span>
                   <span className="text-slate-700 font-bold">ยอดโอน: <strong className="text-emerald-700 font-semibold">{netTransferAmt.toLocaleString("th-TH", { minimumFractionDigits: 2 })} ฿</strong></span>
                 </div>
-              ) : null}
+              ) : <div />}
 
               <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
                 <button
@@ -490,7 +603,7 @@ export function FormModal({ form, title = "เพิ่มข้อมูล", b
                 </button>
                 <button
                   type={submitPath ? "submit" : "button"}
-                  disabled={saving || !submitPath}
+                  disabled={saving || loadingSchema || !activeForm || !submitPath}
                   className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer shadow-md active:scale-[0.99]"
                 >
                   <Save size={15} />
