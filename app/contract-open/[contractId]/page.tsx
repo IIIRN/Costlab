@@ -5,7 +5,6 @@ import { DataTable } from "@/components/tables/DataTable";
 import { isCommittedBill } from "@/lib/bill-status";
 import { TABLES } from "@/lib/config";
 import { hydrateBillRows, hydrateContractRows } from "@/lib/formulas";
-import { getFormPayload } from "@/lib/form";
 import { getRows } from "@/lib/db";
 import { money } from "@/lib/numbers";
 import type { SheetRow } from "@/lib/types";
@@ -54,11 +53,10 @@ export default async function ContractDetailPage({ params }: ContractDetailPageP
   const { contractId } = await params;
   const decodedContractId = decodeURIComponent(contractId).trim();
 
-  const [contractRows, rawDataRows, contractorRows, form, peopleRows] = await Promise.all([
+  const [contractRows, rawDataRows, contractorRows, peopleRows] = await Promise.all([
     getRows(TABLES.CONTRACT_WORK, 15_000).then(rows => hydrateContractRows(rows)).catch(() => []),
     getRows(TABLES.DATA, 15_000).catch(() => []),
     getRows(TABLES.CONTRACTOR, 15_000).catch(() => []),
-    getFormPayload(TABLES.CONTRACT_WORK).catch(() => null),
     getRows(TABLES.PEOPLE, 15_000).catch(() => [])
   ]);
 
@@ -109,7 +107,7 @@ export default async function ContractDetailPage({ params }: ContractDetailPageP
           <span className="text-slate-300">/</span>
           <span className="text-xs font-bold text-slate-700">{decodedContractId}</span>
         </div>
-        <ContractDetailEditButton form={form} row={contract} />
+        <ContractDetailEditButton row={contract} />
       </div>
 
       {/* TITLE & META */}

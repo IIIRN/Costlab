@@ -1,6 +1,5 @@
 import { TABLES } from "@/lib/config";
 import { BillsDashboardClient } from "@/components/BillsDashboardClient";
-import { getFormPayload } from "@/lib/form";
 import { hydrateBillRows } from "@/lib/formulas";
 import { getRows } from "@/lib/db";
 import { cookies } from "next/headers";
@@ -47,16 +46,6 @@ export default async function BillsPage({ searchParams }: BillsPageProps) {
     safeRows(TABLES.CONTRACTOR),
   ]);
 
-  const preloadedRows = {
-    [TABLES.PEOPLE]: peopleRows,
-    [TABLES.PROJECT]: projectRows,
-    [TABLES.STORE]: storeRows,
-    [TABLES.CONTRACT_WORK]: contractRows,
-    [TABLES.CONTRACTOR]: contractorRows,
-  };
-
-  const form = await getFormPayload(TABLES.DATA, preloadedRows).catch(() => null);
-  const requesterNames = requesterNameMap(peopleRows);
   const hydratedRows = await hydrateBillRows(allRows, { projects: projectRows, stores: storeRows, contracts: contractRows, contractors: contractorRows });
   const sortedRows = sortBillRows(hydratedRows, sort || "latest");
   const rows = nonEmptyRows(sortedRows, columns);
@@ -65,7 +54,6 @@ export default async function BillsPage({ searchParams }: BillsPageProps) {
     <BillsDashboardClient
       columns={columns}
       initialRows={rows}
-      form={form}
       isAdmin={isAdmin}
       peopleRows={peopleRows}
       search={search}
