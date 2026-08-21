@@ -4,7 +4,6 @@ import type { ComponentType, FormEvent, ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { SplashScreen } from "@/components/SplashScreen";
 import {
   BriefcaseBusiness,
   Building2,
@@ -66,18 +65,6 @@ function hrefFor(view: (typeof PRIMARY_VIEWS)[number]) {
 }
 
 export function AppShell({ children, peopleRows = [], currentUser = null }: { children: ReactNode, peopleRows?: SheetRow[], currentUser?: any }) {
-  // Show splash on first load only
-  const [showSplash, setShowSplash] = useState(() => {
-    if (typeof window === "undefined") return false;
-    const seen = sessionStorage.getItem("costlab_splash_seen");
-    return !seen;
-  });
-
-  function handleSplashDone() {
-    sessionStorage.setItem("costlab_splash_seen", "1");
-    setShowSplash(false);
-  }
-
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
@@ -189,8 +176,6 @@ export function AppShell({ children, peopleRows = [], currentUser = null }: { ch
         "";
 
   return (
-    <>
-      {showSplash && <SplashScreen onDone={handleSplashDone} />}
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-200 text-slate-800 antialiased">
       {/* Mobile Navigation Header & Drawer (Hidden on Desktop) */}
       <div className="md:hidden block">
@@ -344,6 +329,5 @@ export function AppShell({ children, peopleRows = [], currentUser = null }: { ch
         {children}
       </main>
     </div>
-    </>
   );
 }
