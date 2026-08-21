@@ -44,20 +44,22 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const cookieStore = await cookies();
+  const employeeId = cookieStore.get("auth_employee_id")?.value;
+  const name = cookieStore.get("auth_name")?.value;
+  const role = cookieStore.get("auth_role")?.value;
+  const pictureUrl = cookieStore.get("auth_picture_url")?.value;
+
+  const currentUser = employeeId
+    ? { id: employeeId, name: name || "", role: role || "User", pictureUrl: pictureUrl || "" }
+    : null;
+
   let peopleRows: any[] = [];
   try {
     peopleRows = await getRows(TABLES.PEOPLE);
   } catch (e) {
     // Ignore error if people table can't be fetched
   }
-
-  const cookieStore = await cookies();
-  const employeeId = cookieStore.get("auth_employee_id")?.value;
-  const name = cookieStore.get("auth_name")?.value;
-  const role = cookieStore.get("auth_role")?.value;
-  const pictureUrl = cookieStore.get("auth_picture_url")?.value;
-  
-  const currentUser = employeeId ? { id: employeeId, name: name || "", role: role || "User", pictureUrl: pictureUrl || "" } : null;
 
   return (
     <html lang="th" suppressHydrationWarning>
@@ -68,7 +70,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             {!currentUser ? (
               <LoginScreen peopleRows={peopleRows} />
             ) : (
-              <AppShell peopleRows={peopleRows} currentUser={currentUser}>{children}</AppShell>
+              <AppShell peopleRows={peopleRows} currentUser={currentUser}>
+                {children}
+              </AppShell>
             )}
           </ToastProvider>
         </LineAuthProvider>
@@ -76,4 +80,3 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     </html>
   );
 }
-
