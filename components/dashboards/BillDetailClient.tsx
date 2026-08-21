@@ -152,75 +152,81 @@ export function BillDetailClient({
         </div>
       </div>
 
-      {/* 4. DETAILS SECTION */}
+      {/* 4. MAIN CONTENT: Details (left) + Image (right) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Left: Expense Breakdown */}
-        <div className="lg:col-span-6 border border-slate-200 rounded-md bg-white overflow-hidden">
-          <div className="px-3 py-2 border-b border-slate-200 bg-slate-50">
-            <h2 className="text-xs font-bold text-slate-700">รายการค่าใช้จ่าย</h2>
+
+        {/* Left column: expense + payment tables */}
+        <div className="lg:col-span-7 flex flex-col gap-4">
+          {/* Expense Breakdown */}
+          <div className="border border-slate-200 rounded-md bg-white overflow-hidden">
+            <div className="px-3 py-2 border-b border-slate-200 bg-slate-50">
+              <h2 className="text-xs font-bold text-slate-700">รายการค่าใช้จ่าย</h2>
+            </div>
+            {expenseItems.length > 0 ? (
+              <table className="w-full text-xs">
+                <tbody className="divide-y divide-slate-100">
+                  {expenseItems.map((item, idx) => (
+                    <tr key={idx}>
+                      <td className="px-3 py-2 text-slate-500 font-medium whitespace-nowrap w-[40%]">{item.label}</td>
+                      <td className={`px-3 py-2 font-semibold ${item.isAmount ? "text-slate-900" : "text-slate-800"}`}>
+                        {item.isAmount ? money(item.value) : String(item.value)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="p-4 text-center text-slate-400 text-xs">ไม่มีรายละเอียดค่าใช้จ่ายเพิ่มเติม</div>
+            )}
           </div>
-          {expenseItems.length > 0 ? (
-            <table className="w-full text-xs">
-              <tbody className="divide-y divide-slate-100">
-                {expenseItems.map((item, idx) => (
-                  <tr key={idx}>
-                    <td className="px-3 py-2 text-slate-500 font-medium whitespace-nowrap w-[40%]">{item.label}</td>
-                    <td className={`px-3 py-2 font-semibold ${item.isAmount ? "text-slate-900" : "text-slate-800"}`}>
-                      {item.isAmount ? money(item.value) : String(item.value)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <div className="p-4 text-center text-slate-400 text-xs">ไม่มีรายละเอียดค่าใช้จ่ายเพิ่มเติม</div>
-          )}
+
+          {/* Payment & Tax Details */}
+          <div className="border border-slate-200 rounded-md bg-white overflow-hidden">
+            <div className="px-3 py-2 border-b border-slate-200 bg-slate-50">
+              <h2 className="text-xs font-bold text-slate-700">เงื่อนไขการชำระเงิน & ภาษี</h2>
+            </div>
+            {paymentItems.length > 0 ? (
+              <table className="w-full text-xs">
+                <tbody className="divide-y divide-slate-100">
+                  {paymentItems.map((item, idx) => (
+                    <tr key={idx}>
+                      <td className="px-3 py-2 text-slate-500 font-medium whitespace-nowrap w-[40%]">{item.label}</td>
+                      <td className="px-3 py-2 font-semibold text-slate-800">
+                        {item.link ? (
+                          <Link href={item.link} className="text-indigo-600 hover:underline">
+                            {String(item.value)}
+                          </Link>
+                        ) : item.isAmount ? (
+                          money(item.value)
+                        ) : (
+                          String(item.value)
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="p-4 text-center text-slate-400 text-xs">ไม่มีเงื่อนไขชำระเงินเพิ่มเติม</div>
+            )}
+          </div>
         </div>
 
-        {/* Right: Payment & Tax Details */}
-        <div className="lg:col-span-6 border border-slate-200 rounded-md bg-white overflow-hidden">
-          <div className="px-3 py-2 border-b border-slate-200 bg-slate-50">
-            <h2 className="text-xs font-bold text-slate-700">เงื่อนไขการชำระเงิน & ภาษี</h2>
+        {/* Right column: Bill Image — large preview */}
+        <div className="lg:col-span-5">
+          <div className="border border-slate-200 rounded-md bg-white overflow-hidden h-full">
+            <div className="px-3 py-2 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+              <h2 className="text-xs font-bold text-slate-700">รูปถ่ายบิล & เอกสารประกอบ</h2>
+              {hasValue(imageValue) && (
+                <span className="text-[10px] text-slate-400">คลิกรูปเพื่อขยาย</span>
+              )}
+            </div>
+            <div className="p-3">
+              <BillImageThumbnail value={imageValue} large />
+            </div>
           </div>
-          {paymentItems.length > 0 ? (
-            <table className="w-full text-xs">
-              <tbody className="divide-y divide-slate-100">
-                {paymentItems.map((item, idx) => (
-                  <tr key={idx}>
-                    <td className="px-3 py-2 text-slate-500 font-medium whitespace-nowrap w-[40%]">{item.label}</td>
-                    <td className="px-3 py-2 font-semibold text-slate-800">
-                      {item.link ? (
-                        <Link href={item.link} className="text-indigo-600 hover:underline">
-                          {String(item.value)}
-                        </Link>
-                      ) : item.isAmount ? (
-                        money(item.value)
-                      ) : (
-                        String(item.value)
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <div className="p-4 text-center text-slate-400 text-xs">ไม่มีเงื่อนไขชำระเงินเพิ่มเติม</div>
-          )}
         </div>
-      </div>
 
-      {/* 5. ATTACHMENT / BILL IMAGE */}
-      <div className="border border-slate-200 rounded-md bg-white overflow-hidden">
-        <div className="px-3 py-2 border-b border-slate-200 bg-slate-50">
-          <h2 className="text-xs font-bold text-slate-700">รูปถ่ายบิล & เอกสารประกอบ</h2>
-        </div>
-        <div className="p-3">
-          {hasValue(imageValue) ? (
-            <BillImageThumbnail value={imageValue} />
-          ) : (
-            <span className="text-xs text-slate-400">ไม่มีรูปถ่ายบิลแนบในระบบ</span>
-          )}
-        </div>
       </div>
 
       {/* 6. RELATED TABLES */}
@@ -235,6 +241,7 @@ export function BillDetailClient({
               limit={10}
               detailBasePath="/work-status"
               detailKeyColumn="ID Project"
+              showDetailColumn={false}
               cellFormatters={{
                 "วันที่": (v) => formatDateThai(v),
                 "ยอดงาน": (v) => money(v),
@@ -255,6 +262,7 @@ export function BillDetailClient({
               limit={10}
               detailBasePath="/contract-open"
               detailKeyColumn="id_Conwork"
+              showDetailColumn={false}
               cellFormatters={{
                 "วันที่": (v) => formatDateThai(v),
                 "ยอดเงินจ้าง": (v) => money(v),

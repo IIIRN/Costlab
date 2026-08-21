@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { ChevronLeft, ChevronRight, Eye, List, Pencil, Plus, Save, Trash2, X, Search, ArrowDownUp, Download, Upload, FileSpreadsheet } from "lucide-react";
+import { ChevronLeft, ChevronRight, List, Pencil, Plus, Save, Trash2, X, Search, ArrowDownUp, Download, Upload, FileSpreadsheet } from "lucide-react";
 import { BillImageThumbnail } from "@/components/BillImageThumbnail";
 import { showConfirm, showToast } from "@/components/ToastProvider";
 import type { RowValue, SheetRow } from "@/lib/types";
@@ -43,6 +43,26 @@ export function ManageTableClient({
 }: ManageTableClientProps) {
   const router = useRouter();
   const visibleColumns = useMemo(() => columns.filter(column => column !== "_sheetRow"), [columns]);
+  const primaryLinkColumn = useMemo(() => {
+    const preferred = [
+      "ชื่อ-นามสกุล",
+      "ชื่อ Project",
+      "ชื่อโครงการ",
+      "ชื่อร้านค้า",
+      "ชื่อร้าน",
+      "ชื่อบริษัท",
+      "ชื่อลูกค้า",
+      "ชื่อธนาคาร",
+      "ชื่อประเภทสินค้า",
+      "หมายเลขทะเบียน",
+      "ชื่อ",
+      "ชื่อเล่น",
+    ];
+    for (const col of preferred) {
+      if (visibleColumns.includes(col)) return col;
+    }
+    return visibleColumns[0] || "";
+  }, [visibleColumns]);
   const addColumns = useMemo(() => formColumns.filter(column => column !== "_sheetRow"), [formColumns]);
   const [rows, setRows] = useState<SheetRow[]>(initialRows);
   const [addOpen, setAddOpen] = useState(false);
@@ -609,7 +629,7 @@ export function ManageTableClient({
                       {visibleColumns.map(column => {
                         const draftValue = draftRows[id]?.[column] ?? stringify(row[column]);
                         const cellContent = renderDisplayCell(column, row[column], displayLookups);
-                        const isLinkColumn = column === visibleColumns[0] || column === "ชื่อ Project" || column === "ชื่อร้าน" || column === "ชื่อร้านค้า" || column === "ร้านค้า" || column === "ชื่อ-นามสกุล" || column === "ชื่อบริษัท" || column === "ชื่อลูกค้า" || column === "id_store";
+                        const isLinkColumn = column === primaryLinkColumn;
 
                         return (
                           <td
@@ -644,18 +664,8 @@ export function ManageTableClient({
                         );
                       })}
                       {!editing && !deleteMode ? (
-                        <td className="py-2 px-3 text-center w-24" data-label="จัดการ">
-                          <div className="flex items-center justify-center gap-1 min-w-[70px]">
-                            {detailBasePath ? (
-                              <Link
-                                className="inline-flex items-center justify-center w-6 h-6 rounded border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 transition"
-                                href={`${detailBasePath}/${encodeURIComponent(targetKey)}`}
-                                aria-label="ดูรายละเอียด"
-                                title="ดูรายละเอียด"
-                              >
-                                <Eye size={13} />
-                              </Link>
-                            ) : null}
+                        <td className="py-2 px-3 text-center w-20" data-label="จัดการ">
+                          <div className="flex items-center justify-center gap-1 min-w-[50px]">
                             {editOpenEventName ? (
                               <button
                                 type="button"

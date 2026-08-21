@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { DataTable } from "@/components/tables/DataTable";
 import { ProjectDetailEditor } from "@/components/ProjectDetailEditor";
+import { getProjectColorInfo } from "@/components/dashboards/WorkStatusDashboardClient";
 import { money, toNumber } from "@/lib/numbers";
 import type { SheetRow } from "@/lib/types";
 
@@ -65,9 +66,7 @@ export function ProjectDetailClient({
 }: ProjectDetailClientProps) {
   const [activeTab, setActiveTab] = useState<"bills" | "expenses" | "products" | "edit">("bills");
 
-  const rawColor = String(hydratedProject.color || "").toLowerCase().trim();
-  const isComplete = rawColor === "black" || rawColor === "เสร็จแล้ว" || rawColor === "completed";
-  const isRed = rawColor === "red";
+  const colorInfo = getProjectColorInfo(hydratedProject.color);
 
   // Financial calculations
   const percentUsed = totals.budget > 0 ? Math.min(100, Math.round((totals.totalAll / totals.budget) * 100)) : 0;
@@ -149,15 +148,9 @@ export function ProjectDetailClient({
           <span className="text-slate-300">/</span>
           <span className="text-xs font-bold text-slate-700">#{projectId}</span>
           <span
-            className={`px-2 py-0.5 rounded text-[11px] font-semibold ${
-              isComplete
-                ? "bg-slate-100 text-slate-600 border border-slate-200"
-                : isRed
-                ? "bg-rose-50 text-rose-700 border border-rose-200"
-                : "bg-emerald-50 text-emerald-700 border border-emerald-200"
-            }`}
+            className={`inline-flex items-center px-2.5 py-0.5 rounded text-[11px] font-semibold ${colorInfo.badgeClass}`}
           >
-            {isComplete ? "เสร็จสิ้นแล้ว" : isRed ? "เร่งด่วน" : "กำลังทำอยู่"}
+            <span>{colorInfo.label}</span>
           </span>
         </div>
       </div>

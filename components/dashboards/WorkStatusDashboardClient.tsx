@@ -8,7 +8,6 @@ import {
   Building2,
   CheckCircle2,
   Clock3,
-  Eye,
   FolderKanban,
   LayoutGrid,
   List,
@@ -24,12 +23,38 @@ type WorkStatusDashboardClientProps = {
   projects: SheetRow[];
 };
 
+export function getProjectColorInfo(colorVal: unknown) {
+  const c = String(colorVal || "").toLowerCase().trim();
+  if (c === "red" || c.includes("แดง") || c.includes("ใหญ่")) {
+    return {
+      key: "red" as const,
+      label: "🔴 (งานใหญ่)",
+      badgeClass: "bg-rose-50 text-rose-700 border border-rose-200",
+      dotClass: "bg-rose-600",
+    };
+  }
+  if (c === "black" || c.includes("ดำ") || c.includes("เสร็จ") || c === "completed") {
+    return {
+      key: "black" as const,
+      label: "⚫ (เสร็จแล้ว)",
+      badgeClass: "bg-slate-100 text-slate-700 border border-slate-200",
+      dotClass: "bg-slate-700",
+    };
+  }
+  return {
+    key: "green" as const,
+    label: "🟢 (งานเล็ก)",
+    badgeClass: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+    dotClass: "bg-emerald-600",
+  };
+}
+
 export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClientProps) {
   const searchParams = useSearchParams();
   const urlSearch = searchParams.get("search") || "";
 
   const [searchTerm, setSearchTerm] = useState(urlSearch);
-  const [filterTab, setFilterTab] = useState<"all" | "active" | "complete">("all");
+  const [filterTab, setFilterTab] = useState<"all" | "red" | "green" | "complete">("all");
   const [viewMode, setViewMode] = useState<"table" | "grid">("table");
 
   useEffect(() => {
@@ -47,25 +72,24 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
     return list;
   }, [projects, searchTerm]);
 
-  const activeProjects = useMemo(() => {
-    return filteredProjects.filter((p) => {
-      const c = String(p.color || "").toLowerCase().trim();
-      return c !== "black" && c !== "เสร็จแล้ว" && c !== "completed";
-    });
+  const redProjects = useMemo(() => {
+    return filteredProjects.filter((p) => getProjectColorInfo(p.color).key === "red");
+  }, [filteredProjects]);
+
+  const greenProjects = useMemo(() => {
+    return filteredProjects.filter((p) => getProjectColorInfo(p.color).key === "green");
   }, [filteredProjects]);
 
   const completeProjects = useMemo(() => {
-    return filteredProjects.filter((p) => {
-      const c = String(p.color || "").toLowerCase().trim();
-      return c === "black" || c === "เสร็จแล้ว" || c === "completed";
-    });
+    return filteredProjects.filter((p) => getProjectColorInfo(p.color).key === "black");
   }, [filteredProjects]);
 
   const displayList = useMemo(() => {
-    if (filterTab === "active") return activeProjects;
+    if (filterTab === "red") return redProjects;
+    if (filterTab === "green") return greenProjects;
     if (filterTab === "complete") return completeProjects;
     return filteredProjects;
-  }, [filterTab, activeProjects, completeProjects, filteredProjects]);
+  }, [filterTab, redProjects, greenProjects, completeProjects, filteredProjects]);
 
   // Overall financial statistics
   const totalBudget = useMemo(() => {
@@ -76,11 +100,15 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
     return projects.reduce((sum, p) => sum + toNumber(p["รวม ALL"]), 0);
   }, [projects]);
 
+  const allRedCount = useMemo(() => projects.filter((p) => getProjectColorInfo(p.color).key === "red").length, [projects]);
+  const allGreenCount = useMemo(() => projects.filter((p) => getProjectColorInfo(p.color).key === "green").length, [projects]);
+  const allCompleteCount = useMemo(() => projects.filter((p) => getProjectColorInfo(p.color).key === "black").length, [projects]);
+
   return (
     <div className="w-full flex flex-col gap-5 p-4 sm:p-6 max-w-[1600px] mx-auto font-sans">
-      {/* 1. EXECUTIVE SUMMARY STRIP (2x2 on mobile, flex on desktop) */}
+      {/* 1. EXECUTIVE SUMMARY STRIP (Responsive grid) */}
       <div className="bg-white rounded-xl md:rounded-lg p-3 sm:p-4 border border-slate-200/90 shadow-2xs">
-        <div className="grid grid-cols-2 lg:flex lg:flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 items-center justify-between gap-3 text-xs">
           {/* Total Projects */}
           <div className="flex items-center gap-2 pr-2 sm:pr-4 border-r border-slate-100 sm:border-slate-200">
             <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold shrink-0">
@@ -92,30 +120,41 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
             </div>
           </div>
 
-          {/* Active Projects */}
-          <div className="flex items-center gap-2 pr-0 sm:pr-4 lg:border-r border-slate-200">
-            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold shrink-0">
-              <Clock3 size={15} />
+          {/* Red: Large Projects */}
+          <div className="flex items-center gap-2 pr-2 sm:pr-4 border-r border-slate-100 sm:border-slate-200">
+            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold shrink-0">
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-600" />
             </span>
             <div className="min-w-0">
-              <div className="text-[10px] text-emerald-600 font-semibold truncate">กำลังทำอยู่</div>
-              <div className="text-sm sm:text-base font-bold text-emerald-700">{activeProjects.length} <span className="text-[10px] font-normal text-emerald-500">งาน</span></div>
+              <div className="text-[10px] text-rose-600 font-semibold truncate">🔴 (งานใหญ่)</div>
+              <div className="text-sm sm:text-base font-bold text-rose-700">{allRedCount} <span className="text-[10px] font-normal text-rose-400">งาน</span></div>
             </div>
           </div>
 
-          {/* Completed Projects */}
-          <div className="flex items-center gap-2 pr-2 sm:pr-4 border-r border-slate-100 sm:border-slate-200 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100">
-            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center font-bold shrink-0">
+          {/* Green: Small Projects */}
+          <div className="flex items-center gap-2 pr-0 sm:pr-4 lg:border-r border-slate-200">
+            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold shrink-0">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
+            </span>
+            <div className="min-w-0">
+              <div className="text-[10px] text-emerald-600 font-semibold truncate">🟢 (งานเล็ก)</div>
+              <div className="text-sm sm:text-base font-bold text-emerald-700">{allGreenCount} <span className="text-[10px] font-normal text-emerald-400">งาน</span></div>
+            </div>
+          </div>
+
+          {/* Black: Completed Projects */}
+          <div className="flex items-center gap-2 pr-2 sm:pr-4 border-r border-slate-100 sm:border-slate-200 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center font-bold shrink-0">
               <CheckCircle2 size={15} />
             </span>
             <div className="min-w-0">
-              <div className="text-[10px] text-slate-400 font-semibold truncate">เสร็จสิ้นแล้ว</div>
-              <div className="text-sm sm:text-base font-bold text-slate-700">{completeProjects.length} <span className="text-[10px] font-normal text-slate-400">งาน</span></div>
+              <div className="text-[10px] text-slate-500 font-semibold truncate">⚫ (เสร็จแล้ว)</div>
+              <div className="text-sm sm:text-base font-bold text-slate-700">{allCompleteCount} <span className="text-[10px] font-normal text-slate-400">งาน</span></div>
             </div>
           </div>
 
           {/* Total Spent vs Budget */}
-          <div className="flex items-center gap-2 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100">
+          <div className="col-span-2 sm:col-span-1 flex items-center gap-2 pt-2 lg:pt-0 border-t sm:border-t-0 border-slate-100">
             <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold shrink-0">
               <Wallet size={15} />
             </span>
@@ -146,25 +185,36 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
           </button>
           <button
             type="button"
-            onClick={() => setFilterTab("active")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap active:scale-95 cursor-pointer ${
-              filterTab === "active"
+            onClick={() => setFilterTab("red")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap active:scale-95 cursor-pointer flex items-center gap-1.5 ${
+              filterTab === "red"
+                ? "bg-rose-600 text-white shadow-2xs"
+                : "text-rose-700 hover:bg-rose-50 bg-rose-50/50 border border-rose-200/60"
+            }`}
+          >
+            <span>🔴 (งานใหญ่) ({redProjects.length})</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterTab("green")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap active:scale-95 cursor-pointer flex items-center gap-1.5 ${
+              filterTab === "green"
                 ? "bg-emerald-700 text-white shadow-2xs"
                 : "text-emerald-700 hover:bg-emerald-50 bg-emerald-50/50 border border-emerald-200/60"
             }`}
           >
-            🟢 กำลังทำ ({activeProjects.length})
+            <span>🟢 (งานเล็ก) ({greenProjects.length})</span>
           </button>
           <button
             type="button"
             onClick={() => setFilterTab("complete")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap active:scale-95 cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap active:scale-95 cursor-pointer flex items-center gap-1.5 ${
               filterTab === "complete"
-                ? "bg-slate-700 text-white shadow-2xs"
-                : "text-slate-600 hover:bg-slate-100 bg-slate-50 border border-slate-200/60"
+                ? "bg-slate-800 text-white shadow-2xs"
+                : "text-slate-700 hover:bg-slate-100 bg-slate-50 border border-slate-200/60"
             }`}
           >
-            🏁 เสร็จแล้ว ({completeProjects.length})
+            <span>⚫ (เสร็จแล้ว) ({completeProjects.length})</span>
           </button>
         </div>
 
@@ -201,9 +251,7 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
             const remaining = budget - spent;
             const percentUsed = budget > 0 ? Math.min(100, Math.round((spent / budget) * 100)) : 0;
 
-            const rawColor = String(p.color || "").toLowerCase().trim();
-            const isComplete = rawColor === "black" || rawColor === "เสร็จแล้ว" || rawColor === "completed";
-            const isRed = rawColor === "red";
+            const colorInfo = getProjectColorInfo(p.color);
 
             return (
               <Link
@@ -223,15 +271,9 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
                   </div>
 
                   <span
-                    className={`px-2 py-0.2 rounded text-[10px] font-bold shrink-0 ${
-                      isComplete
-                        ? "bg-slate-100 text-slate-600 border border-slate-200"
-                        : isRed
-                        ? "bg-rose-50 text-rose-700 border border-rose-200"
-                        : "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                    }`}
+                    className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold shrink-0 ${colorInfo.badgeClass}`}
                   >
-                    {isComplete ? "เสร็จแล้ว" : isRed ? "เร่งด่วน" : "กำลังทำ"}
+                    <span>{colorInfo.label}</span>
                   </span>
                 </div>
 
@@ -293,11 +335,10 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
                     <th className="py-3 px-3.5">ลูกค้า</th>
                     <th className="py-3 px-3.5">บริษัท</th>
                     <th className="py-3 px-3.5">ผู้รับผิดชอบ</th>
-                    <th className="py-3 px-3.5 w-28 text-center">สถานะ</th>
+                    <th className="py-3 px-3.5 w-36 text-center">สถานะ (Color)</th>
                     <th className="py-3 px-3.5 text-right">ยอดเบิกจ่ายรวม</th>
                     <th className="py-3 px-3.5 text-right">งบไม่เกิน</th>
                     <th className="py-3 px-3.5 text-right">คงเหลือ</th>
-                    <th className="py-3 px-3.5 w-16 text-center">จัดการ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -312,9 +353,7 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
                     const budget = toNumber(p["งบไม่เกิน"]);
                     const remaining = budget - spent;
 
-                    const rawColor = String(p.color || "").toLowerCase().trim();
-                    const isComplete = rawColor === "black" || rawColor === "เสร็จแล้ว" || rawColor === "completed";
-                    const isRed = rawColor === "red";
+                    const colorInfo = getProjectColorInfo(p.color);
 
                     return (
                       <tr key={id} className="hover:bg-slate-50/80 transition-colors group">
@@ -340,22 +379,11 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
                         <td className="py-2.5 px-3.5 text-slate-600">{owner}</td>
 
                         {/* Status Tag */}
-                        <td className="py-2.5 px-3.5 text-center">
+                        <td className="py-2.5 px-3.5 text-center whitespace-nowrap">
                           <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-semibold ${
-                              isComplete
-                                ? "bg-slate-100 text-slate-700 border border-slate-200"
-                                : isRed
-                                ? "bg-rose-50 text-rose-700 border border-rose-200"
-                                : "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                            }`}
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-semibold ${colorInfo.badgeClass}`}
                           >
-                            <span
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                isComplete ? "bg-slate-600" : isRed ? "bg-rose-600 animate-pulse" : "bg-emerald-600"
-                              }`}
-                            />
-                            {isComplete ? "เสร็จแล้ว" : isRed ? "เร่งด่วน" : "กำลังทำ"}
+                            <span>{colorInfo.label}</span>
                           </span>
                         </td>
 
@@ -377,24 +405,13 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
                         >
                           {money(remaining)}
                         </td>
-
-                        {/* Action detail link */}
-                        <td className="py-2.5 px-3.5 text-center">
-                          <Link
-                            href={`/work-status/${encodeURIComponent(id)}`}
-                            className="w-7 h-7 rounded-lg bg-slate-100 group-hover:bg-indigo-600 text-slate-600 group-hover:text-white flex items-center justify-center transition mx-auto shadow-2xs"
-                            title="ดูรายละเอียดโครงการ"
-                          >
-                            <Eye size={15} />
-                          </Link>
-                        </td>
                       </tr>
                     );
                   })}
 
                   {!displayList.length && (
                     <tr>
-                      <td colSpan={10} className="py-10 text-center text-slate-400">
+                      <td colSpan={9} className="py-10 text-center text-slate-400">
                         ไม่พบโครงการที่ค้นหา
                       </td>
                     </tr>
@@ -416,9 +433,7 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
             const spent = toNumber(p["รวม ALL"]);
             const budget = toNumber(p["งบไม่เกิน"]);
 
-            const rawColor = String(p.color || "").toLowerCase().trim();
-            const isComplete = rawColor === "black" || rawColor === "เสร็จแล้ว" || rawColor === "completed";
-            const isRed = rawColor === "red";
+            const colorInfo = getProjectColorInfo(p.color);
 
             return (
               <Link
@@ -428,15 +443,9 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
               >
                 <div className="flex items-center justify-between">
                   <span
-                    className={`px-2.5 py-0.5 rounded-md text-[11px] font-semibold ${
-                      isComplete
-                        ? "bg-slate-100 text-slate-700"
-                        : isRed
-                        ? "bg-rose-50 text-rose-700 border border-rose-200"
-                        : "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                    }`}
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-semibold ${colorInfo.badgeClass}`}
                   >
-                    {isComplete ? "เสร็จแล้ว" : isRed ? "เร่งด่วน" : "กำลังทำ"}
+                    <span>{colorInfo.label}</span>
                   </span>
                   <span className="font-mono text-[11px] font-bold text-slate-400">#{id}</span>
                 </div>

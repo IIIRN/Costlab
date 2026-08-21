@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Banknote, Check, ChevronLeft, ChevronRight, Filter, List, LoaderCircle, Search, X } from "lucide-react";
+import { Banknote, Check, ChevronLeft, ChevronRight, Filter, List, LoaderCircle, RotateCw, Search, Send, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { showToast } from "@/components/ToastProvider";
 import { money, toNumber } from "@/lib/numbers";
 import type { SheetRow } from "@/lib/types";
 import { formatDateDisplay, normalizeDateToIso, parseDateStrict } from "@/lib/dates";
@@ -21,7 +22,7 @@ type WithdrawDashboardClientProps = {
   isAdmin?: boolean;
 };
 
-const ALL_COLUMNS = ["ลำดับ", "ID Project", "ชื่อ Project", "ร้าน/บุคคล", "สินค้า/ทำงาน", "บิล", "ประเภท", "ยอดเงิน", "ยอดโอน", "ผู้เบิก", "ว/ด/ป", "สถานะ", "จัดการ"];
+const ALL_COLUMNS = ["ลำดับ", "ID Project", "ชื่อ Project", "ร้าน/บุคคล", "สินค้า/ทำงาน", "บิล", "ประเภท", "ยอดเงิน", "ยอดโอน", "ผู้เบิก", "ว/ด/ป", "จัดการ"];
 const PAGE_SIZE_OPTIONS = [20, 50, 100, 200];
 
 export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {}, isAdmin = false }: WithdrawDashboardClientProps) {
@@ -42,7 +43,7 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
     }
   }, [isAdmin]);
 
-  const columns = useMemo(() => effectiveIsAdmin ? ALL_COLUMNS : ALL_COLUMNS.filter(c => c !== "จัดการ"), [effectiveIsAdmin]);
+  const columns = useMemo(() => ALL_COLUMNS, [effectiveIsAdmin]);
   const [filters, setFilters] = useState(() => normalizeFilters(initialFilters));
 
   useEffect(() => {
@@ -57,6 +58,8 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
   const [actionError, setActionError] = useState("");
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [isBatchApproving, setIsBatchApproving] = useState(false);
+  const [resendMode, setResendMode] = useState(false);
+  const [isResending, setIsResending] = useState(false);
 
   useEffect(() => {
     setFilters(normalizeFilters(initialFilters));
@@ -201,6 +204,40 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
     }
   }
 
+  async function handleResendSelected() {
+    if (selectedRows.size === 0) return;
+    setIsResending(true);
+    setActionError("");
+
+    try {
+      const selectedList = rows.filter(r => selectedRows.has(Number(r._sheetRow)));
+      if (selectedList.length === 0) {
+        setActionError("ไม่พบรายการที่เลือกสำหรับส่งซ้ำ");
+        setIsResending(false);
+        return;
+      }
+
+      const res = await fetch("/api/line/notify-withdraw-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rows: selectedList, targetRole: "requester" })
+      });
+
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(payload.error || "ส่งข้อความไม่สำเร็จ");
+      }
+
+      showToast("success", `ส่งข้อความแจ้งเตือนซ้ำเรียบร้อยแล้ว (${selectedList.length} รายการ)`);
+      setSelectedRows(new Set());
+      setResendMode(false);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "เกิดข้อผิดพลาดในการส่งข้อความซ้ำ");
+    } finally {
+      setIsResending(false);
+    }
+  }
+
   return (
     <div className="w-full flex flex-col gap-3 p-3 sm:p-5 max-w-[1600px] mx-auto font-sans text-sm text-slate-800">
       {/* 1. EXECUTIVE SUMMARY KPI CARDS (Hidden on mobile for clean layout) */}
@@ -250,6 +287,26 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
               <X size={14} className="absolute right-2 text-slate-400 cursor-pointer hover:text-slate-600" onClick={() => updateFilter("search", "")} />
             )}
           </div>
+
+          {/* Resend Checklist Mode Button */}
+          <button
+            type="button"
+            onClick={() => {
+              setResendMode(!resendMode);
+              setSelectedRows(new Set());
+              setActionError("");
+            }}
+            className={`px-2.5 sm:px-3 py-1.5 rounded-lg border text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shrink-0 shadow-2xs active:scale-95 ${
+              resendMode
+                ? "bg-amber-500 hover:bg-amber-600 text-white border-amber-600"
+                : "bg-white hover:bg-amber-50 text-amber-800 border-amber-300"
+            }`}
+            title="เปิดโหมดเลือกรายการเพื่อส่งข้อความแจ้งเตือนซ้ำ (ไม่เปลี่ยนสถานะ)"
+          >
+            <RotateCw size={13} className={resendMode ? "animate-spin" : ""} />
+            <span className="hidden sm:inline">{resendMode ? "ออกจากโหมดส่งซ้ำ" : "ส่งซ้ำ (Resend)"}</span>
+            <span className="sm:hidden">{resendMode ? "ออก" : "ส่งซ้ำ"}</span>
+          </button>
 
           {/* Mobile Filter Toggle Button */}
           <button
@@ -310,8 +367,55 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
         </div>
       </div>
 
-      {/* 2.5 ACTION BAR BELOW SEARCH (Light Theme Design) */}
-      {selectedRows.size > 0 ? (
+      {/* 2.5 ACTION BAR (Resend Mode vs Normal Batch Mode) */}
+      {resendMode ? (
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 p-2.5 sm:p-3 bg-amber-50 text-amber-900 rounded-xl shadow-xs border border-amber-200 animate-in fade-in zoom-in-95 duration-150">
+          <div className="flex items-center justify-between sm:justify-start gap-2.5">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-xs bg-amber-500 text-white px-2 py-0.5 rounded-md flex items-center gap-1 shrink-0">
+                <RotateCw size={12} />
+                <span>โหมดส่งซ้ำ</span>
+              </span>
+              <span className="text-xs text-amber-900 font-semibold">
+                เลือก <strong className="text-amber-950 font-bold">{selectedRows.size}</strong> รายการ <span className="hidden md:inline text-amber-700 font-normal">(สถานะในระบบจะไม่ถูกเปลี่ยนแปลง)</span>
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setResendMode(false);
+                setSelectedRows(new Set());
+              }}
+              className="sm:hidden text-xs text-slate-500 hover:text-slate-800 font-semibold underline cursor-pointer"
+            >
+              ยกเลิก
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={selectedRows.size === 0 || isResending}
+              onClick={handleResendSelected}
+              className="flex-1 sm:flex-initial px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+            >
+              {isResending ? <LoaderCircle className="spin" size={14} /> : <Send size={14} />}
+              <span>ส่งแจ้งเตือนซ้ำที่เลือก ({selectedRows.size})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setResendMode(false);
+                setSelectedRows(new Set());
+              }}
+              className="hidden sm:flex px-3 py-2 text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-xs font-semibold transition cursor-pointer"
+            >
+              ยกเลิก
+            </button>
+          </div>
+        </div>
+      ) : selectedRows.size > 0 ? (
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 p-2.5 sm:p-3 bg-white text-slate-800 rounded-xl shadow-xs border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
           <div className="flex items-center justify-between sm:justify-start gap-2.5">
             <div className="flex items-center gap-2">
@@ -376,12 +480,15 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
               <input
                 type="checkbox"
                 checked={
-                  visibleRows.filter(r => normalizedStatus(r["สถานะ"]) === "รอตั้งเบิก" || normalizedStatus(r["สถานะ"]) === "รออนุมัติ").length > 0 &&
-                  visibleRows.filter(r => normalizedStatus(r["สถานะ"]) === "รอตั้งเบิก" || normalizedStatus(r["สถานะ"]) === "รออนุมัติ").every(r => selectedRows.has(Number(r._sheetRow)))
+                  visibleRows.length > 0 &&
+                  (resendMode
+                    ? visibleRows.every(r => selectedRows.has(Number(r._sheetRow)))
+                    : visibleRows.filter(r => normalizedStatus(r["สถานะ"]) === "รอตั้งเบิก" || normalizedStatus(r["สถานะ"]) === "รออนุมัติ").length > 0 &&
+                      visibleRows.filter(r => normalizedStatus(r["สถานะ"]) === "รอตั้งเบิก" || normalizedStatus(r["สถานะ"]) === "รออนุมัติ").every(r => selectedRows.has(Number(r._sheetRow))))
                 }
                 onChange={e => {
                   const eligibleIds = visibleRows
-                    .filter(r => normalizedStatus(r["สถานะ"]) === "รอตั้งเบิก" || normalizedStatus(r["สถานะ"]) === "รออนุมัติ")
+                    .filter(r => resendMode ? true : (normalizedStatus(r["สถานะ"]) === "รอตั้งเบิก" || normalizedStatus(r["สถานะ"]) === "รออนุมัติ"))
                     .map(r => Number(r._sheetRow));
                   if (e.target.checked) setSelectedRows(new Set([...selectedRows, ...eligibleIds]));
                   else {
@@ -392,7 +499,7 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
                 }}
                 className="w-4 h-4 rounded border-slate-300 text-slate-900 accent-slate-900 cursor-pointer"
               />
-              <span>เลือกทั้งหมดที่รอตั้งเบิก</span>
+              <span>{resendMode ? "เลือกทั้งหมดในหน้านี้ (ส่งซ้ำ)" : "เลือกทั้งหมดที่รอตั้งเบิก"}</span>
             </label>
             <span className="text-[11px] text-slate-500 font-normal">
               {visibleRows.length} รายการ
@@ -409,7 +516,7 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
               const sheetRowId = Number(row._sheetRow);
               const isSelected = selectedRows.has(sheetRowId);
               const status = normalizedStatus(row["สถานะ"]);
-              const isSelectable = status === "รอตั้งเบิก" || status === "รออนุมัติ";
+              const isSelectable = resendMode ? true : (status === "รอตั้งเบิก" || status === "รออนุมัติ");
               const seq = String(row["ลำดับ"] || row._sheetRow || index + 1);
               const requesterKey = String(row["ผู้เบิก"] || "").trim();
               const requesterName = requesterNames[requesterKey] || requesterKey || "-";
@@ -427,7 +534,9 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
                   }}
                   className={`p-3 transition flex items-center gap-3 cursor-pointer ${
                     isSelected
-                      ? "bg-sky-50/50 border-l-4 border-l-sky-500"
+                      ? resendMode
+                        ? "bg-amber-50/70 border-l-4 border-l-amber-500"
+                        : "bg-sky-50/50 border-l-4 border-l-sky-500"
                       : "hover:bg-slate-50 active:bg-slate-100"
                   }`}
                 >
@@ -445,7 +554,7 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
                           setSelectedRows(newSet);
                         }
                       }}
-                      className={`w-5 h-5 rounded border-slate-300 text-sky-600 accent-sky-600 cursor-pointer ${
+                      className={`w-5 h-5 rounded border-slate-300 ${resendMode ? "text-amber-600 accent-amber-600" : "text-sky-600 accent-sky-600"} cursor-pointer ${
                         !isSelectable ? "opacity-30 cursor-not-allowed" : ""
                       }`}
                     />
@@ -524,6 +633,7 @@ export function WithdrawDashboardClient({ rows, peopleRows, initialFilters = {},
             requesterNames={requesterNames}
             rows={visibleRows}
             selectedRows={selectedRows}
+            resendMode={resendMode}
             onSelectRow={rowId => {
               const newSet = new Set(selectedRows);
               if (newSet.has(rowId)) newSet.delete(rowId);
@@ -595,6 +705,7 @@ function WithdrawTable({
   approvingRow,
   onApprove,
   selectedRows,
+  resendMode = false,
   onSelectRow,
   onSelectAll
 }: {
@@ -604,13 +715,15 @@ function WithdrawTable({
   approvingRow: number | null;
   onApprove: (row: SheetRow) => void;
   selectedRows: Set<number>;
+  resendMode?: boolean;
   onSelectRow: (rowId: number) => void;
   onSelectAll: (rowIds: number[]) => void;
 }) {
   if (!rows.length) return <div className="p-8 text-center text-slate-400 text-xs font-medium">ไม่พบรายการตั้งเบิก</div>;
 
-  // Filter rows eligible for selection (only status 'รอตั้งเบิก' or 'รออนุมัติ')
+  // Filter rows eligible for selection
   const eligibleRows = rows.filter(r => {
+    if (resendMode) return true;
     const st = normalizedStatus(r["สถานะ"]);
     return st === "รอตั้งเบิก" || st === "รออนุมัติ";
   });
@@ -632,7 +745,13 @@ function WithdrawTable({
                   else onSelectAll([]);
                 }}
                 className="rounded border-slate-300 text-slate-900 focus:ring-slate-500 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                title={eligibleRows.length === 0 ? "ไม่มีรายการที่สามารถเลือกตั้งเบิกได้" : "เลือกทั้งหมดที่รอตั้งเบิก"}
+                title={
+                  eligibleRows.length === 0
+                    ? "ไม่มีรายการที่สามารถเลือกได้"
+                    : resendMode
+                    ? "เลือกทั้งหมดในหน้านี้เพื่อส่งแจ้งเตือนซ้ำ"
+                    : "เลือกทั้งหมดที่รอตั้งเบิก"
+                }
               />
             </th>
             {columns.map(column => (
@@ -647,10 +766,10 @@ function WithdrawTable({
             const sheetRowId = Number(row._sheetRow);
             const isSelected = selectedRows.has(sheetRowId);
             const status = normalizedStatus(row["สถานะ"]);
-            const isSelectable = status === "รอตั้งเบิก" || status === "รออนุมัติ";
+            const isSelectable = resendMode ? true : (status === "รอตั้งเบิก" || status === "รออนุมัติ");
 
             return (
-              <tr key={`${sheetRowId}-${index}`} className="hover:bg-slate-50 transition-colors">
+              <tr key={`${sheetRowId}-${index}`} className={`transition-colors ${isSelected && resendMode ? "bg-amber-50/50" : "hover:bg-slate-50"}`}>
                 <td className="py-2 px-3 text-center border-r border-slate-100">
                   <input 
                     type="checkbox" 
@@ -659,10 +778,16 @@ function WithdrawTable({
                     onChange={() => {
                       if (isSelectable) onSelectRow(sheetRowId);
                     }}
-                    className={`rounded border-slate-300 text-slate-900 focus:ring-slate-500 ${
+                    className={`rounded border-slate-300 ${resendMode ? "text-amber-600 accent-amber-600 focus:ring-amber-500" : "text-slate-900 focus:ring-slate-500"} ${
                       isSelectable ? "cursor-pointer" : "cursor-not-allowed opacity-30 bg-slate-100"
                     }`}
-                    title={!isSelectable ? `รายการสถานะ "${row["สถานะ"] || status}" ตั้งเบิกเรียบร้อยแล้ว ไม่สามารถเลือกซ้ำได้` : "เลือกรายการนี้เพื่อตั้งเบิก"}
+                    title={
+                      !isSelectable
+                        ? `รายการสถานะ "${row["สถานะ"] || status}" ตั้งเบิกเรียบร้อยแล้ว (เปิดโหมดส่งซ้ำเพื่อเลือกส่งใหม่)`
+                        : resendMode
+                        ? "เลือกรายการนี้เพื่อส่งข้อความแจ้งเตือนซ้ำ"
+                        : "เลือกรายการนี้เพื่อตั้งเบิก"
+                    }
                   />
                 </td>
 

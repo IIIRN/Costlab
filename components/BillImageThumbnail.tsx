@@ -16,12 +16,14 @@ import {
 type BillImageThumbnailProps = {
   value: unknown;
   compact?: boolean;
+  large?: boolean;
 };
 
-export function BillImageThumbnail({ value, compact = false }: BillImageThumbnailProps) {
+export function BillImageThumbnail({ value, compact = false, large = false }: BillImageThumbnailProps) {
   const rawValue = formatValue(value).trim();
   const [open, setOpen] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(0);   // lightbox index
+  const [selectedIndex, setSelectedIndex] = useState(0); // large preview index
   const [imgError, setImgError] = useState(false);
 
   // Advanced Controls: Zoom & Rotation
@@ -83,10 +85,134 @@ export function BillImageThumbnail({ value, compact = false }: BillImageThumbnai
 
   // Empty or Invalid Image State
   if (!rawValue || rawValue === "ไม่มี" || rawValue === "-" || !imageUrls.length || imgError) {
+    if (large) {
+      return (
+        <div className="flex flex-col items-center justify-center gap-2 h-36 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 text-slate-400 select-none">
+          <ImageIcon size={28} strokeWidth={1.5} />
+          <span className="text-xs font-medium">ไม่มีรูปถ่ายบิลแนบ</span>
+        </div>
+      );
+    }
     return (
       <span className="inline-flex items-center justify-center w-7 h-7 rounded-md text-slate-300 select-none" title="ไม่มีรูปภาพ">
         <ImageIcon size={14} />
       </span>
+    );
+  }
+
+  // Large preview card mode
+  if (large) {
+    const previewUrl = imageUrls[selectedIndex] || firstImageUrl;
+
+    return (
+      <>
+        {/* Main large preview — click to open lightbox */}
+        <button
+          type="button"
+          onClick={() => { setCurrentIndex(selectedIndex); setOpen(true); }}
+          className="group relative w-full rounded-xl overflow-hidden border border-slate-200 bg-slate-50 hover:border-emerald-400 hover:shadow-md transition-all duration-200 cursor-zoom-in block"
+          title="คลิกเพื่อขยายดูรูปภาพ"
+        >
+          <img
+            src={previewUrl}
+            alt="รูปถ่ายบิล"
+            loading="lazy"
+            decoding="async"
+            onError={() => setImgError(true)}
+            className="w-full object-cover max-h-56 group-hover:scale-105 transition-transform duration-300"
+          />
+          {/* Hover overlay */}
+          <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/20 transition-colors duration-200 flex items-center justify-center">
+            <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-white/90 text-slate-800 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-1.5">
+              <ZoomIn size={13} />
+              ขยายดูรูป
+            </span>
+          </div>
+          {/* Position badge */}
+          {imageUrls.length > 1 && (
+            <span className="absolute top-2 right-2 bg-slate-900/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+              {selectedIndex + 1} / {imageUrls.length}
+            </span>
+          )}
+        </button>
+        {/* Thumbnail strip — click to change main preview (NOT open lightbox) */}
+        {imageUrls.length > 1 && (
+          <div className="flex gap-1.5 mt-2 overflow-x-auto pb-1">
+            {imageUrls.slice(0, 8).map((url, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setSelectedIndex(idx)}
+                className={`shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all duration-150 cursor-pointer ${
+                  idx === selectedIndex
+                    ? "border-emerald-500 shadow-md scale-105"
+                    : "border-slate-200 hover:border-emerald-300 hover:scale-105"
+                }`}
+                title={`รูปที่ ${idx + 1}`}
+              >
+                <img src={url} alt={`รูปที่ ${idx + 1}`} className="w-full h-full object-cover" />
+              </button>
+            ))}
+            {imageUrls.length > 8 && (
+              <span className="shrink-0 w-12 h-12 rounded-lg border-2 border-slate-200 bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500">
+                +{imageUrls.length - 8}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Lightbox (reused below) */}
+        {open && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
+            role="presentation"
+            onClick={() => setOpen(false)}
+          >
+            <div
+              className="relative w-full max-w-[620px] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-slate-200 animate-in zoom-in-95 duration-200 text-slate-800 max-h-[90vh]"
+              role="dialog"
+              aria-modal="true"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <header className="flex flex-wrap items-center justify-between gap-2.5 px-4 py-3 border-b border-slate-200/90 bg-white text-slate-900">
+                <div className="flex items-center gap-2">
+                  <span className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center">
+                    <ImageIcon size={16} />
+                  </span>
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-900">รูปถ่ายเอกสาร / บิล</h3>
+                    {imageUrls.length > 1 && (
+                      <p className="text-[10px] text-slate-500">{currentIndex + 1} / {imageUrls.length} รูป</p>
+                    )}
+                  </div>
+                </div>
+                <button type="button" onClick={() => setOpen(false)} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition">
+                  <X size={18} />
+                </button>
+              </header>
+              <div className="flex-1 overflow-auto bg-slate-100 flex items-center justify-center p-4 min-h-[200px]">
+                <img
+                  src={currentImageUrl}
+                  alt={`รูปที่ ${currentIndex + 1}`}
+                  style={{ transform: `scale(${zoom}) rotate(${rotation}deg)`, transition: "transform 0.2s" }}
+                  className="max-w-full max-h-[55vh] object-contain rounded shadow"
+                />
+              </div>
+              {imageUrls.length > 1 && (
+                <div className="flex items-center justify-center gap-3 px-4 py-2 border-t border-slate-100">
+                  <button type="button" onClick={() => setCurrentIndex((i) => previousIndex(i, imageUrls.length))} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition">
+                    <ChevronLeft size={16} />
+                  </button>
+                  <span className="text-xs font-semibold text-slate-600">{currentIndex + 1} / {imageUrls.length}</span>
+                  <button type="button" onClick={() => setCurrentIndex((i) => nextIndex(i, imageUrls.length))} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition">
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </>
     );
   }
 

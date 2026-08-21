@@ -36,86 +36,110 @@ type DataTableProps = {
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [20, 50, 100, 200];
 
-export function DataTable({ columns, rows, limit = 80, title = "Data", subtitle, rowLabel = "rows", pagination, sortToggle, detailBasePath, detailKeyColumn, cellFormatters, showDetailColumn = true, showSearch = false, initialSearch = "", actionButton }: DataTableProps) {
+export function DataTable({ columns, rows, limit = 80, title = "Data", subtitle, rowLabel = "rows", pagination, sortToggle, detailBasePath, detailKeyColumn, cellFormatters, showDetailColumn = false, showSearch = false, initialSearch = "", actionButton }: DataTableProps) {
   const [localSearch, setLocalSearch] = useState(initialSearch);
   const [sortDesc, setSortDesc] = useState(sortToggle ? sortToggle.direction === "latest" : true);
   const [page, setPage] = useState(pagination ? pagination.page : 1);
   const [pageSize, setPageSize] = useState(pagination ? pagination.pageSize : limit);
 
   useEffect(() => {
-    setPage(1);
-  }, [localSearch]);
+    setLocalSearch(initialSearch);
+  }, [initialSearch]);
 
-  const filteredAndSortedRows = useMemo(() => {
-    let result = [...rows];
-    if (showSearch && localSearch.trim()) {
-      const lower = localSearch.toLowerCase();
-      result = result.filter(row => 
-        Object.values(row).some(value => String(value || "").toLowerCase().includes(lower))
-      );
+  const cleanColumns = useMemo(() => {
+    return columns.filter(column => !column.startsWith("_"));
+  }, [columns]);
+
+  const primaryLinkColumn = useMemo(() => {
+    const preferred = [
+      "ชื่อ-นามสกุล",
+      "ชื่อ Project",
+      "ชื่อโครงการ",
+      "ชื่อร้านค้า",
+      "ชื่อร้าน",
+      "ชื่อบริษัท",
+      "ชื่อลูกค้า",
+      "ชื่อธนาคาร",
+      "ชื่อประเภทสินค้า",
+      "หมายเลขทะเบียน",
+      "ชื่อ",
+      "ชื่อเล่น",
+    ];
+    for (const col of preferred) {
+      if (cleanColumns.includes(col)) return col;
     }
-    // Always sort by sequence ID (latest first by default)
-    result.sort((a, b) => {
-      const seqA = extractRowSequence(a);
-      const seqB = extractRowSequence(b);
-      if (seqA !== seqB) {
-        return sortDesc ? seqB - seqA : seqA - seqB;
-      }
-      return 0;
-    });
-    return result;
-  }, [rows, localSearch, showSearch, sortDesc]);
+    return cleanColumns[0] || "";
+  }, [cleanColumns]);
 
-  const totalRows = filteredAndSortedRows.length;
-  const totalPages = pagination ? Math.max(1, Math.ceil(totalRows / pageSize)) : 1;
-  const currentPage = pagination ? clampPage(page, totalPages) : 1;
-  const startIndex = pagination ? (currentPage - 1) * pageSize : 0;
-  const visibleRows = pagination ? filteredAndSortedRows.slice(startIndex, startIndex + pageSize) : filteredAndSortedRows.slice(0, limit);
+  const filteredRows = useMemo(() => {
+    if (!localSearch.trim()) return rows;
+    const query = localSearch.toLowerCase().trim();
+    return rows.filter(row => {
+      return Object.values(row).some(value =>
+        String(value || "").toLowerCase().includes(query)
+      );
+    });
+  }, [rows, localSearch]);
+
+  const totalRows = filteredRows.length;
+  const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const startIndex = (currentPage - 1) * pageSize;
+  const visibleRows = filteredRows.slice(startIndex, startIndex + pageSize);
   const displayStart = visibleRows.length ? startIndex + 1 : 0;
   const displayEnd = startIndex + visibleRows.length;
 
-  const cleanColumns = useMemo(() => columns.filter(col => Boolean(col && String(col).trim())), [columns]);
-
   return (
-    <div className="flex flex-col h-full bg-white rounded-md border border-slate-200 overflow-hidden text-xs text-slate-800">
-      <div className="px-4 py-3 border-b border-slate-200 bg-white flex flex-wrap items-center justify-between gap-3 shrink-0">
-        <div>
-          <h3 className="text-sm font-bold text-slate-900 tracking-tight m-0">{title}</h3>
-          {subtitle ? <span className="text-xs text-slate-500 font-normal">{subtitle}</span> : null}
+    <div className="bg-white rounded-lg border border-slate-200 shadow-2xs overflow-hidden flex flex-col font-sans">
+      <div className="p-3 sm:p-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 bg-white">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="w-7 h-7 rounded bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-xs shrink-0">
+            <List size={14} />
+          </span>
+          <div className="min-w-0">
+            <h2 className="text-xs font-bold text-slate-900 truncate tracking-tight">{title}</h2>
+            {subtitle ? <p className="text-[11px] text-slate-500 truncate">{subtitle}</p> : null}
+          </div>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
+            {totalRows} {rowLabel}
+          </span>
         </div>
+
         <div className="flex items-center gap-2">
-          {actionButton}
-          {showSearch && (
-            <div className="flex items-center bg-white border border-slate-300 focus-within:border-slate-500 rounded-md px-2.5 py-1 h-8 w-56 transition">
-              <Search size={14} className="text-slate-400 shrink-0" />
+          {showSearch ? (
+            <div className="relative flex items-center">
+              <Search size={13} className="absolute left-2.5 text-slate-400 pointer-events-none" />
               <input
                 type="text"
                 placeholder="ค้นหา..."
                 value={localSearch}
-                onChange={e => setLocalSearch(e.target.value)}
-                className="border-none bg-transparent outline-none px-2 text-xs font-normal w-full text-slate-800 placeholder:text-slate-400 min-h-0"
+                onChange={e => {
+                  setLocalSearch(e.target.value);
+                  setPage(1);
+                }}
+                className="bg-slate-50 border border-slate-200 text-xs pl-7 pr-7 py-1 rounded focus:outline-none focus:bg-white focus:border-slate-400 w-36 sm:w-48 transition"
               />
               {localSearch && (
-                <X size={14} className="cursor-pointer text-slate-400 hover:text-slate-600 shrink-0" onClick={() => setLocalSearch("")} />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLocalSearch("");
+                    setPage(1);
+                  }}
+                  className="absolute right-2 text-slate-400 hover:text-slate-600"
+                >
+                  <X size={12} />
+                </button>
               )}
             </div>
-          )}
-          {sortToggle ? (
-            <button
-              type="button"
-              className="border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
-              onClick={() => setSortDesc(current => !current)}
-              title="สลับการเรียงลำดับ"
-            >
-              {sortDesc ? <ArrowDownWideNarrow size={14} className="text-slate-600 shrink-0" /> : <ArrowUpWideNarrow size={14} className="text-slate-600 shrink-0" />}
-              <span className="text-slate-700 font-semibold">{sortDesc ? "ล่าสุดก่อน" : "เก่าสุดก่อน"}</span>
-            </button>
           ) : null}
+          {actionButton}
         </div>
       </div>
-      {visibleRows.length ? (
-        <div className="flex-1 overflow-auto bg-white">
-          <table className="w-full text-left border-collapse text-xs text-slate-800 font-sans">
+
+      {visibleRows.length > 0 ? (
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs text-slate-700 border-collapse">
             <thead>
               <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-200 text-xs">
                 {cleanColumns.map(column => (
@@ -132,20 +156,24 @@ export function DataTable({ columns, rows, limit = 80, title = "Data", subtitle,
 
                 return (
                   <tr key={`${String(row._sheetRow ?? row.id ?? row["ลำดับ"] ?? row[cleanColumns[0]] ?? "row")}-${index}`} className="hover:bg-slate-50 transition-colors">
-                    {cleanColumns.map(column => (
-                      <td key={column} className={`py-2 px-3 border-r border-slate-100 ${getColumnAlignmentClass(column)}`} data-column={column} data-label={column}>
-                        {column === "ชื่อ Project" && detailBasePath && targetKey ? (
-                          <Link
-                            href={`${detailBasePath}/${encodeURIComponent(targetKey)}`}
-                            className="font-bold text-slate-900 hover:underline"
-                          >
-                            {renderCell(column, row[column], row, cellFormatters)}
-                          </Link>
-                        ) : (
-                          renderCell(column, row[column], row, cellFormatters)
-                        )}
-                      </td>
-                    ))}
+                    {cleanColumns.map(column => {
+                      const isLink = column === primaryLinkColumn;
+
+                      return (
+                        <td key={column} className={`py-2 px-3 border-r border-slate-100 ${getColumnAlignmentClass(column)}`} data-column={column} data-label={column}>
+                          {isLink && detailBasePath && targetKey ? (
+                            <Link
+                              href={`${detailBasePath}/${encodeURIComponent(targetKey)}`}
+                              className="font-bold text-slate-900 hover:underline"
+                            >
+                              {renderCell(column, row[column], row, cellFormatters)}
+                            </Link>
+                          ) : (
+                            renderCell(column, row[column], row, cellFormatters)
+                          )}
+                        </td>
+                      );
+                    })}
                     {detailBasePath && showDetailColumn ? (
                       <td className="py-2 px-3 text-center" data-label="จัดการ">
                         <Link
