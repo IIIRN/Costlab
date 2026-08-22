@@ -1516,8 +1516,58 @@ export async function getLineUserIdByRequester(requesterKey: string): Promise<st
   return "";
 }
 
-export async function getLineConfigIds(): Promise<{ ownerId: string; approverIds: string[] }> {
+export async function getLineTargetIds(): Promise<{ ownerId: string; approverIds: string[]; closerIds: string[] }> {
   try {
+    let ownerId = "";
+    const approverSet = new Set<string>();
+    const closerSet = new Set<string>();
+
+    // 1. Try reading dynamically from users_list in system_options
+    const { data: usersRow } = await supabaseAdmin
+      .from("system_options")
+      .select("data")
+      .eq("id", "users_list")
+      .maybeSingle();
+
+    if (usersRow?.data && Array.isArray(usersRow.data)) {
+      for (const u of usersRow.data) {
+        if (u.status === "Inactive") continue;
+        const lineId = String(u.lineUserId || u.line_user_id || "").trim();
+        if (!lineId) continue;
+
+        if (u.isOwner || (!ownerId && (u.role === "Admin" || u.role === "Owner"))) {
+          ownerId = lineId;
+        }
+
+        // 🟢 Admin (อนุมัติ) / canApprove
+        if (Boolean(u.canApprove) || u.role === "Admin_Approver" || u.role === "Approver") {
+          approverSet.add(lineId);
+        }
+
+        // 🔵 Admin (Approve / ปิดบิล) / canCloseBill
+        if (Boolean(u.canCloseBill) || u.role === "Admin_Closer") {
+          closerSet.add(lineId);
+        }
+      }
+    }
+
+    // 2. Also check master_members table if sets are empty
+    if (approverSet.size === 0) {
+      const { data: members } = await supabaseAdmin.from("master_members").select("*");
+      for (const m of members || []) {
+        const lineId = String(m.line_user_id || "").trim();
+        if (!lineId) continue;
+        const role = String(m.role || m["สิทธิ์การใช้งาน"] || "");
+        if (role === "Admin_Approver" || role === "Approver" || role === "Manager") {
+          approverSet.add(lineId);
+        }
+        if (role === "Admin_Closer") {
+          closerSet.add(lineId);
+        }
+      }
+    }
+
+    // 3. Fallback to line_config in system_options or env
     const { data: configRow } = await supabaseAdmin
       .from("system_options")
       .select("data")
@@ -1525,17 +1575,27 @@ export async function getLineConfigIds(): Promise<{ ownerId: string; approverIds
       .maybeSingle();
 
     const cfg = configRow?.data || {};
-    const ownerId = String(cfg.LINE_USER_ID_OWN || process.env.LINE_USER_ID_OWN || LINE_CONFIG.USER_ID_OWN || "").trim();
-    
+    if (!ownerId) {
+      ownerId = String(cfg.LINE_USER_ID_OWN || process.env.LINE_USER_ID_OWN || LINE_CONFIG.USER_ID_OWN || "").trim();
+    }
     const rawApprovers = String(cfg.LINE_USER_ID_APPROVER || process.env.LINE_USER_ID_APPROVER || LINE_CONFIG.USER_ID_APPROVER || "").trim();
-    const approverIds = rawApprovers.split(",").map(id => id.trim()).filter(Boolean);
+    if (rawApprovers) {
+      rawApprovers.split(",").forEach(id => {
+        const clean = id.trim();
+        if (clean) approverSet.add(clean);
+      });
+    }
 
-    return { ownerId, approverIds };
+    const approverIds = Array.from(approverSet);
+    const closerIds = Array.from(closerSet);
+    return { ownerId, approverIds, closerIds };
   } catch (e) {
-    console.error("Failed fetching LINE config IDs:", e);
-    return { ownerId: "", approverIds: [] };
+    console.error("Failed fetching LINE target IDs:", e);
+    return { ownerId: "", approverIds: [], closerIds: [] };
   }
 }
+
+export const getLineConfigIds = getLineTargetIds;
 
 export type MultiBillFlexOptions = {
   title: string;

@@ -523,7 +523,7 @@ export async function saveEntityBankOption(entityId: string, bankVal: string) {
   try {
     const { data } = await supabaseAdmin.from("system_options").select("*").eq("id", "entity_banks").maybeSingle();
     const existingMap = (data?.data && typeof data.data === "object") ? { ...data.data } : {};
-    existingMap[String(entityId)] = String(bankVal);
+    existingMap[String(entityId).trim()] = String(bankVal).trim();
     await supabaseAdmin.from("system_options").upsert({
       id: "entity_banks",
       data: existingMap,
@@ -533,6 +533,26 @@ export async function saveEntityBankOption(entityId: string, bankVal: string) {
     clearCache("sys_opt:all");
   } catch (e) {
     console.warn("Failed to persist entity bank in system_options:", e);
+  }
+}
+
+export async function saveEntityBanksBatch(bankMap: Record<string, string>) {
+  if (!isSupabaseConfigured() || !Object.keys(bankMap).length) return;
+  try {
+    const { data } = await supabaseAdmin.from("system_options").select("*").eq("id", "entity_banks").maybeSingle();
+    const existing = (data?.data && typeof data.data === "object") ? { ...data.data } : {};
+    for (const [k, v] of Object.entries(bankMap)) {
+      if (k && v) existing[String(k).trim()] = String(v).trim();
+    }
+    await supabaseAdmin.from("system_options").upsert({
+      id: "entity_banks",
+      data: existing,
+      updated_at: new Date().toISOString()
+    });
+    clearCache("sys_opt:entity_banks");
+    clearCache("sys_opt:all");
+  } catch (e) {
+    console.warn("Failed to persist entity banks batch in system_options:", e);
   }
 }
 
@@ -864,6 +884,16 @@ export async function getRowsFromSupabase(tableName: string, maxRows = 10_000): 
     }
 
     if ((tableName === "สินค้า" || dbTable === "products") && mapped.length === 0) {
+      const options = await getSystemOptionsFromSupabase();
+      if (Array.isArray(options["PRODUCT_MASTER_DATA"]) && options["PRODUCT_MASTER_DATA"].length > 0) {
+        return options["PRODUCT_MASTER_DATA"].map((item: any, idx: number) => ({
+          _sheetRow: idx + 2,
+          id_product: item.id || item.code || String(idx + 1),
+          "รหัสสินค้า": item.code || String(idx + 1),
+          "ชื่อประเภทสินค้า": item.name || "",
+          "หมายเหตุ": item.description || ""
+        }));
+      }
       return DEFAULT_PRODUCT_CATEGORIES;
     }
 
@@ -1060,13 +1090,236 @@ export async function insertRowToSupabase(tableName: string, rowData: Record<str
 
     if (res.error) {
       console.warn(`Failed to insert into Supabase '${dbTable}': ${res.error.message}`);
-      return null;
+      throw new Error(`บันทึกลงตาราง '${dbTable}' ไม่สำเร็จ: ${res.error.message}`);
     }
 
     return res.data;
   } catch (err) {
     console.warn(`Exception inserting into Supabase '${dbTable}':`, err);
-    return null;
+    throw err;
+  }
+}
+
+function getBusinessKey(dbTable: string, row: Record<string, any>): string {
+  if (!row || typeof row !== "object") return "";
+
+  if (dbTable === "banks") {
+    return String(row.name || row["ชื่อธนาคาร"] || "").trim().toLowerCase();
+  }
+  if (dbTable === "stores") {
+    return String(row.name || row.full_name || row["ชื่อร้านค้า"] || row["ชื่อเต็ม"] || "").trim().toLowerCase();
+  }
+  if (dbTable === "contractors") {
+    const idCard = String(row.id_card || row["บัตรประจำตัวประชาชน"] || "").trim();
+    if (idCard && idCard.length >= 5) return `idcard:${idCard}`;
+    return String(row.full_name || row.nickname || row["ชื่อ-นามสกุล"] || row["ชื่อเล่น"] || "").trim().toLowerCase();
+  }
+  if (dbTable === "master_members") {
+    const phone = String(row.phone || row["เบอร์โทร"] || "").replace(/\D/g, "");
+    if (phone.length >= 9) return `phone:${phone}`;
+    const idCard = String(row.id_card || row["เลขที่บัตรประชาชน"] || "").trim();
+    if (idCard && idCard.length >= 5) return `idcard:${idCard}`;
+    return String(row.full_name || row.nickname || row["ชื่อ-นามสกุล"] || row["ชื่อเล่น"] || "").trim().toLowerCase();
+  }
+  if (dbTable === "cars") {
+    return String(row.plate_no || row["หมายเลขทะเบียน"] || "").trim().toLowerCase().replace(/\s+/g, "");
+  }
+  if (dbTable === "products") {
+    const code = String(row.code || row["รหัสสินค้า"] || "").trim();
+    if (code) return `code:${code.toLowerCase()}`;
+    return String(row.name || row["ชื่อประเภทสินค้า"] || "").trim().toLowerCase();
+  }
+  if (dbTable === "customers") {
+    return String(row.name || row["ชื่อลูกค้า"] || "").trim().toLowerCase();
+  }
+  if (dbTable === "companies") {
+    return String(row.name_th || row.name_en || row["ชื่อบริษัท"] || row["ชื่ออังกฤษ"] || "").trim().toLowerCase();
+  }
+  if (dbTable === "projects") {
+    return String(row.name || row["ชื่อ Project"] || "").trim().toLowerCase();
+  }
+  if (dbTable === "bills") {
+    const proj = String(row.project_id || row["ID Project"] || "").trim();
+    const bill = String(row.bill_no || row["บิล"] || "").trim();
+    const amount = String(row.amount || row["ยอดเงิน"] || "").trim();
+    const date = String(row.bill_date || row["ว/ด/ป"] || "").trim();
+    if (proj && bill) return `bill:${proj}:${bill}:${amount}:${date}`.toLowerCase();
+    return "";
+  }
+  return "";
+}
+
+function getPrefixForTable(dbTable: string): string {
+  switch (dbTable) {
+    case "banks": return "Ba";
+    case "stores": return "St";
+    case "contractors": return "Con";
+    case "contract_works": return "CW";
+    case "master_members": return "U";
+    case "cars": return "Car";
+    case "customers": return "Cus";
+    case "companies": return "Comp";
+    case "loans": return "L";
+    default: return "";
+  }
+}
+
+export async function bulkInsertRowsToSupabase(tableName: string, rowsData: Record<string, any>[]) {
+  if (!isSupabaseConfigured() || !rowsData.length) return [];
+
+  const dbTable = getDbTableName(tableName);
+  const rawDbRows = rowsData
+    .map(r => mapSheetRowToSupabaseRow(tableName, r))
+    .filter(r => Object.keys(r).length > 0);
+
+  if (!rawDbRows.length) return [];
+
+  try {
+    // 1. Fetch existing records to prevent duplicates and match IDs
+    const { data: existingRecords } = await supabaseAdmin.from(dbTable).select("*");
+    const existingList = existingRecords || [];
+
+    const existingById = new Map<string, Record<string, any>>();
+    const existingByBusinessKey = new Map<string, Record<string, any>>();
+
+    let maxNum = 100;
+    const prefix = getPrefixForTable(dbTable);
+
+    for (const record of existingList) {
+      if (record.id !== undefined && record.id !== null) {
+        existingById.set(String(record.id).trim().toLowerCase(), record);
+
+        const match = String(record.id).match(/\d+/);
+        if (match) {
+          const n = parseInt(match[0], 10);
+          if (!isNaN(n) && n > maxNum) maxNum = n;
+        }
+      }
+
+      const bKey = getBusinessKey(dbTable, record);
+      if (bKey) {
+        existingByBusinessKey.set(bKey, record);
+      }
+    }
+
+    // 2. Intelligent deduplication and ID assignment
+    const dedupedMap = new Map<string, Record<string, any>>();
+
+    for (const incomingRow of rawDbRows) {
+      const rowCopy = { ...incomingRow };
+      const rawId = String(rowCopy.id || "").trim().toLowerCase();
+      const bKey = getBusinessKey(dbTable, rowCopy);
+
+      let matchedRecord: Record<string, any> | undefined;
+
+      if (rawId && existingById.has(rawId)) {
+        matchedRecord = existingById.get(rawId);
+      } else if (bKey && existingByBusinessKey.has(bKey)) {
+        matchedRecord = existingByBusinessKey.get(bKey);
+      }
+
+      if (matchedRecord) {
+        // Link to existing ID to update instead of duplicating
+        rowCopy.id = matchedRecord.id;
+        const dedupKey = String(matchedRecord.id);
+        const merged = { ...matchedRecord, ...(dedupedMap.get(dedupKey) || {}), ...rowCopy };
+        dedupedMap.set(dedupKey, merged);
+      } else {
+        // New record
+        if (!rowCopy.id && dbTable !== "bills") {
+          maxNum++;
+          rowCopy.id = prefix ? `${prefix}${maxNum}` : `${maxNum}`;
+        }
+        const dedupKey = rowCopy.id ? String(rowCopy.id) : (bKey || `temp_${Math.random()}`);
+        dedupedMap.set(dedupKey, rowCopy);
+
+        if (rowCopy.id) {
+          existingById.set(String(rowCopy.id).trim().toLowerCase(), rowCopy);
+        }
+        if (bKey) {
+          existingByBusinessKey.set(bKey, rowCopy);
+        }
+      }
+    }
+
+    const dedupedRows = Array.from(dedupedMap.values());
+
+    // Save entity banks in system_options for stores/contractors/master_members
+    if (dbTable === "stores" || dbTable === "contractors" || dbTable === "master_members") {
+      const bankEntries: Record<string, string> = {};
+      for (const r of dedupedRows) {
+        const eid = String(r.id || "").trim();
+        const bname = String(r.bank_name || r["ธนาคาร"] || "").trim();
+        if (eid && bname) {
+          bankEntries[eid] = bname;
+        }
+      }
+      if (Object.keys(bankEntries).length > 0) {
+        saveEntityBanksBatch(bankEntries).catch(() => {});
+      }
+    }
+
+    const chunkSize = 200;
+    const insertedResults: any[] = [];
+
+    for (let i = 0; i < dedupedRows.length; i += chunkSize) {
+      const chunk = dedupedRows.slice(i, i + chunkSize);
+
+      const sanitizedChunk = chunk.map(item => {
+        const clean: Record<string, any> = {};
+        for (const [k, v] of Object.entries(item)) {
+          if (v !== undefined) clean[k] = v;
+        }
+        return clean;
+      });
+
+      let currentChunk = sanitizedChunk;
+      let res = await supabaseAdmin.from(dbTable).upsert(currentChunk, { onConflict: "id" }).select();
+
+      // Auto-retry if any column is missing in Postgres schema cache (e.g. bank_name)
+      let retries = 0;
+      while (res.error && retries < 6) {
+        retries++;
+        const match = res.error.message.match(/Could not find the '([^']+)' column/i);
+        if (match && match[1]) {
+          const missingCol = match[1];
+          currentChunk = currentChunk.map(item => {
+            const copy = { ...item };
+            delete copy[missingCol];
+            return copy;
+          });
+          res = await supabaseAdmin.from(dbTable).upsert(currentChunk, { onConflict: "id" }).select();
+          continue;
+        }
+        break;
+      }
+
+      if (res.error) {
+        res = await supabaseAdmin.from(dbTable).upsert(currentChunk).select();
+      }
+
+      if (res.error) {
+        res = await supabaseAdmin.from(dbTable).insert(currentChunk).select();
+      }
+
+      if (res.error) {
+        console.warn(`Bulk insert error in table '${dbTable}':`, res.error.message);
+        throw new Error(`นำเข้าข้อมูลตาราง '${dbTable}' ไม่สำเร็จ: ${res.error.message}`);
+      }
+
+      if (res.data) {
+        insertedResults.push(...res.data);
+      }
+    }
+
+    clearCache(`rows:${tableName}`);
+    clearCache(`headers:${tableName}`);
+    clearCache("rows:");
+
+    return insertedResults;
+  } catch (err) {
+    console.warn(`Exception in bulkInsertRowsToSupabase for '${dbTable}':`, err);
+    throw err;
   }
 }
 

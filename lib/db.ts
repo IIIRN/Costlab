@@ -2,6 +2,7 @@ import { cached, clearCache } from "@/lib/cache";
 import { TABLE_KEYS } from "@/lib/config";
 import type { RefOption, TableRow, SheetRow } from "@/lib/types";
 import {
+  bulkInsertRowsToSupabase,
   deleteRowFromSupabase,
   deleteRowsFromSupabase,
   deleteStorageFilesFromSupabase,
@@ -111,12 +112,30 @@ export async function appendRow(tableName: string, row: TableRow) {
     await insertRowToSupabase(tableName, row);
   } catch (e) {
     console.warn(`Supabase appendRow failed for ${tableName}:`, e);
+    throw e;
   }
   clearCache(`rows:${tableName}`);
   clearCache(`headers:${tableName}`);
+  clearCache("rows:");
 }
 
 export const createTableRow = appendRow;
+
+/**
+ * Bulk insert new rows into Supabase in a single batch query
+ */
+export async function bulkAppendRows(tableName: string, rows: TableRow[]) {
+  try {
+    const inserted = await bulkInsertRowsToSupabase(tableName, rows);
+    clearCache(`rows:${tableName}`);
+    clearCache(`headers:${tableName}`);
+    clearCache("rows:");
+    return inserted;
+  } catch (e) {
+    console.warn(`Supabase bulkAppendRows failed for ${tableName}:`, e);
+    throw e;
+  }
+}
 
 /**
  * Update an existing row in Supabase by primary key / ID

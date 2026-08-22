@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { ChevronLeft, ChevronRight, List, Pencil, Plus, Save, Trash2, X, Search, ArrowDownUp, Download, Upload, FileSpreadsheet } from "lucide-react";
+import { ChevronLeft, ChevronRight, List, Pencil, Plus, Save, Trash2, X, Search, ArrowDownUp, Download, Upload, FileSpreadsheet, Loader2 } from "lucide-react";
 import { BillImageThumbnail } from "@/components/BillImageThumbnail";
 import { showConfirm, showToast } from "@/components/ToastProvider";
 import type { RowValue, SheetRow } from "@/lib/types";
 import { formatDateDisplay } from "@/lib/dates";
 
-type BusyState = "add" | "edit" | "delete" | null;
+type BusyState = "add" | "edit" | "delete" | "import" | null;
 const PAGE_SIZE_OPTIONS = [20, 50, 100, 200];
 
 type ManageTableClientProps = {
@@ -72,6 +72,7 @@ export function ManageTableClient({
   const [draftRows, setDraftRows] = useState<Record<string, Record<string, string>>>({});
   const [selectedRows, setSelectedRows] = useState<(string | number)[]>([]);
   const [busy, setBusy] = useState<BusyState>(null);
+  const [importProgress, setImportProgress] = useState<{ current: number; total: number; message: string } | null>(null);
   const [error, setError] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -318,6 +319,9 @@ export function ManageTableClient({
     const file = event.target.files?.[0];
     if (!file) return;
 
+    setBusy("import");
+    setImportProgress({ current: 0, total: 0, message: "กำลังอ่านไฟล์ CSV..." });
+
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
@@ -327,20 +331,25 @@ export function ManageTableClient({
         const parsedRows = parseCSVText(text);
         if (parsedRows.length === 0) throw new Error("ไม่พบข้อมูลในไฟล์ CSV");
 
-        setBusy("add");
-        let successCount = 0;
+        setImportProgress({
+          current: Math.floor(parsedRows.length / 2),
+          total: parsedRows.length,
+          message: `กำลังนำเข้าข้อมูล ${parsedRows.length} รายการเข้าสู่ Supabase...`
+        });
 
-        for (const rowData of parsedRows) {
-          try {
-            await requestJson("/api/rows", {
-              method: "POST",
-              body: JSON.stringify({ tableName, row: rowData })
-            });
-            successCount++;
-          } catch (err) {
-            console.error("CSV Row Import error:", err);
-          }
-        }
+        // Fast Bulk Batch Insert (Single Query Batch)
+        const res = await requestJson("/api/rows", {
+          method: "POST",
+          body: JSON.stringify({ tableName, rows: parsedRows })
+        });
+
+        const successCount = res.count || parsedRows.length;
+
+        setImportProgress({
+          current: parsedRows.length,
+          total: parsedRows.length,
+          message: "นำเข้าข้อมูลสำเร็จแล้ว กำลังรีเฟรชตาราง..."
+        });
 
         showToast("success", `นำเข้าข้อมูลสำเร็จ ${successCount} จาก ${parsedRows.length} รายการ`);
         await reloadRows();
@@ -348,14 +357,30 @@ export function ManageTableClient({
         showToast("error", err instanceof Error ? err.message : "นำเข้าไฟล์ CSV ไม่สำเร็จ");
       } finally {
         setBusy(null);
+        setImportProgress(null);
         event.target.value = "";
       }
     };
     reader.readAsText(file, "UTF-8");
   }
 
+  function detectDelimiter(firstLine: string): string {
+    const commaCount = (firstLine.match(/,/g) || []).length;
+    const semiCount = (firstLine.match(/;/g) || []).length;
+    const tabCount = (firstLine.match(/\t/g) || []).length;
+    if (tabCount > commaCount && tabCount > semiCount) return "\t";
+    if (semiCount > commaCount) return ";";
+    return ",";
+  }
+
   function parseCSVText(text: string): Record<string, string>[] {
-    const cleanText = text.replace(/^\uFEFF/, "");
+    const cleanText = text.replace(/^\uFEFF/, "").trim();
+    if (!cleanText) return [];
+
+    const firstLineEnd = cleanText.indexOf("\n");
+    const firstLine = firstLineEnd !== -1 ? cleanText.slice(0, firstLineEnd) : cleanText;
+    const delimiter = detectDelimiter(firstLine);
+
     const lines: string[][] = [];
     let currentLine: string[] = [];
     let currentCell = "";
@@ -372,7 +397,7 @@ export function ManageTableClient({
         } else {
           insideQuote = !insideQuote;
         }
-      } else if (char === ',' && !insideQuote) {
+      } else if (char === delimiter && !insideQuote) {
         currentLine.push(currentCell.trim());
         currentCell = "";
       } else if ((char === '\r' || char === '\n') && !insideQuote) {
@@ -396,20 +421,32 @@ export function ManageTableClient({
 
     if (lines.length < 2) return [];
 
-    const headers = lines[0].map(h => h.replace(/^"+|"+$/g, '').trim());
+    const rawHeaders = lines[0].map(h => h.replace(/^"+|"+$/g, '').trim());
+    
+    // Normalize headers to match table/view columns
+    const headers = rawHeaders.map(h => {
+      const cleanH = h.trim();
+      const matchedCol = columns.find(c => c.toLowerCase() === cleanH.toLowerCase() || c === cleanH);
+      return matchedCol || cleanH;
+    });
+
     const dataRowsResult: Record<string, string>[] = [];
 
     for (let r = 1; r < lines.length; r++) {
       const rowValues = lines[r];
       const rowObj: Record<string, string> = {};
+      let hasData = false;
       headers.forEach((h, colIdx) => {
         if (h) {
           let val = rowValues[colIdx] ?? "";
           val = val.replace(/^"+|"+$/g, '').trim();
           rowObj[h] = val;
+          if (val) hasData = true;
         }
       });
-      dataRowsResult.push(rowObj);
+      if (hasData) {
+        dataRowsResult.push(rowObj);
+      }
     }
 
     return dataRowsResult;
@@ -468,9 +505,13 @@ export function ManageTableClient({
           </button>
 
           {/* Import CSV Button */}
-          <label className="px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap">
-            <Upload size={14} className="text-indigo-600 shrink-0" />
-            <span>นำเข้า CSV</span>
+          <label className={`px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap ${busy === "import" ? "opacity-60 cursor-not-allowed" : ""}`}>
+            {busy === "import" ? (
+              <Loader2 size={14} className="text-indigo-600 animate-spin shrink-0" />
+            ) : (
+              <Upload size={14} className="text-indigo-600 shrink-0" />
+            )}
+            <span>{busy === "import" ? "กำลังนำเข้า..." : "นำเข้า CSV"}</span>
             <input
               type="file"
               accept=".csv"
@@ -792,6 +833,36 @@ export function ManageTableClient({
           </form>
         </div>
       ) : null}
+
+      {/* 5. IMPORT PROGRESS MODAL OVERLAY */}
+      {importProgress && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 max-w-sm w-full space-y-4 text-center animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+              <Loader2 size={28} className="animate-spin" />
+            </div>
+            <div className="space-y-1.5">
+              <h3 className="text-base font-semibold text-slate-900">กำลังนำเข้าข้อมูล...</h3>
+              <p className="text-xs text-slate-600 font-medium">{importProgress.message}</p>
+            </div>
+            {importProgress.total > 0 && (
+              <div className="space-y-1.5 pt-1">
+                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden border border-slate-200/60">
+                  <div
+                    className="bg-indigo-600 h-full rounded-full transition-all duration-150"
+                    style={{ width: `${Math.round((importProgress.current / Math.max(1, importProgress.total)) * 100)}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-xs text-slate-500 font-mono">
+                  <span>{importProgress.current} / {importProgress.total} รายการ</span>
+                  <span>{Math.round((importProgress.current / Math.max(1, importProgress.total)) * 100)}%</span>
+                </div>
+              </div>
+            )}
+            <p className="text-xs text-slate-400">กรุณารอสักครู่ ระบบกำลังบันทึกลงฐานข้อมูล Supabase</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
