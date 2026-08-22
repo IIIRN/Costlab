@@ -1478,36 +1478,82 @@ function normalizeUri(uri?: string): string {
 export async function getLineUserIdByRequester(requesterKey: string): Promise<string> {
   if (!requesterKey) return "";
   try {
-    const trimmed = String(requesterKey).trim();
-    // 1. Query master_members
+    const trimmed = String(requesterKey).trim().toLowerCase();
+
+    // 1. Query users_list in system_options (Primary source from User Management)
+    const { data: usersRow } = await supabaseAdmin
+      .from("system_options")
+      .select("data")
+      .eq("id", "users_list")
+      .maybeSingle();
+
+    if (usersRow?.data && Array.isArray(usersRow.data)) {
+      const match = usersRow.data.find((u: any) => {
+        const dName = String(u.displayName || "").trim().toLowerCase();
+        const uName = String(u.username || "").trim().toLowerCase();
+        const uId = String(u.id || "").trim().toLowerCase();
+        const phone = String(u.phone || "").replace(/[^0-9]/g, "");
+        const cleanReq = trimmed.replace(/[^0-9]/g, "");
+
+        return (
+          dName === trimmed ||
+          uName === trimmed ||
+          uId === trimmed ||
+          (cleanReq && phone && phone === cleanReq) ||
+          dName.includes(trimmed) ||
+          trimmed.includes(dName)
+        );
+      });
+
+      const lineId = String(match?.lineUserId || match?.line_user_id || "").trim();
+      if (lineId) return lineId;
+    }
+
+    // 2. Query master_members
     const { data: members } = await supabaseAdmin
       .from("master_members")
       .select("*");
     
     if (members && members.length > 0) {
-      const match = members.find(m => 
-        String(m.id || "").trim() === trimmed ||
-        String(m["รหัสพนักงาน"] || "").trim() === trimmed ||
-        String(m["ชื่อเล่น"] || "").trim() === trimmed ||
-        String(m["ชื่อ-นามสกุล"] || "").trim() === trimmed ||
-        String(m.name || "").trim() === trimmed
-      );
+      const match = members.find(m => {
+        const id = String(m.id || "").trim().toLowerCase();
+        const empId = String(m["รหัสพนักงาน"] || "").trim().toLowerCase();
+        const nickname = String(m["ชื่อเล่น"] || "").trim().toLowerCase();
+        const fullname = String(m["ชื่อ-นามสกุล"] || "").trim().toLowerCase();
+        const name = String(m.name || "").trim().toLowerCase();
+
+        return (
+          id === trimmed ||
+          empId === trimmed ||
+          nickname === trimmed ||
+          fullname === trimmed ||
+          name === trimmed ||
+          fullname.includes(trimmed) ||
+          trimmed.includes(nickname)
+        );
+      });
       if (match?.line_user_id) return String(match.line_user_id).trim();
       if (match?.["LINE User ID"]) return String(match["LINE User ID"]).trim();
     }
 
-    // 2. Query users
+    // 3. Query users table
     const { data: users } = await supabaseAdmin
       .from("users")
       .select("*");
     if (users && users.length > 0) {
-      const match = users.find(u => 
-        String(u.id || "").trim() === trimmed ||
-        String(u.username || "").trim() === trimmed ||
-        String(u.employee_id || "").trim() === trimmed ||
-        String(u.name || "").trim() === trimmed ||
-        String(u.nickname || "").trim() === trimmed
-      );
+      const match = users.find(u => {
+        const id = String(u.id || "").trim().toLowerCase();
+        const username = String(u.username || "").trim().toLowerCase();
+        const name = String(u.name || "").trim().toLowerCase();
+        const nickname = String(u.nickname || "").trim().toLowerCase();
+
+        return (
+          id === trimmed ||
+          username === trimmed ||
+          name === trimmed ||
+          nickname === trimmed
+        );
+      });
       if (match?.line_user_id) return String(match.line_user_id).trim();
     }
   } catch (e) {
@@ -2182,19 +2228,8 @@ export function createMultiBillFlex(
       }
     ];
   } else if (mode === "completed") {
-    footerButtons = [
-      {
-        type: "button",
-        style: "primary",
-        color: "#059669",
-        height: "sm",
-        action: {
-          type: "message",
-          label: `🎉 รายการเบิกเงินสำเร็จเรียบร้อย (${bills.length} รายการ)`,
-          text: `เบิกสำเร็จ:${sheetRowStr}`
-        }
-      }
-    ];
+    // ไม่มีปุ่มด้านล่างสำหรับการ์ดที่เบิกเงินสำเร็จเรียบร้อยแล้ว
+    footerButtons = [];
   } else {
     // Mode search
     footerButtons = [

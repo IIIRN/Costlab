@@ -90,10 +90,12 @@ export async function POST(req: NextRequest) {
     const targetUserId = await getLineUserIdByRequester(requesterKey);
     const fallbackGroup = await getLineTargetGroup("finance");
 
-    const sendTo = targetUserId || fallbackGroup;
+    // Only send to fallbackGroup if it is an actual LINE Group ID starting with "C"
+    const validGroup = fallbackGroup && fallbackGroup.startsWith("C") ? fallbackGroup : "";
+    const sendTo = targetUserId || validGroup;
 
     if (!sendTo) {
-      return NextResponse.json({ error: "No LINE User ID or Group target found for requester" }, { status: 400 });
+      return NextResponse.json({ error: `No LINE User ID found for requester "${requesterKey}"` }, { status: 400 });
     }
 
     const flex = createWithdrawRequesterFlex(bills, peopleMap);
