@@ -24,7 +24,8 @@ import {
   MessageSquare,
   Sparkles,
   Crown,
-  ExternalLink
+  ExternalLink,
+  CheckCheck
 } from "lucide-react";
 
 type LineConfig = {
@@ -395,12 +396,12 @@ export function LineSystemDashboardClient() {
     return matchesCategory && matchesSearch;
   });
 
-  const detectedOwner = systemUsers.find(
-    (u) => u.isOwner || (u.role === "Admin" && u.lineUserId) || (u.role === "Admin" && !systemUsers.some((x: any) => x.isOwner))
+  const detectedApprovers = systemUsers.filter(
+    (u) => Boolean(u.canApprove) || u.role === "Admin_Approver" || u.role === "Approver"
   );
 
-  const detectedApprovers = systemUsers.filter(
-    (u) => u.canApprove || u.role === "Approver" || u.role === "Admin"
+  const detectedClosers = systemUsers.filter(
+    (u) => Boolean(u.canCloseBill) || u.role === "Admin_Closer"
   );
 
   return (
@@ -791,75 +792,85 @@ export function LineSystemDashboardClient() {
                       <Users size={13} />
                     </div>
                     <span className="text-xs font-semibold text-slate-900">
-                      ผู้รับการแจ้งเตือนส่วนตัว & ผู้อนุมัติ (ซิงค์อัตโนมัติจากหน้า จัดการผู้ใช้)
+                      ผู้มีสิทธิ์อนุมัติตั้งเบิก & ปิดงานบิล (ซิงค์อัตโนมัติจากหน้า จัดการผู้ใช้)
                     </span>
                   </div>
                   <a
                     href="/settings/users"
                     className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:text-emerald-800 hover:underline shrink-0"
                   >
-                    <span>⚙️ กำหนดสิทธิ์ผู้อนุมัติที่หน้า จัดการผู้ใช้</span>
+                    <span>⚙️ จัดการสิทธิ์ที่หน้า จัดการผู้ใช้</span>
                     <ExternalLink size={11} />
                   </a>
                 </div>
 
                 <p className="text-[11px] text-slate-500 leading-relaxed">
-                  ระบบจะดึง LINE User ID ของ <strong>เจ้าของระบบ (OWN)</strong> และ <strong>ผู้อนุมัติบิล (Approvers)</strong> จากหน้าจัดการผู้ใช้ระบบโดยอัตโนมัติ ไม่ต้องกรอกรหัสยาวๆ เองอีกต่อไป
+                  ระบบจะดึง LINE User ID ของ <strong>ผู้ที่อนุมัติตั้งเบิกได้</strong> และ <strong>ผู้ที่ปิดงานได้</strong> จากหน้าจัดการผู้ใช้ระบบโดยอัตโนมัติ
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                  {/* Owner Display */}
-                  <div className="p-2.5 rounded-lg border border-amber-200 bg-amber-50/60 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold text-amber-900 flex items-center gap-1">
-                        <Crown size={12} className="text-amber-600" />
-                        <span>เจ้าของระบบ (OWN / Admin)</span>
-                      </span>
-                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 font-mono">
-                        {detectedOwner ? "พร้อมใช้งาน" : "ยังไม่ระบุ"}
-                      </span>
-                    </div>
-                    {detectedOwner ? (
-                      <div className="text-xs text-slate-800 font-medium truncate">
-                        {detectedOwner.displayName || detectedOwner.username}
-                        <div className="text-[10px] font-mono text-slate-500 truncate">
-                          LINE: {detectedOwner.lineUserId || "ยังไม่ผูก LINE ID"}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-[11px] text-slate-500">
-                        ยังไม่มีผู้ใช้ที่ตั้งเป็นเจ้าของระบบ (ไปที่หน้าจัดการผู้ใช้เพื่อกำหนด)
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Approvers Display */}
-                  <div className="p-2.5 rounded-lg border border-emerald-200 bg-emerald-50/60 space-y-1">
+                  {/* 🟢 Box 1: Approvers (อนุมัติตั้งเบิก) */}
+                  <div className="p-2.5 rounded-lg border border-emerald-200 bg-emerald-50/60 space-y-1.5">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-bold text-emerald-900 flex items-center gap-1">
                         <Check size={12} className="text-emerald-600" />
-                        <span>ผู้อนุมัติบิล (Approvers)</span>
+                        <span>1. ผู้ที่อนุมัติตั้งเบิกได้ (Approvers)</span>
                       </span>
-                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 font-mono">
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 font-mono font-semibold">
                         {detectedApprovers.length} ท่าน
                       </span>
                     </div>
                     {detectedApprovers.length > 0 ? (
-                      <div className="space-y-0.5 max-h-16 overflow-y-auto pr-1">
+                      <div className="space-y-1 max-h-24 overflow-y-auto pr-1">
                         {detectedApprovers.map((u, i) => (
-                          <div key={i} className="text-xs text-slate-800 flex items-center justify-between gap-1">
-                            <span className="truncate">{u.displayName || u.username}</span>
-                            <span className="text-[10px] font-mono text-emerald-700 shrink-0">
+                          <div key={i} className="text-xs text-slate-800 flex items-center justify-between gap-1 p-1 bg-white/80 rounded border border-emerald-100">
+                            <span className="truncate font-medium">{u.displayName || u.username}</span>
+                            <span className={`text-[10px] font-mono shrink-0 ${u.lineUserId ? "text-emerald-700 font-semibold" : "text-slate-400"}`}>
                               {u.lineUserId ? "✓ ผูก LINE แล้ว" : "✕ ยังไม่ผูก LINE"}
                             </span>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <div className="text-[11px] text-slate-500">
-                        ยังไม่มีผู้ใช้ที่มีสิทธิ์อนุมัติบิล (ไปที่หน้าจัดการผู้ใช้เพื่อเปิดสิทธิ์)
+                      <div className="text-[11px] text-slate-500 py-1">
+                        ยังไม่มีผู้ใช้ที่มีสิทธิ์อนุมัติตั้งเบิก (ไปที่หน้าจัดการผู้ใช้เพื่อเปิดสิทธิ์)
                       </div>
                     )}
+                    <p className="text-[10px] text-emerald-700/80 leading-tight">
+                      รับการ์ด Flex ขออนุมัติและกดอนุมัติตั้งเบิกผ่าน LINE
+                    </p>
+                  </div>
+
+                  {/* 🔵 Box 2: Closers (ปิดงาน / ปิดบิล) */}
+                  <div className="p-2.5 rounded-lg border border-blue-200 bg-blue-50/60 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-blue-900 flex items-center gap-1">
+                        <CheckCheck size={12} className="text-blue-600" />
+                        <span>2. ผู้ที่ปิดงาน / ปิดบิลได้ (Closers)</span>
+                      </span>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-100 text-blue-800 font-mono font-semibold">
+                        {detectedClosers.length} ท่าน
+                      </span>
+                    </div>
+                    {detectedClosers.length > 0 ? (
+                      <div className="space-y-1 max-h-24 overflow-y-auto pr-1">
+                        {detectedClosers.map((u, i) => (
+                          <div key={i} className="text-xs text-slate-800 flex items-center justify-between gap-1 p-1 bg-white/80 rounded border border-blue-100">
+                            <span className="truncate font-medium">{u.displayName || u.username}</span>
+                            <span className={`text-[10px] font-mono shrink-0 ${u.lineUserId ? "text-blue-700 font-semibold" : "text-slate-400"}`}>
+                              {u.lineUserId ? "✓ ผูก LINE แล้ว" : "✕ ยังไม่ผูก LINE"}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-[11px] text-slate-500 py-1">
+                        ยังไม่มีผู้ใช้ที่มีสิทธิ์ปิดงานบิล (ไปที่หน้าจัดการผู้ใช้เพื่อเปิดสิทธิ์)
+                      </div>
+                    )}
+                    <p className="text-[10px] text-blue-700/80 leading-tight">
+                      รับการ์ด Flex แจ้งเตือนปิดงานและกดยืนยันจ่ายเงินสำเร็จผ่าน LINE
+                    </p>
                   </div>
                 </div>
               </div>

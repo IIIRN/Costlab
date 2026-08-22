@@ -178,6 +178,8 @@ export function mapSupabaseRowToSheetRow(dbTable: string, row: Record<string, an
     res["หัก"] = row.withholding_tax ?? row["หัก"] ?? dataObj["หัก"];
     res["เครดิต"] = row.credit_days ?? row["เครดิต"] ?? dataObj["เครดิต"];
     res["ผู้เบิก"] = row.requester ?? row["ผู้เบิก"] ?? dataObj["ผู้เบิก"];
+    res["ผู้สร้างบิล"] = row.created_by ?? row["ผู้สร้างบิล"] ?? dataObj["ผู้สร้างบิล"] ?? dataObj["ผู้บันทึก"] ?? "";
+    res["created_by"] = res["ผู้สร้างบิล"];
     res["รูปถ่ายบิล"] = row.image_url ?? row["รูปถ่ายบิล"] ?? dataObj["รูปถ่ายบิล"];
     res["สถานะ"] = row.status ?? row["สถานะ"] ?? dataObj["สถานะ"];
     res["ว/ด/ป"] = row.bill_date ? String(row.bill_date) : row["ว/ด/ป"] ?? dataObj["ว/ด/ป"] ?? (row.created_at ? new Date(row.created_at).toISOString().slice(0, 10) : "");
@@ -360,6 +362,12 @@ export function mapSheetRowToSupabaseRow(tableName: string, row: Record<string, 
 
     const rawRequester = row["ผู้เบิก"] ?? row.requester;
     if (hasValue(rawRequester)) dbRow.requester = String(rawRequester).trim();
+
+    const rawCreatedBy = row["ผู้สร้างบิล"] ?? row.created_by ?? row["ผู้บันทึก"];
+    if (hasValue(rawCreatedBy)) {
+      dbRow.created_by = String(rawCreatedBy).trim();
+      dbRow["ผู้สร้างบิล"] = String(rawCreatedBy).trim();
+    }
 
     const rawImage = row["รูปถ่ายบิล"] ?? row.image_url;
     if (hasValue(rawImage)) dbRow.image_url = String(rawImage).trim();

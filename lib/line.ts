@@ -1848,6 +1848,12 @@ export function createMultiBillFlex(
     return resolveRequesterNameFromMap(raw, peopleMap);
   }
 
+  function getCreatorDisplayName(b: Record<string, any>): string {
+    const raw = String(b["ผู้สร้างบิล"] || b.created_by || b["ผู้บันทึก"] || "").trim();
+    if (!raw) return "";
+    return resolveRequesterNameFromMap(raw, peopleMap);
+  }
+
   const mode = options.mode || "search";
 
   const totalAmount = bills.reduce((sum, b) => sum + Number(b["ยอดเงิน"] || b.amount || 0), 0);
@@ -1855,6 +1861,7 @@ export function createMultiBillFlex(
 
   const firstBill = bills[0];
   const firstReq = getRequesterDisplayName(firstBill);
+  const firstCreator = getCreatorDisplayName(firstBill);
   const sheetRowIds = bills.map(b => String(b._sheetRow || b.id || b["ลำดับ"] || "").trim()).filter(Boolean);
   const sheetRowStr = sheetRowIds.join(",");
 
@@ -1888,7 +1895,7 @@ export function createMultiBillFlex(
       },
       {
         type: "text",
-        text: `พบทั้งหมด ${bills.length} รายการ${firstReq && firstReq !== "-" ? ` | ผู้เบิก: ${firstReq}` : ""}`,
+        text: `พบทั้งหมด ${bills.length} รายการ${firstReq && firstReq !== "-" ? ` | ผู้เบิก: ${firstReq}` : ""}${firstCreator && firstCreator !== firstReq && firstCreator !== "-" ? ` (ผู้สร้าง: ${firstCreator})` : ""}`,
         color: "#047857",
         size: "xs",
         margin: "xs"
@@ -1901,6 +1908,7 @@ export function createMultiBillFlex(
     const bId = String(b._sheetRow || b.id || b["ลำดับ"] || idx + 1);
     const amt = Number(b["ยอดเงิน"] || b.amount || 0).toLocaleString("th-TH");
     const requesterName = getRequesterDisplayName(b);
+    const creatorName = getCreatorDisplayName(b);
     const vendorName = b["ร้าน/บุคคล"] || b.vendor_or_person || "-";
     const billType = b["บิล"] || b.bill || b.bill_type || "ทั่วไป";
     const projName = b["ชื่อ Project"] || b.project_name || "โครงการทั่วไป";
@@ -2054,6 +2062,18 @@ export function createMultiBillFlex(
             { type: "text", text: `${requesterName} / ${vendorName}`, size: "xxs", color: "#1E293B", flex: 7, wrap: true }
           ]
         },
+        // Creator Row (if different from requester)
+        ...(creatorName && creatorName !== requesterName && creatorName !== "-" ? [
+          {
+            type: "box",
+            layout: "baseline",
+            margin: "xs",
+            contents: [
+              { type: "text", text: "ผู้สร้างบิล:", size: "xxs", color: "#64748B", flex: 3 },
+              { type: "text", text: `${creatorName} (บันทึกแทน)`, size: "xxs", color: "#0284C7", flex: 7, wrap: true }
+            ]
+          }
+        ] : []),
         // Description Row
         {
           type: "box",
