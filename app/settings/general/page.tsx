@@ -291,9 +291,9 @@ export default function GeneralSettingsPage() {
         {/* Right Column: Live Sidebar Preview (1 col) */}
         <div>
           <div className="bg-[#0b3531] border border-[#0d3f3a] rounded-md p-3.5 text-slate-100 space-y-3 sticky top-4 shadow-2xs">
-            <div className="text-[10px] font-medium uppercase text-[#8eaba5] flex items-center justify-between border-b border-[#12443e] pb-1.5">
+            <div className="text-xs font-medium uppercase text-[#8eaba5] flex items-center justify-between border-b border-[#12443e] pb-1.5">
               <span>Sidebar Live Preview</span>
-              <span className="text-[9px] bg-[#d4f54e] text-[#0b3531] px-1.5 py-0.2 rounded font-medium">
+              <span className="text-xs bg-[#d4f54e] text-[#0b3531] px-1.5 py-0.2 rounded font-medium">
                 Live
               </span>
             </div>
@@ -311,7 +311,7 @@ export default function GeneralSettingsPage() {
                 <div className="font-medium text-white truncate text-xs leading-tight">
                   {settings.companyName || "ชื่อบริษัท..."}
                 </div>
-                <div className="text-[10px] text-[#8eaba5] truncate leading-tight mt-0.5">
+                <div className="text-xs text-[#8eaba5] truncate leading-tight mt-0.5">
                   {settings.companySubTitle || "คำอธิบายย่อย..."}
                 </div>
               </div>
@@ -319,7 +319,7 @@ export default function GeneralSettingsPage() {
 
             {/* Header Document Preview */}
             <div className="p-2.5 bg-white text-slate-900 rounded border border-slate-200 space-y-1">
-              <div className="text-[9px] text-slate-400 uppercase">ตัวอย่างหัวรายงาน</div>
+              <div className="text-xs text-slate-400 uppercase">ตัวอย่างหัวรายงาน</div>
               <div className="flex items-center gap-2 pt-0.5">
                 <div className="w-6 h-6 rounded bg-slate-100 flex items-center justify-center shrink-0">
                   {settings.logoUrl ? (
@@ -329,8 +329,8 @@ export default function GeneralSettingsPage() {
                   )}
                 </div>
                 <div className="min-w-0">
-                  <div className="font-medium truncate text-[11px]">{settings.companyName || "ชื่อบริษัท..."}</div>
-                  <div className="text-[9px] text-slate-500 font-mono">Tax ID: {settings.taxId || "-"}</div>
+                  <div className="font-medium truncate text-xs">{settings.companyName || "ชื่อบริษัท..."}</div>
+                  <div className="text-xs text-slate-500 font-mono">Tax ID: {settings.taxId || "-"}</div>
                 </div>
               </div>
             </div>

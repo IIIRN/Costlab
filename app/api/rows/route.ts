@@ -84,11 +84,13 @@ export async function PATCH(request: NextRequest) {
     const sheetRow = Number(body.sheetRow);
     const patch = body.values && typeof body.values === "object" ? body.values as SheetRow : {};
     const existingRows = await getRows(tableName);
+    const keyCol = TABLE_KEYS[tableName] || "";
     const existing = existingRows.find((row: SheetRow) =>
       Number(row._sheetRow) === sheetRow ||
       String(row._sheetRow) === String(body.sheetRow) ||
-      String(row[TABLE_KEYS[tableName] || ""]) === String(body.sheetRow) ||
+      (keyCol && String(row[keyCol]) === String(body.sheetRow)) ||
       (row.id !== undefined && String(row.id) === String(body.sheetRow)) ||
+      (row.id_Conwork !== undefined && String(row.id_Conwork) === String(body.sheetRow)) ||
       (row.id_bank !== undefined && String(row.id_bank) === String(body.sheetRow)) ||
       (row.id_store !== undefined && String(row.id_store) === String(body.sheetRow)) ||
       (row.id_Contractor !== undefined && String(row.id_Contractor) === String(body.sheetRow))
@@ -110,11 +112,13 @@ export async function PATCH(request: NextRequest) {
       validateRequiredBySchema(values, tableName);
       if (tableName === TABLES.DATA) await validateBillRelations(values);
     }
+    const isContractWork = tableName === TABLES.CONTRACT_WORK || tableName === "Contract_work" || tableName === "contract_works" || tableName === "ContractWork";
+    const isProject = tableName === TABLES.PROJECT || tableName === "Project" || tableName === "projects";
     const output = isFollowUpOrStatusPatch
       ? values
-      : tableName === TABLES.CONTRACT_WORK
+      : isContractWork
         ? await applyContractFormulas(values)
-        : tableName === TABLES.PROJECT
+        : isProject
           ? applyProjectFormulas(values)
           : tableName === TABLES.DATA
             ? await applyBillFormulas(values)
@@ -214,7 +218,7 @@ function canManageTable(tableName: string) {
     "Project", "projects", "project",
     "ร้านค้า", "stores", "store",
     "รับเหมา", "contractors", "contractor",
-    "งานรับเหมา", "contract_works", "ContractWork", "contractwork", "CONTRACT_WORK",
+    "งานรับเหมา", "contract_works", "ContractWork", "contractwork", "CONTRACT_WORK", "Contract_work",
     "รายชื่อ", "master_members", "PEOPLE", "Master Member", "people",
     "ธนาคาร", "banks", "bank", "BANK",
     "ทะเบียน", "cars", "car", "CAR",

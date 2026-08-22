@@ -88,7 +88,7 @@ export default function SettingsPage() {
           <Database size={16} className="text-emerald-700 shrink-0" />
           <h1 className="text-sm font-medium text-slate-900 tracking-tight">สถานะ Supabase Database (System Status)</h1>
           {refreshing && (
-            <span className="text-[10px] text-slate-500 flex items-center gap-1">
+            <span className="text-xs text-slate-500 flex items-center gap-1">
               <RefreshCw size={11} className="animate-spin text-emerald-600" />
               <span>กำลังอัปเดต...</span>
             </span>
@@ -109,7 +109,7 @@ export default function SettingsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {/* Card 1 */}
         <div className="bg-white border border-slate-200 p-3 rounded-md shadow-2xs space-y-1">
-          <div className="flex items-center justify-between text-[10px] font-medium text-slate-500 uppercase">
+          <div className="flex items-center justify-between text-xs font-medium text-slate-500 uppercase">
             <span>การเชื่อมต่อ DB</span>
             <Activity size={14} className={data?.connectionOk ? "text-emerald-600" : "text-amber-500"} />
           </div>
@@ -119,29 +119,29 @@ export default function SettingsPage() {
               {data?.connectionOk ? "Supabase Active" : loading ? "กำลังตรวจสอบ..." : "Sheets Fallback"}
             </span>
           </div>
-          <p className="text-[10px] text-slate-500 font-mono truncate m-0">{data?.connectionMessage || "กำลังตรวจสอบ..."}</p>
+          <p className="text-xs text-slate-500 font-mono truncate m-0">{data?.connectionMessage || "กำลังตรวจสอบ..."}</p>
         </div>
 
         {/* Card 2 */}
         <div className="bg-white border border-slate-200 p-3 rounded-md shadow-2xs space-y-1">
-          <div className="flex items-center justify-between text-[10px] font-medium text-slate-500 uppercase">
+          <div className="flex items-center justify-between text-xs font-medium text-slate-500 uppercase">
             <span>ความเร็ว Latency</span>
             <Zap size={14} className="text-amber-500" />
           </div>
           <div className="text-sm font-medium text-slate-900">
             {data?.connectionOk ? `${data.latencyMs} ms` : "-"}
           </div>
-          <p className="text-[10px] text-slate-500 m-0">{data?.connectionOk ? "ตอบสนองรวดเร็ว" : "รอเชื่อมต่อ"}</p>
+          <p className="text-xs text-slate-500 m-0">{data?.connectionOk ? "ตอบสนองรวดเร็ว" : "รอเชื่อมต่อ"}</p>
         </div>
 
         {/* Card 3 */}
         <div className="bg-white border border-slate-200 p-3 rounded-md shadow-2xs space-y-1">
-          <div className="flex items-center justify-between text-[10px] font-medium text-slate-500 uppercase">
+          <div className="flex items-center justify-between text-xs font-medium text-slate-500 uppercase">
             <span>Storage Bucket (รูปบิล)</span>
             <HardDrive size={14} className="text-indigo-600" />
           </div>
           <div className="font-medium text-slate-900 text-xs truncate">{data?.billsBucketStatus || "กำลังตรวจสอบ..."}</div>
-          <p className="text-[10px] text-slate-500 m-0">สำหรับรูปใบเสร็จ & ไฟล์แนบ</p>
+          <p className="text-xs text-slate-500 m-0">สำหรับรูปใบเสร็จ & ไฟล์แนบ</p>
         </div>
       </div>
 
@@ -153,7 +153,7 @@ export default function SettingsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 font-mono text-xs">
           <div className="p-2.5 bg-slate-50 rounded border border-slate-200 flex items-center justify-between">
             <div className="min-w-0">
-              <div className="text-slate-500 text-[10px] font-sans">SUPABASE_URL</div>
+              <div className="text-slate-500 text-xs font-sans">SUPABASE_URL</div>
               <div className="text-slate-800 font-medium truncate">{data?.maskedUrl || "-"}</div>
             </div>
             {data?.isConfigured ? <CheckCircle2 size={15} className="text-emerald-600 shrink-0 ml-1" /> : <AlertTriangle size={15} className="text-amber-500 shrink-0 ml-1" />}
@@ -161,7 +161,7 @@ export default function SettingsPage() {
 
           <div className="p-2.5 bg-slate-50 rounded border border-slate-200 flex items-center justify-between">
             <div>
-              <div className="text-slate-500 text-[10px] font-sans">ANON_KEY</div>
+              <div className="text-slate-500 text-xs font-sans">ANON_KEY</div>
               <div className="text-slate-800 font-medium">{data?.isAnonKeySet ? "ตั้งค่าแล้ว" : "ยังไม่ได้ตั้งค่า"}</div>
             </div>
             {data?.isAnonKeySet ? <CheckCircle2 size={15} className="text-emerald-600 shrink-0" /> : <AlertTriangle size={15} className="text-amber-500 shrink-0" />}
@@ -169,7 +169,7 @@ export default function SettingsPage() {
 
           <div className="p-2.5 bg-slate-50 rounded border border-slate-200 flex items-center justify-between">
             <div>
-              <div className="text-slate-500 text-[10px] font-sans">SERVICE_ROLE_KEY</div>
+              <div className="text-slate-500 text-xs font-sans">SERVICE_ROLE_KEY</div>
               <div className="text-slate-800 font-medium">{data?.isServiceKeySet ? "ตั้งค่าแล้ว" : "ยังไม่ได้ตั้งค่า"}</div>
             </div>
             {data?.isServiceKeySet ? <CheckCircle2 size={15} className="text-emerald-600 shrink-0" /> : <AlertTriangle size={15} className="text-amber-500 shrink-0" />}
@@ -188,8 +188,8 @@ export default function SettingsPage() {
             data.tableStats.map((t) => (
               <div key={t.table} className="p-2 bg-slate-50 rounded border border-slate-200 flex items-center justify-between">
                 <div className="min-w-0">
-                  <div className="font-medium text-slate-800 truncate text-[11px]">{t.name}</div>
-                  <div className="text-[10px] text-slate-400 font-mono truncate">{t.table}</div>
+                  <div className="font-medium text-slate-800 truncate text-xs">{t.name}</div>
+                  <div className="text-xs text-slate-400 font-mono truncate">{t.table}</div>
                 </div>
                 <div className="text-right shrink-0 ml-1">
                   <div className="font-medium text-emerald-800 text-xs">

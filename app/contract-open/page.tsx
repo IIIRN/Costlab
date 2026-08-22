@@ -3,6 +3,7 @@ import { TABLES } from "@/lib/config";
 import { hydrateContractRows } from "@/lib/formulas";
 import { getRows } from "@/lib/db";
 import { getViewColumns } from "@/lib/views";
+import { getFormPayload } from "@/lib/form";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,14 @@ export default async function ContractOpenPage() {
   const fallback = hydratedRows[0] ? Object.keys(hydratedRows[0]).filter((column) => !column.startsWith("_")) : [];
   const columns = getViewColumns("เปิดจ้าง", fallback);
 
-  return <ContractOpenDashboardClient columns={columns} initialRows={hydratedRows} />;
+  const formPayload = await getFormPayload(TABLES.CONTRACT_WORK, {
+    [TABLES.CONTRACT_WORK]: rawRows,
+    [TABLES.PROJECT]: projectRows,
+    [TABLES.CONTRACTOR]: contractorRows,
+    [TABLES.DATA]: dataRows,
+  }).catch(() => null);
+
+  return <ContractOpenDashboardClient columns={columns} initialRows={hydratedRows} form={formPayload} />;
 }
 
 async function safeRows(tableName: string) {

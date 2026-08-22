@@ -6,6 +6,7 @@ import { isCommittedBill } from "@/lib/bill-status";
 import { TABLES } from "@/lib/config";
 import { hydrateBillRows, hydrateContractRows } from "@/lib/formulas";
 import { getRows } from "@/lib/db";
+import { getFormPayload } from "@/lib/form";
 import { money } from "@/lib/numbers";
 import type { SheetRow } from "@/lib/types";
 import { notFound } from "next/navigation";
@@ -53,12 +54,20 @@ export default async function ContractDetailPage({ params }: ContractDetailPageP
   const { contractId } = await params;
   const decodedContractId = decodeURIComponent(contractId).trim();
 
-  const [contractRows, rawDataRows, contractorRows, peopleRows] = await Promise.all([
+  const [contractRows, rawDataRows, contractorRows, peopleRows, projectRows] = await Promise.all([
     getRows(TABLES.CONTRACT_WORK, 15_000).then(rows => hydrateContractRows(rows)).catch(() => []),
     getRows(TABLES.DATA, 15_000).catch(() => []),
     getRows(TABLES.CONTRACTOR, 15_000).catch(() => []),
-    getRows(TABLES.PEOPLE, 15_000).catch(() => [])
+    getRows(TABLES.PEOPLE, 15_000).catch(() => []),
+    getRows(TABLES.PROJECT, 15_000).catch(() => [])
   ]);
+
+  const formPayload = await getFormPayload(TABLES.CONTRACT_WORK, {
+    [TABLES.CONTRACT_WORK]: contractRows,
+    [TABLES.PROJECT]: projectRows,
+    [TABLES.CONTRACTOR]: contractorRows,
+    [TABLES.DATA]: rawDataRows
+  }).catch(() => null);
 
   const dataRows = await hydrateBillRows(rawDataRows);
   const rawContract = contractRows.find(row => String(row.id_Conwork || "").trim() === decodedContractId);
@@ -105,40 +114,40 @@ export default async function ContractDetailPage({ params }: ContractDetailPageP
             <span>รายการเปิดจ้าง</span>
           </Link>
           <span className="text-slate-300">/</span>
-          <span className="text-xs font-bold text-slate-700">{decodedContractId}</span>
+          <span className="text-xs text-slate-700">{decodedContractId}</span>
         </div>
-        <ContractDetailEditButton row={contract} />
+        <ContractDetailEditButton row={contract} form={formPayload} />
       </div>
 
       {/* TITLE & META */}
       <div>
-        <h1 className="text-lg font-bold text-slate-900">{displayName}</h1>
-        <p className="text-xs text-slate-500 mt-0.5">โครงการ: <span className="font-semibold text-slate-700">{projectName}</span></p>
+        <h1 className="text-lg text-slate-900">{displayName}</h1>
+        <p className="text-xs text-slate-500 mt-0.5">โครงการ: <span className="text-slate-700">{projectName}</span></p>
       </div>
 
       {/* FINANCIAL SUMMARY */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
         <div className="border border-slate-200 rounded-xl md:rounded-md p-3 sm:p-4 bg-white shadow-2xs">
-          <div className="text-[11px] text-slate-400 font-medium mb-0.5">ยอดเงินจ้างรวม</div>
-          <div className="text-base sm:text-lg font-bold text-slate-900">{money(total)}</div>
+          <div className="text-xs text-slate-400 font-medium mb-0.5">ยอดเงินจ้างรวม</div>
+          <div className="text-base sm:text-lg text-slate-900">{money(total)}</div>
         </div>
 
         <div className="border border-slate-200 rounded-xl md:rounded-md p-3 sm:p-4 bg-white shadow-2xs">
-          <div className="flex items-center justify-between text-[11px] text-slate-400 font-medium mb-0.5">
+          <div className="flex items-center justify-between text-xs text-slate-400 font-medium mb-0.5">
             <span>ยอดจ่ายแล้ว</span>
-            <span className="text-emerald-700 font-bold">{payPercent}%</span>
+            <span className="text-emerald-700 ">{payPercent}%</span>
           </div>
-          <div className="text-base sm:text-lg font-bold text-emerald-700">{money(paid)}</div>
+          <div className="text-base sm:text-lg text-emerald-700">{money(paid)}</div>
           <div className="mt-1.5 w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
             <div className="bg-emerald-500 h-full rounded-full transition-all duration-300" style={{ width: `${payPercent}%` }} />
           </div>
         </div>
 
         <div className="border border-slate-200 rounded-xl md:rounded-md p-3 sm:p-4 bg-white shadow-2xs">
-          <div className="text-[11px] text-slate-400 font-medium mb-0.5">ค่าแรงคงเหลือ</div>
-          <div className={`text-base sm:text-lg font-bold ${remaining < 0 ? "text-rose-600" : "text-amber-700"}`}>
+          <div className="text-xs text-slate-400 font-medium mb-0.5">ค่าแรงคงเหลือ</div>
+          <div className={`text-base sm:text-lg ${remaining < 0 ? "text-rose-600" : "text-amber-700"}`}>
             {money(remaining)}
-            {remaining < 0 && <span className="text-[10px] text-rose-500 ml-1">จ่ายเกิน</span>}
+            {remaining < 0 && <span className="text-xs text-rose-500 ml-1">จ่ายเกิน</span>}
           </div>
         </div>
       </div>
@@ -149,7 +158,7 @@ export default async function ContractDetailPage({ params }: ContractDetailPageP
         {/* Left: Contract Info Table */}
         <div className="lg:col-span-4 border border-slate-200 rounded-md bg-white overflow-hidden">
           <div className="px-3 py-2 border-b border-slate-200 bg-slate-50">
-            <h2 className="text-xs font-bold text-slate-700">ข้อมูลสัญญาและผู้รับเหมา</h2>
+            <h2 className="text-xs text-slate-700">ข้อมูลสัญญาและผู้รับเหมา</h2>
           </div>
           <table className="w-full text-xs">
             <tbody className="divide-y divide-slate-100">
@@ -159,7 +168,7 @@ export default async function ContractDetailPage({ params }: ContractDetailPageP
                 return (
                   <tr key={field}>
                     <td className="px-3 py-2 text-slate-500 font-medium whitespace-nowrap w-[38%]">{field}</td>
-                    <td className={`px-3 py-2 font-semibold ${isAmount ? "text-indigo-700" : "text-slate-800"}`}>
+                    <td className={`px-3 py-2 ${isAmount ? "text-indigo-700" : "text-slate-800"}`}>
                       {formatDetailValue(field, val)}
                     </td>
                   </tr>

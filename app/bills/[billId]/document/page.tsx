@@ -64,7 +64,7 @@ export default async function BillDocumentPage({ params }: BillDocumentPageProps
           <span className="text-slate-500">|</span>
           <div className="flex items-center gap-2">
             <FileText size={16} className="text-emerald-400" />
-            <h1 className="text-sm font-bold text-slate-100 truncate">
+            <h1 className="text-sm text-slate-100 truncate">
               เอกสารสัญญาจ้าง / ใบสำคัญจ่าย / 50 ทวิ (บิล #{docData.billSequence})
             </h1>
           </div>

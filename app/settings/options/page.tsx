@@ -209,7 +209,7 @@ export default function SystemOptionsSettingsPage() {
       <div className="flex items-center justify-between border-b border-slate-200 pb-2.5 bg-white p-3 rounded-md border shadow-2xs">
         <div>
           <h1 className="text-sm font-medium text-slate-900 tracking-tight">ตั้งค่าตัวเลือก & เงื่อนไขระบบ (System Options)</h1>
-          <p className="text-slate-500 text-[11px] mt-0.5">จัดการรายชื่อตัวเลือก Dropdown/Enum สำหรับแบบฟอร์มบันทึกบิลและรายการในระบบ</p>
+          <p className="text-slate-500 text-xs mt-0.5">จัดการรายชื่อตัวเลือก Dropdown/Enum สำหรับแบบฟอร์มบันทึกบิลและรายการในระบบ</p>
         </div>
         <button
           type="button"
@@ -251,7 +251,7 @@ export default function SystemOptionsSettingsPage() {
               {/* Items Chip Grid */}
               <div className="flex flex-wrap gap-1 min-h-[36px] items-center p-2 bg-slate-50 rounded border border-slate-200">
                 {currentList.length === 0 ? (
-                  <span className="text-slate-400 italic text-[11px]">ไม่มีรายการตัวเลือก</span>
+                  <span className="text-slate-400 italic text-xs">ไม่มีรายการตัวเลือก</span>
                 ) : (
                   currentList.map((item, idx) => (
                     <span

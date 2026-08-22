@@ -71,7 +71,7 @@ function BillConditions({ row }: { row: SheetRow }) {
     row["เครดิต"] ? `เครดิต ${row["เครดิต"]}` : ""
   ].filter(Boolean);
   return values.length ? (
-    <span className="inline-block px-2 py-0.5 text-[11px] font-medium text-slate-600 bg-slate-100 rounded-md">{values.join(" · ")}</span>
+    <span className="inline-block px-2 py-0.5 text-xs font-medium text-slate-600 bg-slate-100 rounded-md">{values.join(" · ")}</span>
   ) : <span className="text-slate-400 font-mono text-xs">-</span>;
 }
 

@@ -285,11 +285,11 @@ export default function ProductCategoryMasterPage() {
           <div>
             <h1 className="text-sm font-medium text-slate-900 tracking-tight flex items-center gap-1.5">
               <span>จัดการหมวดสินค้า & รหัสจัดกลุ่มงบประมาณ</span>
-              <span className="text-[10px] px-2 py-0.2 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full flex items-center gap-1">
+              <span className="text-xs px-2 py-0.2 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full flex items-center gap-1">
                 <Sparkles size={10} /> Master Data
               </span>
             </h1>
-            <p className="text-slate-500 text-[11px] mt-0.5">จัดการเพิ่ม/ลบหมวดงานหลัก และรหัสประเภทสินค้าอย่างเป็นระบบ</p>
+            <p className="text-slate-500 text-xs mt-0.5">จัดการเพิ่ม/ลบหมวดงานหลัก และรหัสประเภทสินค้าอย่างเป็นระบบ</p>
           </div>
         </div>
 
@@ -380,7 +380,7 @@ export default function ProductCategoryMasterPage() {
               >
                 {getGroupIcon(g)}
                 <span>{g}</span>
-                <span className="text-[10px] font-mono px-1 rounded bg-slate-200/60 text-slate-800">{count}</span>
+                <span className="text-xs font-mono px-1 rounded bg-slate-200/60 text-slate-800">{count}</span>
               </button>
             );
           })}
@@ -424,12 +424,12 @@ export default function ProductCategoryMasterPage() {
                       {cat.name}
                     </td>
                     <td className="py-2 px-3 border-r border-slate-100">
-                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] bg-slate-100 text-slate-700 border border-slate-200">
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-700 border border-slate-200">
                         {getGroupIcon(cat.group)}
                         <span>{cat.group}</span>
                       </span>
                     </td>
-                    <td className="py-2 px-3 text-slate-600 text-[11px] border-r border-slate-100">
+                    <td className="py-2 px-3 text-slate-600 text-xs border-r border-slate-100">
                       {cat.description || "-"}
                     </td>
                     <td className="py-2 px-3 text-center">
@@ -460,7 +460,7 @@ export default function ProductCategoryMasterPage() {
         </div>
 
         {/* Footer Info */}
-        <div className="px-3 py-2 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-500">
+        <div className="px-3 py-2 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
           <span>แสดง {filteredCategories.length} จากทั้งหมด {categories.length} รายการ</span>
           <span> CostLab Master Data Management</span>
         </div>
@@ -611,7 +611,7 @@ export default function ProductCategoryMasterPage() {
                         <div className="flex items-center gap-1.5 text-xs font-normal text-slate-800">
                           {getGroupIcon(group)}
                           <span>{group}</span>
-                          <span className="text-[10px] font-mono px-1 py-0.2 bg-slate-100 text-slate-600 rounded border border-slate-200">
+                          <span className="text-xs font-mono px-1 py-0.2 bg-slate-100 text-slate-600 rounded border border-slate-200">
                             {countInGroup} รายการ
                           </span>
                         </div>
