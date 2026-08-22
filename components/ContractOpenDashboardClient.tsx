@@ -56,7 +56,9 @@ export function ContractOpenDashboardClient({
   const visibleRows = filteredRows.slice(pageStart, pageStart + pageSize);
   const visibleStart = visibleRows.length ? pageStart + 1 : 0;
   const visibleEnd = pageStart + visibleRows.length;
-
+  const totalHire = useMemo(() => filteredRows.reduce((sum, r) => sum + toNumber(r["ยอดเงินจ้าง"]), 0), [filteredRows]);
+  const totalPaid = useMemo(() => filteredRows.reduce((sum, r) => sum + toNumber(r["ยอดเงินจ่าย"]), 0), [filteredRows]);
+  const totalRemaining = totalHire - totalPaid;
 
   useEffect(() => {
     setPage(1);
@@ -64,6 +66,29 @@ export function ContractOpenDashboardClient({
 
   return (
     <div className="w-full flex flex-col gap-3 p-3 sm:p-5 max-w-[1600px] mx-auto font-sans text-sm text-slate-800">
+
+      {/* 1. DESKTOP SUMMARY KPI CARDS (Hidden on Mobile, 4 Columns on Desktop) */}
+      <div className="hidden md:grid grid-cols-4 gap-3">
+        <div className="bg-white rounded-md p-3 border border-slate-200 shadow-2xs">
+          <span className="text-xs text-slate-500 block truncate">สัญญาจ้างทั้งหมด</span>
+          <div className="text-lg text-slate-900 mt-0.5">{filteredRows.length} <span className="text-xs font-normal text-slate-500">สัญญา</span></div>
+        </div>
+
+        <div className="bg-white rounded-md p-3 border border-slate-200 shadow-2xs">
+          <span className="text-xs text-slate-500 block truncate">ยอดเงินจ้างรวม</span>
+          <div className="text-lg text-slate-900 mt-0.5">{money(totalHire)}</div>
+        </div>
+
+        <div className="bg-white rounded-md p-3 border border-slate-200 shadow-2xs">
+          <span className="text-xs text-slate-500 block truncate">ยอดจ่ายแล้วรวม</span>
+          <div className="text-lg text-emerald-700 mt-0.5">{money(totalPaid)}</div>
+        </div>
+
+        <div className="bg-white rounded-md p-3 border border-slate-200 shadow-2xs">
+          <span className="text-xs text-slate-500 block truncate">ค่าแรงคงเหลือรวม</span>
+          <div className="text-lg text-amber-700 mt-0.5">{money(totalRemaining)}</div>
+        </div>
+      </div>
 
       {/* 2. FILTER TOOLBAR & SEARCH */}
       {/* 2. MOBILE SEARCH & SORT TOOLBAR (Visible only on Mobile) */}
