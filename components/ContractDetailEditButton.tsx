@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { FormModal } from "@/components/FormModal";
+import { TABLES } from "@/lib/config";
 import { FORM_SCHEMAS } from "@/lib/schemas";
 import { useRouter } from "next/navigation";
 import { showConfirm, showToast } from "@/components/ToastProvider";
@@ -39,7 +40,7 @@ export function ContractDetailEditButton({ form, row }: ContractDetailEditButton
       const res = await fetch("/api/rows", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tableName: "ContractWork", sheetRows: [sheetRow] })
+        body: JSON.stringify({ tableName: TABLES.CONTRACT_WORK, sheetRows: [sheetRow] })
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "ลบไม่สำเร็จ");
@@ -58,7 +59,7 @@ export function ContractDetailEditButton({ form, row }: ContractDetailEditButton
         <button
           type="button"
           onClick={handleEditClick}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-slate-300 rounded-md bg-white hover:bg-slate-50 text-slate-700 transition"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-slate-300 rounded-md bg-white hover:bg-slate-50 text-slate-700 transition"
         >
           <Pencil size={13} />
           <span>แก้ไข</span>
@@ -67,7 +68,7 @@ export function ContractDetailEditButton({ form, row }: ContractDetailEditButton
           type="button"
           onClick={handleDelete}
           disabled={deleting}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-rose-200 rounded-md bg-white hover:bg-rose-50 text-rose-600 transition disabled:opacity-40"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-rose-200 rounded-md bg-white hover:bg-rose-50 text-rose-600 transition disabled:opacity-40"
         >
           <Trash2 size={13} />
           <span>{deleting ? "กำลังลบ..." : "ลบ"}</span>
@@ -76,7 +77,7 @@ export function ContractDetailEditButton({ form, row }: ContractDetailEditButton
 
       <FormModal
         key="contract-detail-edit-modal"
-        tableName="Contract_work"
+        tableName={TABLES.CONTRACT_WORK}
         form={form}
         buttonLabel="แก้ไขสัญญา"
         title="แก้ไขสัญญาจ้างงาน"

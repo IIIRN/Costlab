@@ -280,7 +280,7 @@ export function BillFollowDashboardClient({
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white border border-slate-700 px-4 py-3 rounded-md shadow-lg flex items-center gap-3 animate-in fade-in duration-200">
           <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
-          <span className="text-xs font-semibold">{toastMessage}</span>
+          <span className="text-xs ">{toastMessage}</span>
           <button type="button" onClick={() => setToastMessage(null)} className="text-slate-400 hover:text-white ml-2">
             <X size={15} />
           </button>
@@ -298,14 +298,14 @@ export function BillFollowDashboardClient({
               : "bg-white border-slate-200 hover:border-slate-300 text-slate-800"
           }`}
         >
-          <div className="flex items-center justify-between text-[10px] sm:text-xs">
-            <span className={`font-bold truncate ${activeTab === "all" ? "text-[#0b3531]" : "text-slate-700"}`}>ทั้งหมด</span>
-            <span className={`shrink-0 ml-1 font-mono text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
+          <div className="flex items-center justify-between text-xs sm:text-xs">
+            <span className={`truncate ${activeTab === "all" ? "text-[#0b3531]" : "text-slate-700"}`}>ทั้งหมด</span>
+            <span className={`shrink-0 ml-1 font-mono text-xs px-1.5 py-0.2 rounded-full ${
               activeTab === "all" ? "bg-[#0b3531] text-[#d4f54e]" : "bg-slate-100 text-slate-500"
             }`}>{allPendingRows.length}</span>
           </div>
           <div className="flex items-baseline justify-between mt-1">
-            <span className={`text-sm sm:text-lg font-bold truncate ${activeTab === "all" ? "text-[#0b3531]" : "text-slate-900"}`}>{money(allPendingTotal)}</span>
+            <span className={`text-sm sm:text-lg truncate ${activeTab === "all" ? "text-[#0b3531]" : "text-slate-900"}`}>{money(allPendingTotal)}</span>
           </div>
         </div>
 
@@ -318,14 +318,14 @@ export function BillFollowDashboardClient({
               : "bg-white border-slate-200 hover:border-slate-300 text-slate-800"
           }`}
         >
-          <div className="flex items-center justify-between text-[10px] sm:text-xs">
-            <span className={`font-bold truncate ${activeTab === "vat" ? "text-[#0b3531]" : "text-slate-700"}`}>ตาม VAT</span>
-            <span className={`shrink-0 ml-1 font-mono text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
+          <div className="flex items-center justify-between text-xs sm:text-xs">
+            <span className={`truncate ${activeTab === "vat" ? "text-[#0b3531]" : "text-slate-700"}`}>ตาม VAT</span>
+            <span className={`shrink-0 ml-1 font-mono text-xs px-1.5 py-0.2 rounded-full ${
               activeTab === "vat" ? "bg-[#0b3531] text-[#d4f54e]" : "bg-slate-100 text-slate-500"
             }`}>{vatRows.length}</span>
           </div>
           <div className="flex items-baseline justify-between mt-1">
-            <span className={`text-sm sm:text-lg font-bold truncate ${activeTab === "vat" ? "text-[#0b3531]" : "text-slate-900"}`}>{money(vatTotal)}</span>
+            <span className={`text-sm sm:text-lg truncate ${activeTab === "vat" ? "text-[#0b3531]" : "text-slate-900"}`}>{money(vatTotal)}</span>
           </div>
         </div>
 
@@ -338,14 +338,14 @@ export function BillFollowDashboardClient({
               : "bg-white border-slate-200 hover:border-slate-300 text-slate-800"
           }`}
         >
-          <div className="flex items-center justify-between text-[10px] sm:text-xs">
-            <span className={`font-bold truncate ${activeTab === "natural" ? "text-[#0b3531]" : "text-slate-700"}`}>หัก 3% บุคคล</span>
-            <span className={`shrink-0 ml-1 font-mono text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
+          <div className="flex items-center justify-between text-xs sm:text-xs">
+            <span className={`truncate ${activeTab === "natural" ? "text-[#0b3531]" : "text-slate-700"}`}>หัก 3% บุคคล</span>
+            <span className={`shrink-0 ml-1 font-mono text-xs px-1.5 py-0.2 rounded-full ${
               activeTab === "natural" ? "bg-[#0b3531] text-[#d4f54e]" : "bg-slate-100 text-slate-500"
             }`}>{naturalDeductRows.length}</span>
           </div>
           <div className="flex items-baseline justify-between mt-1">
-            <span className={`text-sm sm:text-lg font-bold truncate ${activeTab === "natural" ? "text-[#0b3531]" : "text-slate-900"}`}>{money(naturalTotal)}</span>
+            <span className={`text-sm sm:text-lg truncate ${activeTab === "natural" ? "text-[#0b3531]" : "text-slate-900"}`}>{money(naturalTotal)}</span>
           </div>
         </div>
 
@@ -358,14 +358,14 @@ export function BillFollowDashboardClient({
               : "bg-white border-slate-200 hover:border-slate-300 text-slate-800"
           }`}
         >
-          <div className="flex items-center justify-between text-[10px] sm:text-xs">
-            <span className={`font-bold truncate ${activeTab === "company" ? "text-[#0b3531]" : "text-slate-700"}`}>หัก 3% บริษัท</span>
-            <span className={`shrink-0 ml-1 font-mono text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
+          <div className="flex items-center justify-between text-xs sm:text-xs">
+            <span className={`truncate ${activeTab === "company" ? "text-[#0b3531]" : "text-slate-700"}`}>หัก 3% บริษัท</span>
+            <span className={`shrink-0 ml-1 font-mono text-xs px-1.5 py-0.2 rounded-full ${
               activeTab === "company" ? "bg-[#0b3531] text-[#d4f54e]" : "bg-slate-100 text-slate-500"
             }`}>{companyDeductRows.length}</span>
           </div>
           <div className="flex items-baseline justify-between mt-1">
-            <span className={`text-sm sm:text-lg font-bold truncate ${activeTab === "company" ? "text-[#0b3531]" : "text-slate-900"}`}>{money(companyTotal)}</span>
+            <span className={`text-sm sm:text-lg truncate ${activeTab === "company" ? "text-[#0b3531]" : "text-slate-900"}`}>{money(companyTotal)}</span>
           </div>
         </div>
 
@@ -378,14 +378,14 @@ export function BillFollowDashboardClient({
               : "bg-white border-slate-200 hover:border-slate-300 text-slate-800"
           }`}
         >
-          <div className="flex items-center justify-between text-[10px] sm:text-xs">
-            <span className={`font-bold truncate ${activeTab === "credit" ? "text-[#0b3531]" : "text-slate-700"}`}>ตาม เครดิต</span>
-            <span className={`shrink-0 ml-1 font-mono text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
+          <div className="flex items-center justify-between text-xs sm:text-xs">
+            <span className={`truncate ${activeTab === "credit" ? "text-[#0b3531]" : "text-slate-700"}`}>ตาม เครดิต</span>
+            <span className={`shrink-0 ml-1 font-mono text-xs px-1.5 py-0.2 rounded-full ${
               activeTab === "credit" ? "bg-[#0b3531] text-[#d4f54e]" : "bg-slate-100 text-slate-500"
             }`}>{creditRows.length}</span>
           </div>
           <div className="flex items-baseline justify-between mt-1">
-            <span className={`text-sm sm:text-lg font-bold truncate ${activeTab === "credit" ? "text-[#0b3531]" : "text-slate-900"}`}>{money(creditTotal)}</span>
+            <span className={`text-sm sm:text-lg truncate ${activeTab === "credit" ? "text-[#0b3531]" : "text-slate-900"}`}>{money(creditTotal)}</span>
           </div>
         </div>
       </div>
@@ -423,7 +423,7 @@ export function BillFollowDashboardClient({
             <button
               type="button"
               onClick={() => setShowMobileFilters(!showMobileFilters)}
-              className={`md:hidden px-2.5 py-1.5 font-semibold rounded-lg border text-xs flex items-center gap-1 shrink-0 cursor-pointer active:scale-95 transition ${
+              className={`md:hidden px-2.5 py-1.5 rounded-lg border text-xs flex items-center gap-1 shrink-0 cursor-pointer active:scale-95 transition ${
                 showMobileFilters || selectedRequester || selectedDate
                   ? "bg-slate-900 text-white border-slate-900 shadow-2xs"
                   : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200"
@@ -437,7 +437,7 @@ export function BillFollowDashboardClient({
               <button
                 type="button"
                 onClick={copyRequesterBatchText}
-                className="px-2.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs rounded-lg transition cursor-pointer shrink-0 flex items-center gap-1 shadow-2xs active:scale-95"
+                className="px-2.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs rounded-lg transition cursor-pointer shrink-0 flex items-center gap-1 shadow-2xs active:scale-95"
                 title="คัดลอกข้อความสรุปบิลค้างทั้งหมดของผู้เบิกรายนี้"
               >
                 <span>LINE ({filteredRows.length})</span>
@@ -450,7 +450,7 @@ export function BillFollowDashboardClient({
         <div className={`flex-wrap items-center gap-2.5 pt-2 border-t border-slate-100 ${showMobileFilters ? "flex" : "hidden md:flex"}`}>
           {/* Requester dropdown */}
           <div className="flex items-center gap-1.5">
-            <span className="font-semibold text-slate-700 whitespace-nowrap">ผู้เบิก:</span>
+            <span className="text-slate-700 whitespace-nowrap">ผู้เบิก:</span>
             <select
               value={selectedRequester}
               onChange={(e) => {
@@ -474,7 +474,7 @@ export function BillFollowDashboardClient({
 
           {/* Date Picker */}
           <div className="flex items-center gap-1.5">
-            <span className="font-semibold text-slate-700 whitespace-nowrap">วันที่:</span>
+            <span className="text-slate-700 whitespace-nowrap">วันที่:</span>
             <input
               type="date"
               value={selectedDate}
@@ -535,25 +535,25 @@ export function BillFollowDashboardClient({
                     <div className="flex items-center gap-1.5 min-w-0">
                       <Link
                         href={`/bills/${encodeURIComponent(billId)}`}
-                        className="font-bold text-[10px] bg-slate-900 text-white px-1.5 py-0.2 rounded shrink-0 hover:bg-slate-800 active:scale-95 transition"
+                        className="text-xs bg-slate-900 text-white px-1.5 py-0.2 rounded shrink-0 hover:bg-slate-800 active:scale-95 transition"
                         title="ดูรายละเอียดบิล"
                       >
                         #{billId}
                       </Link>
-                      <span className="font-bold text-xs text-slate-900 truncate">
+                      <span className="text-xs text-slate-900 truncate">
                         {project}
                       </span>
                     </div>
 
-                    <span className="text-xs sm:text-sm font-bold text-slate-900 shrink-0">
-                      {money(amount)} <span className="text-[10px] font-normal text-slate-400">฿</span>
+                    <span className="text-xs sm:text-sm text-slate-900 shrink-0">
+                      {money(amount)} <span className="text-xs font-normal text-slate-400">฿</span>
                     </span>
                   </div>
 
                   {/* Row 2: Vendor • Item • Requester • Date ── Aging Tag */}
-                  <div className="flex items-center justify-between gap-2 text-[11px] text-slate-600">
+                  <div className="flex items-center justify-between gap-2 text-xs text-slate-600">
                     <div className="flex items-center gap-1.5 min-w-0 truncate">
-                      <span className="font-semibold text-slate-800 truncate">{vendor}</span>
+                      <span className="text-slate-800 truncate">{vendor}</span>
                       {item && item !== "-" && (
                         <>
                           <span className="text-slate-300">•</span>
@@ -564,7 +564,7 @@ export function BillFollowDashboardClient({
                       <span className="text-slate-400 shrink-0">{requesterName}</span>
                     </div>
 
-                    <span className={`px-1.5 py-0.2 rounded text-[10px] font-semibold shrink-0 ${
+                    <span className={`px-1.5 py-0.2 rounded text-xs shrink-0 ${
                       daysElapsed >= 15
                         ? "bg-rose-50 text-rose-700 border border-rose-200"
                         : daysElapsed >= 8
@@ -580,17 +580,17 @@ export function BillFollowDashboardClient({
                     {/* Condition badges */}
                     <div className="flex flex-wrap items-center gap-1">
                       {hasVat && (
-                        <span className="px-1.5 py-0.2 rounded text-[9.5px] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+                        <span className="px-1.5 py-0.2 rounded text-xs bg-sky-50 text-sky-700 border border-sky-200">
                           VAT {row.vat}
                         </span>
                       )}
                       {hasDeduct && (
-                        <span className="px-1.5 py-0.2 rounded text-[9.5px] font-semibold bg-purple-50 text-purple-700 border border-purple-200">
+                        <span className="px-1.5 py-0.2 rounded text-xs bg-purple-50 text-purple-700 border border-purple-200">
                           หัก {row["หัก"]}% {isCompany ? "(บ.)" : "(บุคคล)"}
                         </span>
                       )}
                       {hasCredit && (
-                        <span className="px-1.5 py-0.2 rounded text-[9.5px] font-semibold bg-orange-50 text-orange-700 border border-orange-200">
+                        <span className="px-1.5 py-0.2 rounded text-xs bg-orange-50 text-orange-700 border border-orange-200">
                           เครดิต {row["เครดิต"]} วัน
                         </span>
                       )}
@@ -612,7 +612,7 @@ export function BillFollowDashboardClient({
                       </button>
 
                       {isCompleted ? (
-                        <span className="px-2 py-1 bg-slate-100 text-slate-400 font-semibold text-[10.5px] rounded-lg border border-slate-200">
+                        <span className="px-2 py-1 bg-slate-100 text-slate-400 text-xs rounded-lg border border-slate-200">
                           ได้บิลแล้ว
                         </span>
                       ) : (
@@ -620,7 +620,7 @@ export function BillFollowDashboardClient({
                           type="button"
                           disabled={isSaving}
                           onClick={() => handleMarkReceived(row, (activeTab === "natural" || activeTab === "company") ? "deduct" : activeTab)}
-                          className="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-[10.5px] rounded-lg transition cursor-pointer disabled:opacity-50 active:scale-95 shadow-2xs"
+                          className="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white text-xs rounded-lg transition cursor-pointer disabled:opacity-50 active:scale-95 shadow-2xs"
                           title="กดเพื่อบันทึกว่าได้รับบิลแล้ว"
                         >
                           {isSaving ? "บันทึก..." : "ได้บิลแล้ว"}
@@ -638,7 +638,7 @@ export function BillFollowDashboardClient({
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-700 border-collapse font-sans">
             <thead>
-              <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-200 text-xs">
+              <tr className="bg-slate-100 text-slate-800 border-b border-slate-200 text-xs">
                 <th className="py-2.5 px-3 border-r border-slate-200">ลำดับ</th>
                 <th className="py-2.5 px-3 border-r border-slate-200">ร้าน/บุคคล</th>
                 <th className="py-2.5 px-3 border-r border-slate-200">Project</th>
@@ -674,10 +674,10 @@ export function BillFollowDashboardClient({
                 return (
                   <tr key={`${billId}-${index}`} className="hover:bg-slate-50 transition-colors">
                     {/* Sequence */}
-                    <td className="py-2 px-3 font-semibold text-slate-800 border-r border-slate-100">
+                    <td className="py-2 px-3 text-slate-800 border-r border-slate-100">
                       <Link
                         href={`/bills/${encodeURIComponent(billId)}`}
-                        className="text-slate-900 font-bold hover:underline"
+                        className="text-slate-900 hover:underline"
                         title="ดูรายละเอียดบิล"
                       >
                         #{billId}
@@ -685,7 +685,7 @@ export function BillFollowDashboardClient({
                     </td>
 
                     {/* Vendor */}
-                    <td className="py-2 px-3 font-bold text-slate-900 border-r border-slate-100">
+                    <td className="py-2 px-3 text-slate-900 border-r border-slate-100">
                       {vendor}
                     </td>
 
@@ -706,7 +706,7 @@ export function BillFollowDashboardClient({
 
                     {/* Days Elapsed Aging */}
                     <td className="py-2 px-3 text-center border-r border-slate-100">
-                      <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                      <span className={`px-2 py-0.5 rounded text-xs ${
                         daysElapsed >= 15
                           ? "bg-rose-50 text-rose-700 border border-rose-200"
                           : daysElapsed >= 8
@@ -723,7 +723,7 @@ export function BillFollowDashboardClient({
                     </td>
 
                     {/* Amount */}
-                    <td className="py-2 px-3 text-right font-bold text-slate-900 border-r border-slate-100">
+                    <td className="py-2 px-3 text-right text-slate-900 border-r border-slate-100">
                       {money(amount)}
                     </td>
 
@@ -731,17 +731,17 @@ export function BillFollowDashboardClient({
                     <td className="py-2 px-3 text-center border-r border-slate-100">
                       <div className="flex flex-wrap items-center justify-center gap-1">
                         {hasVat && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                          <span className="px-1.5 py-0.5 rounded text-xs bg-slate-100 text-slate-700 border border-slate-200">
                             vat {row.vat}
                           </span>
                         )}
                         {hasDeduct && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                          <span className="px-1.5 py-0.5 rounded text-xs bg-slate-100 text-slate-700 border border-slate-200">
                             หัก {row["หัก"]}% {isCompany ? "(บ.)" : "(บุคคล)"}
                           </span>
                         )}
                         {hasCredit && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                          <span className="px-1.5 py-0.5 rounded text-xs bg-slate-100 text-slate-700 border border-slate-200">
                             เครดิต {row["เครดิต"]} วัน
                           </span>
                         )}
@@ -752,7 +752,7 @@ export function BillFollowDashboardClient({
                     <td className="py-2 px-3 text-center">
                       <div className="flex items-center justify-center gap-1.5">
                         {completedRowIds.has(billId) || (toNumber(row.vat) > 0 && Boolean(row["วันได้บิล"])) || (toNumber(row["หัก"]) > 0 && Boolean(row["วันออก 3%"])) || (Boolean(row["เครดิต"]) && Boolean(row["วันจ่าย"])) ? (
-                          <span className="px-2 py-1 bg-slate-100 text-slate-500 font-semibold text-[11px] rounded border border-slate-200 cursor-not-allowed">
+                          <span className="px-2 py-1 bg-slate-100 text-slate-500 text-xs rounded border border-slate-200 cursor-not-allowed">
                             ได้บิลแล้ว
                           </span>
                         ) : (
@@ -760,7 +760,7 @@ export function BillFollowDashboardClient({
                             type="button"
                             disabled={isSaving}
                             onClick={() => handleMarkReceived(row, (activeTab === "natural" || activeTab === "company") ? "deduct" : activeTab)}
-                            className="px-2 py-1 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-[11px] rounded transition cursor-pointer disabled:opacity-50"
+                            className="px-2 py-1 bg-emerald-700 hover:bg-emerald-800 text-white text-xs rounded transition cursor-pointer disabled:opacity-50"
                             title="กดเพื่อบันทึกว่าได้รับบิลแล้ว"
                           >
                             {isSaving ? "บันทึก..." : "ได้บิลแล้ว"}
@@ -770,7 +770,7 @@ export function BillFollowDashboardClient({
                         <button
                           type="button"
                           onClick={() => copyLineText(row)}
-                          className={`p-1 rounded text-[11px] transition border cursor-pointer ${
+                          className={`p-1 rounded text-xs transition border cursor-pointer ${
                             isCopied
                               ? "bg-slate-900 text-white border-slate-900"
                               : "bg-white text-slate-600 hover:bg-slate-50 border-slate-300"
@@ -802,7 +802,7 @@ export function BillFollowDashboardClient({
             {/* Mobile Minimal Pagination (Clean Minimal Footer) */}
             <div className="block md:hidden pt-1 pb-3">
               {totalPages <= 1 ? (
-                <div className="text-center text-[11px] text-slate-400 font-medium select-none">
+                <div className="text-center text-xs text-slate-400 font-medium select-none">
                   • แสดงครบทั้งหมด {filteredRows.length} รายการ •
                 </div>
               ) : (
@@ -811,21 +811,21 @@ export function BillFollowDashboardClient({
                     type="button"
                     disabled={currentPage <= 1}
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    className="px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 disabled:opacity-30 transition font-semibold text-slate-700 flex items-center gap-1 cursor-pointer active:bg-slate-200"
+                    className="px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 disabled:opacity-30 transition text-slate-700 flex items-center gap-1 cursor-pointer active:bg-slate-200"
                   >
                     <ChevronLeft size={14} />
                     <span>ก่อนหน้า</span>
                   </button>
 
-                  <span className="font-semibold text-slate-700 text-xs">
-                    หน้า {currentPage} / {totalPages} <span className="font-normal text-slate-400 text-[11px]">({filteredRows.length} รายการ)</span>
+                  <span className="text-slate-700 text-xs">
+                    หน้า {currentPage} / {totalPages} <span className="font-normal text-slate-400 text-xs">({filteredRows.length} รายการ)</span>
                   </span>
 
                   <button
                     type="button"
                     disabled={currentPage >= totalPages}
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    className="px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 disabled:opacity-30 transition font-semibold text-slate-700 flex items-center gap-1 cursor-pointer active:bg-slate-200"
+                    className="px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 disabled:opacity-30 transition text-slate-700 flex items-center gap-1 cursor-pointer active:bg-slate-200"
                   >
                     <span>ถัดไป</span>
                     <ChevronRight size={14} />
@@ -852,7 +852,7 @@ export function BillFollowDashboardClient({
                         setPageSize(opt);
                         setPage(1);
                       }}
-                      className={`px-2 py-0.5 rounded text-xs font-semibold transition cursor-pointer ${
+                      className={`px-2 py-0.5 rounded text-xs transition cursor-pointer ${
                         opt === pageSize ? "bg-slate-900 text-white" : "bg-white border border-slate-300 text-slate-700 hover:bg-slate-100"
                       }`}
                     >
@@ -871,7 +871,7 @@ export function BillFollowDashboardClient({
                   >
                     <ChevronLeft size={15} />
                   </button>
-                  <span className="font-semibold text-slate-800 px-1">
+                  <span className="text-slate-800 px-1">
                     {currentPage} / {totalPages}
                   </span>
                   <button

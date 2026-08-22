@@ -271,8 +271,8 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
                   <MessageSquare size={20} />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 leading-tight">ลงทะเบียน / ผูกบัญชี LINE</h3>
-                  <p className="text-[11px] text-slate-500 font-medium">ยืนยันตัวตนเพื่อเข้าใช้งานระบบ</p>
+                  <h3 className="text-base text-slate-900 leading-tight">ลงทะเบียน / ผูกบัญชี LINE</h3>
+                  <p className="text-xs text-slate-500 font-medium">ยืนยันตัวตนเพื่อเข้าใช้งานระบบ</p>
                 </div>
               </div>
               <button
@@ -292,18 +292,18 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
                   className="w-11 h-11 rounded-full object-cover border-2 border-emerald-400 shadow-xs shrink-0"
                 />
               ) : (
-                <div className="w-11 h-11 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center text-base shrink-0">
+                <div className="w-11 h-11 rounded-full bg-emerald-600 text-white flex items-center justify-center text-base shrink-0">
                   {lineProfile.displayName.charAt(0)}
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <div className="text-xs font-bold text-slate-900 truncate">{lineProfile.displayName}</div>
-                <div className="text-[10px] text-emerald-700 font-mono truncate">{lineProfile.userId}</div>
+                <div className="text-xs text-slate-900 truncate">{lineProfile.displayName}</div>
+                <div className="text-xs text-emerald-700 font-mono truncate">{lineProfile.userId}</div>
               </div>
             </div>
 
-            <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80 text-[11px] text-slate-600 space-y-1">
-              <div className="font-bold text-slate-800 flex items-center gap-1.5">
+            <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80 text-xs text-slate-600 space-y-1">
+              <div className="text-slate-800 flex items-center gap-1.5">
                 <Shield size={13} className="text-slate-500" />
                 <span>คำแนะนำการลงทะเบียน:</span>
               </div>
@@ -315,7 +315,7 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
 
             <form onSubmit={handleRegisterSubmit} className="space-y-3">
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1.5 flex items-center gap-1">
+                <label className="text-xs text-slate-700 block mb-1.5 flex items-center gap-1">
                   <Phone size={13} className="text-slate-500" />
                   <span>เบอร์โทรศัพท์ *</span>
                 </label>
@@ -324,14 +324,14 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
                   placeholder="เช่น 0812345678"
                   value={phoneInput}
                   onChange={e => setPhoneInput(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
                   required
                   autoFocus
                 />
               </div>
 
               {registerError && (
-                <div className="p-2.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-bold">
+                <div className="p-2.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs ">
                   {registerError}
                 </div>
               )}
@@ -340,14 +340,14 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
                 <button
                   type="button"
                   onClick={() => setShowPhoneModal(false)}
-                  className="flex-1 py-2.5 border border-slate-300 text-slate-700 font-bold text-xs rounded-xl hover:bg-slate-50 transition cursor-pointer"
+                  className="flex-1 py-2.5 border border-slate-300 text-slate-700 text-xs rounded-xl hover:bg-slate-50 transition cursor-pointer"
                 >
                   ยกเลิก
                 </button>
                 <button
                   type="submit"
                   disabled={registering || !phoneInput.trim()}
-                  className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
                   {registering ? (
                     <>

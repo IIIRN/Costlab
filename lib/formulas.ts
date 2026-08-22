@@ -148,8 +148,14 @@ function applyContractFormulasWithContext(
   }
   const contractor = context.contractors.find(item => String(item["id_Contractor"]).trim() === String(row["id_Contractor"]).trim());
   if (contractor) {
-    row["ชื่อเล่น"] = contractor["ชื่อเล่น"] || contractor["ชื่อ-นามสกุล"] || row["ชื่อเล่น"] || "";
-    row["ผู้รับเหมา"] = contractor["ชื่อเล่น"] || contractor["ชื่อ-นามสกุล"] || row["ผู้รับเหมา"] || "";
+    const cName = contractor["ชื่อเล่น"] || contractor["ชื่อ-นามสกุล"] || row["ชื่อเล่น"] || "";
+    row["ชื่อเล่น"] = cName;
+    row["ผู้รับเหมา"] = cName;
+    row["ช่าง"] = cName;
+    row["เบอร์โทรศัพท์"] = contractor["เบอร์โทรศัพท์"] || contractor["เบอร์โทร"] || row["เบอร์โทรศัพท์"] || row["เบอร์โทร"] || "";
+  } else {
+    row["ช่าง"] = row["ชื่อเล่น"] || row["ผู้รับเหมา"] || row["ชื่อ-นามสกุล"] || "";
+    row["เบอร์โทรศัพท์"] = row["เบอร์โทรศัพท์"] || row["เบอร์โทร"] || "";
   }
 
   const paid = computePaidForContract(row, context.dataRows);

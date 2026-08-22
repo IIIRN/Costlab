@@ -896,21 +896,21 @@ export function ProjectAnalyticsDashboardClient({
                   <div className="w-full bg-slate-200 rounded-full h-2.5 flex overflow-hidden shadow-2xs">
                     {matPct > 0 && (
                       <div
-                        className="bg-emerald-600 h-full transition-all duration-500 flex items-center justify-center text-[10px] text-white font-normal"
+                        className="bg-emerald-600 h-full transition-all duration-500 flex items-center justify-center text-xs text-white font-normal"
                         style={{ width: `${matPct}%` }}
                         title={`ค่าของ: ${money(p.mat)} ฿ (${matPct.toFixed(1)}%)`}
                       />
                     )}
                     {labPct > 0 && (
                       <div
-                        className="bg-indigo-600 h-full transition-all duration-500 flex items-center justify-center text-[10px] text-white font-normal"
+                        className="bg-indigo-600 h-full transition-all duration-500 flex items-center justify-center text-xs text-white font-normal"
                         style={{ width: `${labPct}%` }}
                         title={`ค่าแรง: ${money(p.lab)} ฿ (${labPct.toFixed(1)}%)`}
                       />
                     )}
                     {othPct > 0 && (
                       <div
-                        className="bg-slate-400 h-full transition-all duration-500 flex items-center justify-center text-[10px] text-white font-normal"
+                        className="bg-slate-400 h-full transition-all duration-500 flex items-center justify-center text-xs text-white font-normal"
                         style={{ width: `${othPct}%` }}
                         title={`อื่นๆ: ${money(p.oth)} ฿ (${othPct.toFixed(1)}%)`}
                       />

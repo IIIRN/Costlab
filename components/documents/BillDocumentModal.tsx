@@ -52,20 +52,20 @@ export function BillDocumentModal({
             </div>
             <div className="min-w-0">
               {/* Mobile: compact */}
-              <p className="sm:hidden text-xs font-bold text-slate-100 leading-tight">
+              <p className="sm:hidden text-xs text-slate-100 leading-tight">
                 พิมพ์เอกสาร
-                <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full bg-slate-800 text-emerald-400 font-mono">
+                <span className="ml-1.5 text-xs px-1.5 py-0.5 rounded-full bg-slate-800 text-emerald-400 font-mono">
                   #{data.billSequence}
                 </span>
               </p>
               {/* Desktop: full */}
-              <h3 className="hidden sm:flex text-sm font-bold text-slate-100 items-center gap-2 leading-tight">
+              <h3 className="hidden sm:flex text-sm text-slate-100 items-center gap-2 leading-tight">
                 <span>เอกสารสัญญาจ้าง / ใบสำคัญจ่าย / 50 ทวิ</span>
-                <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-emerald-400 font-mono">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-emerald-400 font-mono">
                   บิล #{data.billSequence}
                 </span>
               </h3>
-              <p className="hidden sm:block text-[11px] text-slate-400 truncate max-w-sm">
+              <p className="hidden sm:block text-xs text-slate-400 truncate max-w-sm">
                 โครงการ: {data.project.name} | ผู้รับเหมา: {data.contractor.fullName}
               </p>
             </div>
@@ -77,7 +77,7 @@ export function BillDocumentModal({
               href={`/bills/${encodeURIComponent(data.billSequence)}/document`}
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition"
               title="เปิดหน้าพิมพ์เต็มจอในแท็บใหม่"
             >
               <ExternalLink size={14} />
@@ -86,7 +86,7 @@ export function BillDocumentModal({
             <button
               type="button"
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 text-xs font-bold text-slate-900 bg-emerald-400 hover:bg-emerald-300 rounded-lg shadow-sm transition active:scale-95"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 text-xs text-slate-900 bg-emerald-400 hover:bg-emerald-300 rounded-lg shadow-sm transition active:scale-95"
             >
               <Printer size={15} />
               <span className="hidden sm:inline">พิมพ์เอกสาร (Print / PDF)</span>
@@ -108,7 +108,7 @@ export function BillDocumentModal({
             <button
               type="button"
               onClick={() => setActiveTab("all")}
-              className={`px-2.5 sm:px-3 py-1.5 rounded-md font-semibold transition whitespace-nowrap ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-md transition whitespace-nowrap ${
                 activeTab === "all"
                   ? "bg-slate-900 text-white shadow-xs"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
@@ -120,7 +120,7 @@ export function BillDocumentModal({
             <button
               type="button"
               onClick={() => setActiveTab("contract")}
-              className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-md font-semibold transition whitespace-nowrap ${
+              className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-md transition whitespace-nowrap ${
                 activeTab === "contract"
                   ? "bg-slate-900 text-white shadow-xs"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
@@ -133,7 +133,7 @@ export function BillDocumentModal({
             <button
               type="button"
               onClick={() => setActiveTab("voucher")}
-              className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-md font-semibold transition whitespace-nowrap ${
+              className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-md transition whitespace-nowrap ${
                 activeTab === "voucher"
                   ? "bg-slate-900 text-white shadow-xs"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
@@ -146,7 +146,7 @@ export function BillDocumentModal({
             <button
               type="button"
               onClick={() => setActiveTab("tax50twi")}
-              className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-md font-semibold transition whitespace-nowrap ${
+              className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-md transition whitespace-nowrap ${
                 activeTab === "tax50twi"
                   ? "bg-slate-900 text-white shadow-xs"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
@@ -157,7 +157,7 @@ export function BillDocumentModal({
               <span className="sm:hidden">50 ทวิ</span>
             </button>
           </div>
-          <span className="text-[11px] text-slate-500 hidden md:block shrink-0 ml-2">
+          <span className="text-xs text-slate-500 hidden md:block shrink-0 ml-2">
             * บันทึก PDF: เลือก "Save as PDF"
           </span>
         </div>

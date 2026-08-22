@@ -387,7 +387,7 @@ export function FormModal({
         <div className={open ? "hidden" : ""}>
           <button
             type="button"
-            className="inline-flex items-center justify-center gap-1.5 h-9 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-lg shadow-xs transition-all cursor-pointer whitespace-nowrap"
+            className="inline-flex items-center justify-center gap-1.5 h-9 px-4 bg-slate-900 hover:bg-slate-800 text-white text-xs rounded-lg shadow-xs transition-all cursor-pointer whitespace-nowrap"
             onClick={() => handleOpen()}
             onMouseEnter={() => { if (!activeForm && resolvedTableName) prefetchFormSchema(resolvedTableName); }}
             onTouchStart={() => { if (!activeForm && resolvedTableName) prefetchFormSchema(resolvedTableName); }}
@@ -412,7 +412,7 @@ export function FormModal({
             {/* Clean Mobile App Header */}
             <header className="flex items-center justify-between px-4 sm:px-6 py-3 bg-white border-b border-slate-200 shrink-0">
               <div>
-                <h3 id="form-modal-title" className="text-sm sm:text-base font-bold text-slate-900 m-0 tracking-tight">
+                <h3 id="form-modal-title" className="text-sm sm:text-base text-slate-900 m-0 tracking-tight">
                   {isEditing ? title.replace(/^เพิ่ม/, "แก้ไข") : title}
                 </h3>
               </div>
@@ -432,7 +432,7 @@ export function FormModal({
               {loadingSchema || !activeForm ? (
                 <div className="py-16 flex flex-col items-center justify-center gap-3 text-center">
                   <div className="w-9 h-9 border-3 border-slate-200 border-t-slate-800 rounded-full animate-spin" />
-                  <div className="text-sm font-semibold text-slate-800">กำลังเตรียมฟอร์มข้อมูล...</div>
+                  <div className="text-sm text-slate-800">กำลังเตรียมฟอร์มข้อมูล...</div>
                   <div className="text-xs text-slate-500">กำลังโหลดตัวเลือกและโครงสร้างฟอร์ม</div>
                 </div>
               ) : (
@@ -463,12 +463,12 @@ export function FormModal({
                             <div key={section.id} className="bg-white rounded-lg p-4 border border-slate-200 shadow-2xs space-y-3">
                               <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
                                 <SectionHeaderIcon name={section.iconName} />
-                                <h4 className="text-xs font-bold text-slate-900 m-0">{section.title}</h4>
+                                <h4 className="text-xs text-slate-900 m-0">{section.title}</h4>
                               </div>
                               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
                                 {sectionFields.map(field => (
                                   <div className={`${getFieldClassName(field)} space-y-1`} key={field.name}>
-                                    <label className="text-[11px] font-medium text-slate-700 block">
+                                    <label className="text-xs font-medium text-slate-700 block">
                                       {getFieldLabel(field)}
                                       {field.required ? <span className="text-rose-600 font-medium ml-0.5">*</span> : ""}
                                     </label>
@@ -499,12 +499,12 @@ export function FormModal({
                             <div className="bg-white rounded-lg p-4 border border-slate-200 shadow-2xs space-y-3">
                               <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
                                 <FileText size={16} className="text-slate-600" />
-                                <h4 className="text-xs font-bold text-slate-900 m-0">ข้อมูลเพิ่มเติม</h4>
+                                <h4 className="text-xs text-slate-900 m-0">ข้อมูลเพิ่มเติม</h4>
                               </div>
                               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
                                 {unsectionedFields.map(field => (
                                   <div className={`${getFieldClassName(field)} space-y-1`} key={field.name}>
-                                    <label className="text-[11px] font-medium text-slate-700 block">
+                                    <label className="text-xs font-medium text-slate-700 block">
                                       {getFieldLabel(field)}
                                       {field.required ? <span className="text-rose-600 font-medium ml-0.5">*</span> : ""}
                                     </label>
@@ -555,7 +555,7 @@ export function FormModal({
                     ) : null}
 
                     {successMessage ? (
-                      <div className="p-3 bg-emerald-50 text-emerald-800 rounded-lg border border-emerald-200 text-xs font-bold flex items-center justify-between animate-in fade-in duration-150">
+                      <div className="p-3 bg-emerald-50 text-emerald-800 rounded-lg border border-emerald-200 text-xs flex items-center justify-between animate-in fade-in duration-150">
                         <div className="flex items-center gap-2">
                           <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
                           <span>{successMessage}</span>
@@ -570,44 +570,44 @@ export function FormModal({
                       </div>
                     ) : null}
 
-                    {error ? <div className="p-3 bg-rose-50 text-rose-700 rounded-lg border border-rose-200 text-xs font-bold">{error}</div> : null}
+                    {error ? <div className="p-3 bg-rose-50 text-rose-700 rounded-lg border border-rose-200 text-xs ">{error}</div> : null}
                   </fieldset>
                 </>
               )}
             </div>
 
             {/* Action Footer Bar (Mobile Full-Width Buttons & Summary) */}
-            <footer className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 px-4 sm:px-6 py-3 bg-white border-t border-slate-200 shrink-0 shadow-lg sm:shadow-none">
+            <footer className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-4 sm:px-6 py-3.5 sm:py-4 bg-white border-t border-slate-200 shrink-0 shadow-lg sm:shadow-none">
               {isDataForm && baseAmt > 0 ? (
-                <div className="flex items-center justify-between sm:justify-start gap-2.5 text-xs bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 font-sans">
-                  <span className="text-slate-500 font-medium">ยอดเงิน: <strong className="text-slate-900 font-bold">{baseAmt.toLocaleString("th-TH", { minimumFractionDigits: 2 })} ฿</strong></span>
+                <div className="flex items-center justify-between sm:justify-start gap-2.5 text-xs sm:text-sm bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-200 font-sans">
+                  <span className="text-slate-500 font-medium">ยอดเงิน: <strong className="text-slate-900 ">{baseAmt.toLocaleString("th-TH", { minimumFractionDigits: 2 })} ฿</strong></span>
                   {deductAmt > 0 ? (
                     <>
                       <span className="text-slate-300">|</span>
-                      <span className="text-slate-500 font-medium">หัก: <strong className="text-amber-700 font-bold">-{deductAmt.toLocaleString("th-TH", { minimumFractionDigits: 2 })} ฿</strong></span>
+                      <span className="text-slate-500 font-medium">หัก: <strong className="text-amber-700 ">-{deductAmt.toLocaleString("th-TH", { minimumFractionDigits: 2 })} ฿</strong></span>
                     </>
                   ) : null}
                   <span className="text-slate-300">|</span>
-                  <span className="text-slate-700 font-bold">ยอดโอน: <strong className="text-emerald-700 font-semibold">{netTransferAmt.toLocaleString("th-TH", { minimumFractionDigits: 2 })} ฿</strong></span>
+                  <span className="text-slate-700 ">ยอดโอน: <strong className="text-emerald-700 ">{netTransferAmt.toLocaleString("th-TH", { minimumFractionDigits: 2 })} ฿</strong></span>
                 </div>
               ) : <div />}
 
-              <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
+              <div className="flex items-center gap-2.5 w-full sm:w-auto sm:ml-auto">
                 <button
                   type="button"
                   disabled={saving}
                   onClick={() => { setOpen(false); setEditSheetRow(null); setSuccessMessage(""); }}
-                  className="w-1/3 sm:w-auto px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 border border-slate-300 bg-white transition cursor-pointer active:bg-slate-200"
+                  className="w-1/3 sm:w-auto h-11 sm:h-12 px-5 rounded-xl text-sm text-slate-700 hover:bg-slate-100 border border-slate-300 bg-white transition cursor-pointer active:bg-slate-200 flex items-center justify-center"
                 >
                   ยกเลิก
                 </button>
                 <button
                   type={submitPath ? "submit" : "button"}
                   disabled={saving || loadingSchema || !activeForm || !submitPath}
-                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer shadow-md active:scale-[0.99]"
+                  className="flex-1 sm:flex-initial h-11 sm:h-12 inline-flex items-center justify-center gap-2 px-6 rounded-xl text-sm sm:text-base text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer shadow-md active:scale-[0.99]"
                 >
-                  <Save size={15} />
-                  <span>{saving ? "กำลังบันทึก..." : (isEditing ? "บันทึกการแก้ไข" : "บันทึกรายการบิล")}</span>
+                  <Save size={18} />
+                  <span>{saving ? "กำลังบันทึก..." : (isEditing ? "บันทึกการแก้ไข" : (isDataForm ? "บันทึกรายการบิล" : "บันทึกข้อมูล"))}</span>
                 </button>
               </div>
             </footer>
@@ -676,14 +676,14 @@ function ImageFileFieldInput({
             <img src={previewUrl} alt="รูปเดิม" className="w-full h-full object-cover" />
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-xs font-bold text-slate-800 block truncate">รูปภาพที่เคยอัปโหลด</span>
-            <span className="text-[10px] text-slate-400 font-mono block truncate">{value}</span>
+            <span className="text-xs text-slate-800 block truncate">รูปภาพที่เคยอัปโหลด</span>
+            <span className="text-xs text-slate-400 font-mono block truncate">{value}</span>
           </div>
           {!readOnly && (
             <button
               type="button"
               onClick={handleRemoveExisting}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-lg border border-rose-200 transition cursor-pointer shrink-0"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs rounded-lg border border-rose-200 transition cursor-pointer shrink-0"
               title="ลบรูปภาพที่อัปโหลดไว้"
             >
               <Trash2 size={13} />
@@ -700,14 +700,14 @@ function ImageFileFieldInput({
             <img src={selectedFilePreview} alt="รูปใหม่" className="w-full h-full object-cover" />
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-xs font-bold text-sky-900 block">เลือกไฟล์ใหม่แล้ว</span>
-            <span className="text-[10px] text-sky-600 font-medium block">พร้อมบันทึกอัปโหลดใหม่</span>
+            <span className="text-xs text-sky-900 block">เลือกไฟล์ใหม่แล้ว</span>
+            <span className="text-xs text-sky-600 font-medium block">พร้อมบันทึกอัปโหลดใหม่</span>
           </div>
           {!readOnly && (
             <button
               type="button"
               onClick={handleRemoveSelectedFile}
-              className="inline-flex items-center gap-1 px-2 py-1 bg-white hover:bg-slate-100 text-slate-600 text-xs font-bold rounded-lg border border-slate-200 transition cursor-pointer shrink-0"
+              className="inline-flex items-center gap-1 px-2 py-1 bg-white hover:bg-slate-100 text-slate-600 text-xs rounded-lg border border-slate-200 transition cursor-pointer shrink-0"
             >
               <X size={13} />
               <span>ยกเลิก</span>
@@ -726,10 +726,10 @@ function ImageFileFieldInput({
           multiple={field.type === "Image"}
           disabled={readOnly}
           onChange={handleFileChange}
-          className="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border border-slate-300 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 transition-colors cursor-pointer"
+          className="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border border-slate-300 file:text-xs file:file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 transition-colors cursor-pointer"
         />
         {field.type === "Image" && !previewUrl && !selectedFilePreview ? (
-          <small className="text-[11px] text-slate-400 block font-medium">บนมือถือเลือกถ่ายรูปหรือแนบจากเครื่องได้</small>
+          <small className="text-xs text-slate-400 block font-medium">บนมือถือเลือกถ่ายรูปหรือแนบจากเครื่องได้</small>
         ) : null}
       </div>
     </div>
@@ -817,7 +817,7 @@ function renderField(
                 <span className="text-slate-400 font-normal italic text-xs">ยังไม่ได้เลือกรายการ</span>
               )}
             </div>
-            <span className="text-[11px] font-medium text-slate-500 bg-slate-200/60 px-2 py-0.5 rounded-full shrink-0">{selectedValues.length} / {options.length}</span>
+            <span className="text-xs font-medium text-slate-500 bg-slate-200/60 px-2 py-0.5 rounded-full shrink-0">{selectedValues.length} / {options.length}</span>
           </div>
           <input
             type="text"
@@ -1219,17 +1219,17 @@ function getOptionButtonStyle(fieldName: string, optionValue: string, checked: b
     const val = optionValue.trim().toLowerCase();
     if (val === "red" || val.includes("แดง") || val.includes("ใหญ่")) {
       return checked
-        ? "bg-rose-600 text-white border-rose-600 font-bold shadow-xs ring-2 ring-rose-300"
+        ? "bg-rose-600 text-white border-rose-600 shadow-xs ring-2 ring-rose-300"
         : "bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100 font-medium";
     }
     if (val === "green" || val.includes("เขียว") || val.includes("เล็ก")) {
       return checked
-        ? "bg-emerald-600 text-white border-emerald-600 font-bold shadow-xs ring-2 ring-emerald-300"
+        ? "bg-emerald-600 text-white border-emerald-600 shadow-xs ring-2 ring-emerald-300"
         : "bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100 font-medium";
     }
     if (val === "black" || val.includes("ดำ") || val.includes("เสร็จ")) {
       return checked
-        ? "bg-slate-900 text-white border-slate-900 font-bold shadow-xs ring-2 ring-slate-400"
+        ? "bg-slate-900 text-white border-slate-900 shadow-xs ring-2 ring-slate-400"
         : "bg-slate-100 text-slate-800 border-slate-300 hover:bg-slate-200 font-medium";
     }
   }

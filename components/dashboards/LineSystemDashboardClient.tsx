@@ -383,16 +383,16 @@ export function LineSystemDashboardClient() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-sm font-medium text-slate-900 tracking-tight">ตั้งค่าระบบ LINE Bot & คู่มือคำสั่ง</h1>
-            <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-50 text-emerald-800 border border-emerald-200">
+            <span className="px-2 py-0.5 rounded text-xs bg-emerald-50 text-emerald-800 border border-emerald-200">
               V2.0 Active
             </span>
           </div>
-          <p className="text-slate-500 text-[11px] mt-0.5">
+          <p className="text-slate-500 text-xs mt-0.5">
             จัดการ Token, LIFF ID, เวลาส่งสรุปงานประจำวัน, คู่มือคำสั่ง 63 คีย์เวิร์ด และตรวจ Error Logs
           </p>
         </div>
 
-        <div className="flex items-center gap-2 text-[11px]">
+        <div className="flex items-center gap-2 text-xs">
           <span className="text-slate-500">แหล่งข้อมูล:</span>
           <span className={`px-2 py-0.5 rounded border ${configSource === "supabase" ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-amber-50 text-amber-800 border-amber-200"}`}>
             {configSource === "supabase" ? "Supabase DB" : "Environment Vars"}
@@ -411,22 +411,22 @@ export function LineSystemDashboardClient() {
                 className="w-10 h-10 rounded-full border border-slate-200 shadow-2xs object-cover"
               />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm border border-emerald-200">
+              <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-sm border border-emerald-200">
                 LINE
               </div>
             )}
 
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-bold text-slate-900">
+                <h2 className="text-sm text-slate-900">
                   {quotaInfo?.botInfo?.displayName || "LINE Official Account"}
                 </h2>
                 {quotaInfo?.botInfo?.basicId && (
-                  <span className="font-mono text-[11px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded border border-emerald-200">
+                  <span className="font-mono text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded border border-emerald-200">
                     {quotaInfo.botInfo.basicId}
                   </span>
                 )}
-                <span className="flex items-center gap-1 text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                <span className="flex items-center gap-1 text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   เชื่อมต่อสมบูรณ์
                 </span>
@@ -441,7 +441,7 @@ export function LineSystemDashboardClient() {
             type="button"
             onClick={fetchQuotaInfo}
             disabled={loadingQuota}
-            className="self-start sm:self-auto px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs border border-slate-300 transition flex items-center gap-1.5 cursor-pointer"
+            className="self-start sm:self-auto px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs border border-slate-300 transition flex items-center gap-1.5 cursor-pointer"
           >
             <RefreshCw size={13} className={loadingQuota ? "animate-spin text-emerald-600" : "text-slate-600"} />
             <span>{loadingQuota ? "กำลังอัปเดต..." : "รีเฟรชโควต้า"}</span>
@@ -452,9 +452,9 @@ export function LineSystemDashboardClient() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
           {/* Card 1: Package Type */}
           <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col justify-between space-y-1">
-            <span className="text-[11px] font-bold text-slate-500">แพคเกจ LINE OA ปัจจุบัน</span>
+            <span className="text-xs text-slate-500">แพคเกจ LINE OA ปัจจุบัน</span>
             <div className="flex items-center justify-between">
-              <span className="text-sm font-black text-slate-900">
+              <span className="text-sm text-slate-900">
                 {quotaInfo?.quota?.limit === 500
                   ? "Free Package (ฟรี)"
                   : quotaInfo?.quota?.limit === 15000
@@ -465,7 +465,7 @@ export function LineSystemDashboardClient() {
                   ? `${quotaInfo.quota.limit.toLocaleString()} ข้อความ/เดือน`
                   : "ไม่จำกัด / ไม่อั้น"}
               </span>
-              <span className="text-xs font-bold text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200">
+              <span className="text-xs text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200">
                 {quotaInfo?.quota?.limit && quotaInfo.quota.limit > 0
                   ? `${quotaInfo.quota.limit.toLocaleString()} / ด.`
                   : "Unlimited"}
@@ -475,13 +475,13 @@ export function LineSystemDashboardClient() {
 
           {/* Card 2: Used Messages */}
           <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col justify-between space-y-1">
-            <span className="text-[11px] font-bold text-slate-500">ส่งข้อความแล้วเดือนนี้</span>
+            <span className="text-xs text-slate-500">ส่งข้อความแล้วเดือนนี้</span>
             <div className="flex items-baseline justify-between">
-              <span className="text-base font-black font-mono text-slate-900">
+              <span className="text-base font-mono text-slate-900">
                 {quotaInfo?.quota ? quotaInfo.quota.totalUsage.toLocaleString() : "0"}{" "}
                 <span className="text-xs font-normal text-slate-500">ข้อความ</span>
               </span>
-              <span className="text-xs font-bold text-slate-600 font-mono">
+              <span className="text-xs text-slate-600 font-mono">
                 {quotaInfo?.quota?.usagePercent !== undefined
                   ? `${quotaInfo.quota.usagePercent.toFixed(1)}%`
                   : "0%"}
@@ -491,9 +491,9 @@ export function LineSystemDashboardClient() {
 
           {/* Card 3: Remaining Quota */}
           <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col justify-between space-y-1">
-            <span className="text-[11px] font-bold text-slate-500">โควต้าคงเหลือเดือนนี้</span>
+            <span className="text-xs text-slate-500">โควต้าคงเหลือเดือนนี้</span>
             <div className="flex items-baseline justify-between">
-              <span className={`text-base font-black font-mono ${
+              <span className={`text-base font-mono ${
                 quotaInfo?.quota && quotaInfo.quota.remaining === 0
                   ? "text-rose-600"
                   : quotaInfo?.quota && quotaInfo.quota.remaining < 50
@@ -507,7 +507,7 @@ export function LineSystemDashboardClient() {
                   : "0"}{" "}
                 <span className="text-xs font-normal text-slate-500">ข้อความ</span>
               </span>
-              <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+              <span className={`px-2 py-0.5 rounded text-xs border ${
                 quotaInfo?.quota && quotaInfo.quota.remaining === 0
                   ? "bg-rose-50 text-rose-700 border-rose-200"
                   : "bg-emerald-50 text-emerald-700 border-emerald-200"
@@ -521,7 +521,7 @@ export function LineSystemDashboardClient() {
         {/* Visual Progress Bar */}
         {quotaInfo?.quota && quotaInfo.quota.limit > 0 && (
           <div className="space-y-1 pt-1">
-            <div className="flex items-center justify-between text-[11px] font-semibold text-slate-600">
+            <div className="flex items-center justify-between text-xs text-slate-600">
               <span>สัดส่วนการใช้งานโควต้าข้อความเดือนนี้</span>
               <span>
                 {quotaInfo.quota.totalUsage.toLocaleString()} / {quotaInfo.quota.limit.toLocaleString()} ข้อความ
@@ -629,7 +629,7 @@ export function LineSystemDashboardClient() {
                 <Terminal size={14} className="text-slate-500" />
                 <span className="text-xs">Webhook Endpoint URL (ระบุใน LINE Developers Console):</span>
               </div>
-              <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">SSL / HTTPS Ready</span>
+              <span className="text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">SSL / HTTPS Ready</span>
             </div>
 
             <div className="flex items-center gap-2">
@@ -637,7 +637,7 @@ export function LineSystemDashboardClient() {
                 type="text"
                 readOnly
                 value={webhookUrl}
-                className="flex-1 bg-slate-50 border border-slate-200 rounded px-2.5 py-1.5 font-mono text-[11px] text-slate-800 focus:outline-none"
+                className="flex-1 bg-slate-50 border border-slate-200 rounded px-2.5 py-1.5 font-mono text-xs text-slate-800 focus:outline-none"
               />
               <button
                 type="button"
@@ -658,20 +658,20 @@ export function LineSystemDashboardClient() {
                   <Users size={14} className="text-emerald-600" />
                   <span className="text-xs text-slate-900">ตรวจพบกลุ่ม LINE ที่มีการรับส่งข้อความอัตโนมัติ ({discoveredGroups.length} กลุ่ม)</span>
                 </div>
-                <span className="text-[10px] text-slate-500">คัดลอก Group ID ด้านล่างไปใส่ในช่องกลุ่มเป้าหมาย</span>
+                <span className="text-xs text-slate-500">คัดลอก Group ID ด้านล่างไปใส่ในช่องกลุ่มเป้าหมาย</span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                 {discoveredGroups.map((g) => (
                   <div key={g.groupId} className="p-2 rounded bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
                     <div className="min-w-0 pr-2">
-                      <div className="font-mono text-[11px] text-slate-800 truncate" title={g.groupId}>{g.groupId}</div>
-                      <div className="text-[10px] text-slate-500">รับแล้ว {g.messageCount} ข้อความ</div>
+                      <div className="font-mono text-xs text-slate-800 truncate" title={g.groupId}>{g.groupId}</div>
+                      <div className="text-xs text-slate-500">รับแล้ว {g.messageCount} ข้อความ</div>
                     </div>
                     <button
                       type="button"
                       onClick={() => copyTextSnippet(g.groupId)}
-                      className="px-2 py-1 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 rounded text-[10px] cursor-pointer shrink-0"
+                      className="px-2 py-1 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 rounded text-xs cursor-pointer shrink-0"
                     >
                       {copiedKeyword === g.groupId ? "คัดลอกแล้ว" : "คัดลอก ID"}
                     </button>
@@ -686,7 +686,7 @@ export function LineSystemDashboardClient() {
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <div>
                 <h2 className="text-xs font-medium text-slate-900 m-0">กำหนดค่า Token & Group IDs</h2>
-                <p className="text-[10px] text-slate-500 m-0">ระบุการตั้งค่าสำหรับการเชื่อมต่อ LINE Messaging API และ LINE OA LIFF</p>
+                <p className="text-xs text-slate-500 m-0">ระบุการตั้งค่าสำหรับการเชื่อมต่อ LINE Messaging API และ LINE OA LIFF</p>
               </div>
               <button
                 type="submit"
@@ -701,7 +701,7 @@ export function LineSystemDashboardClient() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* Credentials & LIFF Section */}
               <div className="sm:col-span-2 border-b border-slate-100 pb-1">
-                <span className="text-[11px] text-slate-500 uppercase">🔑 Credentials & LIFF App ID (LINE OA & Bot)</span>
+                <span className="text-xs text-slate-500 uppercase">🔑 Credentials & LIFF App ID (LINE OA & Bot)</span>
               </div>
 
               <div className="sm:col-span-2 space-y-1">
@@ -758,7 +758,7 @@ export function LineSystemDashboardClient() {
 
               {/* Target User IDs Section */}
               <div className="sm:col-span-2 border-b border-slate-100 pb-1 mt-1">
-                <span className="text-[11px] text-slate-500 uppercase">👤 User IDs ผู้รับการแจ้งเตือนส่วนตัว</span>
+                <span className="text-xs text-slate-500 uppercase">👤 User IDs ผู้รับการแจ้งเตือนส่วนตัว</span>
               </div>
 
               <div className="space-y-1">
@@ -785,7 +785,7 @@ export function LineSystemDashboardClient() {
 
               {/* Group IDs Section */}
               <div className="sm:col-span-2 border-b border-slate-100 pb-1 mt-1">
-                <span className="text-[11px] text-slate-500 uppercase">👥 Group IDs กลุ่ม LINE สำหรับยิงการ์ด Flex</span>
+                <span className="text-xs text-slate-500 uppercase">👥 Group IDs กลุ่ม LINE สำหรับยิงการ์ด Flex</span>
               </div>
 
               <div className="space-y-1">
@@ -872,7 +872,7 @@ export function LineSystemDashboardClient() {
             <div className="text-xs text-slate-900">🧪 ทดสอบยิงข้อความเข้า LINE (Test Notification)</div>
             <div className="flex flex-col sm:flex-row items-end gap-2">
               <div className="flex-1 w-full space-y-1">
-                <label className="text-slate-600 block text-[11px]">ระบุ User ID หรือ Group ID ที่ต้องการทดสอบยิงข้อความ:</label>
+                <label className="text-slate-600 block text-xs">ระบุ User ID หรือ Group ID ที่ต้องการทดสอบยิงข้อความ:</label>
                 <input
                   type="text"
                   value={testTargetId}
@@ -901,7 +901,7 @@ export function LineSystemDashboardClient() {
           <div className="bg-white p-3.5 rounded-md border border-slate-200 shadow-2xs space-y-3">
             <div>
               <h2 className="text-xs font-medium text-slate-900 m-0">⏰ กำหนดเวลาแจ้งเตือนสรุปผลงานประจำวัน (Daily Schedules)</h2>
-              <p className="text-[11px] text-slate-500 m-0">ระบบ Serverless Cron จะยิงการ์ด Flex สรุปงานเช้าและเย็นตามเวลาที่กำหนด</p>
+              <p className="text-xs text-slate-500 m-0">ระบบ Serverless Cron จะยิงการ์ด Flex สรุปงานเช้าและเย็นตามเวลาที่กำหนด</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -911,15 +911,15 @@ export function LineSystemDashboardClient() {
                   <span className="text-slate-900 text-xs flex items-center gap-1.5">
                     🌅 สรุปงานเช้า (Morning Task Alert)
                   </span>
-                  <span className="px-2 py-0.5 rounded text-[10px] bg-amber-100 text-amber-800 border border-amber-300">
+                  <span className="px-2 py-0.5 rounded text-xs bg-amber-100 text-amber-800 border border-amber-300">
                     กลุ่มงาน TASK
                   </span>
                 </div>
-                <p className="text-slate-600 text-[11px] leading-relaxed">
+                <p className="text-slate-600 text-xs leading-relaxed">
                   สรุปงานค้าง งานด่วนประจำวัน และรายการงานที่ต้องตรวจรับเข้า LINE กลุ่มงาน
                 </p>
                 <div className="space-y-1">
-                  <label className="text-slate-700 block text-[11px]">เวลาแจ้งเตือนช่วงเช้า:</label>
+                  <label className="text-slate-700 block text-xs">เวลาแจ้งเตือนช่วงเช้า:</label>
                   <input
                     type="text"
                     value={formConfig.CRON_TIME_MORNING || "07:30"}
@@ -947,15 +947,15 @@ export function LineSystemDashboardClient() {
                   <span className="text-slate-900 text-xs flex items-center gap-1.5">
                     📊 สรุปผลงานทีม & การเงินช่วงเย็น (Evening Summary)
                   </span>
-                  <span className="px-2 py-0.5 rounded text-[10px] bg-slate-200 text-slate-800 border border-slate-300">
+                  <span className="px-2 py-0.5 rounded text-xs bg-slate-200 text-slate-800 border border-slate-300">
                     3 แท็บ Carousel
                   </span>
                 </div>
-                <p className="text-slate-600 text-[11px] leading-relaxed">
+                <p className="text-slate-600 text-xs leading-relaxed">
                   สรุปยอดเงินรวมรายการบิล, อัตราความสำเร็จผลงานทีม (Success Rate %), และรายการงานค้าง
                 </p>
                 <div className="space-y-1">
-                  <label className="text-slate-700 block text-[11px]">เวลาแจ้งเตือนช่วงเย็น:</label>
+                  <label className="text-slate-700 block text-xs">เวลาแจ้งเตือนช่วงเย็น:</label>
                   <input
                     type="text"
                     value={formConfig.CRON_TIME_EVENING || "17:00"}
@@ -1044,21 +1044,21 @@ export function LineSystemDashboardClient() {
               <div key={item.id} className="bg-white p-3 rounded-md border border-slate-200 shadow-2xs space-y-2 hover:border-slate-300 transition">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
                   <span className="font-mono text-xs text-emerald-800">{item.keyword}</span>
-                  <span className="px-2 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600 border border-slate-200">
+                  <span className="px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-600 border border-slate-200">
                     {item.categoryName}
                   </span>
                 </div>
 
-                <p className="text-slate-600 text-[11px] leading-normal">{item.description}</p>
+                <p className="text-slate-600 text-xs leading-normal">{item.description}</p>
 
                 <div className="space-y-1 bg-slate-50 p-2 rounded border border-slate-200">
-                  <div className="text-[10px] text-slate-500">รูปแบบพิมพ์ใน LINE:</div>
+                  <div className="text-xs text-slate-500">รูปแบบพิมพ์ใน LINE:</div>
                   <div className="flex items-center justify-between gap-1">
-                    <code className="font-mono text-[11px] text-slate-900 truncate">{item.syntax}</code>
+                    <code className="font-mono text-xs text-slate-900 truncate">{item.syntax}</code>
                     <button
                       type="button"
                       onClick={() => copyTextSnippet(item.example)}
-                      className="px-2 py-0.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 rounded text-[10px] cursor-pointer shrink-0"
+                      className="px-2 py-0.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 rounded text-xs cursor-pointer shrink-0"
                     >
                       {copiedKeyword === item.example ? "คัดลอกแล้ว" : "คัดลอก"}
                     </button>
@@ -1077,7 +1077,7 @@ export function LineSystemDashboardClient() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2">
               <div>
                 <h2 className="text-xs font-medium text-slate-900 m-0">🚨 ประวัติข้อผิดพลาดระบบ (System Error Logs)</h2>
-                <p className="text-[11px] text-slate-500 m-0">บันทึกข้อผิดพลาดที่เกิดขึ้นขณะประมวลผลคำสั่ง LINE Webhook และ Cron Jobs</p>
+                <p className="text-xs text-slate-500 m-0">บันทึกข้อผิดพลาดที่เกิดขึ้นขณะประมวลผลคำสั่ง LINE Webhook และ Cron Jobs</p>
               </div>
 
               <div className="flex items-center gap-1.5 shrink-0">
@@ -1121,27 +1121,27 @@ export function LineSystemDashboardClient() {
             ) : errorLogs.length === 0 ? (
               <div className="py-8 text-center text-slate-500 text-xs space-y-2">
                 <CheckCircle2 size={24} className="mx-auto text-emerald-500" />
-                <div className="font-semibold text-slate-800">ไม่พบข้อผิดพลาดในระบบ (System Healthy)</div>
-                <p className="text-slate-400 text-[11px] max-w-md mx-auto">
-                  ระบบทำงานปกติและยังไม่มีข้อผิดพลาดเกิดขึ้น ท่านสามารถกดปุ่ม <span className="font-semibold text-slate-600">"ทดสอบบันทึก Log"</span> ด้านบนเพื่อทดสอบการบันทึกได้ครับ
+                <div className="text-slate-800">ไม่พบข้อผิดพลาดในระบบ (System Healthy)</div>
+                <p className="text-slate-400 text-xs max-w-md mx-auto">
+                  ระบบทำงานปกติและยังไม่มีข้อผิดพลาดเกิดขึ้น ท่านสามารถกดปุ่ม <span className="text-slate-600">"ทดสอบบันทึก Log"</span> ด้านบนเพื่อทดสอบการบันทึกได้ครับ
                 </p>
               </div>
             ) : (
               <div className="space-y-2">
                 {errorLogs.map((log, index) => (
-                  <div key={log.id || index} className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 font-mono text-[11px] space-y-1">
-                    <div className="flex items-center justify-between text-slate-500 text-[10px]">
+                  <div key={log.id || index} className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 font-mono text-xs space-y-1">
+                    <div className="flex items-center justify-between text-slate-500 text-xs">
                       <span>{new Date(log.created_at).toLocaleString("th-TH")}</span>
-                      <span className={`px-1.5 py-0.5 rounded font-sans text-[10px] font-bold ${
+                      <span className={`px-1.5 py-0.5 rounded font-sans text-xs ${
                         log.level === "ERROR" ? "bg-rose-100 text-rose-800" : log.level === "WARN" ? "bg-amber-100 text-amber-800" : "bg-sky-100 text-sky-800"
                       }`}>
                         {log.level || "ERROR"}
                       </span>
                     </div>
-                    <div className="text-slate-900 font-sans font-semibold text-xs">{log.message}</div>
-                    <div className="text-slate-500 text-[10px]">Source: {log.source}</div>
+                    <div className="text-slate-900 font-sans text-xs">{log.message}</div>
+                    <div className="text-slate-500 text-xs">Source: {log.source}</div>
                     {log.context && (
-                      <pre className="p-1.5 bg-white border border-slate-200 rounded text-[10px] text-slate-700 overflow-x-auto">
+                      <pre className="p-1.5 bg-white border border-slate-200 rounded text-xs text-slate-700 overflow-x-auto">
                         {JSON.stringify(log.context, null, 2)}
                       </pre>
                     )}

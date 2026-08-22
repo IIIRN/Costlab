@@ -420,8 +420,8 @@ export function ManageTableClient({
       {/* 1. COMPACT PAGE HEADER */}
       <div className="flex items-center justify-between border-b border-slate-200 pb-2">
         <div className="flex items-center gap-2">
-          <h1 className="font-bold text-base text-slate-900 tracking-tight">{viewName}</h1>
-          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+          <h1 className="text-base text-slate-900 tracking-tight">{viewName}</h1>
+          <span className="px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-700 border border-slate-200">
             {filteredAndSortedRows.length} {rowLabel}
           </span>
         </div>
@@ -448,7 +448,7 @@ export function ManageTableClient({
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            className="px-3 py-1.5 bg-[#d4f54e] hover:bg-[#c2e438] text-[#0b3531] text-xs font-bold rounded-lg shadow-2xs border border-[#b8df28] transition cursor-pointer flex items-center gap-1.5 shrink-0"
+            className="px-3 py-1.5 bg-[#d4f54e] hover:bg-[#c2e438] text-[#0b3531] text-xs rounded-lg shadow-2xs border border-[#b8df28] transition cursor-pointer flex items-center gap-1.5 shrink-0"
             disabled={Boolean(busy)}
             onClick={openAddForm}
           >
@@ -460,7 +460,7 @@ export function ManageTableClient({
           <button
             type="button"
             onClick={exportToCSV}
-            className="px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
+            className="px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
             title="ส่งออกไฟล์ CSV (UTF-8)"
           >
             <Download size={14} className="text-emerald-600 shrink-0" />
@@ -468,7 +468,7 @@ export function ManageTableClient({
           </button>
 
           {/* Import CSV Button */}
-          <label className="px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap">
+          <label className="px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap">
             <Upload size={14} className="text-indigo-600 shrink-0" />
             <span>นำเข้า CSV</span>
             <input
@@ -483,7 +483,7 @@ export function ManageTableClient({
           <button
             type="button"
             onClick={() => setSortDesc(!sortDesc)}
-            className="px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
+            className="px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
             title="สลับการเรียงลำดับ"
           >
             <ArrowDownUp size={14} className="text-slate-600 shrink-0" />
@@ -494,7 +494,7 @@ export function ManageTableClient({
             <>
               <button
                 type="button"
-                className="px-3 py-1.5 bg-[#0b3531] hover:bg-[#072724] text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
+                className="px-3 py-1.5 bg-[#0b3531] hover:bg-[#072724] text-white rounded-lg text-xs flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
                 disabled={busy === "edit"}
                 onClick={saveEdit}
               >
@@ -503,7 +503,7 @@ export function ManageTableClient({
               </button>
               <button
                 type="button"
-                className="px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
+                className="px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
                 disabled={Boolean(busy)}
                 onClick={cancelEdit}
               >
@@ -514,7 +514,7 @@ export function ManageTableClient({
           ) : editOpenEventName ? null : (
             <button
               type="button"
-              className="px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
+              className="px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
               disabled={Boolean(busy) || !rows.length}
               onClick={beginEdit}
             >
@@ -527,7 +527,7 @@ export function ManageTableClient({
             <>
               <button
                 type="button"
-                className="px-3 py-1.5 bg-rose-700 hover:bg-rose-800 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
+                className="px-3 py-1.5 bg-rose-700 hover:bg-rose-800 text-white rounded-lg text-xs flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
                 disabled={busy === "delete" || !selectedRows.length}
                 onClick={confirmDelete}
               >
@@ -536,7 +536,7 @@ export function ManageTableClient({
               </button>
               <button
                 type="button"
-                className="px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
+                className="px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
                 disabled={Boolean(busy)}
                 onClick={() => { setDeleteMode(false); setSelectedRows([]); }}
               >
@@ -547,7 +547,7 @@ export function ManageTableClient({
           ) : (
             <button
               type="button"
-              className="px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
+              className="px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
               disabled={Boolean(busy) || !rows.length}
               onClick={beginDelete}
             >
@@ -558,7 +558,7 @@ export function ManageTableClient({
         </div>
       </div>
 
-      {error ? <div className="p-3 bg-rose-50 text-rose-700 rounded-md border border-rose-200 text-xs font-bold">{error}</div> : null}
+      {error ? <div className="p-3 bg-rose-50 text-rose-700 rounded-md border border-rose-200 text-xs ">{error}</div> : null}
 
       {/* 3. WORK TABLE CARD */}
       <div className="border border-slate-200 rounded-md bg-white overflow-hidden">
@@ -566,7 +566,7 @@ export function ManageTableClient({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-700 border-collapse font-sans">
               <thead>
-                <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-200 text-xs">
+                <tr className="bg-slate-100 text-slate-800 border-b border-slate-200 text-xs">
                   {deleteMode ? (
                     <th className="py-2.5 px-3 w-10 text-center border-r border-slate-200">
                       <input
@@ -636,7 +636,7 @@ export function ManageTableClient({
                             key={column}
                             className={[
                               "py-2 px-3 text-xs border-r border-slate-100",
-                              isAmountColumn(column) ? "text-right font-bold text-slate-900" : "",
+                              isAmountColumn(column) ? "text-right text-slate-900" : "",
                               isCenterColumn(column) ? "text-center" : "",
                               isDateColumn(column) ? "text-center" : "",
                               editing ? "editing-cell" : ""
@@ -653,7 +653,7 @@ export function ManageTableClient({
                             ) : detailBasePath && isLinkColumn ? (
                               <Link
                                 href={`${detailBasePath}/${encodeURIComponent(targetKey)}`}
-                                className="font-bold text-slate-900 hover:underline"
+                                className="text-slate-900 hover:underline"
                               >
                                 {cellContent}
                               </Link>
@@ -741,7 +741,7 @@ export function ManageTableClient({
           >
             <header className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-white">
               <div>
-                <h3 id="manage-add-title" className="text-sm font-bold text-slate-900 m-0">เพิ่มข้อมูล</h3>
+                <h3 id="manage-add-title" className="text-sm text-slate-900 m-0">เพิ่มข้อมูล</h3>
                 <span className="text-xs text-slate-500 font-normal">{viewName}</span>
               </div>
               <button
@@ -758,7 +758,7 @@ export function ManageTableClient({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {addColumns.map(column => (
                   <label className="flex flex-col gap-1 text-xs" key={column}>
-                    <span className="font-semibold text-slate-700">{column}</span>
+                    <span className="text-slate-700">{column}</span>
                     <input
                       name={column}
                       value={addValues[column] || ""}
@@ -776,14 +776,14 @@ export function ManageTableClient({
                 type="button"
                 disabled={Boolean(busy)}
                 onClick={() => setAddOpen(false)}
-                className="px-3 py-1 rounded text-xs font-semibold text-slate-700 hover:bg-slate-200 transition"
+                className="px-3 py-1 rounded text-xs text-slate-700 hover:bg-slate-200 transition"
               >
                 ยกเลิก
               </button>
               <button
                 type="submit"
                 disabled={busy === "add"}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded text-xs text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer"
               >
                 <Save size={14} />
                 <span>บันทึก</span>
@@ -835,7 +835,7 @@ function ManagePagination({
               <button
                 key={option}
                 type="button"
-                className={`px-2 py-0.5 rounded text-xs font-semibold transition cursor-pointer ${
+                className={`px-2 py-0.5 rounded text-xs transition cursor-pointer ${
                   option === pageSize
                     ? "bg-slate-900 text-white"
                     : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-100"
@@ -856,12 +856,12 @@ function ManagePagination({
         </PageButton>
         {pages.map((page, index) => (
           page === "ellipsis" ? (
-            <span className="px-1 text-xs text-slate-400 font-bold" key={`ellipsis-${index}`}>...</span>
+            <span className="px-1 text-xs text-slate-400 " key={`ellipsis-${index}`}>...</span>
           ) : (
             <button
               key={page}
               type="button"
-              className={`min-w-6 h-6 px-1.5 rounded text-xs font-semibold transition cursor-pointer ${
+              className={`min-w-6 h-6 px-1.5 rounded text-xs transition cursor-pointer ${
                 page === currentPage
                   ? "bg-slate-900 text-white"
                   : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-100"
@@ -886,7 +886,7 @@ function PageButton({ children, disabled, onClick }: { children: ReactNode; disa
   return (
     <button
       type="button"
-      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-slate-200 bg-white text-xs text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
       disabled={disabled}
       onClick={onClick}
     >
@@ -989,7 +989,7 @@ function ColorDot({ value }: { value: RowValue | undefined }) {
   return (
     <span className="inline-flex items-center gap-1.5" title={displayTitle}>
       <span className={`w-2.5 h-2.5 rounded-full ${bgClass} transition-all shrink-0`} aria-label={displayTitle} />
-      <span className="text-[11px] font-semibold text-slate-700">{displayTitle}</span>
+      <span className="text-xs text-slate-700">{displayTitle}</span>
     </span>
   );
 }

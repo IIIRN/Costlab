@@ -462,11 +462,11 @@ export function ProjectBudgetControlMatrix({
                           <span className="text-slate-300">|</span>
                           <span className="text-slate-700">Spent: <span className="text-emerald-800 font-normal">{money(wg.spentSum)}</span> ฿</span>
                           {wg.isOver ? (
-                            <span className="px-2 py-0.5 bg-rose-100 text-rose-800 rounded-full font-normal text-[11px] border border-rose-300">เกินงบ</span>
+                            <span className="px-2 py-0.5 bg-rose-100 text-rose-800 rounded-full font-normal text-xs border border-rose-300">เกินงบ</span>
                           ) : wg.isWarning ? (
-                            <span className="px-2 py-0.5 bg-amber-100 text-amber-900 rounded-full font-normal text-[11px] border border-amber-300">เฝ้าระวัง</span>
+                            <span className="px-2 py-0.5 bg-amber-100 text-amber-900 rounded-full font-normal text-xs border border-amber-300">เฝ้าระวัง</span>
                           ) : (
-                            <span className="px-2 py-0.5 bg-emerald-100 text-emerald-900 rounded-full font-normal text-[11px] border border-emerald-300">ปกติ</span>
+                            <span className="px-2 py-0.5 bg-emerald-100 text-emerald-900 rounded-full font-normal text-xs border border-emerald-300">ปกติ</span>
                           )}
                         </div>
                       </div>

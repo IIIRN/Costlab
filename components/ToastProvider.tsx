@@ -124,7 +124,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           return (
             <div
               key={t.id}
-              className={`pointer-events-auto flex items-start gap-3 p-3.5 rounded-xl shadow-xl border text-xs font-semibold backdrop-blur-md transition-all animate-in fade-in slide-in-from-top-3 duration-200 ${
+              className={`pointer-events-auto flex items-start gap-3 p-3.5 rounded-xl shadow-xl border text-xs backdrop-blur-md transition-all animate-in fade-in slide-in-from-top-3 duration-200 ${
                 isError
                   ? "bg-rose-900/95 border-rose-700 text-rose-100"
                   : isSuccess
@@ -170,7 +170,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 <AlertTriangle size={20} />
               </div>
               <div>
-                <h3 className="font-bold text-sm text-slate-900">{confirmState.options.title}</h3>
+                <h3 className="text-sm text-slate-900">{confirmState.options.title}</h3>
                 <p className="text-xs text-slate-500 mt-0.5 leading-normal">{confirmState.options.message}</p>
               </div>
             </div>
@@ -179,14 +179,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               <button
                 type="button"
                 onClick={() => handleConfirmChoice(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
+                className="px-4 py-2 text-xs text-slate-600 hover:bg-slate-100 rounded-xl transition"
               >
                 {confirmState.options.cancelText}
               </button>
               <button
                 type="button"
                 onClick={() => handleConfirmChoice(true)}
-                className={`px-4 py-2 text-xs font-semibold text-white rounded-xl shadow-xs transition ${
+                className={`px-4 py-2 text-xs text-white rounded-xl shadow-xs transition ${
                   confirmState.options.variant === "danger"
                     ? "bg-rose-600 hover:bg-rose-700"
                     : confirmState.options.variant === "warning"

@@ -72,7 +72,7 @@ export function UserSwitcher({ currentUser, theme = "dark", isCollapsed = false,
           onClick={handleLogout}
           disabled={loading}
           title={`ออกจากระบบ (${currentUser.name || currentUser.id})`}
-          className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-600 to-emerald-800 text-white font-bold flex items-center justify-center text-xs shadow-md cursor-pointer hover:opacity-90 transition shrink-0 overflow-hidden"
+          className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-600 to-emerald-800 text-white flex items-center justify-center text-xs shadow-md cursor-pointer hover:opacity-90 transition shrink-0 overflow-hidden"
         >
           {currentUser.pictureUrl ? (
             <img src={currentUser.pictureUrl} alt={currentUser.name} className="w-full h-full object-cover" />
@@ -100,11 +100,11 @@ export function UserSwitcher({ currentUser, theme = "dark", isCollapsed = false,
               )}
             </div>
             <div className="flex flex-col min-w-0">
-              <span className={`text-xs font-semibold truncate leading-tight flex items-center gap-1 ${isLight ? "text-slate-900" : "text-white"}`}>
+              <span className={`text-xs truncate leading-tight flex items-center gap-1 ${isLight ? "text-slate-900" : "text-white"}`}>
                 <span>{currentUser.name || currentUser.id}</span>
                 <ChevronDown size={12} className={`${isLight ? "text-slate-500" : "text-white/80"} transition-transform ${menuOpen ? "rotate-180" : ""}`} />
               </span>
-              <span className={`text-[9px] uppercase font-bold tracking-wider leading-none mt-0.5 ${isLight ? "text-slate-500" : "text-white/70"}`}>
+              <span className={`text-xs uppercase tracking-wider leading-none mt-0.5 ${isLight ? "text-slate-500" : "text-white/70"}`}>
                 {currentUser.role}
               </span>
             </div>
@@ -120,7 +120,7 @@ export function UserSwitcher({ currentUser, theme = "dark", isCollapsed = false,
                 handleLogout();
               }}
               disabled={loading}
-              className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
             >
               <LogOut size={16} className="text-red-500 shrink-0" />
               <span>ออกจากระบบ</span>
@@ -161,7 +161,7 @@ export function UserSwitcher({ currentUser, theme = "dark", isCollapsed = false,
           <span className={`text-sm font-medium truncate leading-tight ${isLight ? "text-gray-900" : "text-white"}`}>
             {currentUser.name || currentUser.id}
           </span>
-          <span className={`text-[10px] uppercase tracking-wider ${isLight ? "text-gray-500" : "text-white/70"}`}>
+          <span className={`text-xs uppercase tracking-wider ${isLight ? "text-gray-500" : "text-white/70"}`}>
             {currentUser.role}
           </span>
         </div>

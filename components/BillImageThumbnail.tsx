@@ -123,14 +123,14 @@ export function BillImageThumbnail({ value, compact = false, large = false }: Bi
           />
           {/* Hover overlay */}
           <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/20 transition-colors duration-200 flex items-center justify-center">
-            <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-white/90 text-slate-800 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-1.5">
+            <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-white/90 text-slate-800 text-xs px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-1.5">
               <ZoomIn size={13} />
               ขยายดูรูป
             </span>
           </div>
           {/* Position badge */}
           {imageUrls.length > 1 && (
-            <span className="absolute top-2 right-2 bg-slate-900/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+            <span className="absolute top-2 right-2 bg-slate-900/80 text-white text-xs px-2 py-0.5 rounded-full">
               {selectedIndex + 1} / {imageUrls.length}
             </span>
           )}
@@ -154,7 +154,7 @@ export function BillImageThumbnail({ value, compact = false, large = false }: Bi
               </button>
             ))}
             {imageUrls.length > 8 && (
-              <span className="shrink-0 w-12 h-12 rounded-lg border-2 border-slate-200 bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500">
+              <span className="shrink-0 w-12 h-12 rounded-lg border-2 border-slate-200 bg-slate-100 flex items-center justify-center text-xs text-slate-500">
                 +{imageUrls.length - 8}
               </span>
             )}
@@ -180,9 +180,9 @@ export function BillImageThumbnail({ value, compact = false, large = false }: Bi
                     <ImageIcon size={16} />
                   </span>
                   <div>
-                    <h3 className="text-xs font-bold text-slate-900">รูปถ่ายเอกสาร / บิล</h3>
+                    <h3 className="text-xs text-slate-900">รูปถ่ายเอกสาร / บิล</h3>
                     {imageUrls.length > 1 && (
-                      <p className="text-[10px] text-slate-500">{currentIndex + 1} / {imageUrls.length} รูป</p>
+                      <p className="text-xs text-slate-500">{currentIndex + 1} / {imageUrls.length} รูป</p>
                     )}
                   </div>
                 </div>
@@ -203,7 +203,7 @@ export function BillImageThumbnail({ value, compact = false, large = false }: Bi
                   <button type="button" onClick={() => setCurrentIndex((i) => previousIndex(i, imageUrls.length))} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition">
                     <ChevronLeft size={16} />
                   </button>
-                  <span className="text-xs font-semibold text-slate-600">{currentIndex + 1} / {imageUrls.length}</span>
+                  <span className="text-xs text-slate-600">{currentIndex + 1} / {imageUrls.length}</span>
                   <button type="button" onClick={() => setCurrentIndex((i) => nextIndex(i, imageUrls.length))} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition">
                     <ChevronRight size={16} />
                   </button>
@@ -239,7 +239,7 @@ export function BillImageThumbnail({ value, compact = false, large = false }: Bi
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200"
         />
         {imageUrls.length > 1 && (
-          <span className="absolute bottom-0 right-0 bg-slate-900/90 text-emerald-400 text-[9px] font-extrabold leading-none px-1 py-0.5 rounded-tl shadow-xs">
+          <span className="absolute bottom-0 right-0 bg-slate-900/90 text-emerald-400 text-xs leading-none px-1 py-0.5 rounded-tl shadow-xs">
             +{imageUrls.length - 1}
           </span>
         )}
@@ -261,21 +261,21 @@ export function BillImageThumbnail({ value, compact = false, large = false }: Bi
             {/* Modal Header */}
             <header className="flex flex-wrap items-center justify-between gap-2.5 px-4 py-3 border-b border-slate-200/90 bg-white text-slate-900">
               <div className="flex items-center gap-2.5">
-                <span className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center font-bold text-xs shrink-0">
+                <span className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center text-xs shrink-0">
                   <ImageIcon size={18} />
                 </span>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-xs font-bold text-slate-900 tracking-wide">
+                    <h3 className="text-xs text-slate-900 tracking-wide">
                       รูปถ่ายเอกสาร / บิล
                     </h3>
                     {imageUrls.length > 1 && (
-                      <span className="px-2 py-0.5 text-[10px] font-mono font-semibold rounded-full bg-slate-100 text-emerald-700 border border-slate-200">
+                      <span className="px-2 py-0.5 text-xs font-mono rounded-full bg-slate-100 text-emerald-700 border border-slate-200">
                         {currentIndex + 1} / {imageUrls.length}
                       </span>
                     )}
                   </div>
-                  <p className="text-[10px] text-slate-500">ใช้ปุ่มซูม หมุนรูปภาพ หรือคลิกรูปย่อยสลับรูป</p>
+                  <p className="text-xs text-slate-500">ใช้ปุ่มซูม หมุนรูปภาพ หรือคลิกรูปย่อยสลับรูป</p>
                 </div>
               </div>
 
@@ -315,7 +315,7 @@ export function BillImageThumbnail({ value, compact = false, large = false }: Bi
                     <button
                       type="button"
                       onClick={handleResetView}
-                      className="px-1.5 h-7 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 text-[10px] font-bold flex items-center gap-1 transition cursor-pointer"
+                      className="px-1.5 h-7 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 text-xs flex items-center gap-1 transition cursor-pointer"
                       title="คืนค่าขนาดดั้งเดิม"
                     >
                       <RotateCcw size={11} />
@@ -329,7 +329,7 @@ export function BillImageThumbnail({ value, compact = false, large = false }: Bi
                   target="_blank"
                   rel="noreferrer"
                   title="เปิดรูปภาพขนาดใหญ่ในแท็บใหม่"
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 text-xs font-semibold shadow-2xs transition cursor-pointer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 text-xs shadow-2xs transition cursor-pointer"
                 >
                   <ExternalLink size={13} />
                   <span>เปิดรูปจริง</span>

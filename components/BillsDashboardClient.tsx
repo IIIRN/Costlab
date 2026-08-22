@@ -123,23 +123,23 @@ export function BillsDashboardClient({
       {/* 1. EXECUTIVE SUMMARY KPI CARDS (Hidden on Mobile for clean layout) */}
       <div className="hidden md:grid md:grid-cols-4 gap-3">
         <div className="bg-white rounded-md p-2.5 sm:p-3 border border-slate-200 shadow-2xs">
-          <span className="text-[11px] sm:text-xs font-semibold text-slate-500 block truncate">รายการบิลทั้งหมด</span>
-          <div className="text-base sm:text-lg font-bold text-slate-900 mt-0.5">{filteredRows.length} รายการ</div>
+          <span className="text-xs sm:text-xs text-slate-500 block truncate">รายการบิลทั้งหมด</span>
+          <div className="text-base sm:text-lg text-slate-900 mt-0.5">{filteredRows.length} รายการ</div>
         </div>
 
         <div className="bg-white rounded-md p-2.5 sm:p-3 border border-slate-200 shadow-2xs">
-          <span className="text-[11px] sm:text-xs font-semibold text-slate-500 block truncate">รวมยอดเงินบิล</span>
-          <div className="text-base sm:text-lg font-bold text-slate-900 mt-0.5">{money(totalAmount)}</div>
+          <span className="text-xs sm:text-xs text-slate-500 block truncate">รวมยอดเงินบิล</span>
+          <div className="text-base sm:text-lg text-slate-900 mt-0.5">{money(totalAmount)}</div>
         </div>
 
         <div className="bg-white rounded-md p-2.5 sm:p-3 border border-slate-200 shadow-2xs">
-          <span className="text-[11px] sm:text-xs font-semibold text-slate-500 block truncate">ยอดอนุมัติ/เบิกแล้ว</span>
-          <div className="text-base sm:text-lg font-bold text-emerald-700 mt-0.5">{money(approvedAmount)}</div>
+          <span className="text-xs sm:text-xs text-slate-500 block truncate">ยอดอนุมัติ/เบิกแล้ว</span>
+          <div className="text-base sm:text-lg text-emerald-700 mt-0.5">{money(approvedAmount)}</div>
         </div>
 
         <div className="bg-white rounded-md p-2.5 sm:p-3 border border-slate-200 shadow-2xs">
-          <span className="text-[11px] sm:text-xs font-semibold text-slate-500 block truncate">ยอดรออนุมัติ</span>
-          <div className="text-base sm:text-lg font-bold text-amber-700 mt-0.5">{money(pendingAmount)}</div>
+          <span className="text-xs sm:text-xs text-slate-500 block truncate">ยอดรออนุมัติ</span>
+          <div className="text-base sm:text-lg text-amber-700 mt-0.5">{money(pendingAmount)}</div>
         </div>
       </div>
 
@@ -175,9 +175,9 @@ export function BillsDashboardClient({
           <button
             type="button"
             onClick={() => updateFilter("status", "")}
-            className={`px-2.5 py-1 rounded-full whitespace-nowrap transition cursor-pointer text-[11px] ${
+            className={`px-2.5 py-1 rounded-full whitespace-nowrap transition cursor-pointer text-xs ${
               filters.status === ""
-                ? "bg-slate-900 text-white font-semibold shadow-xs"
+                ? "bg-slate-900 text-white shadow-xs"
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200"
             }`}
           >
@@ -186,9 +186,9 @@ export function BillsDashboardClient({
           <button
             type="button"
             onClick={() => updateFilter("status", "รออนุมัติ")}
-            className={`px-2.5 py-1 rounded-full whitespace-nowrap transition cursor-pointer text-[11px] ${
+            className={`px-2.5 py-1 rounded-full whitespace-nowrap transition cursor-pointer text-xs ${
               filters.status === "รออนุมัติ"
-                ? "bg-amber-600 text-white font-semibold shadow-xs"
+                ? "bg-amber-600 text-white shadow-xs"
                 : "bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200/60"
             }`}
           >
@@ -197,9 +197,9 @@ export function BillsDashboardClient({
           <button
             type="button"
             onClick={() => updateFilter("status", "อนุมัติ")}
-            className={`px-2.5 py-1 rounded-full whitespace-nowrap transition cursor-pointer text-[11px] ${
+            className={`px-2.5 py-1 rounded-full whitespace-nowrap transition cursor-pointer text-xs ${
               filters.status === "อนุมัติ"
-                ? "bg-emerald-700 text-white font-semibold shadow-xs"
+                ? "bg-emerald-700 text-white shadow-xs"
                 : "bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200/60"
             }`}
           >
@@ -208,9 +208,9 @@ export function BillsDashboardClient({
           <button
             type="button"
             onClick={() => updateFilter("status", "เบิกแล้ว")}
-            className={`px-2.5 py-1 rounded-full whitespace-nowrap transition cursor-pointer text-[11px] ${
+            className={`px-2.5 py-1 rounded-full whitespace-nowrap transition cursor-pointer text-xs ${
               filters.status === "เบิกแล้ว"
-                ? "bg-slate-700 text-white font-semibold shadow-xs"
+                ? "bg-slate-700 text-white shadow-xs"
                 : "bg-slate-100 text-slate-700 hover:bg-slate-200"
             }`}
           >
@@ -241,7 +241,7 @@ export function BillsDashboardClient({
             <button
               type="button"
               onClick={() => setShowMobileFilters(!showMobileFilters)}
-              className="md:hidden px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md border border-slate-300 flex items-center gap-1 shrink-0 cursor-pointer"
+              className="md:hidden px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md border border-slate-300 flex items-center gap-1 shrink-0 cursor-pointer"
             >
               <Filter size={13} />
               <span>{showMobileFilters ? "ซ่อนตัวกรอง" : "ตัวกรอง"}</span>
@@ -253,7 +253,7 @@ export function BillsDashboardClient({
             <button
               type="button"
               onClick={() => setSortDesc(cur => !cur)}
-              className="px-2.5 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-md text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
+              className="px-2.5 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-md text-xs flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
               title="สลับการเรียงลำดับ"
             >
               {sortDesc ? <ArrowDownWideNarrow size={14} className="text-slate-600" /> : <ArrowUpWideNarrow size={14} className="text-slate-600" />}
@@ -275,7 +275,7 @@ export function BillsDashboardClient({
         <div className={`flex-wrap items-center gap-2.5 pt-1.5 border-t border-slate-100 md:border-t-0 md:pt-0 ${showMobileFilters ? "flex" : "hidden md:flex"}`}>
           {/* Requester Filter */}
           <div className="flex items-center gap-1.5">
-            <span className="font-semibold text-slate-700 whitespace-nowrap">ผู้เบิก:</span>
+            <span className="text-slate-700 whitespace-nowrap">ผู้เบิก:</span>
             <select
               value={filters.requester}
               onChange={event => updateFilter("requester", event.target.value)}
@@ -292,7 +292,7 @@ export function BillsDashboardClient({
 
           {/* Date Filter */}
           <div className="flex items-center gap-1.5">
-            <span className="font-semibold text-slate-700 whitespace-nowrap">วันที่:</span>
+            <span className="text-slate-700 whitespace-nowrap">วันที่:</span>
             <input
               type="date"
               value={filters.date}
@@ -303,7 +303,7 @@ export function BillsDashboardClient({
 
           {/* Bill Type Filter */}
           <div className="flex items-center gap-1.5">
-            <span className="font-semibold text-slate-700 whitespace-nowrap">ประเภท:</span>
+            <span className="text-slate-700 whitespace-nowrap">ประเภท:</span>
             <select
               value={filters.bill}
               onChange={event => updateFilter("bill", event.target.value)}
@@ -317,7 +317,7 @@ export function BillsDashboardClient({
 
           {/* Status Filter */}
           <div className="flex items-center gap-1.5">
-            <span className="font-semibold text-slate-700 whitespace-nowrap">สถานะ:</span>
+            <span className="text-slate-700 whitespace-nowrap">สถานะ:</span>
             <select
               value={filters.status}
               onChange={event => updateFilter("status", event.target.value)}
@@ -385,10 +385,10 @@ export function BillsDashboardClient({
                     {/* 2. Middle Content (Project, Shop, Items) */}
                     <div className="flex-1 min-w-0 space-y-0.5">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-bold text-[11px] bg-slate-900 text-white px-1.5 py-0.2 rounded shrink-0">
+                        <span className="text-xs bg-slate-900 text-white px-1.5 py-0.2 rounded shrink-0">
                           #{seq}
                         </span>
-                        <span className="font-semibold text-xs text-slate-900 truncate">
+                        <span className="text-xs text-slate-900 truncate">
                           {row["ID Project"] ? `[${row["ID Project"]}] ` : ""}{String(row["ชื่อ Project"] || "-")}
                         </span>
                       </div>
@@ -397,7 +397,7 @@ export function BillsDashboardClient({
                         {String(row["ร้าน/บุคคล"] || "-")}
                       </div>
 
-                      <div className="text-[11px] text-slate-500 truncate flex items-center gap-1.5">
+                      <div className="text-xs text-slate-500 truncate flex items-center gap-1.5">
                         <span>{formatDateDisplay(row["ว/ด/ป"])}</span>
                         <span>•</span>
                         <span className="truncate">{String(row["สินค้า/ทำงาน"] || "-")}</span>
@@ -408,10 +408,10 @@ export function BillsDashboardClient({
 
                     {/* 3. Right Amount & Status Badge */}
                     <div className="text-right shrink-0 flex flex-col items-end gap-1">
-                      <span className="text-xs sm:text-sm font-bold text-slate-900">
-                        {money(row["ยอดเงิน"])} <span className="text-[10px] font-normal text-slate-500">฿</span>
+                      <span className="text-xs sm:text-sm text-slate-900">
+                        {money(row["ยอดเงิน"])} <span className="text-xs font-normal text-slate-500">฿</span>
                       </span>
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold ${
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs ${
                         isApproved
                           ? "bg-emerald-50 text-emerald-700 border border-emerald-200/80"
                           : isPending
@@ -429,7 +429,7 @@ export function BillsDashboardClient({
             {/* DESKTOP TABLE VIEW (Display only on screens >= md) */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left text-xs text-slate-700 border-collapse font-sans">
-                <thead className="bg-slate-100 text-slate-800 font-bold border-b border-slate-200 text-xs">
+                <thead className="bg-slate-100 text-slate-800 border-b border-slate-200 text-xs">
                   <tr>
                     <th className="py-2.5 px-3 border-r border-slate-200 text-center">ลำดับ</th>
                     <th className="py-2.5 px-3 border-r border-slate-200 text-center">ID Project</th>
@@ -464,28 +464,28 @@ export function BillsDashboardClient({
                         onClick={() => window.location.href = `/bills/${seq}`}
                         className="hover:bg-slate-50 transition-colors cursor-pointer"
                       >
-                        <td className="py-2 px-3 text-center font-bold text-slate-900 border-r border-slate-100">{seq}</td>
-                        <td className="py-2 px-3 text-center font-bold text-slate-900 border-r border-slate-100">{String(row["ID Project"] || "-")}</td>
-                        <td className="py-2 px-3 font-bold text-slate-900 max-w-[200px] truncate border-r border-slate-100" title={String(row["ชื่อ Project"] || "")}>
+                        <td className="py-2 px-3 text-center text-slate-900 border-r border-slate-100">{seq}</td>
+                        <td className="py-2 px-3 text-center text-slate-900 border-r border-slate-100">{String(row["ID Project"] || "-")}</td>
+                        <td className="py-2 px-3 text-slate-900 max-w-[200px] truncate border-r border-slate-100" title={String(row["ชื่อ Project"] || "")}>
                           {String(row["ชื่อ Project"] || "-")}
                         </td>
                         <td className="py-2 px-3 text-center border-r border-slate-100" onClick={(e) => e.stopPropagation()}>
                           <BillImageThumbnail value={row["รูปถ่ายบิล"]} />
                         </td>
-                        <td className="py-2 px-3 font-semibold text-slate-800 max-w-[160px] truncate border-r border-slate-100" title={String(row["ร้าน/บุคคล"] || "")}>
+                        <td className="py-2 px-3 text-slate-800 max-w-[160px] truncate border-r border-slate-100" title={String(row["ร้าน/บุคคล"] || "")}>
                           {String(row["ร้าน/บุคคล"] || "-")}
                         </td>
                         <td className="py-2 px-3 text-slate-700 max-w-[180px] truncate border-r border-slate-100" title={String(row["สินค้า/ทำงาน"] || "")}>
                           {String(row["สินค้า/ทำงาน"] || "-")}
                         </td>
-                        <td className="py-2 px-3 text-center font-semibold text-slate-700 border-r border-slate-100">{String(row["บิล"] || "-")}</td>
+                        <td className="py-2 px-3 text-center text-slate-700 border-r border-slate-100">{String(row["บิล"] || "-")}</td>
                         <td className="py-2 px-3 text-center text-slate-600 border-r border-slate-100">{String(row["ประเภท"] || "-")}</td>
-                        <td className="py-2 px-3 text-right font-bold text-slate-900 border-r border-slate-100">{money(row["ยอดเงิน"])}</td>
-                        <td className="py-2 px-3 text-center text-[11px] text-slate-500 border-r border-slate-100">{conditions || "-"}</td>
-                        <td className="py-2 px-3 text-center font-semibold text-slate-700 border-r border-slate-100">{requesterName}</td>
+                        <td className="py-2 px-3 text-right text-slate-900 border-r border-slate-100">{money(row["ยอดเงิน"])}</td>
+                        <td className="py-2 px-3 text-center text-xs text-slate-500 border-r border-slate-100">{conditions || "-"}</td>
+                        <td className="py-2 px-3 text-center text-slate-700 border-r border-slate-100">{requesterName}</td>
                         <td className="py-2 px-3 text-center font-medium text-slate-600 border-r border-slate-100 whitespace-nowrap">{formatDateDisplay(row["ว/ด/ป"])}</td>
                         <td className="py-2 px-3 text-center">
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold ${
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs ${
                             statusStr.includes("อนุมัติ")
                               ? "bg-slate-100 text-slate-700 border border-slate-200"
                               : statusStr.includes("เบิกแล้ว")
@@ -519,21 +519,21 @@ export function BillsDashboardClient({
                     type="button"
                     disabled={currentPage <= 1}
                     onClick={() => setPage(page - 1)}
-                    className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-30 transition font-semibold text-slate-700 flex items-center gap-1 cursor-pointer active:bg-slate-100 shadow-2xs"
+                    className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-30 transition text-slate-700 flex items-center gap-1 cursor-pointer active:bg-slate-100 shadow-2xs"
                   >
                     <ChevronLeft size={14} />
                     <span>ก่อนหน้า</span>
                   </button>
 
-                  <span className="font-semibold text-slate-700 text-xs">
-                    หน้า {currentPage} / {totalPages} <span className="font-normal text-slate-400 text-[11px]">({filteredRows.length} รายการ)</span>
+                  <span className="text-slate-700 text-xs">
+                    หน้า {currentPage} / {totalPages} <span className="font-normal text-slate-400 text-xs">({filteredRows.length} รายการ)</span>
                   </span>
 
                   <button
                     type="button"
                     disabled={currentPage >= totalPages}
                     onClick={() => setPage(page + 1)}
-                    className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-30 transition font-semibold text-slate-700 flex items-center gap-1 cursor-pointer active:bg-slate-100 shadow-2xs"
+                    className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-30 transition text-slate-700 flex items-center gap-1 cursor-pointer active:bg-slate-100 shadow-2xs"
                   >
                     <span>ถัดไป</span>
                     <ChevronRight size={14} />
@@ -545,7 +545,7 @@ export function BillsDashboardClient({
             {/* 2. Professional Desktop Pagination */}
             <div className="hidden md:flex flex-row items-center justify-between gap-3 p-3 border-t border-slate-200 text-xs text-slate-600 bg-slate-50/80">
               <div>
-                แสดง <strong className="text-slate-800 font-bold">{visibleStart}-{visibleEnd}</strong> จาก <strong className="text-slate-800 font-bold">{filteredRows.length}</strong> รายการ
+                แสดง <strong className="text-slate-800 ">{visibleStart}-{visibleEnd}</strong> จาก <strong className="text-slate-800 ">{filteredRows.length}</strong> รายการ
               </div>
 
               <div className="flex items-center gap-3">
@@ -556,7 +556,7 @@ export function BillsDashboardClient({
                       key={opt}
                       type="button"
                       onClick={() => setPageSize(opt)}
-                      className={`px-2 py-0.5 rounded text-xs font-semibold transition cursor-pointer ${
+                      className={`px-2 py-0.5 rounded text-xs transition cursor-pointer ${
                         opt === pageSize ? "bg-slate-900 text-white" : "bg-white border border-slate-300 text-slate-700 hover:bg-slate-100"
                       }`}
                     >
@@ -574,7 +574,7 @@ export function BillsDashboardClient({
                   >
                     <ChevronLeft size={15} />
                   </button>
-                  <span className="font-semibold text-slate-800 px-1">
+                  <span className="text-slate-800 px-1">
                     {currentPage} / {totalPages}
                   </span>
                   <button

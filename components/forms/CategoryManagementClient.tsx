@@ -127,7 +127,7 @@ export function CategoryManagementClient({ initialOptions }: CategoryManagementC
       {/* Top Header */}
       <div className="px-5 py-4 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white">
         <div>
-          <h1 className="text-base font-bold text-slate-900">
+          <h1 className="text-base text-slate-900">
             จัดการประเภทและกลุ่มประเภทสำหรับสร้างบิล
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -137,7 +137,7 @@ export function CategoryManagementClient({ initialOptions }: CategoryManagementC
 
         <div className="flex items-center gap-3">
           {savedSuccess && (
-            <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-md">
+            <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-md">
               <Check size={14} />
               <span>บันทึกเรียบร้อยแล้ว</span>
             </div>
@@ -146,7 +146,7 @@ export function CategoryManagementClient({ initialOptions }: CategoryManagementC
             type="button"
             onClick={handleSaveAll}
             disabled={saving}
-            className="flex items-center gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold px-4 py-1.5 rounded-md transition disabled:opacity-50 cursor-pointer shrink-0"
+            className="flex items-center gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs px-4 py-1.5 rounded-md transition disabled:opacity-50 cursor-pointer shrink-0"
           >
             <Save size={15} />
             <span>{saving ? "กำลังบันทึก..." : "บันทึกการเปลี่ยนแปลง"}</span>
@@ -155,9 +155,9 @@ export function CategoryManagementClient({ initialOptions }: CategoryManagementC
       </div>
 
       {error && (
-        <div className="mx-5 mt-3 p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-md flex items-center justify-between">
+        <div className="mx-5 mt-3 p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-md flex items-center justify-between">
           <span>{error}</span>
-          <button type="button" onClick={() => setError("")} className="text-rose-500 hover:text-rose-800 font-bold">
+          <button type="button" onClick={() => setError("")} className="text-rose-500 hover:text-rose-800 ">
             ✕
           </button>
         </div>
@@ -169,10 +169,10 @@ export function CategoryManagementClient({ initialOptions }: CategoryManagementC
         <div className="lg:col-span-5 bg-white rounded-md border border-slate-200 p-4 flex flex-col">
           <div className="flex items-center justify-between pb-3 border-b border-slate-200">
             <div>
-              <h2 className="text-xs font-bold text-slate-800">1. รายการประเภททั้งหมด</h2>
-              <p className="text-[11px] text-slate-500">มาสเตอร์ประเภทสินค้า/ค่าใช้จ่ายทั้งหมดในระบบ</p>
+              <h2 className="text-xs text-slate-800">1. รายการประเภททั้งหมด</h2>
+              <p className="text-xs text-slate-500">มาสเตอร์ประเภทสินค้า/ค่าใช้จ่ายทั้งหมดในระบบ</p>
             </div>
-            <span className="px-2 py-0.5 bg-slate-100 text-slate-700 text-[11px] font-semibold rounded border border-slate-200">
+            <span className="px-2 py-0.5 bg-slate-100 text-slate-700 text-xs rounded border border-slate-200">
               {masterCategories.length} รายการ
             </span>
           </div>
@@ -190,7 +190,7 @@ export function CategoryManagementClient({ initialOptions }: CategoryManagementC
             <button
               type="button"
               onClick={handleAddMasterCategory}
-              className="flex items-center gap-1 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-3 py-1 rounded-md transition cursor-pointer"
+              className="flex items-center gap-1 bg-slate-900 hover:bg-slate-800 text-white text-xs px-3 py-1 rounded-md transition cursor-pointer"
             >
               <Plus size={14} />
               <span>เพิ่ม</span>
@@ -205,10 +205,10 @@ export function CategoryManagementClient({ initialOptions }: CategoryManagementC
                 className="flex items-center justify-between bg-slate-50 border border-slate-200 px-3 py-2 rounded-md transition group"
               >
                 <div className="flex items-center gap-2">
-                  <span className="w-4 h-4 rounded bg-white border border-slate-200 text-slate-500 flex items-center justify-center text-[10px] font-semibold">
+                  <span className="w-4 h-4 rounded bg-white border border-slate-200 text-slate-500 flex items-center justify-center text-xs ">
                     {idx + 1}
                   </span>
-                  <span className="text-xs font-semibold text-slate-800">{cat}</span>
+                  <span className="text-xs text-slate-800">{cat}</span>
                 </div>
 
                 <button
@@ -228,8 +228,8 @@ export function CategoryManagementClient({ initialOptions }: CategoryManagementC
         <div className="lg:col-span-7 space-y-4">
           <div className="bg-white rounded-md border border-slate-200 p-4">
             <div className="pb-3 border-b border-slate-200">
-              <h2 className="text-xs font-bold text-slate-800">2. จัดกลุ่มประเภทสำหรับสร้างบิล</h2>
-              <p className="text-[11px] text-slate-500">เลือกประเภทที่จะให้แสดงเป็นตัวเลือกในฟอร์มสร้างบิลแต่ละรูปแบบ</p>
+              <h2 className="text-xs text-slate-800">2. จัดกลุ่มประเภทสำหรับสร้างบิล</h2>
+              <p className="text-xs text-slate-500">เลือกประเภทที่จะให้แสดงเป็นตัวเลือกในฟอร์มสร้างบิลแต่ละรูปแบบ</p>
             </div>
 
             {/* 3 GROUP CARDS */}
@@ -238,10 +238,10 @@ export function CategoryManagementClient({ initialOptions }: CategoryManagementC
               <div className="p-3.5 rounded-md border border-slate-200 bg-slate-50/50 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-xs font-bold text-slate-800">กลุ่มประเภท (ผู้รับเหมา)</h3>
-                    <p className="text-[11px] text-slate-500">แสดงในฟอร์มบิลเมื่อเลือกร้านค้าประเภทผู้รับเหมา</p>
+                    <h3 className="text-xs text-slate-800">กลุ่มประเภท (ผู้รับเหมา)</h3>
+                    <p className="text-xs text-slate-500">แสดงในฟอร์มบิลเมื่อเลือกร้านค้าประเภทผู้รับเหมา</p>
                   </div>
-                  <span className="text-[11px] font-semibold px-2 py-0.5 bg-slate-200 text-slate-700 rounded">
+                  <span className="text-xs px-2 py-0.5 bg-slate-200 text-slate-700 rounded">
                     {contractorGroup.length} เลือกแล้ว
                   </span>
                 </div>
@@ -254,7 +254,7 @@ export function CategoryManagementClient({ initialOptions }: CategoryManagementC
                         key={cat}
                         type="button"
                         onClick={() => toggleCategoryInGroup("contractor", cat)}
-                        className={`px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1 transition cursor-pointer border ${
+                        className={`px-2.5 py-1 rounded text-xs flex items-center gap-1 transition cursor-pointer border ${
                           isSelected
                             ? "bg-slate-900 text-white border-slate-900"
                             : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"
@@ -272,10 +272,10 @@ export function CategoryManagementClient({ initialOptions }: CategoryManagementC
               <div className="p-3.5 rounded-md border border-slate-200 bg-slate-50/50 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-xs font-bold text-slate-800">กลุ่มประเภท (ร้านค้าทั่วไป)</h3>
-                    <p className="text-[11px] text-slate-500">แสดงในฟอร์มบิลเมื่อเลือกร้านค้าทั่วไป</p>
+                    <h3 className="text-xs text-slate-800">กลุ่มประเภท (ร้านค้าทั่วไป)</h3>
+                    <p className="text-xs text-slate-500">แสดงในฟอร์มบิลเมื่อเลือกร้านค้าทั่วไป</p>
                   </div>
-                  <span className="text-[11px] font-semibold px-2 py-0.5 bg-slate-200 text-slate-700 rounded">
+                  <span className="text-xs px-2 py-0.5 bg-slate-200 text-slate-700 rounded">
                     {storeGroup.length} เลือกแล้ว
                   </span>
                 </div>
@@ -288,7 +288,7 @@ export function CategoryManagementClient({ initialOptions }: CategoryManagementC
                         key={cat}
                         type="button"
                         onClick={() => toggleCategoryInGroup("store", cat)}
-                        className={`px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1 transition cursor-pointer border ${
+                        className={`px-2.5 py-1 rounded text-xs flex items-center gap-1 transition cursor-pointer border ${
                           isSelected
                             ? "bg-slate-900 text-white border-slate-900"
                             : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"
@@ -306,10 +306,10 @@ export function CategoryManagementClient({ initialOptions }: CategoryManagementC
               <div className="p-3.5 rounded-md border border-slate-200 bg-slate-50/50 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-xs font-bold text-slate-800">กลุ่มประเภท (ร้านค้า + เลือกสินค้า)</h3>
-                    <p className="text-[11px] text-slate-500">แสดงเมื่อมีการกรอกเลือกรายละเอียดสินค้าเฉพาะเจาะจง</p>
+                    <h3 className="text-xs text-slate-800">กลุ่มประเภท (ร้านค้า + เลือกสินค้า)</h3>
+                    <p className="text-xs text-slate-500">แสดงเมื่อมีการกรอกเลือกรายละเอียดสินค้าเฉพาะเจาะจง</p>
                   </div>
-                  <span className="text-[11px] font-semibold px-2 py-0.5 bg-slate-200 text-slate-700 rounded">
+                  <span className="text-xs px-2 py-0.5 bg-slate-200 text-slate-700 rounded">
                     {storeItemGroup.length} เลือกแล้ว
                   </span>
                 </div>
@@ -322,7 +322,7 @@ export function CategoryManagementClient({ initialOptions }: CategoryManagementC
                         key={cat}
                         type="button"
                         onClick={() => toggleCategoryInGroup("storeItem", cat)}
-                        className={`px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1 transition cursor-pointer border ${
+                        className={`px-2.5 py-1 rounded text-xs flex items-center gap-1 transition cursor-pointer border ${
                           isSelected
                             ? "bg-slate-900 text-white border-slate-900"
                             : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"

@@ -85,7 +85,7 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
       <div className="bg-white rounded-xl md:rounded-md p-2.5 sm:p-3 border border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 shadow-2xs">
         {/* Date Presets (Horizontal scrollable on mobile) */}
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5 text-xs">
-          <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 mr-1 uppercase shrink-0">ช่วงเวลา:</span>
+          <span className="text-xs sm:text-xs text-slate-500 mr-1 uppercase shrink-0">ช่วงเวลา:</span>
           {(
             [
               ["all", "ทั้งหมด"],
@@ -99,7 +99,7 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
               key={key}
               type="button"
               onClick={() => setPreset(key as Preset)}
-              className={`px-2.5 py-1 rounded-lg sm:rounded-md font-semibold transition cursor-pointer text-[11px] sm:text-xs shrink-0 whitespace-nowrap active:scale-95 ${
+              className={`px-2.5 py-1 rounded-lg sm:rounded-md transition cursor-pointer text-xs sm:text-xs shrink-0 whitespace-nowrap active:scale-95 ${
                 preset === key
                   ? "bg-slate-900 text-white shadow-xs"
                   : "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200"
@@ -113,7 +113,7 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
         {/* Custom Range & Refresh on same line */}
         <div className="flex items-center justify-between gap-1.5 text-xs">
           <div className="flex items-center gap-1 flex-1 min-w-0">
-            <span className="text-slate-500 font-medium text-[10px] sm:text-[11px] shrink-0">เริ่ม:</span>
+            <span className="text-slate-500 font-medium text-xs sm:text-xs shrink-0">เริ่ม:</span>
             <input
               type="date"
               value={from}
@@ -121,12 +121,12 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
                 setFrom(e.target.value);
                 setPreset("custom");
               }}
-              className="w-full bg-slate-50 md:bg-white text-slate-800 font-medium px-1.5 py-1 rounded-lg border border-slate-300 focus:outline-none focus:border-slate-500 text-[10.5px] sm:text-xs"
+              className="w-full bg-slate-50 md:bg-white text-slate-800 font-medium px-1.5 py-1 rounded-lg border border-slate-300 focus:outline-none focus:border-slate-500 text-xs sm:text-xs"
             />
           </div>
 
           <div className="flex items-center gap-1 flex-1 min-w-0">
-            <span className="text-slate-500 font-medium text-[10px] sm:text-[11px] shrink-0">ถึง:</span>
+            <span className="text-slate-500 font-medium text-xs sm:text-xs shrink-0">ถึง:</span>
             <input
               type="date"
               value={to}
@@ -134,7 +134,7 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
                 setTo(e.target.value);
                 setPreset("custom");
               }}
-              className="w-full bg-slate-50 md:bg-white text-slate-800 font-medium px-1.5 py-1 rounded-lg border border-slate-300 focus:outline-none focus:border-slate-500 text-[10.5px] sm:text-xs"
+              className="w-full bg-slate-50 md:bg-white text-slate-800 font-medium px-1.5 py-1 rounded-lg border border-slate-300 focus:outline-none focus:border-slate-500 text-xs sm:text-xs"
             />
           </div>
 
@@ -142,7 +142,7 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
             type="button"
             onClick={refreshData}
             disabled={refreshing}
-            className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg border border-slate-300 transition cursor-pointer text-[10.5px] sm:text-xs shrink-0 active:scale-95 shadow-2xs"
+            className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-300 transition cursor-pointer text-xs sm:text-xs shrink-0 active:scale-95 shadow-2xs"
           >
             <RotateCw size={12} className={refreshing ? "animate-spin text-slate-900" : "text-slate-600"} />
             <span className="hidden sm:inline">{refreshing ? "รีเฟรช..." : "รีเฟรช"}</span>
@@ -155,48 +155,48 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
         {/* Total Expenses */}
         <div className="bg-white rounded-xl md:rounded-md p-2.5 sm:p-4 border border-slate-200 flex flex-col justify-between gap-1.5 shadow-2xs">
           <div className="flex items-center justify-between gap-1">
-            <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">ยอดค่าใช้จ่ายรวม</span>
-            <span className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center font-bold shrink-0 shadow-2xs">
+            <span className="text-xs sm:text-xs text-slate-500 uppercase tracking-wider truncate">ยอดค่าใช้จ่ายรวม</span>
+            <span className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center shrink-0 shadow-2xs">
               <Wallet size={13} className="sm:w-4 sm:h-4" />
             </span>
           </div>
           <div>
-            <div className="text-sm sm:text-lg lg:text-xl font-bold text-slate-900 truncate">{money(summary.total)}</div>
-            <div className="text-[10px] sm:text-xs text-slate-500 font-normal mt-0.5 truncate">รวม {summary.dataCount} บิล</div>
+            <div className="text-sm sm:text-lg lg:text-xl text-slate-900 truncate">{money(summary.total)}</div>
+            <div className="text-xs sm:text-xs text-slate-500 font-normal mt-0.5 truncate">รวม {summary.dataCount} บิล</div>
           </div>
         </div>
 
         {/* Revenue */}
         <div className="bg-white rounded-xl md:rounded-md p-2.5 sm:p-4 border border-slate-200 flex flex-col justify-between gap-1.5 shadow-2xs">
           <div className="flex items-center justify-between gap-1">
-            <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">ยอดงานรวมภาษี</span>
-            <span className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center font-bold shrink-0 shadow-2xs">
+            <span className="text-xs sm:text-xs text-slate-500 uppercase tracking-wider truncate">ยอดงานรวมภาษี</span>
+            <span className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center shrink-0 shadow-2xs">
               <TrendingUp size={13} className="sm:w-4 sm:h-4" />
             </span>
           </div>
           <div>
-            <div className="text-sm sm:text-lg lg:text-xl font-bold text-slate-900 truncate">{money(summary.revenue)}</div>
-            <div className="text-[10px] sm:text-xs text-slate-500 font-normal mt-0.5 truncate">รวม {summary.projectCount} โครงการ</div>
+            <div className="text-sm sm:text-lg lg:text-xl text-slate-900 truncate">{money(summary.revenue)}</div>
+            <div className="text-xs sm:text-xs text-slate-500 font-normal mt-0.5 truncate">รวม {summary.projectCount} โครงการ</div>
           </div>
         </div>
 
         {/* Project Status */}
         <div className="bg-white rounded-xl md:rounded-md p-2.5 sm:p-4 border border-slate-200 flex flex-col justify-between gap-1.5 shadow-2xs">
           <div className="flex items-center justify-between gap-1">
-            <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">สถานะโครงการ</span>
-            <span className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-600 flex items-center justify-center font-bold shrink-0 shadow-2xs">
+            <span className="text-xs sm:text-xs text-slate-500 uppercase tracking-wider truncate">สถานะโครงการ</span>
+            <span className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-600 flex items-center justify-center shrink-0 shadow-2xs">
               <FolderKanban size={13} className="sm:w-4 sm:h-4" />
             </span>
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
             <div>
-              <div className="text-[9.5px] sm:text-[11px] text-slate-500 font-medium truncate">กำลังทำ</div>
-              <div className="text-sm sm:text-lg font-bold text-indigo-900">{summary.activeProjects}</div>
+              <div className="text-xs sm:text-xs text-slate-500 font-medium truncate">กำลังทำ</div>
+              <div className="text-sm sm:text-lg text-indigo-900">{summary.activeProjects}</div>
             </div>
             <div className="h-5 sm:h-6 w-px bg-slate-200" />
             <div>
-              <div className="text-[9.5px] sm:text-[11px] text-slate-500 font-medium truncate">เสร็จสิ้น</div>
-              <div className="text-sm sm:text-lg font-bold text-slate-600">{summary.completeProjects}</div>
+              <div className="text-xs sm:text-xs text-slate-500 font-medium truncate">เสร็จสิ้น</div>
+              <div className="text-sm sm:text-lg text-slate-600">{summary.completeProjects}</div>
             </div>
           </div>
         </div>
@@ -204,13 +204,13 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
         {/* Net Profit */}
         <div className="bg-white rounded-xl md:rounded-md p-2.5 sm:p-4 border border-slate-200 flex flex-col justify-between gap-1.5 shadow-2xs">
           <div className="flex items-center justify-between gap-1">
-            <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">กำไรสุทธิ (Profit)</span>
-            <span className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center font-bold shrink-0 shadow-2xs">
+            <span className="text-xs sm:text-xs text-slate-500 uppercase tracking-wider truncate">กำไรสุทธิ (Profit)</span>
+            <span className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center shrink-0 shadow-2xs">
               <DollarSign size={13} className="sm:w-4 sm:h-4" />
             </span>
           </div>
           <div>
-            <div className="text-sm sm:text-lg lg:text-xl font-bold text-slate-900 truncate">{money(summary.profit)}</div>
+            <div className="text-sm sm:text-lg lg:text-xl text-slate-900 truncate">{money(summary.profit)}</div>
             <div className="space-y-1 mt-1">
               <div className="w-full bg-slate-100 h-1 rounded-full overflow-hidden border border-slate-200">
                 <div
@@ -218,7 +218,7 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
                   style={{ width: `${Math.max(0, Math.min(100, summary.profitPercent))}%` }}
                 />
               </div>
-              <div className="text-[9px] sm:text-[10px] font-medium text-slate-500 text-right truncate">
+              <div className="text-xs sm:text-xs font-medium text-slate-500 text-right truncate">
                 กำไร: {summary.profitPercent.toFixed(1)}%
               </div>
             </div>
@@ -229,42 +229,42 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
       {/* 3. STATUS COUNTERS STRIP (Clickable Quick Nav on Mobile) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 text-xs">
         <a href="/bill-follow?tab=vat" className="bg-white p-2.5 sm:p-3 rounded-xl md:rounded-md border border-slate-200 flex items-center gap-2 sm:gap-2.5 shadow-2xs hover:border-sky-300 transition active:scale-95">
-          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-sky-50 border border-sky-200 text-sky-600 flex items-center justify-center font-bold shrink-0">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-sky-50 border border-sky-200 text-sky-600 flex items-center justify-center shrink-0">
             <FileCheck size={13} className="sm:w-4 sm:h-4" />
           </div>
           <div className="min-w-0">
-            <div className="text-slate-500 text-[9px] sm:text-[10px] font-semibold truncate">ตาม VAT (รอได้บิล)</div>
-            <div className="font-bold text-slate-900 truncate text-xs sm:text-sm">{summary.vatCount} <span className="text-[10px] font-normal text-slate-400">บิล</span></div>
+            <div className="text-slate-500 text-xs sm:text-xs truncate">ตาม VAT (รอได้บิล)</div>
+            <div className="text-slate-900 truncate text-xs sm:text-sm">{summary.vatCount} <span className="text-xs font-normal text-slate-400">บิล</span></div>
           </div>
         </a>
 
         <a href="/bill-follow?tab=natural" className="bg-white p-2.5 sm:p-3 rounded-xl md:rounded-md border border-slate-200 flex items-center gap-2 sm:gap-2.5 shadow-2xs hover:border-purple-300 transition active:scale-95">
-          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-purple-50 border border-purple-200 text-purple-600 flex items-center justify-center font-bold shrink-0">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-purple-50 border border-purple-200 text-purple-600 flex items-center justify-center shrink-0">
             <UserCheck size={13} className="sm:w-4 sm:h-4" />
           </div>
           <div className="min-w-0">
-            <div className="text-slate-500 text-[9px] sm:text-[10px] font-semibold truncate">ตาม หัก 3% บุคคล</div>
-            <div className="font-bold text-slate-900 truncate text-xs sm:text-sm">{summary.naturalDeductCount} <span className="text-[10px] font-normal text-slate-400">บิล</span></div>
+            <div className="text-slate-500 text-xs sm:text-xs truncate">ตาม หัก 3% บุคคล</div>
+            <div className="text-slate-900 truncate text-xs sm:text-sm">{summary.naturalDeductCount} <span className="text-xs font-normal text-slate-400">บิล</span></div>
           </div>
         </a>
 
         <a href="/bill-follow?tab=company" className="bg-white p-2.5 sm:p-3 rounded-xl md:rounded-md border border-slate-200 flex items-center gap-2 sm:gap-2.5 shadow-2xs hover:border-blue-300 transition active:scale-95">
-          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center font-bold shrink-0">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center shrink-0">
             <Building2 size={13} className="sm:w-4 sm:h-4" />
           </div>
           <div className="min-w-0">
-            <div className="text-slate-500 text-[9px] sm:text-[10px] font-semibold truncate">ตาม หัก 3% บริษัท</div>
-            <div className="font-bold text-slate-900 truncate text-xs sm:text-sm">{summary.companyDeductCount} <span className="text-[10px] font-normal text-slate-400">บิล</span></div>
+            <div className="text-slate-500 text-xs sm:text-xs truncate">ตาม หัก 3% บริษัท</div>
+            <div className="text-slate-900 truncate text-xs sm:text-sm">{summary.companyDeductCount} <span className="text-xs font-normal text-slate-400">บิล</span></div>
           </div>
         </a>
 
         <a href="/bill-follow?tab=credit" className="bg-white p-2.5 sm:p-3 rounded-xl md:rounded-md border border-slate-200 flex items-center gap-2 sm:gap-2.5 shadow-2xs hover:border-orange-300 transition active:scale-95">
-          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-orange-50 border border-orange-200 text-orange-600 flex items-center justify-center font-bold shrink-0">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-orange-50 border border-orange-200 text-orange-600 flex items-center justify-center shrink-0">
             <Clock3 size={13} className="sm:w-4 sm:h-4" />
           </div>
           <div className="min-w-0">
-            <div className="text-slate-500 text-[9px] sm:text-[10px] font-semibold truncate">ตาม เครดิต (รอจ่าย)</div>
-            <div className="font-bold text-slate-900 truncate text-xs sm:text-sm">{summary.creditCount} <span className="text-[10px] font-normal text-slate-400">บิล</span></div>
+            <div className="text-slate-500 text-xs sm:text-xs truncate">ตาม เครดิต (รอจ่าย)</div>
+            <div className="text-slate-900 truncate text-xs sm:text-sm">{summary.creditCount} <span className="text-xs font-normal text-slate-400">บิล</span></div>
           </div>
         </a>
       </div>
@@ -276,7 +276,7 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
           <button
             type="button"
             onClick={() => setActiveTab("vat")}
-            className={`px-3 py-1.5 rounded-lg md:rounded-md text-xs font-semibold transition cursor-pointer shrink-0 active:scale-95 ${
+            className={`px-3 py-1.5 rounded-lg md:rounded-md text-xs transition cursor-pointer shrink-0 active:scale-95 ${
               activeTab === "vat"
                 ? "bg-slate-900 text-white shadow-xs"
                 : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
@@ -287,7 +287,7 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
           <button
             type="button"
             onClick={() => setActiveTab("natural")}
-            className={`px-3 py-1.5 rounded-lg md:rounded-md text-xs font-semibold transition cursor-pointer shrink-0 active:scale-95 ${
+            className={`px-3 py-1.5 rounded-lg md:rounded-md text-xs transition cursor-pointer shrink-0 active:scale-95 ${
               activeTab === "natural"
                 ? "bg-slate-900 text-white shadow-xs"
                 : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
@@ -298,7 +298,7 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
           <button
             type="button"
             onClick={() => setActiveTab("equipment")}
-            className={`px-3 py-1.5 rounded-lg md:rounded-md text-xs font-semibold transition cursor-pointer shrink-0 active:scale-95 ${
+            className={`px-3 py-1.5 rounded-lg md:rounded-md text-xs transition cursor-pointer shrink-0 active:scale-95 ${
               activeTab === "equipment"
                 ? "bg-slate-900 text-white shadow-xs"
                 : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
@@ -311,13 +311,13 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
         {/* Tab 1 Content: VAT & Company Labor */}
         {activeTab === "vat" && (
           <div className="p-4 space-y-3">
-            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+            <h3 className="text-xs text-slate-900 uppercase tracking-wider">
               รายงานสรุปค่าใช้จ่าย ค่าแรงบริษัท และภาษี VAT
             </h3>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs text-slate-700 border-collapse">
                 <thead>
-                  <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-200 text-xs">
+                  <tr className="bg-slate-100 text-slate-800 border-b border-slate-200 text-xs">
                     <th className="py-2.5 px-3 border-r border-slate-200">รายการ</th>
                     <th className="py-2.5 px-3 border-r border-slate-200 text-right">ก่อน VAT (บาท)</th>
                     <th className="py-2.5 px-3 border-r border-slate-200 text-right">คำนวณ VAT / ภาษี (บาท)</th>
@@ -326,34 +326,34 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-normal">
                   <tr className="hover:bg-slate-50">
-                    <td className="py-2 px-3 border-r border-slate-100 font-bold text-slate-900">ค่าแรงบริษัท</td>
+                    <td className="py-2 px-3 border-r border-slate-100 text-slate-900">ค่าแรงบริษัท</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main3.laborBeforeVat)}</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main3.laborVat)}</td>
                     <td className="py-2 px-3 text-right font-medium">{money(summary.main3.laborBeforeVat)}</td>
                   </tr>
                   <tr className="hover:bg-slate-50">
-                    <td className="py-2 px-3 border-r border-slate-100 font-bold text-slate-900">ค่าของ (มี VAT)</td>
+                    <td className="py-2 px-3 border-r border-slate-100 text-slate-900">ค่าของ (มี VAT)</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main3.materialBeforeVat)}</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main3.materialVat)}</td>
                     <td className="py-2 px-3 text-right font-medium">{money(summary.main3.materialBeforeVat + summary.main3.materialVat)}</td>
                   </tr>
                   <tr className="hover:bg-slate-50">
-                    <td className="py-2 px-3 border-r border-slate-100 font-bold text-slate-900">น้ำมัน (มี VAT)</td>
+                    <td className="py-2 px-3 border-r border-slate-100 text-slate-900">น้ำมัน (มี VAT)</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main3.fuelBeforeVat)}</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main3.fuelVat)}</td>
                     <td className="py-2 px-3 text-right font-medium">{money(summary.main3.fuelBeforeVat + summary.main3.fuelVat)}</td>
                   </tr>
                   <tr className="hover:bg-slate-50">
-                    <td className="py-2 px-3 border-r border-slate-100 font-bold text-slate-900">ซ่อมรถ (มี VAT)</td>
+                    <td className="py-2 px-3 border-r border-slate-100 text-slate-900">ซ่อมรถ (มี VAT)</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main3.repairBeforeVat)}</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main3.repairVat)}</td>
                     <td className="py-2 px-3 text-right font-medium">{money(summary.main3.repairBeforeVat + summary.main3.repairVat)}</td>
                   </tr>
-                  <tr className="bg-slate-50 font-bold text-slate-900 border-t border-slate-200">
+                  <tr className="bg-slate-50 text-slate-900 border-t border-slate-200">
                     <td className="py-2.5 px-3 border-r border-slate-200">รวมทั้งสิ้น</td>
-                    <td className="py-2.5 px-3 border-r border-slate-200 text-right text-slate-900 font-bold">{money(summary.main3BeforeVatTotal)}</td>
-                    <td className="py-2.5 px-3 border-r border-slate-200 text-right text-slate-900 font-bold">{money(summary.main3VatTotal)}</td>
-                    <td className="py-2.5 px-3 text-right text-slate-900 font-bold">{money(summary.main3GrandTotal)}</td>
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-right text-slate-900 ">{money(summary.main3BeforeVatTotal)}</td>
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-right text-slate-900 ">{money(summary.main3VatTotal)}</td>
+                    <td className="py-2.5 px-3 text-right text-slate-900 ">{money(summary.main3GrandTotal)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -364,13 +364,13 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
         {/* Tab 2 Content: Natural Labor & Operating Costs */}
         {activeTab === "natural" && (
           <div className="p-4 space-y-3">
-            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+            <h3 className="text-xs text-slate-900 uppercase tracking-wider">
               รายงานสรุปค่าแรงบุคคลธรรมดา และงานดำเนินการ
             </h3>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs text-slate-700 border-collapse">
                 <thead>
-                  <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-200 text-xs">
+                  <tr className="bg-slate-100 text-slate-800 border-b border-slate-200 text-xs">
                     <th className="py-2.5 px-3 border-r border-slate-200">รายการ</th>
                     <th className="py-2.5 px-3 border-r border-slate-200 text-right">ยอดรวมค่าใช้จ่าย (บาท)</th>
                     <th className="py-2.5 px-3 border-r border-slate-200 text-right">หัก ณ ที่จ่าย (บาท)</th>
@@ -379,40 +379,40 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-normal">
                   <tr className="hover:bg-slate-50">
-                    <td className="py-2 px-3 border-r border-slate-100 font-bold text-slate-900">ค่าแรง</td>
+                    <td className="py-2 px-3 border-r border-slate-100 text-slate-900">ค่าแรง</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main4.naturalLabor)}</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium text-amber-700">{money(summary.main4.naturalLaborDeduct)}</td>
                     <td className="py-2 px-3 text-right font-medium">{money(summary.main4.naturalLabor - summary.main4.naturalLaborDeduct)}</td>
                   </tr>
                   <tr className="hover:bg-slate-50">
-                    <td className="py-2 px-3 border-r border-slate-100 font-bold text-slate-900">พนักงาน</td>
+                    <td className="py-2 px-3 border-r border-slate-100 text-slate-900">พนักงาน</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main4.staff)}</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium text-amber-700">{money(summary.main4.staffDeduct)}</td>
                     <td className="py-2 px-3 text-right font-medium">{money(summary.main4.staff - summary.main4.staffDeduct)}</td>
                   </tr>
                   <tr className="hover:bg-slate-50">
-                    <td className="py-2 px-3 border-r border-slate-100 font-bold text-slate-900">ค่าของ</td>
+                    <td className="py-2 px-3 border-r border-slate-100 text-slate-900">ค่าของ</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main4.material)}</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium text-amber-700">{money(summary.main4.materialDeduct)}</td>
                     <td className="py-2 px-3 text-right font-medium">{money(summary.main4.material - summary.main4.materialDeduct)}</td>
                   </tr>
                   <tr className="hover:bg-slate-50">
-                    <td className="py-2 px-3 border-r border-slate-100 font-bold text-slate-900">น้ำมัน</td>
+                    <td className="py-2 px-3 border-r border-slate-100 text-slate-900">น้ำมัน</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main4.fuel)}</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium text-amber-700">{money(summary.main4.fuelDeduct)}</td>
                     <td className="py-2 px-3 text-right font-medium">{money(summary.main4.fuel - summary.main4.fuelDeduct)}</td>
                   </tr>
                   <tr className="hover:bg-slate-50">
-                    <td className="py-2 px-3 border-r border-slate-100 font-bold text-slate-900">ซ่อมรถ</td>
+                    <td className="py-2 px-3 border-r border-slate-100 text-slate-900">ซ่อมรถ</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main4.repair)}</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium text-amber-700">{money(summary.main4.repairDeduct)}</td>
                     <td className="py-2 px-3 text-right font-medium">{money(summary.main4.repair - summary.main4.repairDeduct)}</td>
                   </tr>
-                  <tr className="bg-slate-50 font-bold text-slate-900 border-t border-slate-200">
+                  <tr className="bg-slate-50 text-slate-900 border-t border-slate-200">
                     <td className="py-2.5 px-3 border-r border-slate-200">รวมทั้งสิ้น</td>
-                    <td className="py-2.5 px-3 border-r border-slate-200 text-right text-slate-900 font-bold">{money(summary.main4Total)}</td>
-                    <td className="py-2.5 px-3 border-r border-slate-200 text-right text-amber-700 font-bold">{money(summary.main4DeductTotal)}</td>
-                    <td className="py-2.5 px-3 text-right text-slate-900 font-bold">{money(summary.main4NetTotal)}</td>
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-right text-slate-900 ">{money(summary.main4Total)}</td>
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-right text-amber-700 ">{money(summary.main4DeductTotal)}</td>
+                    <td className="py-2.5 px-3 text-right text-slate-900 ">{money(summary.main4NetTotal)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -423,13 +423,13 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
         {/* Tab 3 Content: Machines, Tools & Others */}
         {activeTab === "equipment" && (
           <div className="p-4 space-y-3">
-            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+            <h3 className="text-xs text-slate-900 uppercase tracking-wider">
               รายงานสรุปเครื่องจักร เครื่องมือ และหมวดอื่นๆ
             </h3>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs text-slate-700 border-collapse">
                 <thead>
-                  <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-200 text-xs">
+                  <tr className="bg-slate-100 text-slate-800 border-b border-slate-200 text-xs">
                     <th className="py-2.5 px-3 border-r border-slate-200">รายการ</th>
                     <th className="py-2.5 px-3 border-r border-slate-200 text-right">เครื่องจักร (บาท)</th>
                     <th className="py-2.5 px-3 border-r border-slate-200 text-right">เครื่องมือ (บาท)</th>
@@ -438,34 +438,34 @@ export function MainDashboardClient({ initialDataRows, initialProjectRows }: Mai
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-normal">
                   <tr className="hover:bg-slate-50">
-                    <td className="py-2 px-3 border-r border-slate-100 font-bold text-slate-900">ก่อน VAT</td>
+                    <td className="py-2 px-3 border-r border-slate-100 text-slate-900">ก่อน VAT</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main5.machineBeforeVat)}</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main5.toolBeforeVat)}</td>
                     <td className="py-2 px-3 text-right font-medium">{money(summary.main5.otherBeforeVat)}</td>
                   </tr>
                   <tr className="hover:bg-slate-50">
-                    <td className="py-2 px-3 border-r border-slate-100 font-bold text-slate-900">คำนวณ VAT (บาท)</td>
+                    <td className="py-2 px-3 border-r border-slate-100 text-slate-900">คำนวณ VAT (บาท)</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main5.machineVat)}</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main5.toolVat)}</td>
                     <td className="py-2 px-3 text-right font-medium">{money(summary.main5.otherVat)}</td>
                   </tr>
                   <tr className="hover:bg-slate-50">
-                    <td className="py-2 px-3 border-r border-slate-100 font-bold text-slate-900">ไม่มี VAT</td>
+                    <td className="py-2 px-3 border-r border-slate-100 text-slate-900">ไม่มี VAT</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main5.machineNoVat)}</td>
                     <td className="py-2 px-3 border-r border-slate-100 text-right font-medium">{money(summary.main5.toolNoVat)}</td>
                     <td className="py-2 px-3 text-right font-medium">{money(summary.main5.otherNoVat)}</td>
                   </tr>
-                  <tr className="bg-slate-50 font-bold text-slate-900 border-t border-slate-200">
+                  <tr className="bg-slate-50 text-slate-900 border-t border-slate-200">
                     <td className="py-2.5 px-3 border-r border-slate-200">รวมก่อน VAT</td>
-                    <td className="py-2.5 px-3 border-r border-slate-200 text-right font-bold">{money(summary.main5BeforeVatTotal)}</td>
-                    <td className="py-2.5 px-3 border-r border-slate-200 text-right font-bold">{money(summary.main5ToolBeforeVatTotal)}</td>
-                    <td className="py-2.5 px-3 text-right font-bold">{money(summary.main5OtherBeforeVatTotal)}</td>
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-right ">{money(summary.main5BeforeVatTotal)}</td>
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-right ">{money(summary.main5ToolBeforeVatTotal)}</td>
+                    <td className="py-2.5 px-3 text-right ">{money(summary.main5OtherBeforeVatTotal)}</td>
                   </tr>
-                  <tr className="bg-slate-50 font-bold text-slate-900 border-t border-slate-200">
+                  <tr className="bg-slate-50 text-slate-900 border-t border-slate-200">
                     <td className="py-2.5 px-3 border-r border-slate-200">รวมไม่มี VAT</td>
-                    <td className="py-2.5 px-3 border-r border-slate-200 text-right font-bold">{money(summary.main5NoVatTotal)}</td>
-                    <td className="py-2.5 px-3 border-r border-slate-200 text-right font-bold">{money(summary.main5ToolNoVatTotal)}</td>
-                    <td className="py-2.5 px-3 text-right font-bold">{money(summary.main5OtherNoVatTotal)}</td>
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-right ">{money(summary.main5NoVatTotal)}</td>
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-right ">{money(summary.main5ToolNoVatTotal)}</td>
+                    <td className="py-2.5 px-3 text-right ">{money(summary.main5OtherNoVatTotal)}</td>
                   </tr>
                 </tbody>
               </table>

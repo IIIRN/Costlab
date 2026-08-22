@@ -73,7 +73,7 @@ export async function renderRowDetailPage(id: string, rowKey: string) {
       <header className="p-3 sm:p-4 bg-white border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Link
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs text-slate-700 bg-slate-100 hover:bg-slate-200 rounded transition cursor-pointer"
             href={`/views/${id}`}
           >
             <ArrowLeft size={14} />
@@ -83,13 +83,13 @@ export async function renderRowDetailPage(id: string, rowKey: string) {
           <div className="h-4 w-px bg-slate-200 mx-1 shrink-0" />
 
           <div className="flex items-center gap-2">
-            <h1 className="font-bold text-base text-slate-900 tracking-tight">{title}</h1>
+            <h1 className="text-base text-slate-900 tracking-tight">{title}</h1>
             {primaryCode && primaryCode !== title ? (
-              <span className="font-mono text-[11px] font-bold bg-slate-900 text-white px-2 py-0.5 rounded">
+              <span className="font-mono text-xs bg-slate-900 text-white px-2 py-0.5 rounded">
                 {primaryCode}
               </span>
             ) : null}
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+            <span className="px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-700 border border-slate-200">
               {view.name}
             </span>
           </div>
@@ -102,9 +102,9 @@ export async function renderRowDetailPage(id: string, rowKey: string) {
           <header className="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <FileText size={15} className="text-slate-600 shrink-0" />
-              <h2 className="text-xs font-bold text-slate-800 tracking-tight m-0">ข้อมูลหลัก</h2>
+              <h2 className="text-xs text-slate-800 tracking-tight m-0">ข้อมูลหลัก</h2>
             </div>
-            <span className="text-[11px] font-semibold text-slate-500">{columns.length} ฟิลด์</span>
+            <span className="text-xs text-slate-500">{columns.length} ฟิลด์</span>
           </header>
 
           <div className="p-3 sm:p-4">
@@ -117,22 +117,22 @@ export async function renderRowDetailPage(id: string, rowKey: string) {
 
                 return (
                   <div key={column} className="bg-white p-2.5 rounded border border-slate-200 flex flex-col justify-between">
-                    <dt className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    <dt className="text-xs text-slate-500 uppercase tracking-wider mb-1">
                       {column}
                     </dt>
                     <dd className="mt-0.5">
                       {isEmpty ? (
                         <span className="text-slate-400 font-normal text-xs">-</span>
                       ) : isAmount ? (
-                        <span className="text-xs font-mono font-bold text-slate-900">
+                        <span className="text-xs font-mono text-slate-900">
                           {formatDetailValue(column, val)}
                         </span>
                       ) : isCode ? (
-                        <span className="text-xs font-mono font-bold text-slate-900">
+                        <span className="text-xs font-mono text-slate-900">
                           {formatDetailValue(column, val)}
                         </span>
                       ) : (
-                        <span className="text-xs font-semibold text-slate-800 break-words">
+                        <span className="text-xs text-slate-800 break-words">
                           {formatDetailValue(column, val)}
                         </span>
                       )}

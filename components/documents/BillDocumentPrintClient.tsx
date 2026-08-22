@@ -30,7 +30,7 @@ export function BillDocumentPrintClient({ data }: BillDocumentPrintClientProps) 
           <button
             type="button"
             onClick={() => setActiveTab("all")}
-            className={`px-3 py-1.5 rounded-md font-semibold text-xs transition ${
+            className={`px-3 py-1.5 rounded-md text-xs transition ${
               activeTab === "all"
                 ? "bg-slate-900 text-white shadow-xs"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
@@ -41,7 +41,7 @@ export function BillDocumentPrintClient({ data }: BillDocumentPrintClientProps) 
           <button
             type="button"
             onClick={() => setActiveTab("contract")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-semibold text-xs transition ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition ${
               activeTab === "contract"
                 ? "bg-slate-900 text-white shadow-xs"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
@@ -53,7 +53,7 @@ export function BillDocumentPrintClient({ data }: BillDocumentPrintClientProps) 
           <button
             type="button"
             onClick={() => setActiveTab("voucher")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-semibold text-xs transition ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition ${
               activeTab === "voucher"
                 ? "bg-slate-900 text-white shadow-xs"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
@@ -65,7 +65,7 @@ export function BillDocumentPrintClient({ data }: BillDocumentPrintClientProps) 
           <button
             type="button"
             onClick={() => setActiveTab("tax50twi")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-semibold text-xs transition ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition ${
               activeTab === "tax50twi"
                 ? "bg-slate-900 text-white shadow-xs"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
@@ -79,7 +79,7 @@ export function BillDocumentPrintClient({ data }: BillDocumentPrintClientProps) 
         <button
           type="button"
           onClick={handlePrint}
-          className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-slate-900 bg-emerald-400 hover:bg-emerald-300 rounded-lg shadow-sm transition active:scale-95 cursor-pointer"
+          className="flex items-center gap-1.5 px-4 py-2 text-xs text-slate-900 bg-emerald-400 hover:bg-emerald-300 rounded-lg shadow-sm transition active:scale-95 cursor-pointer"
         >
           <Printer size={15} />
           <span>สั่งพิมพ์เอกสาร (Print / Save as PDF)</span>

@@ -97,9 +97,9 @@ export function BillDetailClient({
             <span>รายการบิล</span>
           </Link>
           <span className="text-slate-300">/</span>
-          <span className="text-xs font-bold text-slate-700 shrink-0">บิล #{billKey(bill) || decodedBillId}</span>
+          <span className="text-xs text-slate-700 shrink-0">บิล #{billKey(bill) || decodedBillId}</span>
           <span
-            className={`px-2 py-0.5 rounded text-[11px] font-semibold shrink-0 ${
+            className={`px-2 py-0.5 rounded text-xs shrink-0 ${
               isPaid
                 ? "bg-slate-100 text-slate-600 border border-slate-200"
                 : isApproved
@@ -115,7 +115,7 @@ export function BillDetailClient({
           <button
             type="button"
             onClick={() => setIsDocModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-md transition shadow-2xs cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-md transition shadow-2xs cursor-pointer"
             title="พิมพ์เอกสารสัญญาจ้าง / ใบสำคัญจ่าย / 50 ทวิ"
           >
             <FileText size={14} className="text-emerald-600 shrink-0" />
@@ -128,25 +128,25 @@ export function BillDetailClient({
 
       {/* 2. TITLE & META */}
       <div>
-        <h1 className="text-lg font-bold text-slate-900">{projectName}</h1>
+        <h1 className="text-lg text-slate-900">{projectName}</h1>
         <p className="text-xs text-slate-500 mt-0.5">
-          คู่ค้า: <span className="font-semibold text-slate-700">{vendor}</span> · ผู้เบิก: <span className="font-semibold text-slate-700">{requester}</span> · วันที่: <span className="font-semibold text-slate-700">{billDate}</span>
+          คู่ค้า: <span className="text-slate-700">{vendor}</span> · ผู้เบิก: <span className="text-slate-700">{requester}</span> · วันที่: <span className="text-slate-700">{billDate}</span>
         </p>
       </div>
 
       {/* 3. FINANCIAL METRICS */}
       <div className="grid grid-cols-3 gap-3">
         <div className="border border-slate-200 rounded-md p-3 bg-white">
-          <div className="text-[11px] text-slate-400 font-medium mb-1">ยอดเงินรวม</div>
-          <div className="text-base font-bold text-slate-900">{money(total)}</div>
+          <div className="text-xs text-slate-400 font-medium mb-1">ยอดเงินรวม</div>
+          <div className="text-base text-slate-900">{money(total)}</div>
         </div>
         <div className="border border-slate-200 rounded-md p-3 bg-white">
-          <div className="text-[11px] text-slate-400 font-medium mb-1">ยอดโอนแล้ว</div>
-          <div className="text-base font-bold text-indigo-700">{money(transfer)}</div>
+          <div className="text-xs text-slate-400 font-medium mb-1">ยอดโอนแล้ว</div>
+          <div className="text-base text-indigo-700">{money(transfer)}</div>
         </div>
         <div className="border border-slate-200 rounded-md p-3 bg-white">
-          <div className="text-[11px] text-slate-400 font-medium mb-1">ยอดคงเหลือ</div>
-          <div className={`text-base font-bold ${remaining > 0 ? "text-amber-600" : "text-emerald-700"}`}>
+          <div className="text-xs text-slate-400 font-medium mb-1">ยอดคงเหลือ</div>
+          <div className={`text-base ${remaining > 0 ? "text-amber-600" : "text-emerald-700"}`}>
             {money(remaining)}
           </div>
         </div>
@@ -160,7 +160,7 @@ export function BillDetailClient({
           {/* Expense Breakdown */}
           <div className="border border-slate-200 rounded-md bg-white overflow-hidden">
             <div className="px-3 py-2 border-b border-slate-200 bg-slate-50">
-              <h2 className="text-xs font-bold text-slate-700">รายการค่าใช้จ่าย</h2>
+              <h2 className="text-xs text-slate-700">รายการค่าใช้จ่าย</h2>
             </div>
             {expenseItems.length > 0 ? (
               <table className="w-full text-xs">
@@ -168,7 +168,7 @@ export function BillDetailClient({
                   {expenseItems.map((item, idx) => (
                     <tr key={idx}>
                       <td className="px-3 py-2 text-slate-500 font-medium whitespace-nowrap w-[40%]">{item.label}</td>
-                      <td className={`px-3 py-2 font-semibold ${item.isAmount ? "text-slate-900" : "text-slate-800"}`}>
+                      <td className={`px-3 py-2 ${item.isAmount ? "text-slate-900" : "text-slate-800"}`}>
                         {item.isAmount ? money(item.value) : String(item.value)}
                       </td>
                     </tr>
@@ -183,7 +183,7 @@ export function BillDetailClient({
           {/* Payment & Tax Details */}
           <div className="border border-slate-200 rounded-md bg-white overflow-hidden">
             <div className="px-3 py-2 border-b border-slate-200 bg-slate-50">
-              <h2 className="text-xs font-bold text-slate-700">เงื่อนไขการชำระเงิน & ภาษี</h2>
+              <h2 className="text-xs text-slate-700">เงื่อนไขการชำระเงิน & ภาษี</h2>
             </div>
             {paymentItems.length > 0 ? (
               <table className="w-full text-xs">
@@ -191,7 +191,7 @@ export function BillDetailClient({
                   {paymentItems.map((item, idx) => (
                     <tr key={idx}>
                       <td className="px-3 py-2 text-slate-500 font-medium whitespace-nowrap w-[40%]">{item.label}</td>
-                      <td className="px-3 py-2 font-semibold text-slate-800">
+                      <td className="px-3 py-2 text-slate-800">
                         {item.link ? (
                           <Link href={item.link} className="text-indigo-600 hover:underline">
                             {String(item.value)}
@@ -216,9 +216,9 @@ export function BillDetailClient({
         <div className="lg:col-span-5">
           <div className="border border-slate-200 rounded-md bg-white overflow-hidden h-full">
             <div className="px-3 py-2 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-              <h2 className="text-xs font-bold text-slate-700">รูปถ่ายบิล & เอกสารประกอบ</h2>
+              <h2 className="text-xs text-slate-700">รูปถ่ายบิล & เอกสารประกอบ</h2>
               {hasValue(imageValue) && (
-                <span className="text-[10px] text-slate-400">คลิกรูปเพื่อขยาย</span>
+                <span className="text-xs text-slate-400">คลิกรูปเพื่อขยาย</span>
               )}
             </div>
             <div className="p-3">

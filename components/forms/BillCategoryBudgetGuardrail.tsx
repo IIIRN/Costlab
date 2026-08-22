@@ -73,10 +73,10 @@ export function BillCategoryBudgetGuardrail({ values, projectRows = [] }: BillCa
           )}
 
           <div>
-            <div className="font-bold flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5">
               <span>คุมงบหมวดงาน: {categoryLabel}</span>
               <span
-                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                className={`text-xs px-2 py-0.5 rounded-full border ${
                   isOverBudget
                     ? "bg-rose-900 border-rose-500 text-rose-200"
                     : isWarning
@@ -87,13 +87,13 @@ export function BillCategoryBudgetGuardrail({ values, projectRows = [] }: BillCa
                 {percentUsedAfterBill}%
               </span>
             </div>
-            <p className="text-[11px] opacity-90 mt-0.5">{budgetStatus.message}</p>
+            <p className="text-xs opacity-90 mt-0.5">{budgetStatus.message}</p>
           </div>
         </div>
 
         <div className="text-right shrink-0">
-          <span className="text-[10px] opacity-75 block">วงเงินหมวดงาน:</span>
-          <span className="font-bold text-xs">{money(budgetLimit)} ฿</span>
+          <span className="text-xs opacity-75 block">วงเงินหมวดงาน:</span>
+          <span className="text-xs">{money(budgetLimit)} ฿</span>
         </div>
       </div>
 
@@ -108,7 +108,7 @@ export function BillCategoryBudgetGuardrail({ values, projectRows = [] }: BillCa
       </div>
 
       {/* Additional Stats Line */}
-      <div className="flex items-center justify-between text-[10px] opacity-80 pt-0.5 border-t border-white/10">
+      <div className="flex items-center justify-between text-xs opacity-80 pt-0.5 border-t border-white/10">
         <span>ยอดบิลนี้: {money(currentBillAmount)} ฿</span>
         <span>
           {remainingAfterBill < 0

@@ -701,12 +701,12 @@ function calcNetLabor(r: SheetRow): number {
         {/* Quick Stats Strip & Calculator Toggle */}
         <div className="flex flex-wrap items-center gap-3 text-xs">
           <div className="border border-slate-200 rounded-md px-3 py-1.5 bg-white">
-            <span className="text-[11px] text-slate-400 block">ยอดโอนเงินสุทธิ</span>
+            <span className="text-xs text-slate-400 block">ยอดโอนเงินสุทธิ</span>
             <span className="font-normal text-emerald-700">{money(totalTransferAll)}</span>
           </div>
 
           <div className="border border-slate-200 rounded-md px-3 py-1.5 bg-white">
-            <span className="text-[11px] text-slate-400 block">ยอดเงินบิลรวม</span>
+            <span className="text-xs text-slate-400 block">ยอดเงินบิลรวม</span>
             <span className="font-normal text-slate-900">{money(totalBillAmountAll)}</span>
           </div>
 
@@ -751,7 +751,7 @@ function calcNetLabor(r: SheetRow): number {
               <span className="font-normal text-slate-700 block">1. คำนวณภาษี VAT 7% & หัก ณ ที่จ่าย (WHT)</span>
               <div className="grid grid-cols-3 gap-2">
                 <div>
-                  <label className="text-[11px] text-slate-500 block mb-1">ยอดก่อนภาษี (บาท)</label>
+                  <label className="text-xs text-slate-500 block mb-1">ยอดก่อนภาษี (บาท)</label>
                   <input
                     type="number"
                     value={calcBaseAmount}
@@ -760,7 +760,7 @@ function calcNetLabor(r: SheetRow): number {
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] text-slate-500 block mb-1">VAT %</label>
+                  <label className="text-xs text-slate-500 block mb-1">VAT %</label>
                   <select
                     value={calcVatPercent}
                     onChange={(e) => setCalcVatPercent(Number(e.target.value))}
@@ -771,7 +771,7 @@ function calcNetLabor(r: SheetRow): number {
                   </select>
                 </div>
                 <div>
-                  <label className="text-[11px] text-slate-500 block mb-1">หัก ณ ที่จ่าย %</label>
+                  <label className="text-xs text-slate-500 block mb-1">หัก ณ ที่จ่าย %</label>
                   <select
                     value={calcWhtPercent}
                     onChange={(e) => setCalcWhtPercent(Number(e.target.value))}
@@ -787,15 +787,15 @@ function calcNetLabor(r: SheetRow): number {
 
               <div className="grid grid-cols-3 gap-2 bg-white p-2.5 rounded-md border border-slate-200 text-center">
                 <div>
-                  <span className="text-[11px] text-slate-400 block">VAT 7%</span>
+                  <span className="text-xs text-slate-400 block">VAT 7%</span>
                   <span className="font-normal text-slate-900">+{money(calcResults.vatVal)}</span>
                 </div>
                 <div>
-                  <span className="text-[11px] text-slate-400 block">หัก ณ ที่จ่าย</span>
+                  <span className="text-xs text-slate-400 block">หัก ณ ที่จ่าย</span>
                   <span className="font-normal text-amber-600">-{money(calcResults.whtVal)}</span>
                 </div>
                 <div>
-                  <span className="text-[11px] text-slate-400 block">ยอดโอนจริงสุทธิ</span>
+                  <span className="text-xs text-slate-400 block">ยอดโอนจริงสุทธิ</span>
                   <span className="font-normal text-emerald-700">{money(calcResults.netPayment)}</span>
                 </div>
               </div>
@@ -806,7 +806,7 @@ function calcNetLabor(r: SheetRow): number {
               <span className="font-normal text-slate-700 block">2. คำนวณ Burn Rate & ประมาณการกำไรโครงการ</span>
               <div className="flex items-center gap-2">
                 <div className="flex-1">
-                  <label className="text-[11px] text-slate-500 block mb-1">มูลค่าสัญญาโครงการ (บาท)</label>
+                  <label className="text-xs text-slate-500 block mb-1">มูลค่าสัญญาโครงการ (บาท)</label>
                   <input
                     type="number"
                     value={calcContractValue}
@@ -815,7 +815,7 @@ function calcNetLabor(r: SheetRow): number {
                   />
                 </div>
                 <div className="flex-1">
-                  <label className="text-[11px] text-slate-500 block mb-1">เบิกจ่ายจริงแล้วสะสม</label>
+                  <label className="text-xs text-slate-500 block mb-1">เบิกจ่ายจริงแล้วสะสม</label>
                   <div className="w-full bg-white border border-slate-200 text-emerald-700 text-xs font-normal px-2.5 py-1 rounded-md">
                     {money(projectMarginResults.spent)}
                   </div>
@@ -824,19 +824,19 @@ function calcNetLabor(r: SheetRow): number {
 
               <div className="grid grid-cols-3 gap-2 bg-white p-2.5 rounded-md border border-slate-200 text-center">
                 <div>
-                  <span className="text-[11px] text-slate-400 block">งบประมาณคงเหลือ</span>
+                  <span className="text-xs text-slate-400 block">งบประมาณคงเหลือ</span>
                   <span className={`font-normal ${projectMarginResults.remaining >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
                     {money(projectMarginResults.remaining)}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[11px] text-slate-400 block">อัตราใช้งบ (Burn Rate)</span>
+                  <span className="text-xs text-slate-400 block">อัตราใช้งบ (Burn Rate)</span>
                   <span className={`font-normal ${projectMarginResults.burnRate > 90 ? "text-rose-600" : "text-slate-800"}`}>
                     {projectMarginResults.burnRate.toFixed(1)}%
                   </span>
                 </div>
                 <div>
-                  <span className="text-[11px] text-slate-400 block">ประมาณการกำไร</span>
+                  <span className="text-xs text-slate-400 block">ประมาณการกำไร</span>
                   <span className={`font-normal ${projectMarginResults.estimatedMargin >= 0 ? "text-indigo-700" : "text-rose-600"}`}>
                     {projectMarginResults.estimatedMargin.toFixed(1)}%
                   </span>
@@ -1254,7 +1254,7 @@ function calcNetLabor(r: SheetRow): number {
           </div>
 
           <div className="overflow-auto max-h-[calc(100vh-210px)] relative">
-            <table className="w-full text-left text-[11px] sm:text-xs text-slate-800 border-collapse font-sans font-normal">
+            <table className="w-full text-left text-xs sm:text-xs text-slate-800 border-collapse font-sans font-normal">
               <thead className="sticky top-0 z-20 bg-slate-900 text-white font-normal border-b border-slate-900 whitespace-nowrap">
                 <tr>
                   <th className="py-2.5 px-2 border-r border-slate-800 text-center w-12 font-normal">ลำดับ</th>

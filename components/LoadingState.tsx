@@ -17,7 +17,7 @@ export function LoadingState({
 }: LoadingStateProps) {
   if (compact || type === "compact") {
     return (
-      <div className="flex items-center justify-center gap-2.5 p-3 text-slate-700 text-xs font-semibold">
+      <div className="flex items-center justify-center gap-2.5 p-3 text-slate-700 text-xs ">
         <Loader2 size={16} className="animate-spin text-emerald-600 shrink-0" />
         {title ? <span>{title}</span> : null}
       </div>
@@ -35,7 +35,7 @@ export function LoadingState({
         </div>
       </div>
 
-      <h3 className="text-sm font-bold text-slate-800 tracking-tight mb-1">
+      <h3 className="text-sm text-slate-800 tracking-tight mb-1">
         {title}
       </h3>
       <p className="text-xs text-slate-500 font-medium max-w-xs leading-relaxed">

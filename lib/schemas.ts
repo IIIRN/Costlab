@@ -225,6 +225,17 @@ export const FORM_SCHEMAS: Record<string, FieldSchema[]> = {
 };
 
 export function getFormSchema(tableName: string) {
+  if (FORM_SCHEMAS[tableName]) return FORM_SCHEMAS[tableName];
+  const normalized = String(tableName || "").trim().toLowerCase().replace(/[-_]/g, "");
+  if (normalized === "contractwork" || normalized === "contractworks" || tableName === TABLES.CONTRACT_WORK || tableName === "งานรับเหมา") {
+    return FORM_SCHEMAS[TABLES.CONTRACT_WORK] || [];
+  }
+  if (normalized === "data" || normalized === "bills" || tableName === TABLES.DATA) {
+    return FORM_SCHEMAS[TABLES.DATA] || [];
+  }
+  if (normalized === "project" || normalized === "projects" || tableName === TABLES.PROJECT) {
+    return FORM_SCHEMAS[TABLES.PROJECT] || [];
+  }
   return FORM_SCHEMAS[tableName] || [];
 }
 

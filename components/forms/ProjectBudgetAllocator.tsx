@@ -211,21 +211,21 @@ export function ProjectBudgetAllocator({
             <PieChart size={16} />
           </div>
           <div className="text-left">
-            <h4 className="font-bold text-xs text-slate-800 flex items-center gap-2">
+            <h4 className="text-xs text-slate-800 flex items-center gap-2">
               <span>จัดสรรงบประมาณรายหมวดงาน (Category Budget Matrix)</span>
               {totalAllocated > 0 && (
-                <span className="text-[10px] font-semibold px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full">
+                <span className="text-xs px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full">
                   จัดสรรแล้ว {money(totalAllocated)} ฿ ({allocatedPercent}%)
                 </span>
               )}
             </h4>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs text-slate-500">
               {expanded ? "คลิกเพื่อซ่อนฟอร์มจัดสรรงบประมาณ" : "คลิกเพื่อเปิดระบุวงเงินคุมงบแยกตามกลุ่มหมวดงานหลัก"}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100">
+        <div className="flex items-center gap-2 text-xs text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100">
           <span>{expanded ? "ซ่อนรายละเอียด" : "ตั้งค่าวงเงินหมวดงาน"}</span>
           {expanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
         </div>
@@ -238,8 +238,8 @@ export function ProjectBudgetAllocator({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3 rounded-lg border border-slate-200">
             {/* Segmented Mode Selector */}
             <div className="space-y-1">
-              <span className="text-[11px] font-bold text-slate-500 block uppercase tracking-wider">โหมดการคุมงบ:</span>
-              <div className="inline-flex p-0.5 bg-slate-100 rounded-lg border border-slate-200 text-xs font-semibold">
+              <span className="text-xs text-slate-500 block uppercase tracking-wider">โหมดการคุมงบ:</span>
+              <div className="inline-flex p-0.5 bg-slate-100 rounded-lg border border-slate-200 text-xs ">
                 {modeOptions.map(mode => {
                   const isSelected = currentMode === mode.key;
                   return (
@@ -249,7 +249,7 @@ export function ProjectBudgetAllocator({
                       onClick={() => onChange("คุมงบประเภทงาน", mode.key)}
                       className={`px-3 py-1 rounded-md transition cursor-pointer text-xs ${
                         isSelected
-                          ? "bg-emerald-600 text-white font-bold shadow-2xs"
+                          ? "bg-emerald-600 text-white shadow-2xs"
                           : "text-slate-600 hover:text-slate-900"
                       }`}
                     >
@@ -263,12 +263,12 @@ export function ProjectBudgetAllocator({
             {/* Quick KPI Strip */}
             <div className="flex items-center gap-3 text-xs border-t sm:border-t-0 sm:border-l border-slate-200 pt-2 sm:pt-0 sm:pl-3">
               <div>
-                <span className="text-[10px] text-slate-400 block font-semibold">งบรวมโครงการ:</span>
-                <span className="font-bold text-slate-800">{money(totalProjectBudget)} ฿</span>
+                <span className="text-xs text-slate-400 block ">งบรวมโครงการ:</span>
+                <span className="text-slate-800">{money(totalProjectBudget)} ฿</span>
               </div>
               <div>
-                <span className="text-[10px] text-slate-400 block font-semibold">คงเหลือจัดสรร:</span>
-                <span className={`font-bold ${remainingBudget < 0 ? "text-rose-600 animate-pulse" : "text-emerald-700"}`}>
+                <span className="text-xs text-slate-400 block ">คงเหลือจัดสรร:</span>
+                <span className={`${remainingBudget < 0 ? "text-rose-600 animate-pulse" : "text-emerald-700"}`}>
                   {money(remainingBudget)} ฿
                 </span>
               </div>
@@ -277,9 +277,9 @@ export function ProjectBudgetAllocator({
 
           {/* Grouped Category Input Grid */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between text-xs text-slate-600 font-semibold px-0.5">
+            <div className="flex items-center justify-between text-xs text-slate-600 px-0.5">
               <span>จัดสรรวงเงินงบประมาณแยกตามหมวดงาน (Master Data):</span>
-              <span className="text-[11px] text-slate-400 font-mono">({Object.keys(groupedCategories).length} กลุ่มงาน / {activeCategories.length} รายการ)</span>
+              <span className="text-xs text-slate-400 font-mono">({Object.keys(groupedCategories).length} กลุ่มงาน / {activeCategories.length} รายการ)</span>
             </div>
 
             {Object.entries(groupedCategories).map(([groupName, items]) => {
@@ -289,15 +289,15 @@ export function ProjectBudgetAllocator({
                 <div key={groupName} className="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs space-y-2">
                   {/* Group Header Banner */}
                   <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
-                    <div className="flex items-center gap-1.5 font-bold text-xs text-slate-800">
+                    <div className="flex items-center gap-1.5 text-xs text-slate-800">
                       {getGroupIcon(groupName)}
                       <span>{groupName}</span>
-                      <span className="text-[10px] font-semibold text-slate-400 font-mono">
+                      <span className="text-xs text-slate-400 font-mono">
                         ({items.length} รายการ)
                       </span>
                     </div>
                     {groupSum > 0 && (
-                      <span className="text-[11px] font-bold text-emerald-700 font-mono">
+                      <span className="text-xs text-emerald-700 font-mono">
                         รวมงบหมวดนี้: {money(groupSum)} ฿
                       </span>
                     )}
@@ -313,7 +313,7 @@ export function ProjectBudgetAllocator({
                           key={`${cat.field}-${idx}`}
                           className="bg-slate-50/60 border border-slate-200/80 hover:border-emerald-300 hover:bg-white rounded-lg p-2 transition flex items-center justify-between gap-2"
                         >
-                          <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5 truncate">
+                          <span className="text-xs text-slate-700 flex items-center gap-1.5 truncate">
                             <Layers size={13} className="text-emerald-600 shrink-0" />
                             <span className="truncate">{cat.label}</span>
                           </span>
@@ -324,9 +324,9 @@ export function ProjectBudgetAllocator({
                               value={val}
                               onChange={e => onChange(cat.field, e.target.value)}
                               placeholder="0.00"
-                              className="w-full bg-white border border-slate-200 focus:border-emerald-500 rounded px-2 py-1 text-xs text-right font-mono font-bold text-slate-800 focus:outline-none"
+                              className="w-full bg-white border border-slate-200 focus:border-emerald-500 rounded px-2 py-1 text-xs text-right font-mono text-slate-800 focus:outline-none"
                             />
-                            <span className="text-[10px] text-slate-400 font-bold">฿</span>
+                            <span className="text-xs text-slate-400 ">฿</span>
                           </div>
                         </div>
                       );

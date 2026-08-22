@@ -146,9 +146,9 @@ export function ProjectDetailClient({
             <span>รายการสถานะงาน</span>
           </Link>
           <span className="text-slate-300">/</span>
-          <span className="text-xs font-bold text-slate-700">#{projectId}</span>
+          <span className="text-xs text-slate-700">#{projectId}</span>
           <span
-            className={`inline-flex items-center px-2.5 py-0.5 rounded text-[11px] font-semibold ${colorInfo.badgeClass}`}
+            className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs ${colorInfo.badgeClass}`}
           >
             <span>{colorInfo.label}</span>
           </span>
@@ -157,25 +157,25 @@ export function ProjectDetailClient({
 
       {/* 2. TITLE & META */}
       <div>
-        <h1 className="text-lg font-bold text-slate-900">{projectName}</h1>
+        <h1 className="text-lg text-slate-900">{projectName}</h1>
         <p className="text-xs text-slate-500 mt-0.5">
-          ลูกค้า: <span className="font-semibold text-slate-700">{customer}</span> · บริษัท: <span className="font-semibold text-slate-700">{company}</span> · ผู้รับผิดชอบ: <span className="font-semibold text-slate-700">{owner}</span>
+          ลูกค้า: <span className="text-slate-700">{customer}</span> · บริษัท: <span className="text-slate-700">{company}</span> · ผู้รับผิดชอบ: <span className="text-slate-700">{owner}</span>
         </p>
       </div>
 
       {/* 3. FINANCIAL SUMMARY */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
         <div className="border border-slate-200 rounded-xl md:rounded-md p-3 sm:p-4 bg-white shadow-2xs">
-          <div className="text-[11px] text-slate-400 font-medium mb-0.5">งบประมาณ</div>
-          <div className="text-base sm:text-lg font-bold text-slate-900">{money(totals.budget)}</div>
+          <div className="text-xs text-slate-400 font-medium mb-0.5">งบประมาณ</div>
+          <div className="text-base sm:text-lg text-slate-900">{money(totals.budget)}</div>
         </div>
 
         <div className="border border-slate-200 rounded-xl md:rounded-md p-3 sm:p-4 bg-white shadow-2xs">
-          <div className="flex items-center justify-between text-[11px] text-slate-400 font-medium mb-0.5">
+          <div className="flex items-center justify-between text-xs text-slate-400 font-medium mb-0.5">
             <span>เบิกจ่ายรวม</span>
-            <span className="font-bold text-indigo-700">{percentUsed}%</span>
+            <span className="text-indigo-700">{percentUsed}%</span>
           </div>
-          <div className="text-base sm:text-lg font-bold text-indigo-700">{money(totals.totalAll)}</div>
+          <div className="text-base sm:text-lg text-indigo-700">{money(totals.totalAll)}</div>
           {totals.budget > 0 && (
             <div className="mt-1.5 w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
               <div
@@ -189,22 +189,22 @@ export function ProjectDetailClient({
         </div>
 
         <div className="border border-slate-200 rounded-xl md:rounded-md p-3 sm:p-4 bg-white shadow-2xs">
-          <div className="text-[11px] text-slate-400 font-medium mb-0.5">ยอดคงเหลือ</div>
-          <div className={`text-base sm:text-lg font-bold ${totals.remaining < 0 ? "text-rose-600" : "text-emerald-700"}`}>
+          <div className="text-xs text-slate-400 font-medium mb-0.5">ยอดคงเหลือ</div>
+          <div className={`text-base sm:text-lg ${totals.remaining < 0 ? "text-rose-600" : "text-emerald-700"}`}>
             {money(totals.remaining)}
-            {totals.remaining < 0 && <span className="text-[10px] text-rose-500 ml-1">เกินงบ</span>}
+            {totals.remaining < 0 && <span className="text-xs text-rose-500 ml-1">เกินงบ</span>}
           </div>
         </div>
       </div>
 
       {/* 4. WORKSPACE TABS (Scrollable on mobile) */}
-      <div className="flex items-center gap-1 border-b border-slate-200 text-xs font-semibold overflow-x-auto no-scrollbar whitespace-nowrap">
+      <div className="flex items-center gap-1 border-b border-slate-200 text-xs overflow-x-auto no-scrollbar whitespace-nowrap">
         <button
           type="button"
           onClick={() => setActiveTab("bills")}
           className={`px-3 py-2 border-b-2 transition shrink-0 cursor-pointer ${
             activeTab === "bills"
-              ? "border-slate-900 text-slate-900 font-bold"
+              ? "border-slate-900 text-slate-900 "
               : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
@@ -216,7 +216,7 @@ export function ProjectDetailClient({
           onClick={() => setActiveTab("expenses")}
           className={`px-3 py-2 border-b-2 transition shrink-0 cursor-pointer ${
             activeTab === "expenses"
-              ? "border-slate-900 text-slate-900 font-bold"
+              ? "border-slate-900 text-slate-900 "
               : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
@@ -228,7 +228,7 @@ export function ProjectDetailClient({
           onClick={() => setActiveTab("products")}
           className={`px-3 py-2 border-b-2 transition shrink-0 cursor-pointer ${
             activeTab === "products"
-              ? "border-slate-900 text-slate-900 font-bold"
+              ? "border-slate-900 text-slate-900 "
               : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
@@ -240,7 +240,7 @@ export function ProjectDetailClient({
           onClick={() => setActiveTab("edit")}
           className={`px-3 py-2 border-b-2 transition shrink-0 cursor-pointer ${
             activeTab === "edit"
-              ? "border-slate-900 text-slate-900 font-bold"
+              ? "border-slate-900 text-slate-900 "
               : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
@@ -271,15 +271,15 @@ export function ProjectDetailClient({
       {activeTab === "expenses" && (
         <div className="border border-slate-200 rounded-md bg-white overflow-hidden">
           <div className="px-3 py-2 border-b border-slate-200 bg-slate-50">
-            <h2 className="text-xs font-bold text-slate-700">ยอดสรุปค่าใช้จ่ายจำแนกตามประเภท</h2>
+            <h2 className="text-xs text-slate-700">ยอดสรุปค่าใช้จ่ายจำแนกตามประเภท</h2>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 text-xs">
             {expenseCategories.map((cat) => {
               const amount = expenseBreakdown[cat] || 0;
               return (
                 <div key={cat} className="p-3 bg-slate-50 rounded-md border border-slate-200">
-                  <div className="text-slate-400 font-medium text-[11px] mb-0.5">{cat}</div>
-                  <div className="font-bold text-slate-900 text-sm">{money(amount)}</div>
+                  <div className="text-slate-400 font-medium text-xs mb-0.5">{cat}</div>
+                  <div className="text-slate-900 text-sm">{money(amount)}</div>
                 </div>
               );
             })}
@@ -291,20 +291,20 @@ export function ProjectDetailClient({
         <div className="border border-slate-200 rounded-md bg-white overflow-hidden">
           <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
             <div>
-              <h2 className="text-xs font-bold text-slate-800">คุมงบประมาณรายสินค้า / หมวดงาน (Product Budget Control Matrix)</h2>
-              <p className="text-[11px] text-slate-500 mt-0.5">
+              <h2 className="text-xs text-slate-800">คุมงบประมาณรายสินค้า / หมวดงาน (Product Budget Control Matrix)</h2>
+              <p className="text-xs text-slate-500 mt-0.5">
                 เปรียบเทียบวงเงินจัดสรรรายหมวด กับยอดเงินเบิกจ่ายจริงตามบิล ({productControlRows.length} รายการ)
               </p>
             </div>
-            <div className="text-xs font-bold text-slate-700 bg-white px-3 py-1.5 rounded-lg border border-slate-200">
-              รวมเบิกจ่าย: <span className="text-indigo-700 font-bold">{money(productControlRows.reduce((sum, r) => sum + r.spent, 0))}</span>
+            <div className="text-xs text-slate-700 bg-white px-3 py-1.5 rounded-lg border border-slate-200">
+              รวมเบิกจ่าย: <span className="text-indigo-700 ">{money(productControlRows.reduce((sum, r) => sum + r.spent, 0))}</span>
             </div>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-100/80 border-b border-slate-200 text-slate-600 font-bold text-[11px]">
+                <tr className="bg-slate-100/80 border-b border-slate-200 text-slate-600 text-xs">
                   <th className="py-2.5 px-4">รายการสินค้า / หมวดงาน</th>
                   <th className="py-2.5 px-4 text-right">วงเงินงบประมาณ</th>
                   <th className="py-2.5 px-4 text-right">เบิกจ่ายแล้ว</th>
@@ -328,17 +328,17 @@ export function ProjectDetailClient({
 
                     return (
                       <tr key={idx} className="hover:bg-slate-50/80 transition">
-                        <td className="py-2.5 px-4 font-semibold text-slate-800">
+                        <td className="py-2.5 px-4 text-slate-800">
                           {item.name}
                         </td>
                         <td className="py-2.5 px-4 text-right font-medium text-slate-600">
-                          {item.budget > 0 ? money(item.budget) : <span className="text-slate-400 text-[11px]">-</span>}
+                          {item.budget > 0 ? money(item.budget) : <span className="text-slate-400 text-xs">-</span>}
                         </td>
-                        <td className="py-2.5 px-4 text-right font-bold text-indigo-700">
+                        <td className="py-2.5 px-4 text-right text-indigo-700">
                           {money(item.spent)}
                         </td>
-                        <td className={`py-2.5 px-4 text-right font-bold ${isOver ? "text-rose-600" : item.budget > 0 ? "text-emerald-700" : "text-slate-400"}`}>
-                          {item.budget > 0 ? money(remaining) : <span className="text-slate-400 text-[11px]">-</span>}
+                        <td className={`py-2.5 px-4 text-right ${isOver ? "text-rose-600" : item.budget > 0 ? "text-emerald-700" : "text-slate-400"}`}>
+                          {item.budget > 0 ? money(remaining) : <span className="text-slate-400 text-xs">-</span>}
                         </td>
                         <td className="py-2.5 px-4 text-center">
                           {item.budget > 0 ? (
@@ -349,14 +349,14 @@ export function ProjectDetailClient({
                                   style={{ width: `${percent}%` }}
                                 />
                               </div>
-                              <span className={`text-[10px] font-bold ${isOver ? "text-rose-600" : "text-slate-600"}`}>{percent}%</span>
+                              <span className={`text-xs ${isOver ? "text-rose-600" : "text-slate-600"}`}>{percent}%</span>
                             </div>
                           ) : (
-                            <span className="text-[10px] text-slate-400 font-medium">ไม่ได้คุมงบ</span>
+                            <span className="text-xs text-slate-400 font-medium">ไม่ได้คุมงบ</span>
                           )}
                         </td>
                         <td className="py-2.5 px-4 text-center">
-                          <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">
+                          <span className="inline-block px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-700">
                             {item.billCount} บิล
                           </span>
                         </td>

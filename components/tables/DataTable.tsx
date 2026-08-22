@@ -93,14 +93,14 @@ export function DataTable({ columns, rows, limit = 80, title = "Data", subtitle,
     <div className="bg-white rounded-lg border border-slate-200 shadow-2xs overflow-hidden flex flex-col font-sans">
       <div className="p-3 sm:p-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 bg-white">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="w-7 h-7 rounded bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-xs shrink-0">
+          <span className="w-7 h-7 rounded bg-slate-100 text-slate-700 flex items-center justify-center text-xs shrink-0">
             <List size={14} />
           </span>
           <div className="min-w-0">
-            <h2 className="text-xs font-bold text-slate-900 truncate tracking-tight">{title}</h2>
-            {subtitle ? <p className="text-[11px] text-slate-500 truncate">{subtitle}</p> : null}
+            <h2 className="text-xs text-slate-900 truncate tracking-tight">{title}</h2>
+            {subtitle ? <p className="text-xs text-slate-500 truncate">{subtitle}</p> : null}
           </div>
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
+          <span className="text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
             {totalRows} {rowLabel}
           </span>
         </div>
@@ -141,7 +141,7 @@ export function DataTable({ columns, rows, limit = 80, title = "Data", subtitle,
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-700 border-collapse">
             <thead>
-              <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-200 text-xs">
+              <tr className="bg-slate-100 text-slate-800 border-b border-slate-200 text-xs">
                 {cleanColumns.map(column => (
                   <th key={column} className={`py-2.5 px-3 border-r border-slate-200 ${getColumnAlignmentClass(column)}`} data-column={column} data-label={column}>
                     {column}
@@ -164,7 +164,7 @@ export function DataTable({ columns, rows, limit = 80, title = "Data", subtitle,
                           {isLink && detailBasePath && targetKey ? (
                             <Link
                               href={`${detailBasePath}/${encodeURIComponent(targetKey)}`}
-                              className="font-bold text-slate-900 hover:underline"
+                              className="text-slate-900 hover:underline"
                             >
                               {renderCell(column, row[column], row, cellFormatters)}
                             </Link>
@@ -250,9 +250,9 @@ function TablePagination({
               <button
                 key={option}
                 type="button"
-                className={`px-2 py-0.5 rounded text-xs font-semibold transition cursor-pointer ${
+                className={`px-2 py-0.5 rounded text-xs transition cursor-pointer ${
                   option === pageSize
-                    ? "bg-slate-900 text-white font-semibold"
+                    ? "bg-slate-900 text-white "
                     : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-100"
                 }`}
                 onClick={() => onPageSizeChange(option)}
@@ -265,7 +265,7 @@ function TablePagination({
       </div>
       <nav className="flex items-center gap-1" aria-label="table pages">
         <button 
-          className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-slate-300 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40 cursor-pointer transition"
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-slate-300 bg-white text-xs text-slate-700 hover:bg-slate-100 disabled:opacity-40 cursor-pointer transition"
           disabled={currentPage <= 1} 
           onClick={() => onPageChange(currentPage - 1)}
         >
@@ -274,12 +274,12 @@ function TablePagination({
         </button>
         {pages.map((page, index) => (
           page === "ellipsis" ? (
-            <span className="px-1 text-xs text-slate-400 font-bold" key={`ellipsis-${index}`}>...</span>
+            <span className="px-1 text-xs text-slate-400 " key={`ellipsis-${index}`}>...</span>
           ) : (
             <button
               key={page}
               type="button"
-              className={`min-w-6 h-6 px-1.5 rounded text-xs font-semibold transition cursor-pointer ${
+              className={`min-w-6 h-6 px-1.5 rounded text-xs transition cursor-pointer ${
                 page === currentPage
                   ? "bg-slate-900 text-white"
                   : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-100"
@@ -291,7 +291,7 @@ function TablePagination({
           )
         ))}
         <button 
-          className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-slate-300 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40 cursor-pointer transition"
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-slate-300 bg-white text-xs text-slate-700 hover:bg-slate-100 disabled:opacity-40 cursor-pointer transition"
           disabled={currentPage >= totalPages} 
           onClick={() => onPageChange(currentPage + 1)}
         >
@@ -373,7 +373,7 @@ function ColorDot({ value }: { value: unknown }) {
   return (
     <span className="inline-flex items-center gap-1.5" title={displayTitle}>
       <span className={`w-2.5 h-2.5 rounded-full ${bgClass} transition-all shrink-0`} aria-label={displayTitle} />
-      <span className="text-[11px] font-semibold text-slate-700">{displayTitle}</span>
+      <span className="text-xs text-slate-700">{displayTitle}</span>
     </span>
   );
 }

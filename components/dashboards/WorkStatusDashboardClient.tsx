@@ -111,57 +111,57 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 items-center justify-between gap-3 text-xs">
           {/* Total Projects */}
           <div className="flex items-center gap-2 pr-2 sm:pr-4 border-r border-slate-100 sm:border-slate-200">
-            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold shrink-0">
+            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
               <FolderKanban size={15} />
             </span>
             <div className="min-w-0">
-              <div className="text-[10px] text-slate-400 font-semibold truncate">โครงการทั้งหมด</div>
-              <div className="text-sm sm:text-base font-bold text-slate-900">{projects.length} <span className="text-[10px] font-normal text-slate-400">งาน</span></div>
+              <div className="text-xs text-slate-400 truncate">โครงการทั้งหมด</div>
+              <div className="text-sm sm:text-base text-slate-900">{projects.length} <span className="text-xs font-normal text-slate-400">งาน</span></div>
             </div>
           </div>
 
           {/* Red: Large Projects */}
           <div className="flex items-center gap-2 pr-2 sm:pr-4 border-r border-slate-100 sm:border-slate-200">
-            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold shrink-0">
+            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
               <span className="w-2.5 h-2.5 rounded-full bg-rose-600" />
             </span>
             <div className="min-w-0">
-              <div className="text-[10px] text-rose-600 font-semibold truncate">🔴 (งานใหญ่)</div>
-              <div className="text-sm sm:text-base font-bold text-rose-700">{allRedCount} <span className="text-[10px] font-normal text-rose-400">งาน</span></div>
+              <div className="text-xs text-rose-600 truncate">🔴 (งานใหญ่)</div>
+              <div className="text-sm sm:text-base text-rose-700">{allRedCount} <span className="text-xs font-normal text-rose-400">งาน</span></div>
             </div>
           </div>
 
           {/* Green: Small Projects */}
           <div className="flex items-center gap-2 pr-0 sm:pr-4 lg:border-r border-slate-200">
-            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold shrink-0">
+            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
             </span>
             <div className="min-w-0">
-              <div className="text-[10px] text-emerald-600 font-semibold truncate">🟢 (งานเล็ก)</div>
-              <div className="text-sm sm:text-base font-bold text-emerald-700">{allGreenCount} <span className="text-[10px] font-normal text-emerald-400">งาน</span></div>
+              <div className="text-xs text-emerald-600 truncate">🟢 (งานเล็ก)</div>
+              <div className="text-sm sm:text-base text-emerald-700">{allGreenCount} <span className="text-xs font-normal text-emerald-400">งาน</span></div>
             </div>
           </div>
 
           {/* Black: Completed Projects */}
           <div className="flex items-center gap-2 pr-2 sm:pr-4 border-r border-slate-100 sm:border-slate-200 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
-            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center font-bold shrink-0">
+            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
               <CheckCircle2 size={15} />
             </span>
             <div className="min-w-0">
-              <div className="text-[10px] text-slate-500 font-semibold truncate">⚫ (เสร็จแล้ว)</div>
-              <div className="text-sm sm:text-base font-bold text-slate-700">{allCompleteCount} <span className="text-[10px] font-normal text-slate-400">งาน</span></div>
+              <div className="text-xs text-slate-500 truncate">⚫ (เสร็จแล้ว)</div>
+              <div className="text-sm sm:text-base text-slate-700">{allCompleteCount} <span className="text-xs font-normal text-slate-400">งาน</span></div>
             </div>
           </div>
 
           {/* Total Spent vs Budget */}
           <div className="col-span-2 sm:col-span-1 flex items-center gap-2 pt-2 lg:pt-0 border-t sm:border-t-0 border-slate-100">
-            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold shrink-0">
+            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
               <Wallet size={15} />
             </span>
             <div className="min-w-0">
-              <div className="text-[10px] text-indigo-600 font-semibold truncate">ยอดเบิกจ่ายรวม</div>
-              <div className="text-sm sm:text-base font-bold text-slate-900 truncate">
-                {money(totalSpent)} <span className="text-[10px] font-normal text-slate-400">/ {money(totalBudget)}</span>
+              <div className="text-xs text-indigo-600 truncate">ยอดเบิกจ่ายรวม</div>
+              <div className="text-sm sm:text-base text-slate-900 truncate">
+                {money(totalSpent)} <span className="text-xs font-normal text-slate-400">/ {money(totalBudget)}</span>
               </div>
             </div>
           </div>
@@ -175,7 +175,7 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
           <button
             type="button"
             onClick={() => setFilterTab("all")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap active:scale-95 cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap active:scale-95 cursor-pointer ${
               filterTab === "all"
                 ? "bg-slate-900 text-white shadow-2xs"
                 : "text-slate-600 hover:bg-slate-100 bg-slate-50 border border-slate-200/60"
@@ -186,7 +186,7 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
           <button
             type="button"
             onClick={() => setFilterTab("red")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap active:scale-95 cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap active:scale-95 cursor-pointer flex items-center gap-1.5 ${
               filterTab === "red"
                 ? "bg-rose-600 text-white shadow-2xs"
                 : "text-rose-700 hover:bg-rose-50 bg-rose-50/50 border border-rose-200/60"
@@ -197,7 +197,7 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
           <button
             type="button"
             onClick={() => setFilterTab("green")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap active:scale-95 cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap active:scale-95 cursor-pointer flex items-center gap-1.5 ${
               filterTab === "green"
                 ? "bg-emerald-700 text-white shadow-2xs"
                 : "text-emerald-700 hover:bg-emerald-50 bg-emerald-50/50 border border-emerald-200/60"
@@ -208,7 +208,7 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
           <button
             type="button"
             onClick={() => setFilterTab("complete")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap active:scale-95 cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap active:scale-95 cursor-pointer flex items-center gap-1.5 ${
               filterTab === "complete"
                 ? "bg-slate-800 text-white shadow-2xs"
                 : "text-slate-700 hover:bg-slate-100 bg-slate-50 border border-slate-200/60"
@@ -262,30 +262,30 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
                 {/* Header: Project ID + Status Tag */}
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="font-bold text-[10px] bg-slate-900 text-white px-1.5 py-0.2 rounded shrink-0">
+                    <span className="text-xs bg-slate-900 text-white px-1.5 py-0.2 rounded shrink-0">
                       #{id}
                     </span>
-                    <span className="font-bold text-xs text-slate-900 truncate">
+                    <span className="text-xs text-slate-900 truncate">
                       {name}
                     </span>
                   </div>
 
                   <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold shrink-0 ${colorInfo.badgeClass}`}
+                    className={`inline-flex items-center px-2 py-0.5 rounded text-xs shrink-0 ${colorInfo.badgeClass}`}
                   >
                     <span>{colorInfo.label}</span>
                   </span>
                 </div>
 
                 {/* Subtitle: Customer • Company • Owner */}
-                <div className="text-[11px] text-slate-500 flex items-center justify-between">
+                <div className="text-xs text-slate-500 flex items-center justify-between">
                   <span className="truncate">{customer} {company !== "-" ? `(${company})` : ""}</span>
                   <span className="text-slate-400 shrink-0 ml-2 font-medium">{owner}</span>
                 </div>
 
                 {/* Financial Progress Strip */}
                 <div className="bg-slate-50 p-2 rounded-lg space-y-1">
-                  <div className="flex items-center justify-between text-[11px]">
+                  <div className="flex items-center justify-between text-xs">
                     <span className="text-slate-500">เบิกแล้ว: <strong className="text-slate-900">{money(spent)}</strong></span>
                     <span className="text-slate-400">งบ: <strong>{money(budget)}</strong></span>
                   </div>
@@ -302,15 +302,15 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
                 </div>
 
                 {/* Footer: Remaining & Detail Link */}
-                <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-100">
+                <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100">
                   <div className="text-slate-500">
                     คงเหลือ:{" "}
-                    <span className={`font-bold ${remaining < 0 ? "text-rose-600" : "text-emerald-700"}`}>
+                    <span className={`${remaining < 0 ? "text-rose-600" : "text-emerald-700"}`}>
                       {money(remaining)} ฿
                     </span>
                   </div>
 
-                  <span className="text-slate-600 font-semibold text-[11px] flex items-center gap-0.5 group-hover:text-slate-900">
+                  <span className="text-slate-600 text-xs flex items-center gap-0.5 group-hover:text-slate-900">
                     <span>ดูรายละเอียด</span>
                     <ArrowRight size={12} />
                   </span>
@@ -329,7 +329,7 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs text-slate-700 border-collapse">
                 <thead>
-                  <tr className="bg-slate-100/90 text-slate-600 font-bold border-b border-slate-200 uppercase tracking-wider text-[11px]">
+                  <tr className="bg-slate-100/90 text-slate-600 border-b border-slate-200 uppercase tracking-wider text-xs">
                     <th className="py-3 px-3.5 w-24">รหัส (ID)</th>
                     <th className="py-3 px-3.5 min-w-[220px]">ชื่อโครงการ (Project)</th>
                     <th className="py-3 px-3.5">ลูกค้า</th>
@@ -358,12 +358,12 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
                     return (
                       <tr key={id} className="hover:bg-slate-50/80 transition-colors group">
                         {/* Project ID */}
-                        <td className="py-2.5 px-3.5 font-mono font-bold text-slate-800">
+                        <td className="py-2.5 px-3.5 font-mono text-slate-800">
                           #{id}
                         </td>
 
                         {/* Project Name */}
-                        <td className="py-2.5 px-3.5 font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                        <td className="py-2.5 px-3.5 text-slate-900 group-hover:text-indigo-600 transition-colors">
                           <Link href={`/work-status/${encodeURIComponent(id)}`} className="hover:underline">
                             {name}
                           </Link>
@@ -381,14 +381,14 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
                         {/* Status Tag */}
                         <td className="py-2.5 px-3.5 text-center whitespace-nowrap">
                           <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-semibold ${colorInfo.badgeClass}`}
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs ${colorInfo.badgeClass}`}
                           >
                             <span>{colorInfo.label}</span>
                           </span>
                         </td>
 
                         {/* Spent */}
-                        <td className="py-2.5 px-3.5 text-right font-bold text-slate-900">
+                        <td className="py-2.5 px-3.5 text-right text-slate-900">
                           {money(spent)}
                         </td>
 
@@ -399,8 +399,8 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
 
                         {/* Remaining */}
                         <td
-                          className={`py-2.5 px-3.5 text-right font-bold ${
-                            remaining < 0 ? "text-rose-600 font-bold" : "text-emerald-700"
+                          className={`py-2.5 px-3.5 text-right ${
+                            remaining < 0 ? "text-rose-600 " : "text-emerald-700"
                           }`}
                         >
                           {money(remaining)}
@@ -443,31 +443,31 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
               >
                 <div className="flex items-center justify-between">
                   <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-semibold ${colorInfo.badgeClass}`}
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs ${colorInfo.badgeClass}`}
                   >
                     <span>{colorInfo.label}</span>
                   </span>
-                  <span className="font-mono text-[11px] font-bold text-slate-400">#{id}</span>
+                  <span className="font-mono text-xs text-slate-400">#{id}</span>
                 </div>
 
-                <h3 className="font-bold text-slate-900 text-xs group-hover:text-indigo-600 transition-colors line-clamp-2">
+                <h3 className="text-slate-900 text-xs group-hover:text-indigo-600 transition-colors line-clamp-2">
                   {name}
                 </h3>
 
-                <div className="text-[11px] text-slate-500 space-y-1 border-t border-slate-100 pt-2">
+                <div className="text-xs text-slate-500 space-y-1 border-t border-slate-100 pt-2">
                   <div className="flex justify-between">
                     <span className="text-slate-400">ลูกค้า/บริษัท</span>
-                    <span className="font-semibold text-slate-800 truncate max-w-[140px]">{customer} ({company})</span>
+                    <span className="text-slate-800 truncate max-w-[140px]">{customer} ({company})</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">ผู้รับผิดชอบ</span>
-                    <span className="font-semibold text-slate-800">{owner}</span>
+                    <span className="text-slate-800">{owner}</span>
                   </div>
                 </div>
 
                 <div className="bg-slate-50 p-2.5 rounded-xl flex items-center justify-between text-xs mt-1">
-                  <span className="text-slate-400 text-[10px]">ยอดเบิกจ่าย</span>
-                  <span className="font-bold text-slate-900">{money(spent)}</span>
+                  <span className="text-slate-400 text-xs">ยอดเบิกจ่าย</span>
+                  <span className="text-slate-900">{money(spent)}</span>
                 </div>
               </Link>
             );

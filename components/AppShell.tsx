@@ -171,9 +171,11 @@ export function AppShell({ children, peopleRows = [], currentUser = null }: { ch
   }
 
   const mobileAddEvent =
-    activeView.id === "bill-entry" ? "open-bill-form" :
-      activeView.id === "contract-open" ? "open-contract-form" :
-        "";
+    pathname === "/bills"
+      ? "open-bill-form"
+      : pathname === "/contract-open"
+        ? "open-contract-form"
+        : "";
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-200 text-slate-800 antialiased">
@@ -209,12 +211,12 @@ export function AppShell({ children, peopleRows = [], currentUser = null }: { ch
                   if (event.key === "Escape") closeMobileSearch();
                 }}
               />
-              <button type="submit" className="w-9 h-9 flex items-center justify-center rounded-xl bg-[#d4f54e] text-[#0b3531] font-bold shrink-0" aria-label="ค้นหา">
+              <button type="submit" className="w-9 h-9 flex items-center justify-center rounded-xl bg-[#d4f54e] text-[#0b3531] shrink-0" aria-label="ค้นหา">
                 <Search size={16} />
               </button>
             </form>
           ) : (
-            <span className="font-semibold text-white truncate max-w-[200px] text-center text-sm">{activeView.name}</span>
+            <span className="text-white truncate max-w-[200px] text-center text-sm">{activeView.name}</span>
           )}
           <div className="flex items-center gap-1.5">
             {mobileSearchOpen ? (
@@ -223,7 +225,7 @@ export function AppShell({ children, peopleRows = [], currentUser = null }: { ch
               mobileAddEvent ? (
                 <button
                   type="button"
-                  className="h-9 px-3.5 sm:px-4 flex items-center justify-center gap-1.5 rounded-xl bg-[#d4f54e] text-[#0b3531] font-bold hover:bg-[#c2e438] shadow-sm cursor-pointer active:scale-95 transition text-xs"
+                  className="h-9 px-3.5 sm:px-4 flex items-center justify-center gap-1.5 rounded-xl bg-[#d4f54e] text-[#0b3531] hover:bg-[#c2e438] shadow-sm cursor-pointer active:scale-95 transition text-xs"
                   aria-label="เพิ่มข้อมูล"
                   onClick={() => window.dispatchEvent(new CustomEvent(mobileAddEvent))}
                 >
@@ -256,7 +258,7 @@ export function AppShell({ children, peopleRows = [], currentUser = null }: { ch
                 )}
               </div>
               <div className="min-w-0">
-                <strong className="block text-sm font-bold leading-none truncate text-white">
+                <strong className="block text-sm leading-none truncate text-white">
                   {companySettings.companyName || "CostLab App"}
                 </strong>
                 <span className="text-xs text-[#9eb5b0] truncate block mt-0.5">
@@ -278,7 +280,7 @@ export function AppShell({ children, peopleRows = [], currentUser = null }: { ch
                   key={view.id}
                   href={href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${active ? "bg-[#d4f54e] text-[#0b3531] font-semibold shadow-xs" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${active ? "bg-[#d4f54e] text-[#0b3531] shadow-xs" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                     }`}
                 >
                   <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${active ? "bg-[#0b3531] text-[#d4f54e]" : "bg-slate-100 text-slate-500"}`}>
@@ -304,13 +306,13 @@ export function AppShell({ children, peopleRows = [], currentUser = null }: { ch
               <Link
                 key={view.id}
                 href={href}
-                className={`flex flex-col items-center justify-center w-full h-full py-1 text-xs font-medium transition-colors ${active ? "text-[#d4f54e] font-semibold" : "text-[#9eb5b0] hover:text-slate-200"
+                className={`flex flex-col items-center justify-center w-full h-full py-1 text-xs font-medium transition-colors ${active ? "text-[#d4f54e] " : "text-[#9eb5b0] hover:text-slate-200"
                   }`}
               >
                 <span className={`p-1 rounded-xl ${active ? "bg-[#d4f54e] text-[#0b3531]" : ""}`}>
                   {Icon ? <Icon size={20} strokeWidth={active ? 2.3 : 1.8} /> : null}
                 </span>
-                <small className="mt-0.5 text-[10px] leading-none truncate max-w-[64px]">{view.name}</small>
+                <small className="mt-0.5 text-xs leading-none truncate max-w-[64px]">{view.name}</small>
               </Link>
             );
           })}

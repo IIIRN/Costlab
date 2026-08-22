@@ -89,13 +89,13 @@ export function ProjectDetailEditor({ fields, project, customerDisplay, companyD
       <section className="bg-white rounded-lg border border-slate-200 shadow-xs p-5 transition-all">
         <form onSubmit={submit}>
           <header className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
-            <h3 className="text-base font-bold text-slate-800">แก้ไขข้อมูล Project</h3>
+            <h3 className="text-base text-slate-800">แก้ไขข้อมูล Project</h3>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 disabled={busy}
                 onClick={cancelEdit}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs text-slate-700 bg-white hover:bg-slate-50 transition-colors"
               >
                 <X size={15} />
                 <span>ยกเลิก</span>
@@ -103,7 +103,7 @@ export function ProjectDetailEditor({ fields, project, customerDisplay, companyD
               <button
                 type="submit"
                 disabled={busy || !canSave}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 transition-all shadow-xs"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 transition-all shadow-xs"
               >
                 <Save size={15} />
                 <span>บันทึก</span>
@@ -114,7 +114,7 @@ export function ProjectDetailEditor({ fields, project, customerDisplay, companyD
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {fields.filter(f => (!f.startsWith("งบไม่เกิน") || f === "งบไม่เกิน") && f !== "คุมงบประเภทงาน").map(field => (
               <label className="flex flex-col gap-1.5" key={field}>
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{field}</span>
+                <span className="text-xs text-slate-500 uppercase tracking-wider">{field}</span>
                 {readonlyField(field) ? (
                   <input
                     value={formatDisplay(project[field], field)}
@@ -164,12 +164,12 @@ export function ProjectDetailEditor({ fields, project, customerDisplay, companyD
   return (
     <section className="bg-white rounded-lg border border-slate-200 shadow-xs p-5 transition-all">
       <header className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
-        <h3 className="text-base font-bold text-slate-800">ข้อมูล Project</h3>
+        <h3 className="text-base text-slate-800">ข้อมูล Project</h3>
         <button
           type="button"
           disabled={!canSave}
           onClick={beginEdit}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-2xs"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-2xs"
         >
           <Pencil size={15} />
           <span>แก้ไข</span>
@@ -178,8 +178,8 @@ export function ProjectDetailEditor({ fields, project, customerDisplay, companyD
       <dl className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {fields.map(field => (
           <div key={field} className="p-3 bg-slate-50/60 rounded-lg border border-slate-100 flex flex-col justify-between">
-            <dt className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">{field}</dt>
-            <dd className={`text-xs font-semibold text-slate-800 ${amountField(field) ? "text-right text-emerald-700 font-bold" : ""}`}>
+            <dt className="text-xs text-slate-400 uppercase tracking-wider mb-1">{field}</dt>
+            <dd className={`text-xs text-slate-800 ${amountField(field) ? "text-right text-emerald-700 " : ""}`}>
               {field === "ชื่อลูกค้า" || field === "ลูกค้า"
                 ? customerDisplay || formatDisplay(project[field], field) || "-"
                 : field === "บริษัท"

@@ -49,6 +49,9 @@ export const TABLE_KEYS: Record<string, string> = {
 
   [TABLES.CONTRACT_WORK]: "id_Conwork",
   ContractWork: "id_Conwork",
+  Contract_work: "id_Conwork",
+  contract_work: "id_Conwork",
+  contractwork: "id_Conwork",
   contract_works: "id_Conwork",
 
   [TABLES.BANK]: "id_bank",
@@ -90,7 +93,7 @@ export const PRIMARY_VIEWS = [
 
 export const VIEW_COLUMNS: Record<string, string[]> = {
   "กรอกบิล": ["ลำดับ", "ID Project", "ชื่อ Project", "ร้าน/บุคคล", "สินค้า/ทำงาน", "บิล", "ประเภท", "ยอดเงิน", "vat", "หัก", "เครดิต", "ผู้เบิก", "ว/ด/ป", "รูปถ่ายบิล", "สถานะ"],
-  "เปิดจ้าง": ["id_Conwork", "id_Contractor", "ID Project", "ชื่อ Project", "ยอดเงินจ้าง", "รายละเอียดงาน", "วันที่", "เบอร์โทรศัพท์", "ยอดเงินจ่าย", "ค่าแรงคงเหลือ"],
+  "เปิดจ้าง": ["รหัสจ้าง", "ผู้รับเหมา", "รหัสโครงการ", "ชื่อโครงการ", "ยอดเงินจ้าง", "รายละเอียดงาน", "วันที่", "เบอร์โทรศัพท์", "ยอดเงินจ่าย", "ค่าแรงคงเหลือ"],
   "1. Project รวม": ["ID Project", "ชื่อ Project", "ชื่อลูกค้า", "ยอดงาน", "ยอดรวม vat", "งบไม่เกิน", "วันที่", "color", "รวม ALL", "บริษัท", "รับผิดชอบ"],
   "2. ธนาคาร": ["id_bank", "ชื่อธนาคาร", "image"],
   "3. ประเภท": ["ประเภท Name1", "ประเภท Name2", "ประเภท Name3"],

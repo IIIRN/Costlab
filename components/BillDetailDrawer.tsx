@@ -122,16 +122,16 @@ export function BillDetailDrawer({
         {/* Top Action Bar */}
         <div className="p-4 bg-slate-900 text-white flex items-center justify-between shadow-md">
           <div className="flex items-center gap-2">
-            <span className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-xs">
+            <span className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white text-xs">
               {activeTab === "bill" ? <Receipt size={16} /> : <FolderKanban size={16} />}
             </span>
             <div>
-              <h3 className="font-bold text-sm leading-tight truncate max-w-[220px]">
+              <h3 className="text-sm leading-tight truncate max-w-[220px]">
                 {activeTab === "bill"
                   ? String(bill["ชื่อ Project"] || "รายละเอียดบิล")
                   : `โครงการ ${projectId}`}
               </h3>
-              <span className="text-[11px] text-slate-300">
+              <span className="text-xs text-slate-300">
                 {activeTab === "bill" ? `ลำดับ #${bill["ลำดับ"] || bill.id || "-"}` : projectData?.name || "-"}
               </span>
             </div>
@@ -143,7 +143,7 @@ export function BillDetailDrawer({
                 href={`/bills/${encodeURIComponent(String(bill["ลำดับ"] || bill._sheetRow || bill.id || ""))}/document`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold text-xs transition border border-slate-700"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs transition border border-slate-700"
                 title="พิมพ์สัญญาจ้าง / ใบสำคัญจ่าย / 50 ทวิ"
               >
                 <FileText size={14} className="text-emerald-400" />
@@ -155,7 +155,7 @@ export function BillDetailDrawer({
               <button
                 type="button"
                 onClick={() => onEdit(bill)}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs transition"
                 title="แก้ไข"
               >
                 <Edit size={14} />
@@ -210,7 +210,7 @@ export function BillDetailDrawer({
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex border-b border-slate-200 bg-slate-50 text-xs font-bold">
+        <div className="flex border-b border-slate-200 bg-slate-50 text-xs ">
           <button
             type="button"
             onClick={() => setActiveTab("bill")}
@@ -242,15 +242,15 @@ export function BillDetailDrawer({
               {/* ID Project Clickable Banner */}
               <div className="p-3.5 rounded-xl bg-indigo-50/80 border border-indigo-100 flex items-center justify-between">
                 <div>
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-indigo-500">ID Project</div>
-                  <div className="text-base font-bold text-indigo-900 mt-0.5">{projectId || "-"}</div>
+                  <div className="text-xs uppercase tracking-wider text-indigo-500">ID Project</div>
+                  <div className="text-base text-indigo-900 mt-0.5">{projectId || "-"}</div>
                 </div>
 
                 {projectId && (
                   <button
                     type="button"
                     onClick={() => fetchProjectDetail(projectId)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition shadow-2xs"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs transition shadow-2xs"
                   >
                     <span>ดูรายละเอียดโครงการ</span>
                     <ArrowRight size={14} />
@@ -261,53 +261,53 @@ export function BillDetailDrawer({
               {/* Main Fields Grid */}
               <div className="grid grid-cols-2 gap-3 bg-white p-4 rounded-xl border border-slate-200/90 shadow-2xs">
                 <div>
-                  <span className="text-[11px] font-semibold text-slate-400 block">ชื่อ Project:</span>
-                  <span className="font-bold text-slate-900 block mt-0.5">{String(bill["ชื่อ Project"] || "-")}</span>
+                  <span className="text-xs text-slate-400 block">ชื่อ Project:</span>
+                  <span className="text-slate-900 block mt-0.5">{String(bill["ชื่อ Project"] || "-")}</span>
                 </div>
 
                 <div>
-                  <span className="text-[11px] font-semibold text-slate-400 block">ร้าน/บุคคล:</span>
-                  <span className="font-bold text-slate-800 block mt-0.5">{String(bill["ร้าน/บุคคล"] || "-")}</span>
+                  <span className="text-xs text-slate-400 block">ร้าน/บุคคล:</span>
+                  <span className="text-slate-800 block mt-0.5">{String(bill["ร้าน/บุคคล"] || "-")}</span>
                 </div>
 
                 <div>
-                  <span className="text-[11px] font-semibold text-slate-400 block">สินค้า/ทำงาน:</span>
+                  <span className="text-xs text-slate-400 block">สินค้า/ทำงาน:</span>
                   <span className="font-medium text-slate-700 block mt-0.5">{String(bill["สินค้า/ทำงาน"] || "-")}</span>
                 </div>
 
                 <div>
-                  <span className="text-[11px] font-semibold text-slate-400 block">บิล:</span>
-                  <span className="font-bold text-indigo-600 block mt-0.5">{String(bill["บิล"] || "-")}</span>
+                  <span className="text-xs text-slate-400 block">บิล:</span>
+                  <span className="text-indigo-600 block mt-0.5">{String(bill["บิล"] || "-")}</span>
                 </div>
 
                 <div>
-                  <span className="text-[11px] font-semibold text-slate-400 block">ประเภท:</span>
-                  <span className="font-semibold text-slate-700 block mt-0.5">{String(bill["ประเภท"] || "-")}</span>
+                  <span className="text-xs text-slate-400 block">ประเภท:</span>
+                  <span className="text-slate-700 block mt-0.5">{String(bill["ประเภท"] || "-")}</span>
                 </div>
 
                 <div>
-                  <span className="text-[11px] font-semibold text-slate-400 block">รายการ:</span>
-                  <span className="font-semibold text-slate-800 block mt-0.5">{String(bill["รายการ"] || "-")}</span>
+                  <span className="text-xs text-slate-400 block">รายการ:</span>
+                  <span className="text-slate-800 block mt-0.5">{String(bill["รายการ"] || "-")}</span>
                 </div>
 
                 <div>
-                  <span className="text-[11px] font-semibold text-slate-400 block">ยอดเงิน:</span>
-                  <span className="font-semibold text-indigo-600 text-sm block mt-0.5">{money(bill["ยอดเงิน"])}</span>
+                  <span className="text-xs text-slate-400 block">ยอดเงิน:</span>
+                  <span className="text-indigo-600 text-sm block mt-0.5">{money(bill["ยอดเงิน"])}</span>
                 </div>
 
                 <div>
-                  <span className="text-[11px] font-semibold text-slate-400 block">ผู้เบิก:</span>
-                  <span className="font-bold text-slate-800 block mt-0.5">{String(bill["ผู้เบิก"] || "-")}</span>
+                  <span className="text-xs text-slate-400 block">ผู้เบิก:</span>
+                  <span className="text-slate-800 block mt-0.5">{String(bill["ผู้เบิก"] || "-")}</span>
                 </div>
 
                 <div>
-                  <span className="text-[11px] font-semibold text-slate-400 block">ว/ด/ป:</span>
+                  <span className="text-xs text-slate-400 block">ว/ด/ป:</span>
                   <span className="font-medium text-slate-700 block mt-0.5">{formatDateDisplay(bill["ว/ด/ป"])}</span>
                 </div>
 
                 <div>
-                  <span className="text-[11px] font-semibold text-slate-400 block">สถานะ:</span>
-                  <span className="inline-block mt-0.5 font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
+                  <span className="text-xs text-slate-400 block">สถานะ:</span>
+                  <span className="inline-block mt-0.5 px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
                     {String(bill["สถานะ"] || "รออนุมัติ")}
                   </span>
                 </div>
@@ -316,7 +316,7 @@ export function BillDetailDrawer({
               {/* Image Preview Box */}
               <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-2xs space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">รูปถ่ายเอกสาร / บิล:</span>
+                  <span className="text-xs text-slate-500 uppercase tracking-wider">รูปถ่ายเอกสาร / บิล:</span>
                 </div>
                 <div className="w-full flex items-center justify-start bg-slate-50/80 p-3 rounded-xl border border-slate-200/80">
                   <BillImageThumbnail value={bill["รูปถ่ายบิล"]} />
@@ -333,41 +333,41 @@ export function BillDetailDrawer({
               ) : projectData ? (
                 <>
                   <div className="p-4 rounded-xl bg-slate-900 text-white space-y-1">
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-indigo-400">ID Project: {projectData.id}</div>
-                    <div className="text-base font-semibold">{projectData.name}</div>
+                    <div className="text-xs uppercase tracking-wider text-indigo-400">ID Project: {projectData.id}</div>
+                    <div className="text-base ">{projectData.name}</div>
                     <div className="text-xs text-slate-300">ลูกค้า: {projectData.customer_name}</div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs">
-                      <span className="text-[11px] font-semibold text-slate-400 block">ยอดงาน (รวม):</span>
-                      <span className="font-semibold text-slate-900 text-sm block mt-0.5">{money(projectData.contract_amount)}</span>
+                      <span className="text-xs text-slate-400 block">ยอดงาน (รวม):</span>
+                      <span className="text-slate-900 text-sm block mt-0.5">{money(projectData.contract_amount)}</span>
                     </div>
 
                     <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs">
-                      <span className="text-[11px] font-semibold text-slate-400 block">ยอดรวม VAT:</span>
-                      <span className="font-semibold text-indigo-600 text-sm block mt-0.5">{money(projectData.total_vat_amount)}</span>
+                      <span className="text-xs text-slate-400 block">ยอดรวม VAT:</span>
+                      <span className="text-indigo-600 text-sm block mt-0.5">{money(projectData.total_vat_amount)}</span>
                     </div>
 
                     <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs">
-                      <span className="text-[11px] font-semibold text-slate-400 block">งบไม่เกิน:</span>
-                      <span className="font-semibold text-emerald-600 text-sm block mt-0.5">{money(projectData.budget)}</span>
+                      <span className="text-xs text-slate-400 block">งบไม่เกิน:</span>
+                      <span className="text-emerald-600 text-sm block mt-0.5">{money(projectData.budget)}</span>
                     </div>
 
                     <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs">
-                      <span className="text-[11px] font-semibold text-slate-400 block">วันที่:</span>
-                      <span className="font-bold text-slate-800 block mt-0.5">{projectData.date}</span>
+                      <span className="text-xs text-slate-400 block">วันที่:</span>
+                      <span className="text-slate-800 block mt-0.5">{projectData.date}</span>
                     </div>
                   </div>
 
                   <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-2xs space-y-2">
                     <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-                      <span className="font-bold text-slate-700">รวมค่าของ:</span>
-                      <span className="font-semibold text-slate-900 text-sm">{money(projectData.total_materials)}</span>
+                      <span className="text-slate-700">รวมค่าของ:</span>
+                      <span className="text-slate-900 text-sm">{money(projectData.total_materials)}</span>
                     </div>
                     <div className="flex justify-between items-center pt-1">
-                      <span className="font-bold text-slate-700">รวม ALL:</span>
-                      <span className="font-semibold text-indigo-600 text-base">{money(projectData.total_all)}</span>
+                      <span className="text-slate-700">รวม ALL:</span>
+                      <span className="text-indigo-600 text-base">{money(projectData.total_all)}</span>
                     </div>
                   </div>
                 </>
@@ -384,7 +384,7 @@ export function BillDetailDrawer({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg font-bold transition"
+            className="px-4 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg transition"
           >
             ปิดหน้าต่าง
           </button>

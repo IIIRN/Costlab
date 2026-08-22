@@ -24,39 +24,114 @@ function toNumber(val: unknown) {
 
 const TABLE_MAP: Record<string, string> = {
   Data: "bills",
+  data: "bills",
+  bills: "bills",
   Project: "projects",
+  project: "projects",
+  projects: "projects",
   ร้านค้า: "stores",
+  store: "stores",
+  stores: "stores",
   รับเหมา: "contractors",
+  contractor: "contractors",
+  contractors: "contractors",
   งานรับเหมา: "contract_works",
+  Contract_work: "contract_works",
+  Contract_Work: "contract_works",
+  contract_work: "contract_works",
   ContractWork: "contract_works",
   CONTRACT_WORK: "contract_works",
   contractWork: "contract_works",
+  contractwork: "contract_works",
+  contract_works: "contract_works",
   Tasks: "tasks",
   Works: "works",
   Plan: "plans",
   "Master Member": "master_members",
   รายชื่อ: "master_members",
   PEOPLE: "master_members",
+  people: "master_members",
+  master_members: "master_members",
   ธนาคาร: "banks",
   BANK: "banks",
+  bank: "banks",
+  banks: "banks",
   ทะเบียน: "cars",
   CAR: "cars",
+  car: "cars",
+  cars: "cars",
   ประเภท: "categories",
   CATEGORY: "categories",
+  category: "categories",
+  categories: "categories",
   ลูกค้า: "customers",
   CUSTOMER: "customers",
+  customer: "customers",
+  customers: "customers",
   บริษัท: "companies",
   COMPANY: "companies",
+  company: "companies",
+  companies: "companies",
   ยืมเงิน: "loans",
   LOAN: "loans",
+  loan: "loans",
+  loans: "loans",
   เบิกเงิน: "bills",
   WITHDRAW: "bills",
   ตัวเลือกระบบ: "system_options",
   ระบบLog: "audit_logs",
   สินค้า: "products",
   PRODUCT: "products",
+  product: "products",
+  products: "products",
   "ประเภทสินค้า": "products"
 };
+
+export function getDbTableName(tableName: string): string {
+  if (!tableName) return "";
+  if (TABLE_MAP[tableName]) return TABLE_MAP[tableName];
+  const normalized = tableName.trim().toLowerCase().replace(/[-_]/g, "");
+  if (normalized === "contractwork" || normalized === "contractworks" || normalized === "conwork" || tableName === "งานรับเหมา") {
+    return "contract_works";
+  }
+  if (normalized === "data" || normalized === "bills" || normalized === "bill") {
+    return "bills";
+  }
+  if (normalized === "project" || normalized === "projects") {
+    return "projects";
+  }
+  if (normalized === "store" || normalized === "stores" || tableName === "ร้านค้า") {
+    return "stores";
+  }
+  if (normalized === "contractor" || normalized === "contractors" || tableName === "รับเหมา") {
+    return "contractors";
+  }
+  if (normalized === "people" || normalized === "mastermember" || normalized === "mastermembers" || tableName === "รายชื่อ") {
+    return "master_members";
+  }
+  if (normalized === "bank" || normalized === "banks" || tableName === "ธนาคาร") {
+    return "banks";
+  }
+  if (normalized === "car" || normalized === "cars" || tableName === "ทะเบียน") {
+    return "cars";
+  }
+  if (normalized === "category" || normalized === "categories" || tableName === "ประเภท") {
+    return "categories";
+  }
+  if (normalized === "customer" || normalized === "customers" || tableName === "ลูกค้า") {
+    return "customers";
+  }
+  if (normalized === "company" || normalized === "companies" || tableName === "บริษัท") {
+    return "companies";
+  }
+  if (normalized === "loan" || normalized === "loans" || tableName === "ยืมเงิน") {
+    return "loans";
+  }
+  if (normalized === "product" || normalized === "products" || tableName === "สินค้า" || tableName === "ประเภทสินค้า") {
+    return "products";
+  }
+  return TABLE_MAP[tableName] || tableName.toLowerCase();
+}
 
 export const DEFAULT_PRODUCT_CATEGORIES: SheetRow[] = [
   { _sheetRow: 1, id_product: "1", รหัสสินค้า: "1", ชื่อประเภทสินค้า: "เหล็กเส้น", หมายเหตุ: "" },
@@ -243,7 +318,7 @@ export function mapSupabaseRowToSheetRow(dbTable: string, row: Record<string, an
 }
 
 export function mapSheetRowToSupabaseRow(tableName: string, row: Record<string, any>): Record<string, any> {
-  const dbTable = TABLE_MAP[tableName] || tableName.toLowerCase();
+  const dbTable = getDbTableName(tableName);
   const dbRow: Record<string, any> = {};
 
   if (dbTable === "bills") {
@@ -577,12 +652,12 @@ export async function getProjectBudgetAllocationsFromSupabase(): Promise<Record<
 export async function updateRowInSupabase(tableName: string, keyColumn: string, keyValue: any, patch: Record<string, any>) {
   if (!isSupabaseConfigured()) return null;
 
-  const dbTable = TABLE_MAP[tableName] || tableName.toLowerCase();
+  const dbTable = getDbTableName(tableName);
   const dbPatch = mapSheetRowToSupabaseRow(tableName, patch);
   delete dbPatch._sheetRow;
   delete dbPatch.id;
 
-  const rawVal = patch.id ?? patch[keyColumn] ?? patch["id_bank"] ?? patch["id_store"] ?? patch["id_Contractor"] ?? patch["id_cus"] ?? patch["id_Company"] ?? patch["id_car"] ?? keyValue;
+  const rawVal = patch.id ?? patch[keyColumn] ?? patch["id_bank"] ?? patch["id_store"] ?? patch["id_Contractor"] ?? patch["id_Conwork"] ?? patch["id_cus"] ?? patch["id_Company"] ?? patch["id_car"] ?? keyValue;
   const numId = Number(rawVal);
   const primaryVal = Number.isFinite(numId) && String(rawVal).trim() !== "" ? numId : rawVal;
 
@@ -676,7 +751,7 @@ export async function updateRowInSupabase(tableName: string, keyColumn: string, 
 export async function deleteRowsFromSupabase(tableName: string, targetVals: (string | number)[]) {
   if (!isSupabaseConfigured() || !targetVals.length) return null;
 
-  const dbTable = TABLE_MAP[tableName] || tableName.toLowerCase();
+  const dbTable = getDbTableName(tableName);
   try {
     const numVals = targetVals.map(v => Number(v)).filter(n => Number.isFinite(n));
     const strVals = targetVals.map(v => String(v).trim()).filter(Boolean);
@@ -693,7 +768,7 @@ export async function deleteRowsFromSupabase(tableName: string, targetVals: (str
 export async function deleteRowFromSupabase(tableName: string, keyColumn: string, keyValue: any, row?: Record<string, any>) {
   if (!isSupabaseConfigured()) return null;
 
-  const dbTable = TABLE_MAP[tableName] || tableName.toLowerCase();
+  const dbTable = getDbTableName(tableName);
   const rawVal = row?.id ?? row?.[keyColumn] ?? row?.id_Conwork ?? row?.id_bank ?? row?.id_store ?? row?.id_Contractor ?? row?.id_cus ?? row?.id_Company ?? row?.id_car ?? keyValue;
   const numId = Number(rawVal);
   const targetVal = Number.isFinite(numId) && String(rawVal).trim() !== "" ? numId : rawVal;
@@ -718,7 +793,7 @@ export async function deleteRowFromSupabase(tableName: string, keyColumn: string
 export async function getRowsFromSupabase(tableName: string, maxRows = 10_000): Promise<SheetRow[]> {
   if (!isSupabaseConfigured()) return [];
 
-  const dbTable = TABLE_MAP[tableName] || tableName.toLowerCase();
+  const dbTable = getDbTableName(tableName);
 
   try {
     const isAscending = dbTable !== "bills";
@@ -928,7 +1003,7 @@ function extractMissingColumnName(errorMessage: string): string | null {
 export async function insertRowToSupabase(tableName: string, rowData: Record<string, any>) {
   if (!isSupabaseConfigured()) return null;
 
-  const dbTable = TABLE_MAP[tableName] || tableName.toLowerCase();
+  const dbTable = getDbTableName(tableName);
   const dbRow = mapSheetRowToSupabaseRow(tableName, rowData);
 
   const bankVal = rowData["ธนาคาร"] || rowData["bank_name"];

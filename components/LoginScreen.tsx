@@ -130,10 +130,10 @@ export function LoginScreen({ peopleRows = [] }: { peopleRows?: SheetRow[] }) {
             )}
           </div>
           <div>
-            <h1 className="text-lg font-bold text-slate-900 leading-tight">
+            <h1 className="text-lg text-slate-900 leading-tight">
               {companySettings.companyName || "CostLab Executive"}
             </h1>
-            <p className="text-[11px] text-slate-500 font-medium">
+            <p className="text-xs text-slate-500 font-medium">
               {companySettings.companySubTitle || "ระบบบริหารและติดตามงบประมาณก่อสร้าง"}
             </p>
           </div>
@@ -142,7 +142,7 @@ export function LoginScreen({ peopleRows = [] }: { peopleRows?: SheetRow[] }) {
         {/* Form Input */}
         <form onSubmit={handleSubmit} className="space-y-3.5">
           <div>
-            <label htmlFor="phoneNumber" className="block text-xs font-bold text-slate-700 mb-1">
+            <label htmlFor="phoneNumber" className="block text-xs text-slate-700 mb-1">
               เบอร์โทรศัพท์ (Phone Number)
             </label>
             <div className="relative">
@@ -160,7 +160,7 @@ export function LoginScreen({ peopleRows = [] }: { peopleRows?: SheetRow[] }) {
                   setPhoneNumber(e.target.value);
                   if (error) setError("");
                 }}
-                className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-mono font-semibold focus:outline-none focus:bg-white focus:border-[#0b3531] text-xs transition"
+                className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-mono focus:outline-none focus:bg-white focus:border-[#0b3531] text-xs transition"
                 placeholder="ระบุเบอร์โทรศัพท์..."
               />
             </div>
@@ -168,7 +168,7 @@ export function LoginScreen({ peopleRows = [] }: { peopleRows?: SheetRow[] }) {
 
           {/* Error Message */}
           {error && (
-            <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 text-[11px] font-semibold flex items-center gap-1.5">
+            <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 text-xs flex items-center gap-1.5">
               <AlertCircle size={14} className="text-rose-600 shrink-0" />
               <span>{error}</span>
             </div>
@@ -178,7 +178,7 @@ export function LoginScreen({ peopleRows = [] }: { peopleRows?: SheetRow[] }) {
           <button
             type="submit"
             disabled={loading || !phoneNumber.trim()}
-            className="w-full py-2 px-4 bg-[#0b3531] hover:bg-[#062e2b] text-white font-bold rounded-lg transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 text-xs shadow-sm"
+            className="w-full py-2 px-4 bg-[#0b3531] hover:bg-[#062e2b] text-white rounded-lg transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 text-xs shadow-sm"
           >
             {loading ? (
               <>
@@ -197,7 +197,7 @@ export function LoginScreen({ peopleRows = [] }: { peopleRows?: SheetRow[] }) {
         {/* Divider */}
         <div className="relative flex items-center justify-center my-3">
           <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200" /></div>
-          <span className="relative bg-white px-2.5 text-[11px] font-bold text-slate-400">หรือเข้าด้วย</span>
+          <span className="relative bg-white px-2.5 text-xs text-slate-400">หรือเข้าด้วย</span>
         </div>
 
         {/* LINE OA / LIFF Login Button */}
@@ -214,12 +214,12 @@ export function LoginScreen({ peopleRows = [] }: { peopleRows?: SheetRow[] }) {
         </button>
 
         {/* Account Linking Help Tip */}
-        <p className="text-[10px] text-slate-500 text-center leading-normal m-0">
+        <p className="text-xs text-slate-500 text-center leading-normal m-0">
           💡 เข้าใช้งานครั้งแรก ป๊อปอัปจะแสดงข้อมูลโปรไฟล์ LINE ของคุณ และให้ระบุเบอร์โทรศัพท์เพียงครั้งเดียวเพื่อผูกเข้ากับบัญชีในระบบ
         </p>
 
         {/* Footer Security Note */}
-        <div className="pt-1 text-center text-[10px] text-slate-400 flex items-center justify-center gap-1">
+        <div className="pt-1 text-center text-xs text-slate-400 flex items-center justify-center gap-1">
           <ShieldCheck size={12} className="text-emerald-600" />
           <span>ระบบยืนยันตัวตนผู้ใช้จาก /settings/users</span>
         </div>

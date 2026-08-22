@@ -162,8 +162,8 @@ export function UserManagementDashboardClient() {
       {/* Header */}
       <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
         <div className="flex items-center gap-2">
-          <h1 className="font-bold text-base text-slate-900 tracking-tight">จัดการผู้ใช้ระบบ</h1>
-          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+          <h1 className="text-base text-slate-900 tracking-tight">จัดการผู้ใช้ระบบ</h1>
+          <span className="px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-700 border border-slate-200">
             {users.length} บัญชี
           </span>
         </div>
@@ -171,7 +171,7 @@ export function UserManagementDashboardClient() {
         <button
           type="button"
           onClick={handleOpenCreateModal}
-          className="px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold rounded-md transition flex items-center gap-1.5 cursor-pointer shrink-0 text-xs"
+          className="px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-md transition flex items-center gap-1.5 cursor-pointer shrink-0 text-xs"
         >
           <Plus size={14} />
           <span>เพิ่มผู้ใช้ใหม่</span>
@@ -180,7 +180,7 @@ export function UserManagementDashboardClient() {
 
       {saveResult && (
         <div
-          className={`px-3 py-2 rounded-md border font-semibold flex items-center justify-between gap-2 animate-in fade-in text-xs ${
+          className={`px-3 py-2 rounded-md border flex items-center justify-between gap-2 animate-in fade-in text-xs ${
             saveResult.success ? "bg-emerald-50 border-emerald-200 text-emerald-800" : "bg-rose-50 border-rose-200 text-rose-800"
           }`}
         >
@@ -188,7 +188,7 @@ export function UserManagementDashboardClient() {
             {saveResult.success ? <CheckCircle2 size={15} /> : <ShieldAlert size={15} />}
             <span>{saveResult.message}</span>
           </div>
-          <button type="button" onClick={() => setSaveResult(null)} className="text-slate-400 hover:text-slate-600 font-bold text-xs">
+          <button type="button" onClick={() => setSaveResult(null)} className="text-slate-400 hover:text-slate-600 text-xs">
             ✕
           </button>
         </div>
@@ -201,8 +201,8 @@ export function UserManagementDashboardClient() {
             <Users size={15} />
           </div>
           <div className="min-w-0">
-            <div className="text-[10px] font-bold text-slate-500 uppercase">ผู้ใช้ทั้งหมด</div>
-            <div className="font-bold text-slate-900 truncate text-xs">{users.length} บัญชี</div>
+            <div className="text-xs text-slate-500 uppercase">ผู้ใช้ทั้งหมด</div>
+            <div className="text-slate-900 truncate text-xs">{users.length} บัญชี</div>
           </div>
         </div>
 
@@ -211,8 +211,8 @@ export function UserManagementDashboardClient() {
             <Shield size={15} />
           </div>
           <div className="min-w-0">
-            <div className="text-[10px] font-bold text-slate-500 uppercase">Admin</div>
-            <div className="font-bold text-slate-900 truncate text-xs">{adminCount} บัญชี</div>
+            <div className="text-xs text-slate-500 uppercase">Admin</div>
+            <div className="text-slate-900 truncate text-xs">{adminCount} บัญชี</div>
           </div>
         </div>
 
@@ -221,8 +221,8 @@ export function UserManagementDashboardClient() {
             <UserCheck size={15} />
           </div>
           <div className="min-w-0">
-            <div className="text-[10px] font-bold text-slate-500 uppercase">Manager</div>
-            <div className="font-bold text-slate-900 truncate text-xs">{managerCount} บัญชี</div>
+            <div className="text-xs text-slate-500 uppercase">Manager</div>
+            <div className="text-slate-900 truncate text-xs">{managerCount} บัญชี</div>
           </div>
         </div>
 
@@ -231,8 +231,8 @@ export function UserManagementDashboardClient() {
             <CheckCircle2 size={15} />
           </div>
           <div className="min-w-0">
-            <div className="text-[10px] font-bold text-slate-500 uppercase">ผูก LINE แล้ว</div>
-            <div className="font-bold text-emerald-800 truncate text-xs">{lineLinkedCount} บัญชี</div>
+            <div className="text-xs text-slate-500 uppercase">ผูก LINE แล้ว</div>
+            <div className="text-emerald-800 truncate text-xs">{lineLinkedCount} บัญชี</div>
           </div>
         </div>
       </div>
@@ -256,7 +256,7 @@ export function UserManagementDashboardClient() {
             type="button"
             onClick={fetchUsers}
             disabled={loading}
-            className="px-2.5 py-1 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold transition flex items-center gap-1 cursor-pointer text-xs"
+            className="px-2.5 py-1 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 transition flex items-center gap-1 cursor-pointer text-xs"
           >
             <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
             <span>รีเฟรช</span>
@@ -266,7 +266,7 @@ export function UserManagementDashboardClient() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-200 text-xs">
+              <tr className="bg-slate-100 text-slate-800 border-b border-slate-200 text-xs">
                 <th className="py-2.5 px-3 border-r border-slate-200 w-28">Username</th>
                 <th className="py-2.5 px-3 border-r border-slate-200 min-w-[170px]">ชื่อผู้ใช้งาน</th>
                 <th className="py-2.5 px-3 border-r border-slate-200 min-w-[130px]">เบอร์โทรศัพท์</th>
@@ -293,13 +293,13 @@ export function UserManagementDashboardClient() {
               ) : (
                 filteredUsers.map((u, idx) => (
                   <tr key={u.id || idx} className="hover:bg-slate-50 transition-colors text-xs">
-                    <td className="py-2 px-3 border-r border-slate-100 font-mono font-bold text-slate-800">{u.username}</td>
-                    <td className="py-2 px-3 border-r border-slate-100 font-bold text-slate-900">
+                    <td className="py-2 px-3 border-r border-slate-100 font-mono text-slate-800">{u.username}</td>
+                    <td className="py-2 px-3 border-r border-slate-100 text-slate-900">
                       <div className="flex items-center gap-2">
                         {u.pictureUrl ? (
                           <img src={u.pictureUrl} alt={u.displayName} className="w-6 h-6 rounded-full object-cover border border-slate-200 shrink-0" />
                         ) : (
-                          <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-700 font-bold text-[10px] flex items-center justify-center shrink-0">
+                          <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-700 text-xs flex items-center justify-center shrink-0">
                             {u.displayName.charAt(0)}
                           </div>
                         )}
@@ -318,24 +318,24 @@ export function UserManagementDashboardClient() {
                     </td>
                     <td className="py-2 px-3 border-r border-slate-100">
                       {u.lineUserId ? (
-                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200" title={u.lineUserId}>
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs bg-emerald-50 text-emerald-700 border border-emerald-200" title={u.lineUserId}>
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                           <span>ผูกกับ LINE แล้ว</span>
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-500 border border-slate-200">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-500 border border-slate-200">
                           ยังไม่ผูก
                         </span>
                       )}
                     </td>
                     <td className="py-2 px-3 border-r border-slate-100">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-800 border border-slate-200">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-800 border border-slate-200">
                         {u.role}
                       </span>
                     </td>
                     <td className="py-2 px-3 border-r border-slate-100">
                       <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border ${
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs border ${
                           u.status === "Active"
                             ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                             : "bg-rose-50 text-rose-800 border-rose-200"
@@ -379,7 +379,7 @@ export function UserManagementDashboardClient() {
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-3">
           <div className="bg-white rounded-md border border-slate-200 shadow-xl w-full max-w-md overflow-hidden">
             <div className="p-3 border-b border-slate-200 flex items-center justify-between bg-white text-slate-900">
-              <h3 className="font-bold text-xs flex items-center gap-1.5">
+              <h3 className="text-xs flex items-center gap-1.5">
                 <Users size={14} className="text-slate-600" />
                 <span>{editingIndex !== null ? "แก้ไขผู้ใช้งาน" : "เพิ่มผู้ใช้งานใหม่"}</span>
               </h3>
@@ -394,7 +394,7 @@ export function UserManagementDashboardClient() {
 
             <form onSubmit={handleFormSubmit} className="p-4 space-y-3 max-h-[85vh] overflow-y-auto">
               <div className="space-y-1">
-                <label className="font-semibold text-slate-700 block text-xs">Username / รหัส *</label>
+                <label className="text-slate-700 block text-xs">Username / รหัส *</label>
                 <input
                   type="text"
                   required
@@ -406,7 +406,7 @@ export function UserManagementDashboardClient() {
               </div>
 
               <div className="space-y-1">
-                <label className="font-semibold text-slate-700 block text-xs">ชื่อผู้ใช้งาน *</label>
+                <label className="text-slate-700 block text-xs">ชื่อผู้ใช้งาน *</label>
                 <input
                   type="text"
                   required
@@ -418,7 +418,7 @@ export function UserManagementDashboardClient() {
               </div>
 
               <div className="space-y-1">
-                <label className="font-semibold text-slate-700 block text-xs">เบอร์โทรศัพท์</label>
+                <label className="text-slate-700 block text-xs">เบอร์โทรศัพท์</label>
                 <input
                   type="tel"
                   value={formData.phone || ""}
@@ -429,7 +429,7 @@ export function UserManagementDashboardClient() {
               </div>
 
               <div className="space-y-1">
-                <label className="font-semibold text-slate-700 block text-xs">LINE User ID (e.g. U123456...)</label>
+                <label className="text-slate-700 block text-xs">LINE User ID (e.g. U123456...)</label>
                 <input
                   type="text"
                   value={formData.lineUserId || ""}
@@ -440,7 +440,7 @@ export function UserManagementDashboardClient() {
               </div>
 
               <div className="space-y-1">
-                <label className="font-semibold text-slate-700 block text-xs">รูปโปรไฟล์ (URL)</label>
+                <label className="text-slate-700 block text-xs">รูปโปรไฟล์ (URL)</label>
                 <input
                   type="url"
                   value={formData.pictureUrl || ""}
@@ -452,7 +452,7 @@ export function UserManagementDashboardClient() {
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <label className="font-semibold text-slate-700 block text-xs">สิทธิ์การใช้งาน</label>
+                  <label className="text-slate-700 block text-xs">สิทธิ์การใช้งาน</label>
                   <select
                     value={formData.role}
                     onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
@@ -465,7 +465,7 @@ export function UserManagementDashboardClient() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-semibold text-slate-700 block text-xs">สถานะ</label>
+                  <label className="text-slate-700 block text-xs">สถานะ</label>
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
@@ -481,14 +481,14 @@ export function UserManagementDashboardClient() {
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-3 py-1 rounded border border-slate-300 text-slate-700 font-semibold hover:bg-slate-100 transition text-xs"
+                  className="px-3 py-1 rounded border border-slate-300 text-slate-700 hover:bg-slate-100 transition text-xs"
                 >
                   ยกเลิก
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-3 py-1 rounded bg-slate-900 hover:bg-slate-800 text-white font-semibold transition flex items-center gap-1 text-xs cursor-pointer"
+                  className="px-3 py-1 rounded bg-slate-900 hover:bg-slate-800 text-white transition flex items-center gap-1 text-xs cursor-pointer"
                 >
                   {saving ? <RefreshCw size={13} className="animate-spin" /> : <Save size={14} />}
                   <span>บันทึก</span>
