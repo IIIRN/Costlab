@@ -35,26 +35,23 @@ export default async function BillsPage({ searchParams }: BillsPageProps) {
   ];
 
   const cookieStore = await cookies();
-  const isAdmin = cookieStore.get("auth_role")?.value === "Admin";
+  const role = cookieStore.get("auth_role")?.value || "";
+  const canDeleteCookie = cookieStore.get("auth_can_delete")?.value;
+  const canDelete = canDeleteCookie === "true" || (canDeleteCookie !== "false" && role !== "User" && Boolean(role));
 
-  const [allRows, peopleRows, projectRows, storeRows, contractRows, contractorRows] = await Promise.all([
+  const [allRows, peopleRows] = await Promise.all([
     safeRows(TABLES.DATA),
     safeRows(TABLES.PEOPLE),
-    safeRows(TABLES.PROJECT),
-    safeRows(TABLES.STORE),
-    safeRows(TABLES.CONTRACT_WORK),
-    safeRows(TABLES.CONTRACTOR),
   ]);
 
-  const hydratedRows = await hydrateBillRows(allRows, { projects: projectRows, stores: storeRows, contracts: contractRows, contractors: contractorRows });
-  const sortedRows = sortBillRows(hydratedRows, sort || "latest");
+  const sortedRows = sortBillRows(allRows, sort || "latest");
   const rows = nonEmptyRows(sortedRows, columns);
 
   return (
     <BillsDashboardClient
       columns={columns}
       initialRows={rows}
-      isAdmin={isAdmin}
+      isAdmin={canDelete}
       peopleRows={peopleRows}
       search={search}
       page={page}

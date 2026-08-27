@@ -15,6 +15,7 @@ type BillDetailPageProps = {
 export default async function BillDetailPage({ params }: BillDetailPageProps) {
   const { billId } = await params;
   const decodedBillId = decodeURIComponent(billId).trim();
+
   const [rawDataRows, rawProjectRows, rawContractRows, peopleRows, storeRows, contractorRows, rawCompanyRows] = await Promise.all([
     getRows(TABLES.DATA).catch(() => []),
     getRows(TABLES.PROJECT).catch(() => []),
@@ -25,28 +26,20 @@ export default async function BillDetailPage({ params }: BillDetailPageProps) {
     getRows(TABLES.COMPANY).catch(() => []),
   ]);
 
-  const dataRows = await hydrateBillRows(rawDataRows, {
-    projects: rawProjectRows,
-    stores: storeRows,
-    contracts: rawContractRows,
-    contractors: contractorRows,
-  });
-  const projectRows = hydrateProjectRows(rawProjectRows);
-  const contractRows = await hydrateContractRows(rawContractRows);
-  const bill = dataRows.find((row) => billKey(row) === decodedBillId || String(row._sheetRow || "") === decodedBillId);
+  const bill = rawDataRows.find((row) => billKey(row) === decodedBillId || String(row._sheetRow || "") === decodedBillId || String(row.id || "") === decodedBillId);
   if (!bill) notFound();
 
   const documentData = await getBillDocumentData(bill, {
     projects: rawProjectRows,
     companies: rawCompanyRows,
     contractors: contractorRows,
-    bills: dataRows,
+    bills: [bill],
   });
 
   const projectId = text(bill["ID Project"]);
   const contractId = text(bill["ผู้รับเหมา"]);
-  const project = projectRows.filter((row) => text(row["ID Project"]) === projectId);
-  const contract = contractId ? contractRows.filter((row) => text(row.id_Conwork) === contractId) : [];
+  const project = rawProjectRows.filter((row) => text(row["ID Project"] || row.id) === projectId);
+  const contract = contractId ? rawContractRows.filter((row) => text(row.id_Conwork || row.id) === contractId) : [];
 
   // Resolve Requester Name & Link
   const rawRequester = text(bill["ผู้เบิก"]);

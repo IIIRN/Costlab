@@ -8,7 +8,54 @@ import { applyBillFormulas, applyContractFormulas, applyProjectFormulas } from "
 import { getFormSchema } from "@/lib/schemas";
 import { isVatActive, parseDeductPercent, parseCreditDays } from "@/lib/project-summary";
 import { appendAuditLog, appendRow, bulkAppendRows, deleteRows, getRows, invalidateTableCache, updateRow } from "@/lib/db";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 import type { SheetRow } from "@/lib/types";
+
+async function verifyDeletePermission(request: NextRequest): Promise<boolean> {
+  const role = request.cookies.get("auth_role")?.value;
+  const empId = request.cookies.get("auth_employee_id")?.value;
+  const canDeleteCookie = request.cookies.get("auth_can_delete")?.value;
+
+  // 1. If explicit cookie set to false, deny
+  if (canDeleteCookie === "false") return false;
+  if (canDeleteCookie === "true") return true;
+
+  // 2. If role is explicit Admin or Owner, check users_list for granular override
+  if (role === "Admin" || role === "Owner" || role === "admin" || role === "Admin_Closer" || role === "Admin_Approver") {
+    if (empId) {
+      try {
+        const { data } = await supabaseAdmin.from("system_options").select("data").eq("id", "users_list").maybeSingle();
+        if (data?.data && Array.isArray(data.data)) {
+          const u = data.data.find((x: any) => x.id === empId || x.username === empId);
+          if (u && u.canDelete === false) return false;
+        }
+      } catch (e) {}
+    }
+    return true;
+  }
+
+  // 3. Check users_list in database by employeeId
+  if (empId) {
+    try {
+      const { data } = await supabaseAdmin.from("system_options").select("data").eq("id", "users_list").maybeSingle();
+      if (data?.data && Array.isArray(data.data)) {
+        const u = data.data.find((x: any) => x.id === empId || x.username === empId);
+        if (u) {
+          if (u.canDelete !== undefined) return Boolean(u.canDelete);
+          if (u.role === "User") return false;
+          return true;
+        }
+      }
+    } catch (e) {}
+  }
+
+  // Fallback: If role is "User" or missing, deny deletion
+  if (role === "User" || role === "user" || !role) {
+    return false;
+  }
+
+  return true;
+}
 
 export async function GET(request: NextRequest) {
   const tableName = request.nextUrl.searchParams.get("tableName");
@@ -52,16 +99,33 @@ export async function POST(request: NextRequest) {
     // High performance bulk batch insertion
     if (Array.isArray(body.rows) && body.rows.length > 0) {
       const rows = body.rows as SheetRow[];
-      const inserted = await bulkAppendRows(tableName, rows);
+      const actor = actorFromRequest(request);
+      const processedRows: SheetRow[] = [];
+      for (const r of rows) {
+        const itemRow = { ...r };
+        if (tableName === TABLES.DATA || tableName === "Data" || tableName === "bills") {
+          if (!itemRow["ผู้สร้างบิล"] && !itemRow["created_by"]) {
+            itemRow["ผู้สร้างบิล"] = actor;
+            itemRow["created_by"] = actor;
+          }
+          sanitizeBySchema(itemRow, tableName);
+          const output = await applyBillFormulas(itemRow);
+          processedRows.push(output);
+        } else {
+          sanitizeBySchema(itemRow, tableName);
+          processedRows.push(itemRow);
+        }
+      }
+      const inserted = await bulkAppendRows(tableName, processedRows);
       await appendAuditLog({
         action: "BULK_CREATE",
         tableName,
-        key: `count:${rows.length}`,
-        actor: actorFromRequest(request),
-        details: { count: rows.length }
+        key: `count:${processedRows.length}`,
+        actor: actor,
+        details: { count: processedRows.length }
       }).catch(() => undefined);
       invalidateTableCache(tableName);
-      return NextResponse.json({ ok: true, count: inserted?.length || rows.length });
+      return NextResponse.json({ ok: true, count: inserted?.length || processedRows.length });
     }
 
     const row = body.row && typeof body.row === "object" ? body.row as SheetRow : {};
@@ -196,6 +260,11 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const isAllowed = await verifyDeletePermission(request);
+    if (!isAllowed) {
+      return NextResponse.json({ error: "⛔ คุณไม่มีสิทธิ์ในการลบข้อมูลในระบบ (กรุณาติดต่อผู้ดูแลระบบเพื่อขอสิทธิ์ลบข้อมูล)" }, { status: 403 });
+    }
+
     const body = await request.json();
     const tableName = String(body.tableName || "");
     if (!canManageTable(tableName)) return NextResponse.json({ error: "Table is not manageable" }, { status: 403 });
@@ -369,9 +438,29 @@ async function readPostBody(request: NextRequest) {
 
   const formData = await request.formData();
   const tableName = String(formData.get("tableName") || "");
+
+  const rawRows = formData.get("rows");
+  if (rawRows && typeof rawRows === "string") {
+    try {
+      const parsedRows = JSON.parse(rawRows);
+      if (Array.isArray(parsedRows) && parsedRows.length > 0) {
+        const dummyRow: SheetRow = {};
+        await attachUploadedFiles(formData, tableName, dummyRow);
+        const imgUrl = dummyRow["รูปถ่ายบิล"] || "";
+        const finalRows = parsedRows.map(r => ({
+          ...r,
+          ...(imgUrl && !r["รูปถ่ายบิล"] ? { "รูปถ่ายบิล": imgUrl } : {})
+        }));
+        return { tableName, rows: finalRows };
+      }
+    } catch (e) {
+      console.warn("Failed parsing bulk rows from formData:", e);
+    }
+  }
+
   const row: SheetRow = {};
   for (const [key, value] of formData.entries()) {
-    if (key === "tableName" || isFile(value)) continue;
+    if (key === "tableName" || key === "rows" || isFile(value)) continue;
     row[key] = typeof value === "string" ? value : "";
   }
   await attachUploadedFiles(formData, tableName, row);

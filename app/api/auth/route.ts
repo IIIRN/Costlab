@@ -110,10 +110,12 @@ export async function POST(request: Request) {
       const userName = matchedUser.displayName || matchedUser.name || empId;
       const userRole = matchedUser.role || "User";
       const finalPicUrl = pictureUrl || matchedUser.pictureUrl || "";
+      const canDelete = matchedUser.canDelete !== undefined ? Boolean(matchedUser.canDelete) : (userRole !== "User");
 
       cookieStore.set("auth_employee_id", empId, { expires, path: "/" });
       cookieStore.set("auth_name", userName, { expires, path: "/" });
       cookieStore.set("auth_role", userRole, { expires, path: "/" });
+      cookieStore.set("auth_can_delete", String(canDelete), { expires, path: "/" });
       if (finalPicUrl) cookieStore.set("auth_picture_url", finalPicUrl, { expires, path: "/" });
       cookieStore.set("auth_line_user_id", lineUserId, { expires, path: "/" });
 
@@ -164,10 +166,12 @@ export async function POST(request: Request) {
         const empId = existingUser.username || existingUser.id;
         const userName = existingUser.displayName || existingUser.name || empId;
         const userRole = existingUser.role || "User";
+        const canDelete = existingUser.canDelete !== undefined ? Boolean(existingUser.canDelete) : (userRole !== "User");
 
         cookieStore.set("auth_employee_id", empId, { expires, path: "/" });
         cookieStore.set("auth_name", userName, { expires, path: "/" });
         cookieStore.set("auth_role", userRole, { expires, path: "/" });
+        cookieStore.set("auth_can_delete", String(canDelete), { expires, path: "/" });
         if (pictureUrl) cookieStore.set("auth_picture_url", pictureUrl, { expires, path: "/" });
         cookieStore.set("auth_line_user_id", lineUserId, { expires, path: "/" });
 
@@ -223,10 +227,12 @@ export async function POST(request: Request) {
             const empId = matchedUser.username || matchedUser.id;
             const userName = matchedUser.displayName || empId;
             const userRole = matchedUser.role || "User";
+            const canDelete = matchedUser.role !== "User";
 
             cookieStore.set("auth_employee_id", empId, { expires, path: "/" });
             cookieStore.set("auth_name", userName, { expires, path: "/" });
             cookieStore.set("auth_role", userRole, { expires, path: "/" });
+            cookieStore.set("auth_can_delete", String(canDelete), { expires, path: "/" });
             if (pictureUrl) cookieStore.set("auth_picture_url", pictureUrl, { expires, path: "/" });
             cookieStore.set("auth_line_user_id", lineUserId, { expires, path: "/" });
 
