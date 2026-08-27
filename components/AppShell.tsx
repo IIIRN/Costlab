@@ -299,8 +299,8 @@ export function AppShell({ children, peopleRows = [], currentUser = null }: { ch
           </div>
         </aside>
 
-        {/* Mobile Bottom Navigation Bar - Fixed at bottom with Deep Forest Teal Background */}
-        <nav className="fixed bottom-0 inset-x-0 h-16 bg-[#0b3531] border-t border-[#062e2b] flex items-center justify-around z-30 shadow-2xl px-1 text-white">
+        {/* Mobile Bottom Navigation Bar - Fixed at bottom with Deep Forest Teal Background & Safe Area Padding */}
+        <nav className="fixed bottom-0 inset-x-0 bg-[#0b3531] border-t border-[#062e2b] flex items-center justify-around z-30 shadow-2xl px-1 pt-1.5 pb-[max(0.85rem,env(safe-area-inset-bottom))] text-white md:hidden">
           {mobileViews.map(view => {
             const href = hrefFor(view);
             const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -309,13 +309,13 @@ export function AppShell({ children, peopleRows = [], currentUser = null }: { ch
               <Link
                 key={view.id}
                 href={href}
-                className={`flex flex-col items-center justify-center w-full h-full py-1 text-xs font-medium transition-colors ${active ? "text-[#d4f54e] " : "text-[#9eb5b0] hover:text-slate-200"
+                className={`flex flex-col items-center justify-center w-full py-1 text-xs font-medium transition-colors ${active ? "text-[#d4f54e] " : "text-[#9eb5b0] hover:text-slate-200"
                   }`}
               >
-                <span className={`p-1 rounded-xl ${active ? "bg-[#d4f54e] text-[#0b3531]" : ""}`}>
+                <span className={`p-1 rounded-xl transition-all ${active ? "bg-[#d4f54e] text-[#0b3531] shadow-xs" : ""}`}>
                   {Icon ? <Icon size={20} strokeWidth={active ? 2.3 : 1.8} /> : null}
                 </span>
-                <small className="mt-0.5 text-xs leading-none truncate max-w-[64px]">{view.name}</small>
+                <small className="mt-1 text-[11px] leading-tight truncate max-w-[64px] font-medium">{view.name}</small>
               </Link>
             );
           })}
@@ -330,7 +330,7 @@ export function AppShell({ children, peopleRows = [], currentUser = null }: { ch
       />
 
       {/* Main Workspace Area (With padding for fixed Mobile Header & Footer) */}
-      <main className={`flex-1 min-w-0 min-h-screen pt-14 pb-16 md:pt-0 md:pb-0 relative transition-all duration-300 ${collapsed ? "md:pl-[60px]" : "md:pl-[300px]"}`}>
+      <main className={`flex-1 min-w-0 min-h-screen pt-14 pb-24 md:pt-0 md:pb-0 relative transition-all duration-300 ${collapsed ? "md:pl-[60px]" : "md:pl-[300px]"}`}>
         {children}
       </main>
     </div>
