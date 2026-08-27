@@ -66,22 +66,154 @@ export function getCategoryExpense(rows: SheetRow[], cat: string): number {
   }, 0);
 }
 
+export function computeGrossProfit(workAmount: number, totalCost: number): number {
+  return workAmount - totalCost;
+}
+
+export function computeProfitMargin(grossProfit: number, workAmount: number): number {
+  if (!workAmount || workAmount <= 0) return 0;
+  return Math.round((grossProfit / workAmount) * 1000) / 10;
+}
+
+export function getProfitHealthStatus(marginPercent: number): {
+  status: "healthy" | "normal" | "low" | "loss";
+  label: string;
+  badgeClass: string;
+  dotClass: string;
+} {
+  if (marginPercent >= 20) {
+    return {
+      status: "healthy",
+      label: "กำไรดีมาก (Healthy)",
+      badgeClass: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+      dotClass: "bg-emerald-600",
+    };
+  }
+  if (marginPercent >= 10) {
+    return {
+      status: "normal",
+      label: "กำไรมาตรฐาน (Normal)",
+      badgeClass: "bg-indigo-50 text-indigo-700 border border-indigo-200",
+      dotClass: "bg-indigo-600",
+    };
+  }
+  if (marginPercent >= 0) {
+    return {
+      status: "low",
+      label: "กำไรบาง (Low Margin)",
+      badgeClass: "bg-amber-50 text-amber-700 border border-amber-200",
+      dotClass: "bg-amber-600",
+    };
+  }
+  return {
+    status: "loss",
+    label: "ขาดทุน (Loss)",
+    badgeClass: "bg-rose-50 text-rose-700 border border-rose-200 font-semibold",
+    dotClass: "bg-rose-600",
+  };
+}
+
+export function getBudgetHealthStatus(budget: number, totalCost: number): {
+  status: "safe" | "warning" | "critical" | "over";
+  label: string;
+  percent: number;
+  badgeClass: string;
+  barClass: string;
+} {
+  const percent = budget > 0 ? Math.round((totalCost / budget) * 1000) / 10 : (totalCost > 0 ? 100 : 0);
+  if (percent < 75) {
+    return {
+      status: "safe",
+      label: "ปลอดภัย (Safe)",
+      percent,
+      badgeClass: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+      barClass: "bg-emerald-600",
+    };
+  }
+  if (percent < 90) {
+    return {
+      status: "warning",
+      label: "เฝ้าระวัง (Warning)",
+      percent,
+      badgeClass: "bg-amber-50 text-amber-700 border border-amber-200",
+      barClass: "bg-amber-500",
+    };
+  }
+  if (percent <= 100) {
+    return {
+      status: "critical",
+      label: "วิกฤต (Critical)",
+      percent,
+      badgeClass: "bg-orange-50 text-orange-700 border border-orange-200",
+      barClass: "bg-orange-600",
+    };
+  }
+  return {
+    status: "over",
+    label: "เกินงบ (Over Budget)",
+    percent,
+    badgeClass: "bg-rose-50 text-rose-700 border border-rose-200 font-semibold",
+    barClass: "bg-rose-600",
+  };
+}
+
+export function computeCashFlowBreakdown(dataRows: SheetRow[]): {
+  actualPaid: number;
+  pendingPayables: number;
+  totalCommitted: number;
+} {
+  let actualPaid = 0;
+  let pendingPayables = 0;
+
+  for (const row of dataRows) {
+    if (!isCommittedBill(row)) continue;
+    const amount = toNumber(row["ยอดเงิน"]) || AMOUNT_COLUMNS.reduce((sum, c) => sum + toNumber(row[c]), 0);
+    const st = String(row["สถานะ"] || "").trim().toLowerCase();
+    if (st.includes("เบิกแล้ว") || st === "paid" || st === "withdrawn") {
+      actualPaid += amount;
+    } else {
+      pendingPayables += amount;
+    }
+  }
+
+  return {
+    actualPaid,
+    pendingPayables,
+    totalCommitted: actualPaid + pendingPayables,
+  };
+}
+
 export function hydrateProjectRowsForList(projectRows: SheetRow[], dataRows: SheetRow[]) {
-  const totals = dataRows.reduce<Record<string, number>>((accumulator, row) => {
-    if (!isCommittedBill(row)) return accumulator;
+  const totalsByProject: Record<string, { total: number; paid: number; pending: number }> = {};
+
+  for (const row of dataRows) {
+    if (!isCommittedBill(row)) continue;
     const projectId = String(row["ID Project"] || "").trim();
-    if (!projectId) return accumulator;
+    if (!projectId) continue;
     const amount = toNumber(row["ยอดเงิน"]) || AMOUNT_COLUMNS.reduce((sum, column) => sum + toNumber(row[column]), 0);
-    accumulator[projectId] = (accumulator[projectId] || 0) + amount;
-    return accumulator;
-  }, {});
+    const st = String(row["สถานะ"] || "").trim().toLowerCase();
+    const isPaid = st.includes("เบิกแล้ว") || st === "paid" || st === "withdrawn";
+
+    if (!totalsByProject[projectId]) {
+      totalsByProject[projectId] = { total: 0, paid: 0, pending: 0 };
+    }
+    totalsByProject[projectId].total += amount;
+    if (isPaid) {
+      totalsByProject[projectId].paid += amount;
+    } else {
+      totalsByProject[projectId].pending += amount;
+    }
+  }
 
   return projectRows.map(row => {
     const projectId = String(row["ID Project"] || "").trim();
     const output = { ...row };
     
+    const projStats = totalsByProject[projectId] || { total: 0, paid: 0, pending: 0 };
     // Always compute "รวม ALL" dynamically from committed data rows
-    output["รวม ALL"] = totals[projectId] ?? 0;
+    output["รวม ALL"] = projStats.total;
+    output["เงินจ่ายแล้ว"] = projStats.paid;
+    output["หนี้สินรอจ่าย"] = projStats.pending;
 
     const workAmount = toNumber(output["ยอดงาน"]);
     const vatAmount = toNumber(output["ยอดรวม vat"]);
@@ -115,6 +247,22 @@ export function hydrateProjectRowsForList(projectRows: SheetRow[], dataRows: She
       }
     }
 
+    // Standard Cost & Profitability Calculations
+    const budgetVal = toNumber(output["งบไม่เกิน"]);
+    const costVal = toNumber(output["รวม ALL"]);
+    const effectiveRevenue = recalculatedWorkAmount > 0 ? recalculatedWorkAmount : (recalculatedVatAmount > 0 ? Math.round(recalculatedVatAmount / 1.07) : budgetVal);
+
+    const grossProfit = computeGrossProfit(effectiveRevenue, costVal);
+    const profitMargin = computeProfitMargin(grossProfit, effectiveRevenue);
+    const profitHealth = getProfitHealthStatus(profitMargin);
+    const budgetHealth = getBudgetHealthStatus(budgetVal, costVal);
+
+    output["กำไรขั้นต้น"] = grossProfit;
+    output["อัตรากำไร"] = profitMargin;
+    output["สถานะกำไร"] = profitHealth.status;
+    output["profitHealth"] = profitHealth;
+    output["budgetHealth"] = budgetHealth;
+
     return output;
   });
 }
@@ -126,6 +274,12 @@ export function hydrateProjectSummary(project: SheetRow, projectDataRows: SheetR
     totalVat: number;
     budget: number;
     totalAll: number;
+    grossProfit: number;
+    profitMargin: number;
+    actualPaid: number;
+    pendingPayables: number;
+    profitHealth: any;
+    budgetHealth: any;
     billCount: number;
     remaining: number;
     material: number;
@@ -161,6 +315,13 @@ export function hydrateProjectSummary(project: SheetRow, projectDataRows: SheetR
     budget = workTotal > 0 ? workTotal : (totalVat > 0 ? Math.round(totalVat / 1.07) : totalAll);
   }
 
+  const effectiveRevenue = workTotal > 0 ? workTotal : (totalVat > 0 ? Math.round(totalVat / 1.07) : budget);
+  const grossProfit = computeGrossProfit(effectiveRevenue, totalAll);
+  const profitMargin = computeProfitMargin(grossProfit, effectiveRevenue);
+  const profitHealth = getProfitHealthStatus(profitMargin);
+  const budgetHealth = getBudgetHealthStatus(budget, totalAll);
+  const cashFlow = computeCashFlowBreakdown(committedRows);
+
   return {
     project: {
       ...project,
@@ -168,13 +329,26 @@ export function hydrateProjectSummary(project: SheetRow, projectDataRows: SheetR
       "ยอดงาน": hasValue(project["ยอดงาน"]) && toNumber(project["ยอดงาน"]) > 0 ? project["ยอดงาน"] : workTotal,
       "ยอดรวม vat": hasValue(project["ยอดรวม vat"]) || hasValue(project["ยอดรวม VAT"]) ? (project["ยอดรวม vat"] || project["ยอดรวม VAT"]) : totalVat,
       "งบไม่เกิน": budget,
-      "รวม ALL": totalAll
+      "รวม ALL": totalAll,
+      "กำไรขั้นต้น": grossProfit,
+      "อัตรากำไร": profitMargin,
+      "สถานะกำไร": profitHealth.status,
+      "เงินจ่ายแล้ว": cashFlow.actualPaid,
+      "หนี้สินรอจ่าย": cashFlow.pendingPayables,
+      "profitHealth": profitHealth,
+      "budgetHealth": budgetHealth,
     },
     totals: {
       workTotal,
       totalVat,
       budget,
       totalAll,
+      grossProfit,
+      profitMargin,
+      actualPaid: cashFlow.actualPaid,
+      pendingPayables: cashFlow.pendingPayables,
+      profitHealth,
+      budgetHealth,
       billCount: committedRows.length,
       remaining: budget - totalAll,
       material: getCategoryExpense(committedRows, "ค่าของ"),

@@ -65,22 +65,22 @@ export function BackupScheduleModal({ isOpen, onClose, config, onSave }: BackupS
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl text-slate-100">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl text-slate-900">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
+        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/70">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+            <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700">
               <Calendar className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-white">ตั้งเวลาสำรองข้อมูลอัตโนมัติ</h2>
-              <p className="text-xs text-slate-400">กำหนดรอบเวลาสำรองข้อมูลทั้ง 12 ตารางลงระบบ</p>
+              <h2 className="text-base font-semibold text-slate-900">ตั้งเวลาสำรองข้อมูลอัตโนมัติ</h2>
+              <p className="text-xs text-slate-500">กำหนดรอบเวลาสำรองข้อมูลทั้ง 12 ตารางลงระบบ</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -89,13 +89,13 @@ export function BackupScheduleModal({ isOpen, onClose, config, onSave }: BackupS
         {/* Body */}
         <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
           {/* Main Switch */}
-          <div className="flex items-center justify-between p-4 rounded-xl bg-slate-800/50 border border-slate-700/50">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-200">
             <div className="space-y-0.5">
-              <div className="text-sm font-medium text-white flex items-center gap-2">
-                <Shield className="w-4 h-4 text-emerald-400" />
+              <div className="text-sm font-medium text-slate-900 flex items-center gap-2">
+                <Shield className="w-4 h-4 text-emerald-600" />
                 เปิดใช้งานระบบสำรองอัตโนมัติ
               </div>
-              <p className="text-xs text-slate-400">ระบบจะทำการสำรองข้อมูลอัตโนมัติตามรอบที่กำหนด</p>
+              <p className="text-xs text-slate-500">ระบบจะทำการสำรองข้อมูลอัตโนมัติตามรอบที่กำหนด</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input
@@ -104,7 +104,7 @@ export function BackupScheduleModal({ isOpen, onClose, config, onSave }: BackupS
                 onChange={(e) => setEnabled(e.target.checked)}
                 className="sr-only peer"
               />
-              <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
             </label>
           </div>
 
@@ -112,7 +112,7 @@ export function BackupScheduleModal({ isOpen, onClose, config, onSave }: BackupS
             <>
               {/* Frequency Selection */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
                   ความถี่ในการสำรองข้อมูล
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -125,14 +125,14 @@ export function BackupScheduleModal({ isOpen, onClose, config, onSave }: BackupS
                       key={f.id}
                       type="button"
                       onClick={() => setFrequency(f.id as any)}
-                      className={`p-3 rounded-xl border text-left transition-all ${
+                      className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                         frequency === f.id
-                          ? "bg-emerald-500/10 border-emerald-500 text-white shadow-sm ring-1 ring-emerald-500/50"
-                          : "bg-slate-800/40 border-slate-700/50 text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                          ? "bg-emerald-50 border-emerald-500 text-slate-900 shadow-2xs ring-1 ring-emerald-500/50"
+                          : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                       }`}
                     >
-                      <div className="text-xs font-medium text-white">{f.label}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">{f.sub}</div>
+                      <div className="text-xs font-semibold text-slate-900">{f.label}</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">{f.sub}</div>
                     </button>
                   ))}
                 </div>
@@ -141,17 +141,17 @@ export function BackupScheduleModal({ isOpen, onClose, config, onSave }: BackupS
               {/* Day of Week (for Weekly) */}
               {frequency === "weekly" && (
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-emerald-400" />
+                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-emerald-600" />
                     เลือกวันในสัปดาห์
                   </label>
                   <select
                     value={dayOfWeek}
                     onChange={(e) => setDayOfWeek(Number(e.target.value))}
-                    className="w-full px-3 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-500"
+                    className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-emerald-600"
                   >
                     {DAYS_OF_WEEK.map((d) => (
-                      <option key={d.value} value={d.value} className="bg-slate-800">
+                      <option key={d.value} value={d.value} className="bg-white text-slate-900">
                         {d.label}
                       </option>
                     ))}
@@ -161,24 +161,24 @@ export function BackupScheduleModal({ isOpen, onClose, config, onSave }: BackupS
 
               {/* Time of Day */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-emerald-400" />
+                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-emerald-600" />
                   เวลาที่ต้องการให้เริ่มสำรอง
                 </label>
                 <input
                   type="time"
                   value={time}
                   onChange={(e) => setTime(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-emerald-600"
                 />
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-slate-500">
                   💡 แนะนำตั้งช่วงเวลา 01:00 - 04:00 น. ซึ่งเป็นช่วงเวลาที่ไม่มีผู้ใช้งานระบบ
                 </p>
               </div>
 
               {/* Retention Count */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
                   จำนวนประวัติที่ต้องการเก็บย้อนหลัง
                 </label>
                 <div className="flex items-center gap-3">
@@ -188,22 +188,22 @@ export function BackupScheduleModal({ isOpen, onClose, config, onSave }: BackupS
                     max={52}
                     value={retentionSnapshots}
                     onChange={(e) => setRetentionSnapshots(Number(e.target.value))}
-                    className="w-24 px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-xl text-sm text-white text-center focus:outline-none focus:border-emerald-500"
+                    className="w-24 px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 text-center focus:outline-none focus:border-emerald-600"
                   />
-                  <span className="text-xs text-slate-400">
+                  <span className="text-xs text-slate-500">
                     จุดสำรอง (Snapshots) — เช่น 12 สัปดาห์ (~3 เดือน)
                   </span>
                 </div>
               </div>
 
               {/* LINE Notification Toggle */}
-              <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-800/30 border border-slate-700/50">
+              <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-200">
                 <div className="space-y-0.5">
-                  <div className="text-xs font-medium text-white flex items-center gap-2">
-                    <Bell className="w-3.5 h-3.5 text-blue-400" />
+                  <div className="text-xs font-medium text-slate-900 flex items-center gap-2">
+                    <Bell className="w-3.5 h-3.5 text-blue-600" />
                     ส่งแจ้งเตือนสรุปผลเข้า LINE
                   </div>
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-[11px] text-slate-500">
                     แจ้งเตือนผลและจำนวนแถวที่สำรองสำเร็จไปยังกลุ่มไลน์แอดมิน
                   </p>
                 </div>
@@ -211,15 +211,15 @@ export function BackupScheduleModal({ isOpen, onClose, config, onSave }: BackupS
                   type="checkbox"
                   checked={notifyLine}
                   onChange={(e) => setNotifyLine(e.target.checked)}
-                  className="w-4 h-4 accent-emerald-500 rounded cursor-pointer"
+                  className="w-4 h-4 accent-emerald-600 rounded cursor-pointer"
                 />
               </div>
 
               {/* Info Note */}
-              <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 flex gap-2.5 text-blue-300 text-xs leading-relaxed">
-                <Info className="w-4 h-4 shrink-0 mt-0.5" />
+              <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 flex gap-2.5 text-blue-800 text-xs leading-relaxed">
+                <Info className="w-4 h-4 shrink-0 mt-0.5 text-blue-600" />
                 <div>
-                  <div className="font-semibold text-blue-200 mb-0.5">ระบบ Cron Endpoint</div>
+                  <div className="font-semibold text-blue-900 mb-0.5">ระบบ Cron Endpoint</div>
                   สามารถผูก URL <code>/api/cron/backup</code> กับ Vercel Cron หรือ External Cron เพื่อให้ระบบทำงานอัตโนมัติตามกำหนดได้อย่างแม่นยำ
                 </div>
               </div>
@@ -228,11 +228,11 @@ export function BackupScheduleModal({ isOpen, onClose, config, onSave }: BackupS
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-800 flex items-center justify-end gap-2.5 bg-slate-950/50">
+        <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-end gap-2.5 bg-slate-50/70">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="px-4 py-2 rounded-xl text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-200 transition-colors cursor-pointer"
           >
             ยกเลิก
           </button>
@@ -240,7 +240,7 @@ export function BackupScheduleModal({ isOpen, onClose, config, onSave }: BackupS
             type="button"
             disabled={saving}
             onClick={handleSave}
-            className="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 transition-colors flex items-center gap-2 shadow-lg shadow-emerald-900/30"
+            className="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 transition-colors flex items-center gap-2 shadow-2xs cursor-pointer"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
             บันทึกการตั้งค่า

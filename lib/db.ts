@@ -6,6 +6,7 @@ import {
   deleteRowFromSupabase,
   deleteRowsFromSupabase,
   deleteStorageFilesFromSupabase,
+  getDbTableName,
   getRowsFromSupabase,
   getSystemOptionsFromSupabase,
   insertAuditLogToSupabase,
@@ -38,29 +39,38 @@ const MASTER_TABLES = new Set([
 
 function getTableDefaultTtl(tableName: string): number {
   if (MASTER_TABLES.has(tableName) || MASTER_TABLES.has(tableName.toLowerCase())) {
-    return 180_000; // 3 minutes for master data
+    return 300_000; // 5 minutes for master data
   }
   if (tableName === "Project" || tableName === "projects" || tableName === "PROJECT") {
-    return 60_000; // 1 minute for projects
+    return 180_000; // 3 minutes for projects
   }
-  return 20_000; // 20 seconds for transactions (bills, contracts, tasks)
+  return 180_000; // 3 minutes for transactions (bills, contracts, tasks) with instant write-invalidation
 }
 
 export function invalidateTableCache(tableName: string) {
+  if (!tableName) return;
   const normalized = tableName.trim();
+  const canonical = getDbTableName(normalized) || normalized.toLowerCase();
+
   clearCache(`rows:${normalized}`);
   clearCache(`headers:${normalized}`);
-  
-  // Also clear aliases
-  if (normalized === "bills" || normalized === "Data" || normalized === "DATA" || normalized === "data") {
+  if (canonical && canonical !== normalized) {
+    clearCache(`rows:${canonical}`);
+    clearCache(`headers:${canonical}`);
+  }
+
+  // Clear global aliases and derivative view caches
+  if (canonical === "bills" || normalized === "Data" || normalized === "DATA" || normalized === "bills" || normalized === "data") {
     clearCache("rows:bills");
     clearCache("rows:Data");
     clearCache("rows:DATA");
+    clearCache("rows:data");
     clearCache("headers:bills");
     clearCache("headers:Data");
     clearCache("dashboard");
     clearCache("summary");
-  } else if (normalized === "projects" || normalized === "Project" || normalized === "PROJECT") {
+    clearCache("sys_opt:bill_follow_dates");
+  } else if (canonical === "projects" || normalized === "Project" || normalized === "PROJECT" || normalized === "projects") {
     clearCache("rows:projects");
     clearCache("rows:Project");
     clearCache("rows:PROJECT");
@@ -68,24 +78,61 @@ export function invalidateTableCache(tableName: string) {
     clearCache("headers:Project");
     clearCache("dashboard");
     clearCache("summary");
-  } else if (normalized === "contract_works" || normalized === "งานรับเหมา" || normalized === "Contract_work") {
+    clearCache("sys_opt:project_budget_allocations");
+  } else if (canonical === "contract_works" || normalized === "งานรับเหมา" || normalized === "Contract_work" || normalized === "contract_works") {
     clearCache("rows:contract_works");
     clearCache("rows:งานรับเหมา");
     clearCache("rows:Contract_work");
     clearCache("headers:contract_works");
-  } else if (normalized === "stores" || normalized === "ร้านค้า") {
+  } else if (canonical === "stores" || normalized === "ร้านค้า" || normalized === "stores") {
     clearCache("rows:stores");
     clearCache("rows:ร้านค้า");
     clearCache("headers:stores");
-  } else if (normalized === "contractors" || normalized === "รับเหมา") {
+    clearCache("sys_opt:entity_banks");
+  } else if (canonical === "contractors" || normalized === "รับเหมา" || normalized === "contractors") {
     clearCache("rows:contractors");
     clearCache("rows:รับเหมา");
     clearCache("headers:contractors");
-  } else if (normalized === "master_members" || normalized === "รายชื่อ" || normalized === "PEOPLE") {
+    clearCache("sys_opt:entity_banks");
+  } else if (canonical === "master_members" || normalized === "รายชื่อ" || normalized === "PEOPLE" || normalized === "people") {
     clearCache("rows:master_members");
     clearCache("rows:รายชื่อ");
     clearCache("rows:PEOPLE");
+    clearCache("rows:people");
     clearCache("headers:master_members");
+    clearCache("sys_opt:entity_banks");
+    clearCache("sys_opt:users_list");
+  } else if (canonical === "banks" || normalized === "ธนาคาร" || normalized === "banks" || normalized === "BANK") {
+    clearCache("rows:banks");
+    clearCache("rows:ธนาคาร");
+    clearCache("rows:BANK");
+    clearCache("headers:banks");
+  } else if (canonical === "cars" || normalized === "ทะเบียน" || normalized === "cars" || normalized === "CAR") {
+    clearCache("rows:cars");
+    clearCache("rows:ทะเบียน");
+    clearCache("rows:CAR");
+    clearCache("headers:cars");
+  } else if (canonical === "categories" || normalized === "ประเภท" || normalized === "categories") {
+    clearCache("rows:categories");
+    clearCache("rows:ประเภท");
+    clearCache("headers:categories");
+    clearCache("sys_opt:all");
+  } else if (canonical === "customers" || normalized === "ลูกค้า" || normalized === "customers") {
+    clearCache("rows:customers");
+    clearCache("rows:ลูกค้า");
+    clearCache("headers:customers");
+  } else if (canonical === "companies" || normalized === "บริษัท" || normalized === "companies") {
+    clearCache("rows:companies");
+    clearCache("rows:บริษัท");
+    clearCache("headers:companies");
+  } else if (canonical === "loans" || normalized === "ยืมเงิน" || normalized === "loans") {
+    clearCache("rows:loans");
+    clearCache("rows:ยืมเงิน");
+    clearCache("headers:loans");
+  } else if (canonical === "products" || normalized === "สินค้า" || normalized === "products") {
+    clearCache("rows:products");
+    clearCache("rows:สินค้า");
+    clearCache("headers:products");
   }
 }
 

@@ -450,14 +450,14 @@ export function WithdrawDashboardClient({ rows, peopleRows, usersList = [], init
           </div>
         </div>
       ) : selectedRows.size > 0 ? (
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 p-2.5 sm:p-3 bg-white text-slate-800 rounded-xl shadow-xs border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed sm:static bottom-3 inset-x-3 sm:inset-x-auto z-40 sm:z-auto flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 p-3 bg-white text-slate-900 rounded-xl shadow-xl sm:shadow-2xs border border-slate-300 sm:border-slate-200 animate-in slide-in-from-bottom-2 fade-in duration-150">
           <div className="flex items-center justify-between sm:justify-start gap-2.5">
             <div className="flex items-center gap-2">
-              <span className="text-xs bg-slate-900 text-white px-2 py-0.5 rounded-md">
+              <span className="text-xs bg-slate-900 text-white px-2 py-0.5 rounded-md font-medium">
                 เลือก {selectedRows.size} รายการ
               </span>
-              <span className="text-xs text-slate-700 ">
-                รวม <strong className="text-slate-900 ">{money(displayRows.filter(r => selectedRows.has(Number(r._sheetRow))).reduce((sum, r) => sum + toNumber(r["ยอดเงิน"]), 0))}</strong> ฿
+              <span className="text-xs text-slate-700">
+                รวม <strong className="text-slate-900">{money(displayRows.filter(r => selectedRows.has(Number(r._sheetRow))).reduce((sum, r) => sum + toNumber(r["ยอดเงิน"]), 0))}</strong> ฿
               </span>
             </div>
             <button
@@ -474,7 +474,7 @@ export function WithdrawDashboardClient({ rows, peopleRows, usersList = [], init
               type="button"
               onClick={() => approveSelected("ตั้งเบิก")}
               disabled={isBatchApproving}
-              className="flex-1 sm:flex-initial px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs rounded-lg transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs active:scale-95"
+              className="flex-1 sm:flex-initial px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold rounded-lg transition cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs active:scale-95"
             >
               {isBatchApproving ? <LoaderCircle className="spin" size={14} /> : <Check size={14} />}
               <span>ตั้งเบิกที่เลือก ({selectedRows.size})</span>
@@ -485,7 +485,7 @@ export function WithdrawDashboardClient({ rows, peopleRows, usersList = [], init
                 type="button"
                 onClick={() => approveSelected("อนุมัติ")}
                 disabled={isBatchApproving}
-                className="flex-1 sm:flex-initial px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs rounded-lg transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs active:scale-95"
+                className="flex-1 sm:flex-initial px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-lg transition cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs active:scale-95"
               >
                 <Check size={14} />
                 <span>อนุมัติ ({selectedRows.size})</span>
@@ -495,7 +495,7 @@ export function WithdrawDashboardClient({ rows, peopleRows, usersList = [], init
             <button
               type="button"
               onClick={() => setSelectedRows(new Set())}
-              className="hidden sm:flex px-3 py-2 text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg text-xs transition cursor-pointer"
+              className="hidden sm:flex px-3 py-2 text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg text-xs font-medium transition cursor-pointer"
             >
               ยกเลิก
             </button>

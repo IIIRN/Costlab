@@ -55,26 +55,28 @@ export function BatchBillDocumentPrintClient({
   const totalPages = documents.length * pagesPerBill;
 
   return (
-    <div className="min-h-screen bg-slate-900/90 text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col font-sans">
       {/* TOP STICKY TOOLBAR (No Print) */}
-      <header className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-md border-b border-slate-800 px-4 py-3 shadow-lg flex flex-wrap items-center justify-between gap-3 no-print">
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-3 shadow-2xs flex flex-wrap items-center justify-between gap-3 no-print">
         <div className="flex items-center gap-3">
           <Link
             href="/documents"
-            className="flex items-center gap-1.5 text-xs text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg transition border border-slate-700"
+            className="flex items-center gap-1.5 text-xs text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition border border-slate-200 font-medium"
           >
             <ArrowLeft size={14} />
             <span>กลับหน้าเลือกเอกสาร</span>
           </Link>
-          <span className="text-slate-700">|</span>
+          <span className="text-slate-300">|</span>
           <div className="flex items-center gap-2">
-            <Files size={17} className="text-emerald-400" />
-            <h1 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center">
+              <Files size={16} />
+            </div>
+            <h1 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
               <span>พิมพ์เอกสารชุด</span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 font-mono">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-mono">
                 {documents.length} บิล
               </span>
-              <span className="text-xs text-slate-400 font-normal hidden sm:inline">
+              <span className="text-xs text-slate-500 font-normal hidden sm:inline">
                 ({totalPages} หน้ากระดาษ A4)
               </span>
             </h1>
@@ -83,14 +85,14 @@ export function BatchBillDocumentPrintClient({
 
         {/* Mode Selector & Print Button */}
         <div className="flex items-center gap-2.5 flex-wrap">
-          <div className="flex items-center bg-slate-900 p-1 rounded-lg border border-slate-800 text-xs">
+          <div className="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs">
             <button
               type="button"
               onClick={() => setActiveTab("all")}
-              className={`px-3 py-1.5 rounded-md transition cursor-pointer ${
+              className={`px-3 py-1.5 rounded-md transition cursor-pointer font-medium ${
                 activeTab === "all"
-                  ? "bg-slate-800 text-white font-medium shadow-xs"
-                  : "text-slate-400 hover:text-slate-200"
+                  ? "bg-white text-slate-900 shadow-2xs"
+                  : "text-slate-600 hover:text-slate-900"
               }`}
             >
               ครบชุด 3 หน้า
@@ -98,10 +100,10 @@ export function BatchBillDocumentPrintClient({
             <button
               type="button"
               onClick={() => setActiveTab("tax50twi")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition cursor-pointer font-medium ${
                 activeTab === "tax50twi"
-                  ? "bg-emerald-600 text-white font-medium shadow-xs"
-                  : "text-slate-400 hover:text-slate-200"
+                  ? "bg-emerald-700 text-white shadow-2xs"
+                  : "text-slate-600 hover:text-slate-900"
               }`}
             >
               <FileCheck2 size={13} />
@@ -110,10 +112,10 @@ export function BatchBillDocumentPrintClient({
             <button
               type="button"
               onClick={() => setActiveTab("contract")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition cursor-pointer font-medium ${
                 activeTab === "contract"
-                  ? "bg-slate-800 text-white font-medium shadow-xs"
-                  : "text-slate-400 hover:text-slate-200"
+                  ? "bg-white text-slate-900 shadow-2xs"
+                  : "text-slate-600 hover:text-slate-900"
               }`}
             >
               <FileText size={13} />
@@ -122,10 +124,10 @@ export function BatchBillDocumentPrintClient({
             <button
               type="button"
               onClick={() => setActiveTab("voucher")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition cursor-pointer font-medium ${
                 activeTab === "voucher"
-                  ? "bg-slate-800 text-white font-medium shadow-xs"
-                  : "text-slate-400 hover:text-slate-200"
+                  ? "bg-white text-slate-900 shadow-2xs"
+                  : "text-slate-600 hover:text-slate-900"
               }`}
             >
               <Receipt size={13} />
@@ -136,7 +138,7 @@ export function BatchBillDocumentPrintClient({
           <button
             type="button"
             onClick={handlePrint}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-400 hover:bg-emerald-300 text-slate-950 text-xs font-semibold rounded-lg shadow-md transition active:scale-95 cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-lg shadow-xs transition active:scale-95 cursor-pointer"
           >
             <Printer size={16} />
             <span>สั่งพิมพ์ {totalPages} หน้า (Print / PDF)</span>

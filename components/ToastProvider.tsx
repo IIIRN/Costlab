@@ -124,27 +124,27 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           return (
             <div
               key={t.id}
-              className={`pointer-events-auto flex items-start gap-3 p-3.5 rounded-xl shadow-xl border text-xs backdrop-blur-md transition-all animate-in fade-in slide-in-from-top-3 duration-200 ${
+              className={`pointer-events-auto flex items-start gap-3 p-3.5 rounded-xl shadow-xl border text-xs backdrop-blur-md transition-all animate-in fade-in slide-in-from-top-3 duration-200 bg-white ${
                 isError
-                  ? "bg-rose-900/95 border-rose-700 text-rose-100"
+                  ? "border-rose-300 text-slate-900 ring-1 ring-rose-200"
                   : isSuccess
-                  ? "bg-emerald-900/95 border-emerald-700 text-emerald-100"
+                  ? "border-emerald-300 text-slate-900 ring-1 ring-emerald-200"
                   : isWarning
-                  ? "bg-amber-900/95 border-amber-700 text-amber-100"
-                  : "bg-slate-900/95 border-slate-700 text-slate-100"
+                  ? "border-amber-300 text-slate-900 ring-1 ring-amber-200"
+                  : "border-slate-300 text-slate-900 ring-1 ring-slate-200"
               }`}
             >
               <span className="shrink-0 mt-0.5">
-                {isError && <AlertCircle size={17} className="text-rose-300" />}
-                {isSuccess && <CheckCircle2 size={17} className="text-emerald-300" />}
-                {isWarning && <AlertTriangle size={17} className="text-amber-300" />}
-                {!isError && !isSuccess && !isWarning && <Info size={17} className="text-sky-300" />}
+                {isError && <AlertCircle size={17} className="text-rose-600" />}
+                {isSuccess && <CheckCircle2 size={17} className="text-emerald-600" />}
+                {isWarning && <AlertTriangle size={17} className="text-amber-600" />}
+                {!isError && !isSuccess && !isWarning && <Info size={17} className="text-sky-600" />}
               </span>
-              <div className="flex-1 leading-relaxed">{t.message}</div>
+              <div className="flex-1 leading-relaxed font-medium">{t.message}</div>
               <button
                 type="button"
                 onClick={() => removeToast(t.id)}
-                className="shrink-0 p-0.5 rounded-md opacity-70 hover:opacity-100 hover:bg-white/10 transition"
+                className="shrink-0 p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
               >
                 <X size={14} />
               </button>

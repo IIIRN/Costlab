@@ -249,6 +249,9 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
             const spent = toNumber(p["รวม ALL"]);
             const budget = toNumber(p["งบไม่เกิน"]);
             const remaining = budget - spent;
+            const revenue = toNumber(p["ยอดงาน"]) || budget;
+            const profit = toNumber(p["กำไรขั้นต้น"]) || (revenue - spent);
+            const margin = toNumber(p["อัตรากำไร"]) || (revenue > 0 ? (profit / revenue) * 100 : 0);
             const percentUsed = budget > 0 ? Math.min(100, Math.round((spent / budget) * 100)) : 0;
 
             const colorInfo = getProjectColorInfo(p.color);
@@ -305,7 +308,7 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
                 <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100">
                   <div className="text-slate-500">
                     คงเหลือ:{" "}
-                    <span className={`${remaining < 0 ? "text-rose-600" : "text-emerald-700"}`}>
+                    <span className={`${remaining < 0 ? "text-rose-600 font-medium" : "text-emerald-700 font-medium"}`}>
                       {money(remaining)} ฿
                     </span>
                   </div>
@@ -399,7 +402,7 @@ export function WorkStatusDashboardClient({ projects }: WorkStatusDashboardClien
 
                         {/* Remaining */}
                         <td
-                          className={`py-2.5 px-3.5 text-right ${
+                          className={`py-2.5 px-3.5 text-right font-medium ${
                             remaining < 0 ? "text-rose-600 " : "text-emerald-700"
                           }`}
                         >

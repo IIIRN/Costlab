@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
@@ -142,6 +142,146 @@ const DATA_FORM_SECTIONS: { id: string; title: string; iconName: string; fields:
   }
 ];
 
+type MultiLineItem = {
+  id: string;
+  category: string;       // e.g. "6.ฝ้าผนัง"
+  categoryType: string;   // e.g. "1.ค่าของ" | "7.เครื่องมือ" | "8.อื่นๆ"
+  amount: string;         // e.g. "5000"
+};
+
+function MultiLineItemsBuilder({
+  items,
+  productOptions,
+  onAdd,
+  onRemove,
+  onUpdate,
+  onCancel,
+}: {
+  items: MultiLineItem[];
+  productOptions: { label: string; value: string }[];
+  onAdd: () => void;
+  onRemove: (id: string) => void;
+  onUpdate: (id: string, field: keyof MultiLineItem, value: string) => void;
+  onCancel: () => void;
+}) {
+  const totalSum = items.reduce((s, i) => s + (Number(i.amount) || 0), 0);
+
+  return (
+    <div className="col-span-full bg-slate-50/80 border border-slate-200 rounded-xl p-3 space-y-2 font-sans animate-in fade-in duration-150">
+      <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-1.5">
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-xs text-slate-800 flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-600 inline-block" />
+            <span>รายการสินค้า ({items.length})</span>
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-2 py-0.5 text-slate-500 hover:text-slate-800 bg-white border border-slate-200 text-xs rounded-md transition cursor-pointer"
+          >
+            รายการเดี่ยว
+          </button>
+          <button
+            type="button"
+            onClick={onAdd}
+            className="px-2 py-0.5 bg-emerald-700 hover:bg-emerald-800 text-white font-medium text-xs rounded-md transition cursor-pointer flex items-center gap-1 shadow-2xs"
+          >
+            <Plus size={12} />
+            <span>+ เพิ่ม</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Minimalist Line Items Rows */}
+      <div className="space-y-1.5">
+        {items.map((item, idx) => (
+          <div
+            key={item.id}
+            className="bg-white border border-slate-200 rounded-lg p-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shadow-2xs"
+          >
+            <span className="font-mono text-[11px] text-slate-400 font-semibold w-5 shrink-0 text-center hidden sm:block">
+              {idx + 1}.
+            </span>
+
+            {/* Product Category Dropdown */}
+            <div className="flex-1 min-w-0">
+              <select
+                value={item.category}
+                onChange={(e) => onUpdate(item.id, "category", e.target.value)}
+                className="w-full bg-white border border-slate-300 text-xs px-2.5 py-1.5 rounded-lg focus:outline-none focus:border-slate-800 text-slate-900 cursor-pointer font-normal"
+              >
+                <option value="">-- เลือกสินค้า ({idx + 1}) --</option>
+                {productOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Cost Type Pill Select */}
+            <div className="w-28 shrink-0">
+              <select
+                value={item.categoryType}
+                onChange={(e) => onUpdate(item.id, "categoryType", e.target.value)}
+                className="w-full bg-slate-50 border border-slate-300 text-xs px-2 py-1.5 rounded-lg focus:outline-none focus:border-slate-800 text-slate-700 cursor-pointer font-normal"
+              >
+                <option value="1.ค่าของ">1.ค่าของ</option>
+                <option value="7.เครื่องมือ">7.เครื่องมือ</option>
+                <option value="8.อื่นๆ">8.อื่นๆ</option>
+              </select>
+            </div>
+
+            {/* Amount Input */}
+            <div className="w-36 shrink-0 relative">
+              <input
+                type="number"
+                step="any"
+                value={item.amount}
+                onChange={(e) => onUpdate(item.id, "amount", e.target.value)}
+                placeholder="0.00"
+                className="w-full bg-white border border-slate-300 text-xs px-2.5 py-1.5 rounded-lg focus:outline-none focus:border-slate-800 text-right font-mono font-semibold text-slate-900 placeholder:text-slate-400"
+              />
+            </div>
+
+            {/* Delete Button */}
+            <button
+              type="button"
+              onClick={() => onRemove(item.id)}
+              disabled={items.length <= 1}
+              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed shrink-0 self-end sm:self-center"
+              title="ลบ"
+            >
+              <Trash2 size={15} />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* Summary Footer */}
+      <div className="flex items-center justify-between pt-1 text-xs">
+        <button
+          type="button"
+          onClick={onAdd}
+          className="text-xs text-emerald-800 hover:text-emerald-900 font-medium flex items-center gap-1 cursor-pointer"
+        >
+          <Plus size={12} /> <span>+ เพิ่มรายการ</span>
+        </button>
+
+        <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-900 px-2.5 py-1 rounded-lg border border-emerald-200 text-xs">
+          <span>รวม:</span>
+          <span className="font-mono font-bold text-emerald-950">
+            ฿{totalSum.toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SectionHeaderIcon({ name }: { name: string }) {
   switch (name) {
     case "ClipboardList": return <ClipboardList size={16} className="text-slate-600" />;
@@ -185,8 +325,92 @@ export function FormModal({
   const isEditing = editSheetRow !== null && editSheetRow !== undefined;
   const isDataForm = resolvedTableName === TABLES.DATA || resolvedTableName === "Data";
 
+  // Multi-Line Items State for Multi-category Bill Entry
+  const [multiLineItems, setMultiLineItems] = useState<MultiLineItem[]>([]);
+  const [isMultiItemMode, setIsMultiItemMode] = useState<boolean>(false);
+
   const [resetKey, setResetKey] = useState(0);
   const formBodyRef = useRef<HTMLDivElement>(null);
+
+  const productOptions = useMemo(() => {
+    const field = activeForm?.schema.find(f => f.name === "สินค้า");
+    const rawList: string[] = Array.isArray(field?.values) ? field.values : [];
+    return rawList.map((v: string) => ({ label: v, value: v }));
+  }, [activeForm]);
+
+  function syncMultiLineItemsToValues(items: MultiLineItem[]) {
+    if (items.length === 0) return;
+    const matSum = items.filter(i => i.categoryType === "1.ค่าของ").reduce((s, i) => s + (Number(i.amount) || 0), 0);
+    const toolSum = items.filter(i => i.categoryType === "7.เครื่องมือ").reduce((s, i) => s + (Number(i.amount) || 0), 0);
+    const otherSum = items.filter(i => i.categoryType === "8.อื่นๆ").reduce((s, i) => s + (Number(i.amount) || 0), 0);
+    const totalSum = items.reduce((s, i) => s + (Number(i.amount) || 0), 0);
+
+    setValues(current => {
+      const next = { ...current };
+      if (matSum > 0) next["ค่าของ"] = String(matSum);
+      if (toolSum > 0) next["เครื่องมือ"] = String(toolSum);
+      if (otherSum > 0) next["อื่นๆ"] = String(otherSum);
+      next["ยอดเงิน"] = String(totalSum);
+      next["ยอดโอน"] = String(totalSum);
+      if (items[0]?.category) next["สินค้า"] = items[0].category;
+      return next;
+    });
+  }
+
+  function enableMultiItemMode() {
+    setIsMultiItemMode(true);
+    if (multiLineItems.length === 0) {
+      const initialItems: MultiLineItem[] = [
+        {
+          id: "1",
+          category: values["สินค้า"] || "",
+          categoryType: values["ประเภท"] || "1.ค่าของ",
+          amount: values["ค่าของ"] || values["ยอดเงิน"] || "",
+        },
+        {
+          id: "2",
+          category: "",
+          categoryType: "1.ค่าของ",
+          amount: "",
+        }
+      ];
+      setMultiLineItems(initialItems);
+      syncMultiLineItemsToValues(initialItems);
+    }
+  }
+
+  function disableMultiItemMode() {
+    setIsMultiItemMode(false);
+    setMultiLineItems([]);
+  }
+
+  function handleAddLineItem() {
+    setMultiLineItems(prev => [
+      ...prev,
+      {
+        id: String(Date.now() + Math.random()),
+        category: "",
+        categoryType: "1.ค่าของ",
+        amount: "",
+      }
+    ]);
+  }
+
+  function handleRemoveLineItem(id: string) {
+    setMultiLineItems(prev => {
+      const next = prev.filter(item => item.id !== id);
+      syncMultiLineItemsToValues(next);
+      return next;
+    });
+  }
+
+  function handleUpdateLineItem(id: string, field: keyof MultiLineItem, val: string) {
+    setMultiLineItems(prev => {
+      const next = prev.map(item => item.id === id ? { ...item, [field]: val } : item);
+      syncMultiLineItemsToValues(next);
+      return next;
+    });
+  }
 
   // Sync if prop form changes
   useEffect(() => {
@@ -382,6 +606,30 @@ export function FormModal({
     body.set("tableName", activeForm.tableName);
     Object.entries(submitValues).forEach(([key, value]) => body.append(key, value));
     if (isEditing && editSheetRow !== null) body.set("sheetRow", String(editSheetRow));
+
+    if (isDataForm && !isEditing && isMultiItemMode && multiLineItems.length > 1) {
+      const invalidItem = multiLineItems.find(i => !i.amount || (Number(i.amount) || 0) <= 0);
+      if (invalidItem) {
+        setError("กรุณาระบุยอดเงินสำหรับทุกรายการสินค้าในบิล");
+        formBodyRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+
+      const rowsToInsert = multiLineItems.map((item) => {
+        const itemValues = { ...submitValues };
+        itemValues["สินค้า"] = item.category || submitValues["สินค้า"] || "";
+        itemValues["รายละเอียดงาน"] = submitValues["รายละเอียดงาน"] || "";
+        itemValues["ประเภท"] = item.categoryType || submitValues["ประเภท"] || "1.ค่าของ";
+        itemValues["ค่าของ"] = item.categoryType === "1.ค่าของ" ? item.amount : "";
+        itemValues["เครื่องมือ"] = item.categoryType === "7.เครื่องมือ" ? item.amount : "";
+        itemValues["อื่นๆ"] = item.categoryType === "8.อื่นๆ" ? item.amount : "";
+        itemValues["ยอดเงิน"] = item.amount;
+        itemValues["ยอดโอน"] = item.amount;
+        return itemValues;
+      });
+
+      body.set("rows", JSON.stringify(rowsToInsert));
+    }
 
     let hasFiles = false;
 
@@ -613,13 +861,42 @@ export function FormModal({
                     {isDataForm ? (
                       <div className="space-y-4">
                         {DATA_FORM_SECTIONS.map(section => {
-                          const sectionFields = visibleFields.filter(f => section.fields.includes(f.name));
-                          if (!sectionFields.length) return null;
+                          const isStoreVendor = values["ร้านค้า/ผู้รับเหมา"] === "ร้านค้า";
+                          const sectionFields = visibleFields.filter(f => {
+                            if (isMultiItemMode && isStoreVendor && (f.name === "สินค้า" || f.name === "ประเภท" || f.name === "รายละเอียดงาน")) {
+                              return false;
+                            }
+                            return section.fields.includes(f.name);
+                          });
+                          if (!sectionFields.length && (!isStoreVendor || !isMultiItemMode)) return null;
                           return (
                             <div key={section.id} className="bg-white rounded-lg p-4 border border-slate-200 shadow-2xs space-y-3">
-                              <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-                                <SectionHeaderIcon name={section.iconName} />
-                                <h4 className="text-xs text-slate-900 m-0">{section.title}</h4>
+                              <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-100">
+                                <div className="flex items-center gap-2">
+                                  <SectionHeaderIcon name={section.iconName} />
+                                  <h4 className="text-xs text-slate-900 m-0 font-medium">{section.title}</h4>
+                                </div>
+
+                                {section.id === "vendor" && isStoreVendor && !isEditing ? (
+                                  isMultiItemMode ? (
+                                    <button
+                                      type="button"
+                                      onClick={disableMultiItemMode}
+                                      className="text-[11px] text-slate-500 hover:text-slate-800 font-normal px-2 py-0.5 rounded-md border border-slate-200 hover:bg-slate-50 transition cursor-pointer"
+                                    >
+                                      รายการเดี่ยว
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={enableMultiItemMode}
+                                      className="text-[11px] text-emerald-800 hover:text-emerald-950 font-medium flex items-center gap-1 px-2.5 py-1 rounded-md bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition cursor-pointer shadow-2xs"
+                                    >
+                                      <span>📦</span>
+                                      <span>+ หลายรายการ</span>
+                                    </button>
+                                  )
+                                ) : null}
                               </div>
                               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
                                 {sectionFields.map(field => (
@@ -643,6 +920,17 @@ export function FormModal({
                                     )}
                                   </div>
                                 ))}
+
+                                {section.id === "vendor" && isStoreVendor && !isEditing && isMultiItemMode ? (
+                                  <MultiLineItemsBuilder
+                                    items={multiLineItems}
+                                    productOptions={productOptions}
+                                    onAdd={handleAddLineItem}
+                                    onRemove={handleRemoveLineItem}
+                                    onUpdate={handleUpdateLineItem}
+                                    onCancel={disableMultiItemMode}
+                                  />
+                                ) : null}
                               </div>
                             </div>
                           );

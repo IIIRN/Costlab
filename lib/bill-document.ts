@@ -116,7 +116,9 @@ export async function getBillDocumentData(
     billRow = bills.find(
       (r) =>
         String(r["ลำดับ"] || "").trim().toLowerCase() === targetId ||
+        String(r["ลำดับtest"] || "").trim().toLowerCase() === targetId ||
         String(r._sheetRow || "").trim() === targetId ||
+        String(r._RowNumber || "").trim() === targetId ||
         String(r.id || "").trim().toLowerCase() === targetId
     );
   }
@@ -160,13 +162,24 @@ export async function getBillDocumentData(
     laborAndStaff = toNumber(billRow["ยอดเงิน"]);
   }
 
-  const taxPercent = toNumber(billRow["หัก"]) || 3;
+  // Tax calculation: only apply tax if explicitly set or indicated
+  let taxPercent = 0;
+  const rawDeduct = billRow["หัก"];
+  if (rawDeduct !== undefined && rawDeduct !== null && String(rawDeduct).trim() !== "") {
+    taxPercent = toNumber(rawDeduct);
+  } else if (billRow["3เปอร์เซ็น"] && toNumber(billRow["3เปอร์เซ็น"]) > 0) {
+    taxPercent = 3;
+  }
+
   let withholdingTax = toNumber(billRow["3เปอร์เซ็น"]);
   if (!withholdingTax && taxPercent > 0) {
     withholdingTax = Math.round(laborAndStaff * (taxPercent / 100) * 100) / 100;
+  } else if (taxPercent === 0) {
+    withholdingTax = 0;
   }
 
-  const netPayable = toNumber(billRow["ยอดเงิน"]) || (laborAndStaff - withholdingTax);
+  const rawNet = toNumber(billRow["ยอดเงิน"]);
+  const netPayable = rawNet || (laborAndStaff - withholdingTax);
 
   const isCorporate =
     String(billRow["statusค่าแรง"] || "").includes("บริษัท") ||

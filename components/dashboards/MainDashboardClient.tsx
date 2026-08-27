@@ -26,7 +26,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { money, toNumber } from "@/lib/numbers";
-import { isCreditActive, isDeductActive, isVatActive } from "@/lib/project-summary";
+import { computeCashFlowBreakdown, getProfitHealthStatus, isCreditActive, isDeductActive, isVatActive } from "@/lib/project-summary";
 import type { SheetRow } from "@/lib/types";
 import { useSearchParams } from "next/navigation";
 
@@ -1274,12 +1274,16 @@ function buildMainSummary(dataRows: SheetRow[], projectRows: SheetRow[]) {
   const operating = sumRowsTotal(operatingRows);
   const profit = revenue - investment;
   const profitPercent = revenue > 0 ? (profit / revenue) * 100 : 0;
+  const profitHealth = getProfitHealthStatus(profitPercent);
+  const cashFlow = computeCashFlowBreakdown(dataRows);
 
   return {
     filterLabel: "ข้อมูลทั้งหมด",
     dataCount: dataRows.length,
     projectCount: projectRows.length,
     total,
+    cashPaid: cashFlow.actualPaid,
+    pendingAP: cashFlow.pendingPayables,
     vatCount,
     naturalDeductCount,
     companyDeductCount,
@@ -1291,6 +1295,7 @@ function buildMainSummary(dataRows: SheetRow[], projectRows: SheetRow[]) {
     operating,
     profit,
     profitPercent,
+    profitHealth,
     main3,
     main3BeforeVatTotal,
     main3VatTotal,

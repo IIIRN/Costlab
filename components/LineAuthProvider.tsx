@@ -47,9 +47,12 @@ export function LineAuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     async function initLiff() {
       try {
-        const res = await fetch("/api/line/config");
-        const data = await res.json();
-        const activeLiffId = data?.liffId || process.env.NEXT_PUBLIC_LINE_LIFF_ID || "";
+        let activeLiffId = process.env.NEXT_PUBLIC_LINE_LIFF_ID || "";
+        if (!activeLiffId) {
+          const res = await fetch("/api/line/config");
+          const data = await res.json();
+          activeLiffId = data?.liffId || "";
+        }
         if (activeLiffId) {
           setLiffId(activeLiffId);
           await loadLiffSdk(activeLiffId);

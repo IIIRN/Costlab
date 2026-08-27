@@ -2099,6 +2099,9 @@ export function createMultiBillFlex(
       );
     }
 
+    const productName = b["สินค้า"] || b.product || "";
+    const categoryName = b["ประเภท"] || b.category || "";
+
     const textDetailsBox: Record<string, any> = {
       type: "box",
       layout: "vertical",
@@ -2132,6 +2135,18 @@ export function createMultiBillFlex(
             contents: [
               { type: "text", text: "ผู้สร้างบิล:", size: "xxs", color: "#64748B", flex: 3 },
               { type: "text", text: `${creatorName} (บันทึกแทน)`, size: "xxs", color: "#0284C7", flex: 7, wrap: true }
+            ]
+          }
+        ] : []),
+        // Product Category Row (if available)
+        ...(productName && productName !== "-" ? [
+          {
+            type: "box",
+            layout: "baseline",
+            margin: "xs",
+            contents: [
+              { type: "text", text: "สินค้า/หมวด:", size: "xxs", color: "#64748B", flex: 3 },
+              { type: "text", text: `${productName}${categoryName ? ` (${categoryName})` : ""}`, size: "xxs", color: "#059669", weight: "bold", flex: 7, wrap: true }
             ]
           }
         ] : []),

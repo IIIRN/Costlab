@@ -120,33 +120,33 @@ export function BillDetailDrawer({
       {/* Slide-over Panel */}
       <div className="w-full max-w-lg bg-white h-full shadow-2xl flex flex-col justify-between border-l border-slate-200 animate-in slide-in-from-right-full duration-300">
         {/* Top Action Bar */}
-        <div className="p-4 bg-slate-900 text-white flex items-center justify-between shadow-md">
-          <div className="flex items-center gap-2">
-            <span className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white text-xs">
+        <div className="p-4 bg-white text-slate-900 flex items-center justify-between border-b border-slate-200 shadow-2xs">
+          <div className="flex items-center gap-2.5">
+            <span className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center text-xs shrink-0">
               {activeTab === "bill" ? <Receipt size={16} /> : <FolderKanban size={16} />}
             </span>
-            <div>
-              <h3 className="text-sm leading-tight truncate max-w-[220px]">
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold text-slate-900 leading-tight truncate max-w-[200px] sm:max-w-[240px]">
                 {activeTab === "bill"
                   ? String(bill["ชื่อ Project"] || "รายละเอียดบิล")
                   : `โครงการ ${projectId}`}
               </h3>
-              <span className="text-xs text-slate-300">
+              <span className="text-xs text-slate-500">
                 {activeTab === "bill" ? `ลำดับ #${bill["ลำดับ"] || bill.id || "-"}` : projectData?.name || "-"}
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 shrink-0">
             {bill && (
               <a
                 href={`/bills/${encodeURIComponent(String(bill["ลำดับ"] || bill._sheetRow || bill.id || ""))}/document`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs transition border border-slate-700"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs transition border border-slate-200 font-medium"
                 title="พิมพ์สัญญาจ้าง / ใบสำคัญจ่าย / 50 ทวิ"
               >
-                <FileText size={14} className="text-emerald-400" />
+                <FileText size={14} className="text-emerald-600" />
                 <span className="hidden sm:inline">พิมพ์เอกสาร</span>
               </a>
             )}
@@ -155,7 +155,7 @@ export function BillDetailDrawer({
               <button
                 type="button"
                 onClick={() => onEdit(bill)}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs transition"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs transition font-medium shadow-2xs cursor-pointer"
                 title="แก้ไข"
               >
                 <Edit size={14} />
@@ -167,23 +167,23 @@ export function BillDetailDrawer({
               <button
                 type="button"
                 onClick={() => onDelete(bill)}
-                className="w-8 h-8 rounded-lg bg-rose-600/80 hover:bg-rose-600 text-white flex items-center justify-center transition"
-                title="ลบ"
+                className="w-7 h-7 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 flex items-center justify-center transition cursor-pointer"
+                title="ลบบิล"
               >
-                <Trash2 size={15} />
+                <Trash2 size={14} />
               </button>
             )}
 
-            <div className="h-4 w-px bg-slate-700 mx-1" />
+            <div className="h-4 w-px bg-slate-200 mx-0.5" />
 
             {hasPrev && onPrev && (
               <button
                 type="button"
                 onClick={onPrev}
-                className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition"
+                className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition cursor-pointer"
                 title="ก่อนหน้า"
               >
-                <ChevronLeft size={16} />
+                <ChevronLeft size={15} />
               </button>
             )}
 
@@ -191,20 +191,20 @@ export function BillDetailDrawer({
               <button
                 type="button"
                 onClick={onNext}
-                className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition"
+                className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition cursor-pointer"
                 title="ถัดไป"
               >
-                <ChevronRight size={16} />
+                <ChevronRight size={15} />
               </button>
             )}
 
             <button
               type="button"
               onClick={onClose}
-              className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition ml-1"
+              className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition cursor-pointer ml-0.5"
               title="ปิด"
             >
-              <X size={18} />
+              <X size={15} />
             </button>
           </div>
         </div>

@@ -276,39 +276,6 @@ export function UserManagementDashboardClient() {
     setModalOpen(true);
   }
 
-  // Auto preset permissions when selecting a role
-  function handleRoleChange(selectedRole: SystemUserRole) {
-    let canApprove = false;
-    let canCloseBill = false;
-    let canDelete = true;
-
-    if (selectedRole === "Admin") {
-      canApprove = false;
-      canCloseBill = false;
-      canDelete = true;
-    } else if (selectedRole === "Admin_Approver" || selectedRole === "Approver") {
-      canApprove = true;
-      canCloseBill = false;
-      canDelete = true;
-    } else if (selectedRole === "Admin_Closer") {
-      canApprove = true;
-      canCloseBill = true;
-      canDelete = true;
-    } else if (selectedRole === "User") {
-      canApprove = false;
-      canCloseBill = false;
-      canDelete = false; // User: กรอกข้อมูลอย่างเดียว ไม่มีสิทธิ์ลบ
-    }
-
-    setFormData((prev) => ({
-      ...prev,
-      role: selectedRole,
-      canApprove,
-      canCloseBill,
-      canDelete,
-    }));
-  }
-
   async function handleDeleteUser(targetUser: SystemUser) {
     const confirmed = await showConfirm(`คุณต้องการลบบัญชีผู้ใช้ "${targetUser.displayName || targetUser.username}" ใช่หรือไม่?`);
     if (!confirmed) return;
@@ -322,11 +289,32 @@ export function UserManagementDashboardClient() {
     e.preventDefault();
     if (!formData.username.trim() || !formData.displayName.trim()) return;
 
+    let calculatedRole: SystemUserRole = "User";
+    if (formData.canCloseBill) {
+      calculatedRole = "Admin_Closer";
+    } else if (formData.canApprove) {
+      calculatedRole = "Admin_Approver";
+    } else if (formData.canDelete || formData.isOwner) {
+      calculatedRole = "Admin";
+    } else {
+      calculatedRole = "User";
+    }
+
+    const payloadUser: SystemUser = {
+      ...formData,
+      role: calculatedRole,
+      isOwner: Boolean(formData.isOwner),
+      canApprove: Boolean(formData.canApprove),
+      canCloseBill: Boolean(formData.canCloseBill),
+      canDelete: Boolean(formData.canDelete),
+      id: formData.username.trim(),
+    };
+
     let nextUsers: SystemUser[];
     if (editingUserId !== null) {
       nextUsers = users.map((u) => {
         if ((u.id || u.username) === editingUserId) {
-          return { ...formData, id: formData.username.trim() };
+          return payloadUser;
         }
         if (formData.isOwner) {
           return { ...u, isOwner: false };
@@ -335,8 +323,7 @@ export function UserManagementDashboardClient() {
       });
     } else {
       const newUser: SystemUser = {
-        ...formData,
-        id: formData.username.trim(),
+        ...payloadUser,
         createdAt: new Date().toISOString().split("T")[0],
       };
       if (formData.isOwner) {
@@ -429,7 +416,7 @@ export function UserManagementDashboardClient() {
               </span>
             </h1>
             <p className="text-xs text-slate-500">
-              แยกสิทธิ์ 4 ระดับ: Admin ปกติ / Admin อนุมัติบิล / Admin ปิดบิล / User กรอกข้อมูลอย่างเดียว (ห้ามลบ)
+              กำหนดบทบาท 4 ระดับ: 👑 ผู้บริหาร (Owner) • 🟢 ผู้อนุมัติบิล (Manager) • 🔵 ฝ่ายการเงิน (Finance) • 👤 พนักงานทั่วไป (Staff)
             </p>
           </div>
         </div>
@@ -842,94 +829,72 @@ export function UserManagementDashboardClient() {
 
       {/* Add / Edit User Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-3">
-          <div className="bg-white rounded-xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            <div className="p-3.5 border-b border-slate-200 flex items-center justify-between bg-slate-50/70 text-slate-900">
-              <h3 className="text-xs font-semibold flex items-center gap-2">
-                <Users size={15} className="text-slate-700" />
-                <span>{editingUserId !== null ? "แก้ไขผู้ใช้งาน & กำหนดสิทธิ์" : "เพิ่มผู้ใช้งานใหม่"}</span>
-              </h3>
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/80 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center">
+                  <Users size={16} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900 m-0">
+                    {editingUserId !== null ? "แก้ไขผู้ใช้งาน & กำหนดสิทธิ์" : "เพิ่มผู้ใช้งานใหม่"}
+                  </h3>
+                  <p className="text-[11px] text-slate-500 m-0">
+                    กำหนดบทบาทหน้าที่และสิทธิ์การอนุมัติในระบบ Costlab
+                  </p>
+                </div>
+              </div>
               <button
                 type="button"
                 onClick={() => setModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 transition cursor-pointer"
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition cursor-pointer"
               >
                 <X size={16} />
               </button>
             </div>
 
-            <form onSubmit={handleFormSubmit} className="p-4 space-y-3.5 max-h-[85vh] overflow-y-auto">
-              <div className="grid grid-cols-2 gap-3">
+            {/* Modal Body */}
+            <form onSubmit={handleFormSubmit} className="p-5 space-y-4 overflow-y-auto flex-1">
+              {/* Row 1: Username & Name */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-slate-700 block text-xs font-medium">Username / รหัส *</label>
+                  <label className="text-slate-700 block text-xs font-semibold">Username / รหัส *</label>
                   <input
                     type="text"
                     required
                     value={formData.username}
                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                     placeholder="เช่น PT101"
-                    className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 font-mono text-slate-800 focus:outline-none focus:border-slate-500 text-xs"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 font-mono text-slate-900 focus:outline-none focus:border-emerald-600 text-xs"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-slate-700 block text-xs font-medium">ชื่อผู้ใช้งาน *</label>
+                  <label className="text-slate-700 block text-xs font-semibold">ชื่อผู้ใช้งาน / ชื่อเล่น *</label>
                   <input
                     type="text"
                     required
                     value={formData.displayName}
                     onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-                    placeholder="เช่น คุณแมน"
-                    className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-800 focus:outline-none focus:border-slate-500 text-xs"
+                    placeholder="เช่น คุณสมชาย (ช่างเอก)"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-emerald-600 text-xs font-medium"
                   />
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-slate-700 block text-xs font-medium">เบอร์โทรศัพท์</label>
-                <input
-                  type="tel"
-                  value={formData.phone || ""}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="081-234-5678"
-                  className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 font-mono text-slate-800 focus:outline-none focus:border-slate-500 text-xs"
-                />
-              </div>
-
-              {/* LINE User ID */}
-              <div className="space-y-1 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
-                <div className="flex items-center justify-between">
-                  <label className="text-slate-700 block text-xs font-semibold">
-                    LINE User ID (สำหรับรับแจ้งเตือน & อนุมัติ/ปิดบิล)
-                  </label>
-                  <span className="text-[10px] text-slate-400">พิมพ์ 'getid' ใน LINE</span>
-                </div>
-                <input
-                  type="text"
-                  value={formData.lineUserId || ""}
-                  onChange={(e) => setFormData({ ...formData, lineUserId: e.target.value })}
-                  placeholder="เช่น Ueb1f6ef3ef267b791da3588ed341e026"
-                  className="w-full bg-white border border-slate-300 rounded-md px-2.5 py-1.5 font-mono text-slate-800 focus:outline-none focus:border-slate-500 text-xs"
-                />
-                <p className="text-[10px] text-slate-500 leading-tight">
-                  ใช้ส่งการ์ด Flex ขออนุมัติบิลเงินสด/ปิดบิล และแจ้งเตือนสรุปรายวันทาง LINE ส่วนตัว
-                </p>
-              </div>
-
-              {/* 🌟 ROLE SELECTION WITH 4 PRESETS */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* Row 2: Phone Number & Account Status */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-slate-700 block text-xs font-medium">บทบาทหลัก (Role)</label>
-                  <select
-                    value={formData.role}
-                    onChange={(e) => handleRoleChange(e.target.value as SystemUserRole)}
-                    className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-800 focus:outline-none focus:border-slate-500 text-xs bg-white font-medium"
-                  >
-                    <option value="Admin">Admin (ปกติ) - ไม่มีสิทธิ์อนุมัติ/ปิดบิล</option>
-                    <option value="Admin_Approver">Admin (อนุมัติ) - สิทธิ์อนุมัติบิล</option>
-                    <option value="Admin_Closer">Admin (Approve / ปิดบิล) - สิทธิ์ปิดบิล</option>
-                    <option value="User">User (ผู้ใช้ทั่วไป) - กรอกอย่างเดียว ห้ามลบ</option>
-                  </select>
+                  <label className="text-slate-700 block text-xs font-medium">เบอร์โทรศัพท์</label>
+                  <input
+                    type="tel"
+                    value={formData.phone || ""}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    placeholder="081-234-5678"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 font-mono text-slate-800 focus:outline-none focus:border-emerald-600 text-xs"
+                  />
                 </div>
 
                 <div className="space-y-1">
@@ -937,112 +902,170 @@ export function UserManagementDashboardClient() {
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                    className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-800 focus:outline-none focus:border-slate-500 text-xs bg-white"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:border-emerald-600 text-xs cursor-pointer"
                   >
-                    <option value="Active">ใช้งานได้ (Active)</option>
-                    <option value="Inactive">ระงับใช้งาน (Inactive)</option>
+                    <option value="Active">🟢 ใช้งานได้ปกติ (Active)</option>
+                    <option value="Inactive">🔴 ระงับการใช้งาน (Inactive)</option>
                   </select>
                 </div>
               </div>
 
-              {/* 🌟 4 GRANULAR PERMISSION TOGGLES */}
-              <div className="space-y-2 pt-1">
-                <div className="text-[11px] font-semibold text-slate-700 uppercase tracking-wide">
-                  กำหนดสิทธิ์ละเอียด (Permission Switches)
+              {/* Row 3: LINE User ID (Compact Helper) */}
+              <div className="space-y-1 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <div className="flex items-center justify-between">
+                  <label className="text-slate-800 block text-xs font-semibold flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span>LINE User ID (สำหรับรับแจ้งเตือน & อนุมัติผ่าน LINE)</span>
+                  </label>
+                  <span className="text-[10px] text-slate-400">พิมพ์ 'getid' ใน LINE บอท</span>
                 </div>
-
-                {/* 1. System Owner Toggle */}
-                <label className="flex items-start gap-2.5 p-2.5 rounded-lg border border-amber-200 bg-amber-50/50 hover:bg-amber-50 transition cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(formData.isOwner)}
-                    onChange={(e) => setFormData({ ...formData, isOwner: e.target.checked })}
-                    className="mt-0.5 accent-amber-600 rounded"
-                  />
-                  <div className="space-y-0.5">
-                    <span className="text-xs font-bold text-amber-900 flex items-center gap-1">
-                      <Crown size={12} className="text-amber-600" />
-                      <span>เจ้าของระบบ (System Owner / OWN)</span>
-                    </span>
-                    <p className="text-[10px] text-amber-700 leading-tight">
-                      รับรายงานแจ้งเตือนการสร้างบิลใหม่ และสรุประบบประจำวันทาง LINE
-                    </p>
-                  </div>
-                </label>
-
-                {/* 2. Bill Approver Toggle */}
-                <label className="flex items-start gap-2.5 p-2.5 rounded-lg border border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50 transition cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(formData.canApprove)}
-                    onChange={(e) => setFormData({ ...formData, canApprove: e.target.checked })}
-                    className="mt-0.5 accent-emerald-600 rounded"
-                  />
-                  <div className="space-y-0.5">
-                    <span className="text-xs font-bold text-emerald-900 flex items-center gap-1">
-                      <Check size={12} className="text-emerald-600" />
-                      <span>สิทธิ์อนุมัติบิล (Admin อนุมัติบิล)</span>
-                    </span>
-                    <p className="text-[10px] text-emerald-700 leading-tight">
-                      รับการ์ด Flex Message ขออนุมัติบิลเงินสด/ใบตั้งเบิก และกดอนุมัติผ่าน LINE ได้
-                    </p>
-                  </div>
-                </label>
-
-                {/* 3. Bill Closer Toggle */}
-                <label className="flex items-start gap-2.5 p-2.5 rounded-lg border border-blue-200 bg-blue-50/50 hover:bg-blue-50 transition cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(formData.canCloseBill)}
-                    onChange={(e) => setFormData({ ...formData, canCloseBill: e.target.checked })}
-                    className="mt-0.5 accent-blue-600 rounded"
-                  />
-                  <div className="space-y-0.5">
-                    <span className="text-xs font-bold text-blue-900 flex items-center gap-1">
-                      <CheckCheck size={12} className="text-blue-600" />
-                      <span>สิทธิ์ปิดบิล (Admin Approve / ปิดบิล)</span>
-                    </span>
-                    <p className="text-[10px] text-blue-700 leading-tight">
-                      รับการ์ด Flex ปิดงานบิล และกดยืนยันการจ่ายเงินสำเร็จผ่าน LINE ได้
-                    </p>
-                  </div>
-                </label>
-
-                {/* 4. Delete Record Toggle */}
-                <label className="flex items-start gap-2.5 p-2.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 transition cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(formData.canDelete)}
-                    onChange={(e) => setFormData({ ...formData, canDelete: e.target.checked })}
-                    className="mt-0.5 accent-slate-800 rounded"
-                  />
-                  <div className="space-y-0.5">
-                    <span className="text-xs font-bold text-slate-900 flex items-center gap-1">
-                      <Trash2 size={12} className="text-slate-700" />
-                      <span>สิทธิ์ลบข้อมูล (Can Delete Records)</span>
-                    </span>
-                    <p className="text-[10px] text-slate-500 leading-tight">
-                      สามารถลบรายการบิล โครงการ หรือข้อมูลในระบบได้ (หากปิดไว้จะกรอกข้อมูลได้เท่านั้น ห้ามลบ)
-                    </p>
-                  </div>
-                </label>
+                <input
+                  type="text"
+                  value={formData.lineUserId || ""}
+                  onChange={(e) => setFormData({ ...formData, lineUserId: e.target.value })}
+                  placeholder="เช่น Ueb1f6ef3ef267b791da3588ed341e026"
+                  className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 font-mono text-slate-800 focus:outline-none focus:border-emerald-600 text-xs placeholder:text-slate-400"
+                />
               </div>
 
+              {/* 🌟 MULTI-SELECT PERMISSION CARDS (แสดงเฉพาะข้อมูลที่จำเป็น ชัดเจน กระชับ) */}
+              <div className="space-y-2 pt-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-slate-900 block text-xs font-semibold flex items-center gap-1.5">
+                    <Shield size={14} className="text-emerald-700" />
+                    <span>กำหนดสิทธิ์การใช้งาน (เลือกได้หลายสิทธิ์) *</span>
+                  </label>
+
+                  {/* Quick Presets */}
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, isOwner: true, canApprove: true, canCloseBill: true, canDelete: true }))}
+                      className="px-2 py-0.5 rounded-md text-[10.5px] font-medium bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200 transition cursor-pointer"
+                    >
+                      👑 เลือกทั้งหมด
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, isOwner: false, canApprove: false, canCloseBill: false, canDelete: false }))}
+                      className="px-2 py-0.5 rounded-md text-[10.5px] font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 transition cursor-pointer"
+                    >
+                      👤 ผู้เบิกทั่วไป
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {/* 1. เจ้าของระบบ */}
+                  <div
+                    onClick={() => setFormData(prev => ({ ...prev, isOwner: !prev.isOwner }))}
+                    className={`p-2.5 rounded-xl border text-left cursor-pointer transition flex items-center justify-between gap-2.5 select-none ${
+                      formData.isOwner
+                        ? "border-amber-500 bg-amber-50/70 ring-1 ring-amber-400"
+                        : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${formData.isOwner ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-400"}`}>
+                        <Crown size={15} />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-semibold text-slate-900 truncate">เจ้าของระบบ (Owner)</div>
+                        <div className="text-[11px] text-slate-500 truncate">รับสรุปรายวันทาง LINE</div>
+                      </div>
+                    </div>
+                    <div className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition ${formData.isOwner ? "bg-amber-600 text-white shadow-2xs" : "border border-slate-300 bg-slate-100"}`}>
+                      {formData.isOwner && <Check size={12} strokeWidth={3} />}
+                    </div>
+                  </div>
+
+                  {/* 2. สิทธิ์อนุมัติบิล */}
+                  <div
+                    onClick={() => setFormData(prev => ({ ...prev, canApprove: !prev.canApprove }))}
+                    className={`p-2.5 rounded-xl border text-left cursor-pointer transition flex items-center justify-between gap-2.5 select-none ${
+                      formData.canApprove
+                        ? "border-emerald-500 bg-emerald-50/70 ring-1 ring-emerald-400"
+                        : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${formData.canApprove ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-400"}`}>
+                        <Check size={15} />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-semibold text-slate-900 truncate">อนุมัติบิล (Approver)</div>
+                        <div className="text-[11px] text-slate-500 truncate">อนุมัติบิลเงินสด & ใบตั้งเบิก</div>
+                      </div>
+                    </div>
+                    <div className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition ${formData.canApprove ? "bg-emerald-600 text-white shadow-2xs" : "border border-slate-300 bg-slate-100"}`}>
+                      {formData.canApprove && <Check size={12} strokeWidth={3} />}
+                    </div>
+                  </div>
+
+                  {/* 3. สิทธิ์ปิดบิล / การเงิน */}
+                  <div
+                    onClick={() => setFormData(prev => ({ ...prev, canCloseBill: !prev.canCloseBill }))}
+                    className={`p-2.5 rounded-xl border text-left cursor-pointer transition flex items-center justify-between gap-2.5 select-none ${
+                      formData.canCloseBill
+                        ? "border-blue-500 bg-blue-50/70 ring-1 ring-blue-400"
+                        : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${formData.canCloseBill ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-400"}`}>
+                        <CheckCheck size={15} />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-semibold text-slate-900 truncate">ฝ่ายการเงิน (Finance)</div>
+                        <div className="text-[11px] text-slate-500 truncate">ปิดบิล & ยืนยันจ่ายเงิน</div>
+                      </div>
+                    </div>
+                    <div className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition ${formData.canCloseBill ? "bg-blue-600 text-white shadow-2xs" : "border border-slate-300 bg-slate-100"}`}>
+                      {formData.canCloseBill && <Check size={12} strokeWidth={3} />}
+                    </div>
+                  </div>
+
+                  {/* 4. สิทธิ์ลบข้อมูล */}
+                  <div
+                    onClick={() => setFormData(prev => ({ ...prev, canDelete: !prev.canDelete }))}
+                    className={`p-2.5 rounded-xl border text-left cursor-pointer transition flex items-center justify-between gap-2.5 select-none ${
+                      formData.canDelete
+                        ? "border-slate-800 bg-slate-100 ring-1 ring-slate-400"
+                        : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${formData.canDelete ? "bg-slate-200 text-slate-800" : "bg-slate-100 text-slate-400"}`}>
+                        <Trash2 size={15} />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-semibold text-slate-900 truncate">ลบข้อมูล (Delete)</div>
+                        <div className="text-[11px] text-slate-500 truncate">อนุญาตให้ลบบิลหรือโครงการ</div>
+                      </div>
+                    </div>
+                    <div className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition ${formData.canDelete ? "bg-slate-900 text-white shadow-2xs" : "border border-slate-300 bg-slate-100"}`}>
+                      {formData.canDelete && <Check size={12} strokeWidth={3} />}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
               <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-3.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100 transition text-xs font-normal cursor-pointer"
+                  className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 transition text-xs font-medium cursor-pointer"
                 >
                   ยกเลิก
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-4 py-1.5 rounded-lg bg-[#0b3531] hover:bg-[#072724] text-white transition flex items-center gap-1.5 text-xs font-normal cursor-pointer shadow-xs"
+                  className="px-5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white transition flex items-center gap-2 text-xs font-semibold cursor-pointer shadow-2xs disabled:opacity-50"
                 >
-                  {saving ? <RefreshCw size={13} className="animate-spin text-[#d4f54e]" /> : <Save size={14} className="text-[#d4f54e]" />}
-                  <span>บันทึกข้อมูล</span>
+                  {saving ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
+                  <span>บันทึกข้อมูลผู้ใช้งาน</span>
                 </button>
               </div>
             </form>

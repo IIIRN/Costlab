@@ -592,7 +592,7 @@ export async function saveEntityBanksBatch(bankMap: Record<string, string>) {
 
 export async function getEntityBankMapFromSupabase(): Promise<Record<string, string>> {
   if (!isSupabaseConfigured()) return {};
-  return cached("sys_opt:entity_banks", 180_000, async () => {
+  return cached("sys_opt:entity_banks", 300_000, async () => {
     try {
       const { data } = await supabaseAdmin.from("system_options").select("*").eq("id", "entity_banks").maybeSingle();
       return (data?.data && typeof data.data === "object") ? data.data : {};
@@ -653,7 +653,7 @@ export async function saveBillFollowDate(billId: string, patch: Record<string, a
 
 export async function getBillFollowDatesFromSupabase(): Promise<Record<string, Record<string, string>>> {
   if (!isSupabaseConfigured()) return {};
-  return cached("sys_opt:bill_follow_dates", 60_000, async () => {
+  return cached("sys_opt:bill_follow_dates", 180_000, async () => {
     try {
       const { data } = await supabaseAdmin.from("system_options").select("*").eq("id", "bill_follow_dates").maybeSingle();
       return (data?.data && typeof data.data === "object") ? data.data : {};
@@ -701,7 +701,7 @@ export async function saveProjectBudgetAllocation(projectId: string, patch: Reco
 
 export async function getProjectBudgetAllocationsFromSupabase(): Promise<Record<string, Record<string, any>>> {
   if (!isSupabaseConfigured()) return {};
-  return cached("sys_opt:project_budget_allocations", 60_000, async () => {
+  return cached("sys_opt:project_budget_allocations", 180_000, async () => {
     try {
       const { data } = await supabaseAdmin.from("system_options").select("*").eq("id", "project_budget_allocations").maybeSingle();
       return (data?.data && typeof data.data === "object") ? data.data : {};
@@ -976,7 +976,7 @@ export async function getRowsFromSupabase(tableName: string, maxRows = 10_000): 
 export async function getSystemOptionsFromSupabase(): Promise<Record<string, string[]>> {
   if (!isSupabaseConfigured()) return {};
 
-  return cached("sys_opt:all", 2_000, async () => {
+  return cached("sys_opt:all", 120_000, async () => {
     try {
       const { data, error } = await supabaseAdmin
         .from("system_options")
@@ -1522,7 +1522,7 @@ export async function deleteStorageFilesFromSupabase(urls: (string | null | unde
 
 export async function getUsersListFromSupabase(): Promise<any[]> {
   if (!isSupabaseConfigured()) return [];
-  return cached("sys_opt:users_list", 5_000, async () => {
+  return cached("sys_opt:users_list", 180_000, async () => {
     try {
       const { data } = await supabaseAdmin.from("system_options").select("data").eq("id", "users_list").maybeSingle();
       return Array.isArray(data?.data) ? data.data : [];
