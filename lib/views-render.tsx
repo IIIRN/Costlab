@@ -322,7 +322,7 @@ async function renderView(
     const rows = view.id === "contract-open" ? hydratedRows : filterRows(hydratedRows, search);
     const fallback = rows[0] ? Object.keys(rows[0]).filter(column => !column.startsWith("_")) : [];
     const columns = getViewColumns(view.name, fallback);
-    if (view.position === "menu") {
+    if (view.position === "menu" || view.position === "task") {
       const keyColumn = tableKeyColumn(view.id, view.table);
       const schemaAddEventName = isSchemaForm ? `open-${view.id}-form` : undefined;
       const schemaEditEventName = isSchemaForm ? `open-${view.id}-edit-form` : undefined;
