@@ -1539,8 +1539,8 @@ function renderField(
     );
   }
 
-  const billDateMode = form.tableName === TABLES.DATA && field.type === "Date";
-  const type = field.type === "Date" ? "date" : field.type === "Decimal" || field.type === "Number" ? "number" : "text";
+  const isDateField = field.type === "Date";
+  const type = isDateField ? "date" : field.type === "Decimal" || field.type === "Number" ? "number" : "text";
   const inputMode = field.type === "Decimal" ? "decimal" : field.type === "Number" ? "numeric" : undefined;
 
   const isProjectTable = form.tableName === TABLES.PROJECT || form.tableName === "Project" || form.tableName === "1. Project รวม";
@@ -1554,12 +1554,12 @@ function renderField(
       <input
         type={type}
         name={field.name}
-        value={billDateMode ? toDateInputValue(value) : value}
+        value={isDateField ? toDateInputValue(value) : value}
         readOnly={readOnly}
         inputMode={inputMode}
-        lang={billDateMode ? "th-TH" : undefined}
-        onChange={event => onChange(billDateMode ? normalizeBillDateInput(event.target.value) : event.target.value)}
-        className="w-full min-w-0 max-w-full block box-border h-10 sm:h-9 px-3 bg-white border border-slate-300 focus:border-slate-800 focus:outline-none rounded-lg text-xs sm:text-sm font-normal text-slate-800 placeholder:text-slate-400 transition-all appearance-none"
+        lang={isDateField ? "th-TH" : undefined}
+        onChange={event => onChange(isDateField ? normalizeBillDateInput(event.target.value) : event.target.value)}
+        className="w-full min-w-0 max-w-full block box-border h-10 sm:h-9 px-3 bg-white border border-slate-300 focus:border-slate-800 focus:outline-none rounded-lg text-xs sm:text-sm font-normal text-slate-800 placeholder:text-slate-400 transition-all appearance-none cursor-pointer"
       />
       {isProjectVatTotal && workAmount > 0 ? (
         <div className="flex items-center justify-between text-[11px] bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-md border border-emerald-200">
