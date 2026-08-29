@@ -5,6 +5,7 @@ import {
   getLineTargetGroup,
   getLineConfigIds,
   getPeopleMap,
+  getBankInfoMap,
   createWithdrawRequesterFlex,
   createWithdrawOwnerFlex,
   createWithdrawApproverFlex,
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing row or rows data" }, { status: 400 });
     }
 
-    const peopleMap = await getPeopleMap();
+    const [peopleMap, bankInfoMap] = await Promise.all([getPeopleMap(), getBankInfoMap()]);
     const targetRole = body.targetRole || "requester";
     const totalAmount = bills.reduce((sum: number, b: any) => sum + Number(b["ยอดเงิน"] || b.amount || 0), 0);
     const amountStr = totalAmount.toLocaleString("th-TH");
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "No Approver LINE User IDs configured" }, { status: 400 });
       }
 
-      const flex = createWithdrawApproverFlex(bills, peopleMap);
+      const flex = createWithdrawApproverFlex(bills, peopleMap, bankInfoMap);
       const altText = bills.length === 1
         ? `✅ รายการอนุมัติสำเร็จ (รอปิดงาน) #${bills[0]._sheetRow || bills[0].id || bills[0]["ลำดับ"] || ""} (฿${amountStr})`
         : `✅ รายการอนุมัติสำเร็จ ${bills.length} รายการ (รวม ฿${amountStr})`;
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "No Owner LINE User ID configured" }, { status: 400 });
       }
 
-      const flex = createWithdrawOwnerFlex(bills, peopleMap);
+      const flex = createWithdrawOwnerFlex(bills, peopleMap, bankInfoMap);
       const altText = bills.length === 1
         ? `📋 คำขออนุมัติเบิกเงิน #${bills[0]._sheetRow || bills[0].id || bills[0]["ลำดับ"] || ""} (฿${amountStr})`
         : `📋 คำขออนุมัติเบิกเงิน ${bills.length} รายการ (รวม ฿${amountStr})`;
@@ -85,7 +86,7 @@ export async function POST(req: NextRequest) {
         }, { status: 400 });
       }
 
-      const flex = createWithdrawCompletedRequesterFlex(bills, peopleMap);
+      const flex = createWithdrawCompletedRequesterFlex(bills, peopleMap, bankInfoMap);
       const altText = bills.length === 1
         ? `🎉 รายการเบิกเงินสำเร็จเรียบร้อย #${bills[0]._sheetRow || bills[0].id || bills[0]["ลำดับ"] || ""} (฿${amountStr})`
         : `🎉 รายการเบิกเงินสำเร็จเรียบร้อย ${bills.length} รายการ (รวม ฿${amountStr})`;
@@ -125,7 +126,7 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    const flex = createWithdrawRequesterFlex(bills, peopleMap);
+    const flex = createWithdrawRequesterFlex(bills, peopleMap, bankInfoMap);
     const altText = bills.length === 1
       ? `📄 แจ้งเตือนรายการตั้งเบิกเงิน #${bills[0]._sheetRow || bills[0].id || bills[0]["ลำดับ"] || ""} (฿${amountStr})`
       : `📄 แจ้งเตือนรายการตั้งเบิกเงิน ${bills.length} รายการ (รวม ฿${amountStr})`;

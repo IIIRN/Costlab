@@ -8,10 +8,12 @@ import { hydrateBillRows, hydrateContractRows } from "@/lib/formulas";
 import { getRows } from "@/lib/db";
 import { getFormPayload } from "@/lib/form";
 import { money } from "@/lib/numbers";
+import { formatDateDisplay } from "@/lib/dates";
 import type { SheetRow } from "@/lib/types";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 type ContractDetailPageProps = {
   params: Promise<{ contractId: string }>;
@@ -268,6 +270,7 @@ function amountField(field: string) {
 
 function formatDetailValue(field: string, value: unknown) {
   if (value === null || value === undefined || value === "") return "-";
+  if (field === "วันที่" || field === "ว/ด/ป" || field === "date") return formatDateDisplay(value);
   if (amountField(field)) return money(toAmount(String(value)));
   return String(value);
 }

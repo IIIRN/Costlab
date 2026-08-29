@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sendFlexMessage, createBillNotificationFlex } from "@/lib/line";
+import { sendFlexMessage, createBillNotificationFlex, getBankInfoMap } from "@/lib/line";
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,7 +21,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing LINE group ID configuration" }, { status: 400 });
     }
 
-    const flex = createBillNotificationFlex(bill);
+    const bankInfoMap = await getBankInfoMap();
+    const flex = createBillNotificationFlex(bill, bankInfoMap);
     const success = await sendFlexMessage(
       targetGroup,
       `🧾 รายการแจ้งเตือนการเบิกเงิน: ฿${Number(bill.amount || 0).toLocaleString("th-TH")}`,

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { clearCache } from "@/lib/cache";
 import { canEditOrDeleteBill, validateBillStatusTransition } from "@/lib/bill-status";
 import { validateBillRelations } from "@/lib/bill-validation";
@@ -161,6 +162,13 @@ export async function POST(request: NextRequest) {
       details: { projectId: output["ID Project"] || "" }
     }).catch(() => undefined);
     invalidateTableCache(tableName);
+    try {
+      revalidatePath("/bills");
+      revalidatePath("/documents");
+      revalidatePath("/dashboards");
+      revalidatePath("/contract-open");
+      revalidatePath("/");
+    } catch {}
     return NextResponse.json({ ok: true });
   } catch (error) {
     return NextResponse.json({ error: errorMessage(error) }, { status: 400 });
@@ -187,32 +195,52 @@ export async function PATCH(request: NextRequest) {
             String(row._sheetRow) === String(targetIdentifier) ||
             (keyCol && String(row[keyCol]) === String(targetIdentifier)) ||
             (row.id !== undefined && String(row.id) === String(targetIdentifier)) ||
+            (row["รหัสพนักงาน"] !== undefined && String(row["รหัสพนักงาน"]) === String(targetIdentifier)) ||
             (row.id_bank !== undefined && String(row.id_bank) === String(targetIdentifier)) ||
             (row.id_store !== undefined && String(row.id_store) === String(targetIdentifier)) ||
-            (row.id_Contractor !== undefined && String(row.id_Contractor) === String(targetIdentifier))
+            (row.id_Contractor !== undefined && String(row.id_Contractor) === String(targetIdentifier)) ||
+            (row.id_car !== undefined && String(row.id_car) === String(targetIdentifier)) ||
+            (row.id_cus !== undefined && String(row.id_cus) === String(targetIdentifier)) ||
+            (row.id_Company !== undefined && String(row.id_Company) === String(targetIdentifier))
           );
           if (!existing) return null;
           const values = { ...existing, ...patch };
-          return updateRow(tableName, Number(targetIdentifier) || Number(existing._sheetRow) || 0, values);
+          const originalTarget = (keyCol && existing[keyCol] ? existing[keyCol] : undefined) || existing.id || targetIdentifier || existing._sheetRow;
+          return updateRow(tableName, originalTarget, values);
         })
       );
       invalidateTableCache(tableName);
+      try {
+        revalidatePath("/views", "layout");
+        revalidatePath("/views/people");
+        revalidatePath("/views/customers");
+        revalidatePath("/views/stores");
+        revalidatePath("/views/contractors");
+        revalidatePath("/views/cars");
+        revalidatePath("/views/companies");
+        revalidatePath("/bills");
+        revalidatePath("/", "layout");
+      } catch {}
       return NextResponse.json({ ok: true, count: results.filter(Boolean).length });
     }
 
-    const sheetRow = Number(body.sheetRow);
+    const targetRowKey = body.sheetRow;
     const patch = body.values && typeof body.values === "object" ? body.values as SheetRow : {};
     const existingRows = await getRows(tableName);
     const keyCol = TABLE_KEYS[tableName] || "";
     const existing = existingRows.find((row: SheetRow) =>
-      Number(row._sheetRow) === sheetRow ||
-      String(row._sheetRow) === String(body.sheetRow) ||
-      (keyCol && String(row[keyCol]) === String(body.sheetRow)) ||
-      (row.id !== undefined && String(row.id) === String(body.sheetRow)) ||
-      (row.id_Conwork !== undefined && String(row.id_Conwork) === String(body.sheetRow)) ||
-      (row.id_bank !== undefined && String(row.id_bank) === String(body.sheetRow)) ||
-      (row.id_store !== undefined && String(row.id_store) === String(body.sheetRow)) ||
-      (row.id_Contractor !== undefined && String(row.id_Contractor) === String(body.sheetRow))
+      Number(row._sheetRow) === Number(targetRowKey) ||
+      String(row._sheetRow) === String(targetRowKey) ||
+      (keyCol && String(row[keyCol]) === String(targetRowKey)) ||
+      (row.id !== undefined && String(row.id) === String(targetRowKey)) ||
+      (row["รหัสพนักงาน"] !== undefined && String(row["รหัสพนักงาน"]) === String(targetRowKey)) ||
+      (row.id_Conwork !== undefined && String(row.id_Conwork) === String(targetRowKey)) ||
+      (row.id_bank !== undefined && String(row.id_bank) === String(targetRowKey)) ||
+      (row.id_store !== undefined && String(row.id_store) === String(targetRowKey)) ||
+      (row.id_Contractor !== undefined && String(row.id_Contractor) === String(targetRowKey)) ||
+      (row.id_car !== undefined && String(row.id_car) === String(targetRowKey)) ||
+      (row.id_cus !== undefined && String(row.id_cus) === String(targetRowKey)) ||
+      (row.id_Company !== undefined && String(row.id_Company) === String(targetRowKey))
     );
     if (!existing) throw new Error("ไม่พบข้อมูลที่ต้องการแก้ไข");
     const values = { ...existing, ...patch };
@@ -242,16 +270,33 @@ export async function PATCH(request: NextRequest) {
           : tableName === TABLES.DATA
             ? await applyBillFormulas(values)
             : values;
-    const row = await updateRow(tableName, sheetRow, output);
+    console.log(`[PATCH /api/rows] tableName: "${tableName}", targetRowKey: "${targetRowKey}", values:`, patch);
+    const originalTarget = (keyCol && existing[keyCol] ? existing[keyCol] : undefined) || existing.id || targetRowKey || existing._sheetRow;
+    const row = await updateRow(tableName, originalTarget, output);
+    console.log(`[PATCH /api/rows SUCCESS] updated "${tableName}" row key: "${originalTarget}"`);
     await appendAuditLog({
       action: tableName === TABLES.DATA && Object.keys(patch).every(key => key === "สถานะ") ? "STATUS" : "UPDATE",
       tableName,
       key: String(row[TABLE_KEYS[tableName]] || ""),
-      sheetRow,
+      sheetRow: Number(existing._sheetRow) || Number(originalTarget) || 0,
       actor: actorFromRequest(request),
       details: Object.fromEntries(Object.keys(patch).map(key => [key, row[key] ?? ""]))
     }).catch(() => undefined);
     invalidateTableCache(tableName);
+    try {
+      revalidatePath("/views", "layout");
+      revalidatePath("/views/people");
+      revalidatePath("/views/customers");
+      revalidatePath("/views/stores");
+      revalidatePath("/views/contractors");
+      revalidatePath("/views/cars");
+      revalidatePath("/views/companies");
+      revalidatePath("/bills");
+      revalidatePath("/documents");
+      revalidatePath("/dashboards");
+      revalidatePath("/contract-open");
+      revalidatePath("/", "layout");
+    } catch {}
     return NextResponse.json({ ok: true, row });
   } catch (error) {
     return NextResponse.json({ error: errorMessage(error) }, { status: 400 });
@@ -302,6 +347,13 @@ export async function DELETE(request: NextRequest) {
     }).catch(() => undefined)));
 
     invalidateTableCache(tableName);
+    try {
+      revalidatePath("/bills");
+      revalidatePath("/documents");
+      revalidatePath("/dashboards");
+      revalidatePath("/contract-open");
+      revalidatePath("/");
+    } catch {}
     return NextResponse.json({ ok: true, deleted: rawKeys.length });
   } catch (error) {
     return NextResponse.json({ error: errorMessage(error) }, { status: 400 });
@@ -322,12 +374,30 @@ function validateBillPatch(existing: SheetRow, patch: SheetRow, values: SheetRow
 
 function ensureBillVendorType(row: SheetRow) {
   const current = String(row["ร้านค้า/ผู้รับเหมา"] ?? row.vendor_type ?? "").trim();
-  if (!current) {
-    if (hasRowValue(row["ผู้รับเหมา"]) || hasRowValue(row.contractor_id)) {
-      row["ร้านค้า/ผู้รับเหมา"] = "ผู้รับเหมา";
-    } else {
-      row["ร้านค้า/ผู้รับเหมา"] = "ร้านค้า";
+  const category = String(row["ประเภท"] ?? row.category ?? "").trim();
+  const hasLaborCost = Number(row["ค่าแรง"] ?? row.labor_cost ?? 0) > 0;
+  const hasLaborStatus = Boolean(row["statusค่าแรง"] ?? row.labor_status);
+
+  if (
+    current === "ผู้รับเหมา" ||
+    hasRowValue(row["ผู้รับเหมา"]) ||
+    hasRowValue(row.contractor_id) ||
+    hasRowValue(row["รายละเอียดงาน"]) ||
+    category.startsWith("2.") ||
+    category.includes("ค่าแรง") ||
+    category.includes("จ้าง") ||
+    hasLaborCost ||
+    hasLaborStatus
+  ) {
+    row["ร้านค้า/ผู้รับเหมา"] = "ผู้รับเหมา";
+    if (!row["ผู้รับเหมา"] && row["ร้าน/บุคคล"]) row["ผู้รับเหมา"] = row["ร้าน/บุคคล"];
+    if (!row["ผู้รับเหมา"] && row["ร้านค้า"]) {
+      row["ผู้รับเหมา"] = row["ร้านค้า"];
+      row["ร้านค้า"] = "";
     }
+  } else {
+    row["ร้านค้า/ผู้รับเหมา"] = "ร้านค้า";
+    if (!row["ร้านค้า"] && row["ร้าน/บุคคล"]) row["ร้านค้า"] = row["ร้าน/บุคคล"];
   }
 }
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { TABLES } from "@/lib/config";
 import { validateBillRelations } from "@/lib/bill-validation";
 import { createBillPdfFromTemplate, uploadBillImage } from "@/lib/drive";
@@ -82,6 +83,12 @@ export async function POST(request: NextRequest) {
       details: { projectId: output["ID Project"] || "", status: output["สถานะ"] || "" }
     }).catch(() => undefined);
     invalidateTableCache(TABLES.DATA);
+    try {
+      revalidatePath("/bills");
+      revalidatePath("/documents");
+      revalidatePath("/dashboards");
+      revalidatePath("/");
+    } catch {}
     return NextResponse.json({ ok: true, row: output, pdfWarning });
   } catch (error) {
     return NextResponse.json({ error: errorMessage(error) }, { status: 400 });
@@ -136,13 +143,31 @@ function ensureBillStatus(row: SheetRow) {
 }
 
 function ensureBillVendorType(row: SheetRow) {
-  const current = String(row["ร้านค้า/ผู้รับเหมา"] || "").trim();
-  if (!current) {
-    if (hasValue(row["ผู้รับเหมา"]) || hasValue(row["รายละเอียดงาน"])) {
-      row["ร้านค้า/ผู้รับเหมา"] = "ผู้รับเหมา";
-    } else {
-      row["ร้านค้า/ผู้รับเหมา"] = "ร้านค้า";
+  const current = String(row["ร้านค้า/ผู้รับเหมา"] ?? row.vendor_type ?? "").trim();
+  const category = String(row["ประเภท"] ?? row.category ?? "").trim();
+  const hasLaborCost = Number(row["ค่าแรง"] ?? row.labor_cost ?? 0) > 0;
+  const hasLaborStatus = Boolean(row["statusค่าแรง"] ?? row.labor_status);
+
+  if (
+    current === "ผู้รับเหมา" ||
+    hasValue(row["ผู้รับเหมา"]) ||
+    hasValue(row.contractor_id) ||
+    hasValue(row["รายละเอียดงาน"]) ||
+    category.startsWith("2.") ||
+    category.includes("ค่าแรง") ||
+    category.includes("จ้าง") ||
+    hasLaborCost ||
+    hasLaborStatus
+  ) {
+    row["ร้านค้า/ผู้รับเหมา"] = "ผู้รับเหมา";
+    if (!row["ผู้รับเหมา"] && row["ร้าน/บุคคล"]) row["ผู้รับเหมา"] = row["ร้าน/บุคคล"];
+    if (!row["ผู้รับเหมา"] && row["ร้านค้า"]) {
+      row["ผู้รับเหมา"] = row["ร้านค้า"];
+      row["ร้านค้า"] = "";
     }
+  } else {
+    row["ร้านค้า/ผู้รับเหมา"] = "ร้านค้า";
+    if (!row["ร้านค้า"] && row["ร้าน/บุคคล"]) row["ร้านค้า"] = row["ร้าน/บุคคล"];
   }
 }
 

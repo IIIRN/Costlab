@@ -3,6 +3,7 @@ import { BillsDashboardClient } from "@/components/BillsDashboardClient";
 import { hydrateBillRows } from "@/lib/formulas";
 import { getRows } from "@/lib/db";
 import { cookies } from "next/headers";
+import { formatBillConditions } from "@/lib/bill-status";
 import type { SheetRow } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -62,13 +63,9 @@ export default async function BillsPage({ searchParams }: BillsPageProps) {
 }
 
 function BillConditions({ row }: { row: SheetRow }) {
-  const values = [
-    row.vat ? `VAT ${row.vat}` : "",
-    row["หัก"] ? `หัก ${row["หัก"]}` : "",
-    row["เครดิต"] ? `เครดิต ${row["เครดิต"]}` : ""
-  ].filter(Boolean);
-  return values.length ? (
-    <span className="inline-block px-2 py-0.5 text-xs font-medium text-slate-600 bg-slate-100 rounded-md">{values.join(" · ")}</span>
+  const text = formatBillConditions(row);
+  return text ? (
+    <span className="inline-block px-2 py-0.5 text-xs font-medium text-slate-600 bg-slate-100 rounded-md">{text}</span>
   ) : <span className="text-slate-400 font-mono text-xs">-</span>;
 }
 

@@ -6,15 +6,22 @@ import { DocumentsManagerClient } from "@/components/documents/DocumentsManagerC
 export const dynamic = "force-dynamic";
 
 export default async function DocumentsPage() {
-  const [rawBills, rawProjects, rawContractors, rawCompanies] = await Promise.all([
+  const [rawBills, rawProjects, rawContractors, rawCompanies, rawStores] = await Promise.all([
     getRows(TABLES.DATA).catch(() => []),
     getRows(TABLES.PROJECT).catch(() => []),
     getRows(TABLES.CONTRACTOR).catch(() => []),
     getRows(TABLES.COMPANY).catch(() => []),
+    getRows(TABLES.STORE).catch(() => []),
   ]);
 
+  const hydratedBills = await hydrateBillRows(rawBills, {
+    projects: rawProjects,
+    stores: rawStores,
+    contractors: rawContractors,
+  });
+
   // Sort latest bills first
-  const sortedBills = [...rawBills].sort((a, b) => {
+  const sortedBills = [...hydratedBills].sort((a, b) => {
     const seqA = Number(a["ลำดับ"] || a._sheetRow || a.id || 0);
     const seqB = Number(b["ลำดับ"] || b._sheetRow || b.id || 0);
     return seqB - seqA;
