@@ -107,6 +107,30 @@ export function ManageTableClient({
   }, [initialRows]);
 
   useEffect(() => {
+    const handleDataUpdated = (event: Event) => {
+      const customEvt = event as CustomEvent;
+      const updatedTable = customEvt.detail?.tableName;
+      if (!updatedTable || updatedTable === tableName || updatedTable === viewName) {
+        reloadRows().catch(() => undefined);
+      }
+    };
+
+    const handleInvalidated = () => {
+      reloadRows().catch(() => undefined);
+    };
+
+    window.addEventListener("data-updated", handleDataUpdated);
+    window.addEventListener("bills-data-updated", handleInvalidated);
+    window.addEventListener("schema-cache-invalidated", handleInvalidated);
+
+    return () => {
+      window.removeEventListener("data-updated", handleDataUpdated);
+      window.removeEventListener("bills-data-updated", handleInvalidated);
+      window.removeEventListener("schema-cache-invalidated", handleInvalidated);
+    };
+  }, [tableName, viewName]);
+
+  useEffect(() => {
     setPage(1);
   }, [search, pageSize]);
 
@@ -174,7 +198,6 @@ export function ManageTableClient({
   }
 
   function beginEdit() {
-    if (editOpenEventName) return;
     setError("");
     setDeleteMode(false);
     setSelectedRows([]);
@@ -571,7 +594,7 @@ export function ManageTableClient({
                 <span>ยกเลิก</span>
               </button>
             </>
-          ) : editOpenEventName ? null : (
+          ) : (
             <button
               type="button"
               className="px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
@@ -1068,7 +1091,10 @@ function renderDisplayCell(column: string, value: RowValue | undefined, displayL
   if (column === "color") return <ColorDot value={value} />;
   const rawValue = stringify(value);
   const lookup = displayLookups[column];
-  if (lookup && rawValue) return lookup[rawValue] || rawValue;
+  if (lookup && rawValue) return lookup[rawValue] || rawValue.replace(/^Ba\d+\s*[-–—]?\s*/i, "");
+  if ((column === "ธนาคาร" || column === "bank" || column === "bank_name") && rawValue) {
+    return rawValue.replace(/^Ba\d+\s*[-–—]?\s*/i, "").trim() || rawValue;
+  }
   if (isDateColumn(column) && rawValue) return formatDateThai(rawValue);
   return formatValue(value, column);
 }

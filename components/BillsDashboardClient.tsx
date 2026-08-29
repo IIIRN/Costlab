@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDownWideNarrow, ArrowUpWideNarrow, ChevronLeft, ChevronRight, Eye, Filter, Search, X } from "lucide-react";
+import { ArrowDownWideNarrow, ArrowUpWideNarrow, ChevronLeft, ChevronRight, Download, Eye, FileSpreadsheet, Filter, Search, X } from "lucide-react";
 import { FormModal } from "@/components/FormModal";
 import { BillWorkflowActions } from "@/components/BillWorkflowActions";
 import { BillDetailDrawer } from "@/components/BillDetailDrawer";
@@ -10,9 +10,10 @@ import { BillImageThumbnail } from "@/components/BillImageThumbnail";
 import { FORM_SCHEMAS } from "@/lib/schemas";
 import { formatDateDisplay, normalizeDateToIso, parseDateStrict } from "@/lib/dates";
 import { money, toNumber } from "@/lib/numbers";
-import { normalizeBillStatus } from "@/lib/bill-status";
+import { formatBillConditions, normalizeBillStatus } from "@/lib/bill-status";
 import { showConfirm, showToast } from "@/components/ToastProvider";
-import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { useRealtimeSync } from "@/lib/use-realtime-sync";
+import { exportBillsToCsvAsync } from "@/lib/csv-exporter";
 import type { SheetRow } from "@/lib/types";
 
 type BillsDashboardClientProps = {
@@ -41,6 +42,12 @@ export function BillsDashboardClient({
   sort: initialSort = "latest",
 }: BillsDashboardClientProps) {
   const router = useRouter();
+  const [rows, setRows] = useState<SheetRow[]>(initialRows);
+
+  useEffect(() => {
+    setRows(initialRows);
+  }, [initialRows]);
+
   const [searchInput, setSearchInput] = useState(initialSearch);
   const [filters, setFilters] = useState({
     requester: "",
@@ -67,33 +74,27 @@ export function BillsDashboardClient({
   const [sortDesc, setSortDesc] = useState(initialSort === "latest");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
-  // Live sync from Supabase PostgreSQL changes + Local Form Events
-  useEffect(() => {
-    const handleDataUpdated = () => {
-      router.refresh();
-    };
-    window.addEventListener("bills-data-updated", handleDataUpdated);
-    window.addEventListener("data-updated", handleDataUpdated);
-
-    const supabase = getSupabaseBrowserClient();
-    let channel: any = null;
-    if (supabase) {
-      channel = supabase
-        .channel("bills_table_live_sync")
-        .on("postgres_changes", { event: "*", schema: "public", table: "bills" }, () => {
-          router.refresh();
-        })
-        .subscribe();
-    }
-
-    return () => {
-      window.removeEventListener("bills-data-updated", handleDataUpdated);
-      window.removeEventListener("data-updated", handleDataUpdated);
-      if (supabase && channel) {
-        supabase.removeChannel(channel);
+  const refreshBillsData = useCallback(async () => {
+    try {
+      const res = await fetch("/api/bills?pageSize=500&page=1");
+      if (res.ok) {
+        const payload = await res.json();
+        if (payload && Array.isArray(payload.rows) && payload.rows.length > 0) {
+          setRows(payload.rows);
+        }
       }
-    };
+    } catch {}
+    router.refresh();
   }, [router]);
+
+  // High-performance debounced live sync from Supabase PostgreSQL + Local Form Events
+  useRealtimeSync({
+    channelName: "bills_table_live_sync",
+    tables: ["bills"],
+    onSync: refreshBillsData,
+    debounceMs: 500,
+    customEvents: ["bills-data-updated", "data-updated", "schema-cache-invalidated"],
+  });
 
   // Bill Detail Drawer State
   const [selectedDetailIndex, setSelectedDetailIndex] = useState<number | null>(null);
@@ -107,6 +108,29 @@ export function BillsDashboardClient({
     }, {});
   }, [peopleRows]);
 
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
+
+  async function handleExportCsv() {
+    if (filteredRows.length === 0) {
+      showToast("warning", "ไม่มีรายการบิลสำหรับส่งออก");
+      return;
+    }
+    setIsExporting(true);
+    setExportProgress(0);
+    try {
+      const filename = `รายงานบิล_${new Date().toISOString().slice(0, 10)}.csv`;
+      await exportBillsToCsvAsync(filteredRows, filename, undefined, percent => {
+        setExportProgress(percent);
+      });
+      showToast("success", `ส่งออกรายงานบิลสำเร็จ (${filteredRows.length} รายการ)`);
+    } catch (e: any) {
+      showToast("error", `เกิดข้อผิดพลาดในการส่งออก: ${e?.message || "กรุณาลองใหม่อีกครั้ง"}`);
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
   const filteredRows = useMemo(() => {
     const query = filters.search.trim().toLowerCase();
     const requester = filters.requester.trim();
@@ -114,7 +138,7 @@ export function BillsDashboardClient({
     const status = filters.status.trim();
     const filterDateIso = filters.date.trim();
 
-    return initialRows.filter(row => {
+    return rows.filter(row => {
       if (requester && String(row["ผู้เบิก"] || "").trim() !== requester) return false;
       if (bill && String(row["บิล"] || "").trim() !== bill) return false;
       if (status && String(row["สถานะ"] || "").trim() !== status) return false;
@@ -142,7 +166,7 @@ export function BillsDashboardClient({
       const seqB = Number(b._sheetRow || b["ลำดับ"] || b.id || 0);
       return sortDesc ? seqB - seqA : seqA - seqB;
     });
-  }, [initialRows, filters, sortDesc]);
+  }, [rows, filters, sortDesc]);
 
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -222,6 +246,15 @@ export function BillsDashboardClient({
           </div>
           <button
             type="button"
+            disabled={isExporting || filteredRows.length === 0}
+            onClick={handleExportCsv}
+            className="p-1.5 bg-emerald-50 text-emerald-800 rounded-lg border border-emerald-300 flex items-center gap-1 text-xs shrink-0 cursor-pointer active:bg-emerald-100 disabled:opacity-50"
+            title="ส่งออก Excel"
+          >
+            <FileSpreadsheet size={14} className="text-emerald-700" />
+          </button>
+          <button
+            type="button"
             onClick={() => setSortDesc(cur => !cur)}
             className="p-1.5 bg-slate-100 text-slate-700 rounded-lg border border-slate-200 flex items-center gap-1 text-xs shrink-0 cursor-pointer active:bg-slate-200"
             title="สลับการเรียงลำดับ"
@@ -241,7 +274,7 @@ export function BillsDashboardClient({
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200"
             }`}
           >
-            ทั้งหมด ({initialRows.length})
+            ทั้งหมด ({rows.length})
           </button>
           <button
             type="button"
@@ -310,6 +343,17 @@ export function BillsDashboardClient({
 
           {/* Action Controls */}
           <div className="flex items-center gap-2 shrink-0 justify-end">
+            <button
+              type="button"
+              disabled={isExporting || filteredRows.length === 0}
+              onClick={handleExportCsv}
+              className="px-2.5 py-1.5 border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-md text-xs flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 whitespace-nowrap active:scale-95"
+              title="ส่งออกรายการที่กรองเป็นไฟล์ Excel (CSV)"
+            >
+              <FileSpreadsheet size={14} className="text-emerald-700" />
+              <span>{isExporting ? `กำลังส่งออก (${exportProgress}%)...` : "ส่งออก Excel"}</span>
+            </button>
+
             <button
               type="button"
               onClick={() => setSortDesc(cur => !cur)}
@@ -512,11 +556,7 @@ export function BillsDashboardClient({
                     const statusStr = String(row["สถานะ"] || "รออนุมัติ").trim();
                     const requesterKey = String(row["ผู้เบิก"] || "").trim();
                     const requesterName = requesterNames[requesterKey] || requesterKey || "-";
-                    const conditions = [
-                      row.vat ? `VAT ${row.vat}` : "",
-                      row["หัก"] ? `หัก ${row["หัก"]}` : "",
-                      row["เครดิต"] ? `เครดิต ${row["เครดิต"]}` : ""
-                    ].filter(Boolean).join(" · ");
+                    const conditions = formatBillConditions(row);
 
                     return (
                       <tr

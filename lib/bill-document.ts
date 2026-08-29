@@ -2,6 +2,8 @@ import { hydrateBillRows } from "@/lib/formulas";
 import { TABLES } from "@/lib/config";
 import { getRows } from "@/lib/db";
 import { toNumber } from "@/lib/numbers";
+import { parseDeductPercent, isVatActive } from "@/lib/project-summary";
+import { formatDateDisplay } from "@/lib/dates";
 import type { SheetRow } from "@/lib/types";
 
 export interface BillDocumentModel {
@@ -162,23 +164,28 @@ export async function getBillDocumentData(
     laborAndStaff = toNumber(billRow["ยอดเงิน"]);
   }
 
-  // Tax calculation: only apply tax if explicitly set or indicated
-  let taxPercent = 0;
-  const rawDeduct = billRow["หัก"];
-  if (rawDeduct !== undefined && rawDeduct !== null && String(rawDeduct).trim() !== "") {
-    taxPercent = toNumber(rawDeduct);
-  } else if (billRow["3เปอร์เซ็น"] && toNumber(billRow["3เปอร์เซ็น"]) > 0) {
-    taxPercent = 3;
+  // Tax calculation: parse % correctly even if string is "3%", "หัก 3%", etc.
+  const rawDeduct = billRow["หัก"] ?? billRow.deduct ?? billRow.withholding_tax;
+  let taxPercent = parseDeductPercent(rawDeduct);
+  let customWht = toNumber(billRow["3เปอร์เซ็น"] || billRow["3เปอร์"] || billRow["จำนวนหัก"] || billRow.deduct_amount);
+
+  if (!taxPercent && customWht > 0) {
+    taxPercent = laborAndStaff > 0 ? Math.round((customWht / laborAndStaff) * 100) : 3;
   }
 
-  let withholdingTax = toNumber(billRow["3เปอร์เซ็น"]);
+  let withholdingTax = customWht;
   if (!withholdingTax && taxPercent > 0) {
-    withholdingTax = Math.round(laborAndStaff * (taxPercent / 100) * 100) / 100;
+    const hasVat = isVatActive(billRow.vat ?? billRow["vat"] ?? billRow.VAT);
+    if (hasVat) {
+      withholdingTax = Math.round(((laborAndStaff / 1.07) * (taxPercent / 100)) * 100) / 100;
+    } else {
+      withholdingTax = Math.round((laborAndStaff * (taxPercent / 100)) * 100) / 100;
+    }
   } else if (taxPercent === 0) {
     withholdingTax = 0;
   }
 
-  const rawNet = toNumber(billRow["ยอดเงิน"]);
+  const rawNet = toNumber(billRow["ยอดโอน"] || billRow["ยอดเงิน"]);
   const netPayable = rawNet || (laborAndStaff - withholdingTax);
 
   const isCorporate =
@@ -194,7 +201,7 @@ export async function getBillDocumentData(
 
   return {
     billSequence: String(billRow["ลำดับ"] || billRow["ลำดับtest"] || billRow._sheetRow || "-"),
-    billDate: String(billRow["ว/ด/ป"] || billRow["วันได้บิล"] || new Date().toISOString().slice(0, 10)),
+    billDate: formatDateDisplay(billRow["ว/ด/ป"] || billRow["วันได้บิล"] || new Date().toISOString().slice(0, 10)),
     status: String(billRow["สถานะ"] || "รออนุมัติ"),
 
     company: {

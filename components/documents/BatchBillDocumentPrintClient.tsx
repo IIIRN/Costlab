@@ -73,7 +73,7 @@ export function BatchBillDocumentPrintClient({
             </div>
             <h1 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
               <span>พิมพ์เอกสารชุด</span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-mono">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
                 {documents.length} บิล
               </span>
               <span className="text-xs text-slate-500 font-normal hidden sm:inline">

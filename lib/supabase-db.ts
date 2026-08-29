@@ -184,8 +184,10 @@ export function mapSupabaseRowToSheetRow(dbTable: string, row: Record<string, an
     res["บิล"] = row.bill_no ?? row["บิล"] ?? dataObj["บิล"];
     res["ประเภท"] = row.category ?? row["ประเภท"] ?? dataObj["ประเภท"];
     res["ยอดเงิน"] = row.amount ?? row["ยอดเงิน"] ?? dataObj["ยอดเงิน"];
-    res["vat"] = row.vat_amount ?? row["vat"] ?? dataObj["vat"];
-    res["หัก"] = row.withholding_tax ?? row["หัก"] ?? dataObj["หัก"];
+    res["หัก"] = row.withholding_tax ?? row["หัก"] ?? dataObj["หัก"] ?? "";
+    res["จำนวนหัก"] = row.deduct_amount ?? row["จำนวนหัก"] ?? dataObj["จำนวนหัก"] ?? dataObj["3เปอร์"] ?? dataObj["3เปอร์เซ็น"] ?? "";
+    res["3เปอร์"] = res["จำนวนหัก"];
+    res["3เปอร์เซ็น"] = res["จำนวนหัก"];
     res["เครดิต"] = row.credit_days ?? row["เครดิต"] ?? dataObj["เครดิต"];
     res["ผู้เบิก"] = row.requester ?? row["ผู้เบิก"] ?? dataObj["ผู้เบิก"];
     res["ผู้สร้างบิล"] = row.created_by ?? row["ผู้สร้างบิล"] ?? dataObj["ผู้สร้างบิล"] ?? dataObj["ผู้บันทึก"] ?? "";
@@ -220,15 +222,37 @@ export function mapSupabaseRowToSheetRow(dbTable: string, row: Record<string, an
     res["วันออก 3%"] = row.wht_issued_date ?? row["วันออก 3%"] ?? dataObj["วันออก 3%"] ?? "";
     res["วันจ่าย"] = row.paid_date ?? row["วันจ่าย"] ?? dataObj["วันจ่าย"] ?? "";
 
-    res["ร้านค้า"] = row.store_id ?? row["ร้านค้า"] ?? dataObj["ร้านค้า"] ?? "";
-    res["ผู้รับเหมา"] = row.contractor_id ?? row["ผู้รับเหมา"] ?? dataObj["ผู้รับเหมา"] ?? "";
-    res["ร้านค้า/ผู้รับเหมา"] = row.vendor_type ?? row["ร้านค้า/ผู้รับเหมา"] ?? dataObj["ร้านค้า/ผู้รับเหมา"] ?? "";
-    res["สินค้า"] = row.product ?? row["สินค้า"] ?? dataObj["สินค้า"] ?? "";
-    res["รายละเอียดงาน"] = row.work_details ?? row["รายละเอียดงาน"] ?? dataObj["รายละเอียดงาน"] ?? "";
+    const rawCategory = String(row.category ?? row["ประเภท"] ?? dataObj["ประเภท"] ?? "").trim();
+    const rawLaborStatus = String(row.labor_status ?? row["statusค่าแรง"] ?? dataObj["statusค่าแรง"] ?? "").trim();
+    const hasLaborCost = Number(row.labor_cost ?? row["ค่าแรง"] ?? dataObj["ค่าแรง"] ?? 0) > 0;
+    const isContractorBill = 
+      row.vendor_type === "ผู้รับเหมา" ||
+      dataObj["ร้านค้า/ผู้รับเหมา"] === "ผู้รับเหมา" ||
+      Boolean(row.contractor_id) ||
+      Boolean(dataObj["ผู้รับเหมา"]) ||
+      rawCategory.startsWith("2.") ||
+      rawCategory.includes("ค่าแรง") ||
+      rawCategory.includes("จ้าง") ||
+      Boolean(rawLaborStatus) ||
+      hasLaborCost;
+
+    res["ร้านค้า/ผู้รับเหมา"] = isContractorBill ? "ผู้รับเหมา" : (row.vendor_type || dataObj["ร้านค้า/ผู้รับเหมา"] || "ร้านค้า");
+    if (isContractorBill) {
+      res["ผู้รับเหมา"] = row.contractor_id ?? dataObj["ผู้รับเหมา"] ?? row.vendor_or_person ?? dataObj["ร้าน/บุคคล"] ?? "";
+      res["ร้านค้า"] = "";
+      res["รายละเอียดงาน"] = row.work_details ?? row.description ?? dataObj["รายละเอียดงาน"] ?? dataObj["สินค้า/ทำงาน"] ?? "";
+      res["สินค้า"] = "";
+    } else {
+      res["ร้านค้า"] = row.store_id ?? dataObj["ร้านค้า"] ?? row.vendor_or_person ?? dataObj["ร้าน/บุคคล"] ?? "";
+      res["ผู้รับเหมา"] = "";
+      res["สินค้า"] = row.product ?? row.description ?? dataObj["สินค้า"] ?? dataObj["สินค้า/ทำงาน"] ?? "";
+      res["รายละเอียดงาน"] = "";
+    }
     res["รายการ"] = row.sub_category ?? row.item_name ?? row["รายการ"] ?? dataObj["รายการ"] ?? "";
     res["ชื่อเครื่องมือ"] = row.tool_name ?? row["ชื่อเครื่องมือ"] ?? dataObj["ชื่อเครื่องมือ"] ?? "";
     res["ทะเบียน"] = row.plate_no ?? row["ทะเบียน"] ?? dataObj["ทะเบียน"] ?? "";
     res["ชื่อพนักงาน"] = row.staff_name ?? row["ชื่อพนักงาน"] ?? dataObj["ชื่อพนักงาน"] ?? "";
+    res.items = row.items ?? dataObj.items ?? [];
   } else if (dbTable === "projects") {
     res["ID Project"] = row.id ?? row["ID Project"];
     res["_sheetRow"] = row.id ?? row._sheetRow;
@@ -273,6 +297,15 @@ export function mapSupabaseRowToSheetRow(dbTable: string, row: Record<string, an
     res["รายละเอียดงาน"] = row.work_details ?? row["รายละเอียดงาน"];
     res["เบอร์โทรศัพท์"] = row.phone ?? row["เบอร์โทรศัพท์"];
     res["ยอดเงินจ่าย"] = row.paid_amount ?? row["ยอดเงินจ่าย"];
+    res["วันที่"] = row.work_date ?? row.date ?? row.contract_date ?? row["วันที่"] ?? row["ว/ด/ป"] ?? row.created_at ?? "";
+    res["สถานที่"] = row.location ?? row["สถานที่"] ?? "";
+    res["เลขบัญชี"] = row.bank_account ?? row["เลขบัญชี"] ?? "";
+    res["ธนาคาร"] = row.bank_name ?? row.bank ?? row["ธนาคาร"] ?? "";
+    res["บัตรประจำตัวประชาชน"] = row.id_card ?? row["บัตรประจำตัวประชาชน"] ?? "";
+    res["ที่อยู่"] = row.address ?? row["ที่อยู่"] ?? "";
+    res["ชื่อ-นามสกุล"] = row.full_name ?? row["ชื่อ-นามสกุล"] ?? "";
+    res["ชื่อเล่น"] = row.nickname ?? row["ชื่อเล่น"] ?? "";
+    res["ค่าแรงคงเหลือ"] = row.remaining_amount ?? row["ค่าแรงคงเหลือ"] ?? "";
   } else if (dbTable === "master_members") {
     res["รหัสพนักงาน"] = row.id ?? row["รหัสพนักงาน"];
     res["_sheetRow"] = row.id ?? row._sheetRow;
@@ -591,6 +624,9 @@ export function mapSheetRowToSupabaseRow(tableName: string, row: Record<string, 
     if (row["รายละเอียดงาน"] !== undefined) dbRow.work_details = row["รายละเอียดงาน"];
     if (row["เบอร์โทรศัพท์"] !== undefined) dbRow.phone = row["เบอร์โทรศัพท์"];
     if (row["ยอดเงินจ่าย"] !== undefined) dbRow.paid_amount = row["ยอดเงินจ่าย"];
+    if (row["วันที่"] !== undefined || row["work_date"] !== undefined || row["date"] !== undefined || row["contract_date"] !== undefined) {
+      dbRow.work_date = row["วันที่"] ?? row["work_date"] ?? row["date"] ?? row["contract_date"];
+    }
   } else if (dbTable === "loans") {
     if (row["id"] !== undefined) dbRow.id = row["id"];
     if (row["ชื่อ"] !== undefined) dbRow.borrower_name = row["ชื่อ"];
@@ -939,9 +975,38 @@ export async function updateRowInSupabase(tableName: string, keyColumn: string, 
   delete dbPatch._sheetRow;
   delete dbPatch.id;
 
-  const rawVal = patch.id ?? patch[keyColumn] ?? patch["id_bank"] ?? patch["id_store"] ?? patch["id_Contractor"] ?? patch["id_Conwork"] ?? patch["id_cus"] ?? patch["id_Company"] ?? patch["id_car"] ?? keyValue;
-  const numId = Number(rawVal);
-  const primaryVal = Number.isFinite(numId) && String(rawVal).trim() !== "" ? numId : rawVal;
+  // Determine the true Supabase primary key ID:
+  // For master entities, prioritize the entity code (e.g. CT362, PT105, ST101, etc.) over numeric sheetRow numbers
+  const entityCode = patch[keyColumn] ??
+    patch["id_Contractor"] ??
+    patch["รหัสพนักงาน"] ??
+    patch["id_store"] ??
+    patch["id_bank"] ??
+    patch["id_car"] ??
+    patch["id_cus"] ??
+    patch["id_Company"] ??
+    patch["id_Conwork"] ??
+    patch["ID Project"] ??
+    patch.id;
+
+  let primaryVal: any = keyValue;
+
+  if (dbTable !== "bills" && dbTable !== "tasks" && dbTable !== "loans") {
+    if (entityCode !== undefined && entityCode !== null && String(entityCode).trim() !== "") {
+      primaryVal = entityCode;
+    }
+  }
+
+  if (primaryVal === undefined || primaryVal === null || String(primaryVal).trim() === "") {
+    primaryVal = entityCode ?? keyValue;
+  }
+
+  const numId = Number(primaryVal);
+  if (Number.isFinite(numId) && String(primaryVal).trim() !== "" && (dbTable === "bills" || dbTable === "tasks" || dbTable === "loans")) {
+    primaryVal = numId;
+  } else if (typeof primaryVal === "string") {
+    primaryVal = primaryVal.trim();
+  }
 
   const patchKeys = Object.keys(patch).filter(k => !k.startsWith("_") && k !== "id");
   const isStatusOnly = patchKeys.length > 0 && patchKeys.every(k => ["สถานะ", "status"].includes(k));
@@ -981,11 +1046,21 @@ export async function updateRowInSupabase(tableName: string, keyColumn: string, 
   }
 
   try {
+    console.log(`[Supabase UPDATE] table: "${dbTable}", id: "${primaryVal}", payload:`, JSON.stringify(dbPatch));
     let res = await supabaseAdmin
       .from(dbTable)
       .update(dbPatch)
       .eq("id", primaryVal)
       .select();
+
+    // Fallback: If 0 rows updated and entityCode is available and different, try entityCode
+    if ((res.error || !res.data || res.data.length === 0) && entityCode && String(entityCode).trim() !== String(primaryVal).trim()) {
+      res = await supabaseAdmin
+        .from(dbTable)
+        .update(dbPatch)
+        .eq("id", String(entityCode).trim())
+        .select();
+    }
 
     if ((res.error || !res.data || res.data.length === 0) && typeof primaryVal === "number") {
       const resStr = await supabaseAdmin
@@ -1031,13 +1106,16 @@ export async function updateRowInSupabase(tableName: string, keyColumn: string, 
     }
 
     if (res.error) {
-      console.warn(`Failed to update Supabase '${dbTable}': ${res.error.message}`);
+      console.error(`[Supabase UPDATE ERROR '${dbTable}'] id "${primaryVal}":`, res.error.message);
+      throw new Error(res.error.message);
+    } else {
+      console.log(`[Supabase UPDATE SUCCESS '${dbTable}'] id "${primaryVal}" -> updated ${res.data?.length || 0} row(s)`);
     }
 
     return res.data;
   } catch (err) {
-    console.warn(`Exception updating Supabase '${dbTable}':`, err);
-    return null;
+    console.error(`[Supabase UPDATE EXCEPTION '${dbTable}'] id "${primaryVal}":`, err);
+    throw err;
   }
 }
 
@@ -1240,6 +1318,226 @@ export async function getRowsFromSupabase(tableName: string, maxRows = 10_000): 
   } catch (err) {
     console.warn(`Exception fetching rows from Supabase table '${dbTable}':`, err);
     return [];
+  }
+}
+
+export async function getWithdrawBillsFromSupabase(maxRows = 3_000): Promise<SheetRow[]> {
+  if (!isSupabaseConfigured()) return [];
+
+  try {
+    const rangeEnd = Math.max(0, maxRows - 1);
+    const [mainResult, billFollowDatesMap] = await Promise.all([
+      supabaseAdmin
+        .from("bills")
+        .select("*")
+        .or("status.eq.รอตั้งเบิก,status.eq.ตั้งเบิก,status.eq.รออนุมัติ,status.eq.อนุมัติ")
+        .order("id", { ascending: false })
+        .range(0, rangeEnd),
+      getBillFollowDatesFromSupabase()
+    ]);
+
+    const { data, error } = mainResult;
+    if (error || !data) return [];
+
+    const hasFollowMap = Object.keys(billFollowDatesMap).length > 0;
+    const rowCount = data.length;
+    const mapped: SheetRow[] = new Array(rowCount);
+
+    for (let idx = 0; idx < rowCount; idx++) {
+      const row = data[idx];
+      const res = mapSupabaseRowToSheetRow("bills", row, idx);
+
+      if (hasFollowMap) {
+        const rawId = String(row.id || "");
+        const rawSeq = String(res["ลำดับ"] || res._sheetRow || "");
+        const followData = (rawId && billFollowDatesMap[rawId]) || (rawSeq && billFollowDatesMap[rawSeq]);
+        if (followData) {
+          Object.assign(res, followData);
+          if (followData["ลำดับ"]) res["ลำดับ"] = followData["ลำดับ"];
+          if (followData["ผู้สร้างบิล"]) {
+            res["ผู้สร้างบิล"] = followData["ผู้สร้างบิล"];
+            res["created_by"] = followData["ผู้สร้างบิล"];
+          }
+        }
+      }
+      if (!res["ผู้สร้างบิล"]) {
+        res["ผู้สร้างบิล"] = res["ผู้เบิก"] || "";
+        res["created_by"] = res["ผู้สร้างบิล"];
+      }
+
+      mapped[idx] = res;
+    }
+
+    return mapped;
+  } catch (err) {
+    console.warn("Exception fetching withdraw bills from Supabase:", err);
+    return [];
+  }
+}
+
+export async function getBillFollowRowsFromSupabase(maxRows = 3_000): Promise<SheetRow[]> {
+  if (!isSupabaseConfigured()) return [];
+
+  try {
+    const rangeEnd = Math.max(0, maxRows - 1);
+    const [mainResult, billFollowDatesMap] = await Promise.all([
+      supabaseAdmin
+        .from("bills")
+        .select("*")
+        .or("vat_amount.gt.0,withholding_tax.gt.0,credit_days.gt.0")
+        .order("id", { ascending: false })
+        .range(0, rangeEnd),
+      getBillFollowDatesFromSupabase()
+    ]);
+
+    const { data, error } = mainResult;
+    if (error || !data) return [];
+
+    const hasFollowMap = Object.keys(billFollowDatesMap).length > 0;
+    const rowCount = data.length;
+    const mapped: SheetRow[] = new Array(rowCount);
+
+    for (let idx = 0; idx < rowCount; idx++) {
+      const row = data[idx];
+      const res = mapSupabaseRowToSheetRow("bills", row, idx);
+
+      if (hasFollowMap) {
+        const rawId = String(row.id || "");
+        const rawSeq = String(res["ลำดับ"] || res._sheetRow || "");
+        const followData = (rawId && billFollowDatesMap[rawId]) || (rawSeq && billFollowDatesMap[rawSeq]);
+        if (followData) {
+          Object.assign(res, followData);
+          if (followData["ลำดับ"]) res["ลำดับ"] = followData["ลำดับ"];
+          if (followData["ผู้สร้างบิล"]) {
+            res["ผู้สร้างบิล"] = followData["ผู้สร้างบิล"];
+            res["created_by"] = followData["ผู้สร้างบิล"];
+          }
+        }
+      }
+      if (!res["ผู้สร้างบิล"]) {
+        res["ผู้สร้างบิล"] = res["ผู้เบิก"] || "";
+        res["created_by"] = res["ผู้สร้างบิล"];
+      }
+
+      mapped[idx] = res;
+    }
+
+    return mapped;
+  } catch (err) {
+    console.warn("Exception fetching bill follow rows from Supabase:", err);
+    return [];
+  }
+}
+
+export async function getDashboardFinancialSummaryFromSupabase(startDate?: string, endDate?: string, projectId?: string): Promise<Record<string, any> | null> {
+  if (!isSupabaseConfigured()) return null;
+
+  try {
+    const { data, error } = await (supabaseAdmin.rpc as any)("get_dashboard_financial_summary", {
+      p_start_date: startDate || null,
+      p_end_date: endDate || null,
+      p_project_id: projectId || null,
+    });
+
+    if (error) {
+      console.warn("RPC get_dashboard_financial_summary error:", error.message);
+      return null;
+    }
+
+    return data || null;
+  } catch (err) {
+    console.warn("Exception calling get_dashboard_financial_summary RPC:", err);
+    return null;
+  }
+}
+
+export type BillsPagedParams = {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  status?: string;
+  projectId?: string;
+  startDate?: string;
+  endDate?: string;
+  sortDesc?: boolean;
+};
+
+export type BillsPagedResult = {
+  rows: SheetRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+export async function getBillsPagedFromSupabase(params: BillsPagedParams = {}): Promise<BillsPagedResult> {
+  if (!isSupabaseConfigured()) {
+    return { rows: [], total: 0, page: 1, pageSize: 50, totalPages: 1 };
+  }
+
+  const page = Math.max(1, Number(params.page) || 1);
+  const pageSize = Math.min(500, Math.max(1, Number(params.pageSize) || 50));
+  const offset = (page - 1) * pageSize;
+  const sortDesc = params.sortDesc !== false;
+
+  try {
+    let query = supabaseAdmin
+      .from("bills")
+      .select("*", { count: "exact" });
+
+    if (params.status && params.status.trim()) {
+      query = query.eq("status", params.status.trim());
+    }
+
+    if (params.projectId && params.projectId.trim()) {
+      query = query.eq("project_id", params.projectId.trim());
+    }
+
+    if (params.startDate) {
+      query = query.gte("bill_date", params.startDate);
+    }
+    if (params.endDate) {
+      query = query.lte("bill_date", params.endDate);
+    }
+
+    if (params.search && params.search.trim()) {
+      const q = params.search.trim();
+      query = query.or(`product.ilike.%${q}%,work_details.ilike.%${q}%,requester.ilike.%${q}%,vendor_type.ilike.%${q}%,id.ilike.%${q}%,sub_category.ilike.%${q}%`);
+    }
+
+    query = query
+      .order("created_at", { ascending: !sortDesc })
+      .range(offset, offset + pageSize - 1);
+
+    const { data, count, error } = await query;
+
+    if (error) {
+      console.warn("getBillsPagedFromSupabase query error:", error.message);
+      return { rows: [], total: 0, page, pageSize, totalPages: 1 };
+    }
+
+    const total = count || (data?.length || 0);
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+    const rows: SheetRow[] = (data || []).map((row, idx) => {
+      const sheetRow = mapSupabaseRowToSheetRow("bills", row, offset + idx);
+      if (!sheetRow["ผู้สร้างบิล"]) {
+        sheetRow["ผู้สร้างบิล"] = sheetRow["ผู้เบิก"] || "";
+        sheetRow["created_by"] = sheetRow["ผู้สร้างบิล"];
+      }
+      return sheetRow;
+    });
+
+    return {
+      rows,
+      total,
+      page,
+      pageSize,
+      totalPages
+    };
+  } catch (err) {
+    console.warn("Exception in getBillsPagedFromSupabase:", err);
+    return { rows: [], total: 0, page, pageSize, totalPages: 1 };
   }
 }
 
@@ -1800,5 +2098,146 @@ export async function getUsersListFromSupabase(): Promise<any[]> {
       return [];
     }
   });
+}
+
+export type StorageCleanupResult = {
+  success: boolean;
+  dryRun: boolean;
+  totalFilesInBucket: number;
+  referencedCount: number;
+  orphanedCount: number;
+  orphanedFiles: string[];
+  deletedCount: number;
+  freedBytesEstimate: number;
+  error?: string;
+};
+
+/**
+ * Scans Supabase Storage bucket and deletes orphaned image files not referenced anywhere in the database
+ */
+export async function cleanupOrphanedStorageImages(bucketName = "repairs", dryRun = true): Promise<StorageCleanupResult> {
+  if (!isSupabaseConfigured()) {
+    return {
+      success: false,
+      dryRun,
+      totalFilesInBucket: 0,
+      referencedCount: 0,
+      orphanedCount: 0,
+      orphanedFiles: [],
+      deletedCount: 0,
+      freedBytesEstimate: 0,
+      error: "Supabase not configured",
+    };
+  }
+
+  try {
+    const { data: fileList, error: listErr } = await supabaseAdmin.storage
+      .from(bucketName)
+      .list("", { limit: 1000, sortBy: { column: "created_at", order: "desc" } });
+
+    if (listErr) {
+      return {
+        success: false,
+        dryRun,
+        totalFilesInBucket: 0,
+        referencedCount: 0,
+        orphanedCount: 0,
+        orphanedFiles: [],
+        deletedCount: 0,
+        freedBytesEstimate: 0,
+        error: listErr.message,
+      };
+    }
+
+    const files = fileList || [];
+    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+
+    const { data: billsData } = await supabaseAdmin
+      .from("bills")
+      .select("image_url, data");
+
+    const activePaths = new Set<string>();
+
+    function extractPath(urlStr: string) {
+      if (!urlStr || typeof urlStr !== "string") return;
+      const parts = urlStr.split(",");
+      for (const p of parts) {
+        const trimmed = p.trim();
+        if (!trimmed) continue;
+        const match = trimmed.match(/\/storage\/v1\/object\/public\/([^\/]+)\/(.+)$/i);
+        if (match && match[1] === bucketName) {
+          activePaths.add(match[2]);
+        } else {
+          const slashIdx = trimmed.lastIndexOf("/");
+          if (slashIdx >= 0) {
+            activePaths.add(trimmed.slice(slashIdx + 1));
+          } else {
+            activePaths.add(trimmed);
+          }
+        }
+      }
+    }
+
+    for (const b of billsData || []) {
+      if (b.image_url) extractPath(b.image_url);
+      if (b.data && typeof b.data === "object") {
+        if (b.data["รูปถ่ายบิล"]) extractPath(b.data["รูปถ่ายบิล"]);
+        if (b.data["รูปภาพ"]) extractPath(b.data["รูปภาพ"]);
+      }
+    }
+
+    const orphanedFiles: string[] = [];
+    let freedBytes = 0;
+
+    for (const file of files) {
+      if (!file.name || file.name === ".emptyFolderPlaceholder") continue;
+
+      const fileCreated = file.created_at ? new Date(file.created_at).getTime() : 0;
+      if (fileCreated > oneDayAgo) continue;
+
+      const isReferenced = activePaths.has(file.name);
+      if (!isReferenced) {
+        orphanedFiles.push(file.name);
+        freedBytes += file.metadata?.size || (file as any).size || 250_000;
+      }
+    }
+
+    let deletedCount = 0;
+    if (!dryRun && orphanedFiles.length > 0) {
+      for (let i = 0; i < orphanedFiles.length; i += 100) {
+        const batch = orphanedFiles.slice(i, i + 100);
+        const { error: delErr } = await supabaseAdmin.storage.from(bucketName).remove(batch);
+        if (!delErr) {
+          deletedCount += batch.length;
+        } else {
+          console.warn(`Error deleting batch from bucket '${bucketName}':`, delErr.message);
+        }
+      }
+    }
+
+    return {
+      success: true,
+      dryRun,
+      totalFilesInBucket: files.length,
+      referencedCount: activePaths.size,
+      orphanedCount: orphanedFiles.length,
+      orphanedFiles,
+      deletedCount: dryRun ? 0 : deletedCount,
+      freedBytesEstimate: freedBytes,
+    };
+  } catch (err: any) {
+    console.error("cleanupOrphanedStorageImages exception:", err);
+    return {
+      success: false,
+      dryRun,
+      totalFilesInBucket: 0,
+      referencedCount: 0,
+      orphanedCount: 0,
+      orphanedFiles: [],
+      deletedCount: 0,
+      freedBytesEstimate: 0,
+      error: err?.message || String(err),
+    };
+  }
 }
 

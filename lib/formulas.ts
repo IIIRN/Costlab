@@ -179,6 +179,10 @@ function applyContractFormulasWithFastContext(
     row["เบอร์โทรศัพท์"] = row["เบอร์โทรศัพท์"] || row["เบอร์โทร"] || "";
   }
 
+  if (!row["วันที่"] && (row["date"] || row["contract_date"] || row["created_at"])) {
+    row["วันที่"] = row["date"] || row["contract_date"] || row["created_at"];
+  }
+
   const paid = computePaidForContract(row, context.dataRows);
   const hireAmount = toNumber(firstValue(row, ["ยอดเงินจ้าง"]));
   row["ยอดเงินจ่าย"] = paid;

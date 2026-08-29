@@ -116,7 +116,7 @@ export function BillDetailDrawer({
   if (!bill) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/40 backdrop-blur-xs flex justify-end transition-opacity">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/50 backdrop-blur-sm sm:backdrop-blur-md flex justify-end transition-opacity">
       {/* Slide-over Panel */}
       <div className="w-full max-w-lg bg-white h-full shadow-2xl flex flex-col justify-between border-l border-slate-200 animate-in slide-in-from-right-full duration-300">
         {/* Top Action Bar */}

@@ -6,7 +6,7 @@ export const FORM_SCHEMAS: Record<string, FieldSchema[]> = {
     { name: "ลำดับ", type: "Text", key: true, initialValue: "nextDataSequence", required: true, readonlyOnEdit: true },
     { name: "ID Project", type: "Ref", refTable: TABLES.PROJECT, refKey: "ID Project", refLabel: "ชื่อ Project", validIf: "activeProjects", required: true, refFill: { "ชื่อ Project": "ชื่อ Project" } },
     { name: "ชื่อ Project", type: "Hidden" },
-    { name: "บิล", type: "Enum", values: ["หลัก", "ย่อย"], initialValue: "ย่อย", required: true, dynamicValues: "fieldOptions" },
+    { name: "บิล", type: "Enum", values: ["หลัก", "ย่อย"], initialValue: "หลัก", required: true, dynamicValues: "fieldOptions" },
     { name: "ร้านค้า/ผู้รับเหมา", type: "Enum", values: ["ร้านค้า", "ผู้รับเหมา"], inputMode: "buttons", initialValue: "ร้านค้า", required: true, description: "ร้านค้า บริษัท และ หจก. : ผู้รับเหมา และนิติบุคคล" },
     { name: "ร้านค้า", type: "Ref", refTable: TABLES.STORE, refKey: "id_store", refLabel: "ชื่อร้านค้า", required: true, showIf: { column: "ร้านค้า/ผู้รับเหมา", equals: "ร้านค้า" } },
     { name: "ผู้รับเหมา", type: "Ref", refTable: TABLES.CONTRACT_WORK, refKey: "id_Conwork", refLabel: "ชื่อเล่น", required: true, showIf: { column: "ร้านค้า/ผู้รับเหมา", equals: "ผู้รับเหมา" }, filterBy: { field: "ID Project", column: "ID Project", openContract: true }, refFill: { "รายละเอียดงาน": "รายละเอียดงาน", "ค่าแรงคงเหลือ": "{ค่าแรงคงเหลือ} จาก {ยอดเงินจ้าง}" } },

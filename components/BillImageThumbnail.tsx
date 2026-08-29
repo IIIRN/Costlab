@@ -87,14 +87,14 @@ export function BillImageThumbnail({ value, compact = false, large = false }: Bi
   if (!rawValue || rawValue === "ไม่มี" || rawValue === "-" || !imageUrls.length || imgError) {
     if (large) {
       return (
-        <div className="flex flex-col items-center justify-center gap-2 h-36 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 text-slate-400 select-none">
-          <ImageIcon size={28} strokeWidth={1.5} />
-          <span className="text-xs font-medium">ไม่มีรูปถ่ายบิลแนบ</span>
+        <div className="flex flex-col items-center justify-center gap-2.5 h-44 w-full max-w-[280px] rounded-xl border-2 border-dashed border-slate-300 bg-slate-100/70 text-slate-700 select-none p-4">
+          <ImageIcon size={34} strokeWidth={1.5} className="text-slate-500" />
+          <span className="text-xs font-bold text-slate-700">ไม่มีรูปถ่ายบิลแนบ</span>
         </div>
       );
     }
     return (
-      <span className="inline-flex items-center justify-center w-7 h-7 rounded-md text-slate-300 select-none" title="ไม่มีรูปภาพ">
+      <span className="inline-flex items-center justify-center w-7 h-7 rounded-md text-slate-400 select-none" title="ไม่มีรูปภาพ">
         <ImageIcon size={14} />
       </span>
     );
@@ -110,7 +110,7 @@ export function BillImageThumbnail({ value, compact = false, large = false }: Bi
         <button
           type="button"
           onClick={() => { setCurrentIndex(selectedIndex); setOpen(true); }}
-          className="group relative w-full rounded-xl overflow-hidden border border-slate-200 bg-slate-50 hover:border-emerald-400 hover:shadow-md transition-all duration-200 cursor-zoom-in block"
+          className="group relative w-full rounded-xl overflow-hidden border border-slate-300 bg-slate-100/40 hover:border-emerald-600 transition-all duration-200 cursor-zoom-in block"
           title="คลิกเพื่อขยายดูรูปภาพ"
         >
           <img
@@ -122,15 +122,15 @@ export function BillImageThumbnail({ value, compact = false, large = false }: Bi
             className="w-full object-cover max-h-56 group-hover:scale-105 transition-transform duration-300"
           />
           {/* Hover overlay */}
-          <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/20 transition-colors duration-200 flex items-center justify-center">
-            <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-white/90 text-slate-800 text-xs px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-1.5">
+          <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/30 transition-colors duration-200 flex items-center justify-center">
+            <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-slate-900 text-white font-bold text-xs px-3 py-1.5 rounded-lg border border-slate-900 flex items-center gap-1.5">
               <ZoomIn size={13} />
               ขยายดูรูป
             </span>
           </div>
           {/* Position badge */}
           {imageUrls.length > 1 && (
-            <span className="absolute top-2 right-2 bg-slate-900/80 text-white text-xs px-2 py-0.5 rounded-full">
+            <span className="absolute top-2 right-2 bg-slate-900 text-white font-bold text-xs px-2.5 py-0.5 rounded-full border border-slate-800">
               {selectedIndex + 1} / {imageUrls.length}
             </span>
           )}
@@ -145,8 +145,8 @@ export function BillImageThumbnail({ value, compact = false, large = false }: Bi
                 onClick={() => setSelectedIndex(idx)}
                 className={`shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all duration-150 cursor-pointer ${
                   idx === selectedIndex
-                    ? "border-emerald-500 shadow-md scale-105"
-                    : "border-slate-200 hover:border-emerald-300 hover:scale-105"
+                    ? "border-emerald-600 scale-105"
+                    : "border-slate-300 hover:border-emerald-500 hover:scale-105"
                 }`}
                 title={`รูปที่ ${idx + 1}`}
               >
@@ -154,7 +154,7 @@ export function BillImageThumbnail({ value, compact = false, large = false }: Bi
               </button>
             ))}
             {imageUrls.length > 8 && (
-              <span className="shrink-0 w-12 h-12 rounded-lg border-2 border-slate-200 bg-slate-100 flex items-center justify-center text-xs text-slate-500">
+              <span className="shrink-0 w-12 h-12 rounded-lg border-2 border-slate-300 bg-slate-200 flex items-center justify-center text-xs text-slate-800 font-bold">
                 +{imageUrls.length - 8}
               </span>
             )}

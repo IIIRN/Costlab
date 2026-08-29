@@ -1,12 +1,12 @@
 import { TABLES } from "@/lib/config";
 import { MainDashboardClient } from "@/components/dashboards/MainDashboardClient";
-import { isCommittedBill, isUnpaidBill, normalizeBillStatus } from "@/lib/bill-status";
+import { isCommittedBill, isUnpaidBill, normalizeBillStatus, formatVatDisplay, formatDeductDisplay, formatCreditDisplay } from "@/lib/bill-status";
 import { computeBillTransferAmount, hydrateProjectRowsForList, isCreditActive, isDeductActive, isVatActive } from "@/lib/project-summary";
 import { WithdrawDashboardClient, type WithdrawFilters } from "@/components/dashboards/WithdrawDashboardClient";
 import { WorkStatusDashboardClient } from "@/components/dashboards/WorkStatusDashboardClient";
 import { BillFollowDashboardClient } from "@/components/dashboards/BillFollowDashboardClient";
 import { money, toNumber } from "@/lib/numbers";
-import { getRows } from "@/lib/db";
+import { getRows, getWithdrawBills, getBillFollowBills } from "@/lib/db";
 import { getUsersListFromSupabase } from "@/lib/supabase-db";
 import { cookies } from "next/headers";
 import type { SheetRow } from "@/lib/types";
@@ -18,7 +18,7 @@ export async function MainDashboard() {
 
 export async function WithdrawDashboard({ filters = {} }: { filters?: WithdrawFilters }) {
   const [dataRows, peopleRows, usersList] = await Promise.all([
-    safeRows(TABLES.DATA),
+    getWithdrawBills(),
     safeRows(TABLES.PEOPLE),
     getUsersListFromSupabase()
   ]);
@@ -46,7 +46,7 @@ export async function WithdrawDashboard({ filters = {} }: { filters?: WithdrawFi
 }
 
 export async function BillFollowDashboard() {
-  const [dataRows, peopleRows] = await Promise.all([safeRows(TABLES.DATA), safeRows(TABLES.PEOPLE)]);
+  const [dataRows, peopleRows] = await Promise.all([getBillFollowBills(), safeRows(TABLES.PEOPLE)]);
   const rawRows = hydrateDataRows(dataRows).filter(isCommittedBill);
   const requesterNames = requesterNameMap(peopleRows);
   
@@ -186,10 +186,10 @@ function FollowPanel({ title, count, requesterNames, rows }: { title: string; co
                   <td className="py-2 px-3 border-r border-slate-100 text-slate-600">{requesterName(row["ผู้เบิก"], requesterNames) || "-"}</td>
                   <td className="py-2 px-3 border-r border-slate-100 text-right text-slate-900">{money(row["ยอดเงิน"])}</td>
                   <td className="py-2 px-3">
-                    <div className="flex flex-wrap gap-1 text-xs ">
-                      <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200">vat {formatCell(row.vat) || "-"}</span>
-                      <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200">หัก {formatCell(row["หัก"]) || "-"}</span>
-                      {hasValue(row["เครดิต"]) ? <span className="bg-slate-100 text-slate-800 px-1.5 py-0.5 rounded border border-slate-300">เครดิต {formatCell(row["เครดิต"])}</span> : null}
+                    <div className="flex flex-wrap gap-1 text-xs">
+                      {row.vat ? <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200">{formatVatDisplay(row.vat)}</span> : null}
+                      {row["หัก"] ? <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200">{formatDeductDisplay(row["หัก"])}</span> : null}
+                      {hasValue(row["เครดิต"]) ? <span className="bg-slate-100 text-slate-800 px-1.5 py-0.5 rounded border border-slate-300">{formatCreditDisplay(row["เครดิต"])}</span> : null}
                     </div>
                   </td>
                 </tr>

@@ -1,5 +1,5 @@
 import { cached, clearCache } from "@/lib/cache";
-import { TABLE_KEYS } from "@/lib/config";
+import { TABLE_KEYS, TABLES } from "@/lib/config";
 import type { RefOption, TableRow, SheetRow } from "@/lib/types";
 import {
   bulkInsertRowsToSupabase,
@@ -8,6 +8,9 @@ import {
   deleteStorageFilesFromSupabase,
   getDbTableName,
   getRowsFromSupabase,
+  getWithdrawBillsFromSupabase,
+  getBillFollowRowsFromSupabase,
+  getDashboardFinancialSummaryFromSupabase,
   getSystemOptionsFromSupabase,
   insertAuditLogToSupabase,
   insertRowToSupabase,
@@ -65,6 +68,8 @@ export function invalidateTableCache(tableName: string) {
     clearCache("rows:Data");
     clearCache("rows:DATA");
     clearCache("rows:data");
+    clearCache("bills:withdraw");
+    clearCache("bills:bill_follow");
     clearCache("headers:bills");
     clearCache("headers:Data");
     clearCache("dashboard");
@@ -159,6 +164,48 @@ export async function getRows(tableName: string, _ttlMs?: number, maxRows = 10_0
 export const fetchTableRows = getRows;
 
 /**
+ * Fetch bills with active withdraw status directly using database index
+ */
+export async function getWithdrawBills(maxRows = 3_000): Promise<TableRow[]> {
+  return cached(`bills:withdraw:${maxRows}`, 180_000, async () => {
+    try {
+      const rows = await getWithdrawBillsFromSupabase(maxRows);
+      return rows || [];
+    } catch (e) {
+      console.warn("getWithdrawBills failed, falling back to full table:", e);
+      const allRows = await getRows("Data", 180_000, maxRows);
+      return allRows;
+    }
+  });
+}
+
+/**
+ * Fetch bills with active VAT, withholding tax, or credit directly using database index
+ */
+export async function getBillFollowBills(maxRows = 3_000): Promise<TableRow[]> {
+  return cached(`bills:bill_follow:${maxRows}`, 180_000, async () => {
+    try {
+      const rows = await getBillFollowRowsFromSupabase(maxRows);
+      return rows || [];
+    } catch (e) {
+      console.warn("getBillFollowBills failed, falling back to full table:", e);
+      const allRows = await getRows("Data", 180_000, maxRows);
+      return allRows;
+    }
+  });
+}
+
+/**
+ * Fetch high-speed financial aggregation directly from PostgreSQL RPC
+ */
+export async function getDashboardFinancialSummary(startDate?: string, endDate?: string, projectId?: string) {
+  const cacheKey = `summary:fin:${startDate || "all"}:${endDate || "all"}:${projectId || "all"}`;
+  return cached(cacheKey, 180_000, async () => {
+    return getDashboardFinancialSummaryFromSupabase(startDate, endDate, projectId);
+  });
+}
+
+/**
  * Get columns/headers for a Supabase table
  */
 export async function getHeaders(tableName: string): Promise<string[]> {
@@ -200,7 +247,9 @@ export async function listRefOptions(tableName: string, options: {
 
   const keyColumn = options.keyColumn || TABLE_KEYS[tableName] || "id";
   const labelColumn = options.labelColumn || keyColumn;
-  const rowColumns = unique([keyColumn, labelColumn, "image", "image_url", ...(options.rowColumns || [])]);
+  const isProjectTable = tableName === TABLES.PROJECT || tableName === "Project" || tableName === "projects";
+  const projectExtraCols = isProjectTable ? ["งบไม่เกินค่าแรง", "งบไม่เกิน", "ยอดงาน", "คุมงบประเภทงาน", "งบไม่เกินค่าของ"] : [];
+  const rowColumns = unique([keyColumn, labelColumn, "image", "image_url", ...projectExtraCols, ...(options.rowColumns || [])]);
 
   return rows
     .filter(row => row[keyColumn] !== "" && row[keyColumn] !== undefined && row[keyColumn] !== null)
@@ -261,9 +310,12 @@ export async function bulkAppendRows(tableName: string, rows: TableRow[]) {
 /**
  * Update an existing row in Supabase by primary key / ID
  */
-export async function updateRow(tableName: string, sheetRow: number, patch: TableRow) {
+export async function updateRow(tableName: string, sheetRow: number | string, patch: TableRow) {
   const keyColumn = TABLE_KEYS[tableName] || "id";
-  const keyValue = patch[keyColumn] || patch.id || patch._sheetRow || sheetRow;
+  const rawTarget = (sheetRow !== 0 && sheetRow !== undefined && sheetRow !== null && String(sheetRow).trim() !== "" && String(sheetRow) !== "0")
+    ? sheetRow
+    : (patch[keyColumn] || patch.id || patch._sheetRow || sheetRow);
+  const keyValue = rawTarget;
 
   try {
     await updateRowInSupabase(tableName, keyColumn, keyValue, patch);

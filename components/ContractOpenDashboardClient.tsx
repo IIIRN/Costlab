@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowDownWideNarrow, ArrowUpWideNarrow, ChevronLeft, ChevronRight, Search, X } from "lucide-react";
+import { ArrowDownWideNarrow, ArrowUpWideNarrow, ChevronLeft, ChevronRight, Plus, Search, X } from "lucide-react";
 import { FormModal } from "@/components/FormModal";
 import { FORM_SCHEMAS } from "@/lib/schemas";
 import { TABLES } from "@/lib/config";
@@ -113,6 +113,16 @@ export function ContractOpenDashboardClient({
           title="สลับการเรียงลำดับ"
         >
           {sortDesc ? <ArrowDownWideNarrow size={14} className="text-slate-600" /> : <ArrowUpWideNarrow size={14} className="text-slate-600" />}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new CustomEvent("open-contract-form"))}
+          className="px-2.5 py-1.5 bg-[#0b3531] text-white rounded-lg text-xs font-medium flex items-center gap-1 shrink-0 cursor-pointer active:scale-95 shadow-2xs"
+          title="เปิดจ้างงานรับเหมา"
+        >
+          <Plus size={14} className="text-[#d4f54e]" />
+          <span>เปิดจ้าง</span>
         </button>
       </div>
 
@@ -396,6 +406,28 @@ export function ContractOpenDashboardClient({
           </>
         )}
       </div>
+
+      {/* Hidden Global & Mobile Modal Trigger for open-contract-form */}
+      <FormModal
+        tableName={TABLES.CONTRACT_WORK}
+        form={form}
+        buttonLabel="เปิดจ้างงาน"
+        title="เปิดจ้างงานรับเหมา"
+        submitPath="/api/rows"
+        openEventName="open-contract-form"
+        hideLauncher
+      />
+
+      {/* Hidden Edit Modal Trigger */}
+      <FormModal
+        tableName={TABLES.CONTRACT_WORK}
+        form={form}
+        buttonLabel="แก้ไข"
+        title="แก้ไขงานรับเหมา"
+        submitPath="/api/rows"
+        openEventName="open-edit-contract-form"
+        hideLauncher
+      />
     </div>
   );
 }

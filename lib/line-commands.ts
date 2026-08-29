@@ -12,7 +12,8 @@ import {
   createBillSearchResultFlex,
   isLineApproverAuthorized,
   getOperatorDisplayName,
-  getPeopleMap
+  getPeopleMap,
+  getBankInfoMap
 } from "@/lib/line";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { insertRowToSupabase } from "@/lib/supabase-db";
@@ -493,12 +494,12 @@ export async function handleLineCommand(
         .replace(/^ส่งไปเพื่ออนุมัติบิลลำดับที่:|^ส่งไปเพื่ออนุมัติ:|^ส่งไปเพื่ออนุมัติบิล:|^ส่งไปเพื่ออนุมัติ|^ส่งต่อให้ผู้อนุมัติ:|^ส่งต่อให้ผู้อนุมัติ|^ส่งต่อผู้อนุมัติ:|^ส่งต่อผู้อนุมัติ|^ส่งต่อ:|^ส่งให้ผู้อนุมัติ:|^ส่งให้ผู้อนุมัติ|^ส่งขออนุมัติ:|^ส่งขออนุมัติ|^ส่งอนุมัติ:|^ส่งอนุมัติบิล:|^ส่งอนุมัติบิลลำดับที่:|^ส่งบิลเพื่ออนุมัติ:/i, "")
         .trim();
 
-      const { getRowsFromSupabase } = await import("@/lib/supabase-db");
+      const { getRows } = await import("@/lib/db");
       const { getLineConfigIds, createWithdrawOwnerFlex, sendFlexMessageDetailed } = await import("@/lib/line");
       const { normalizeBillStatus } = await import("@/lib/bill-status");
       const [rawBills, peopleRows] = await Promise.all([
-        getRowsFromSupabase("Data", 1000),
-        getRowsFromSupabase("master_members", 500).catch(() => []),
+        getRows("Data", 60_000, 1000),
+        getRows("master_members", 300_000, 500).catch(() => []),
       ]);
 
       const peopleMap = new Map<string, string>();
@@ -573,8 +574,8 @@ export async function handleLineCommand(
         return true;
       }
 
-      const resolvedPeopleMap = await getPeopleMap();
-      const flexForOwner = createWithdrawOwnerFlex(pendingBills, resolvedPeopleMap);
+      const [resolvedPeopleMap, bankInfoMap] = await Promise.all([getPeopleMap(), getBankInfoMap()]);
+      const flexForOwner = createWithdrawOwnerFlex(pendingBills, resolvedPeopleMap, bankInfoMap);
       const totalAmount = pendingBills.reduce((sum, b) => sum + Number(b["ยอดเงิน"] || b.amount || 0), 0);
       const amountStr = totalAmount.toLocaleString("th-TH");
 
@@ -653,11 +654,12 @@ export async function handleLineCommand(
       const targetIdList = cleanTarget.split(/[,,\s]+/).map(id => id.trim()).filter(Boolean);
 
       const { normalizeBillStatus } = await import("@/lib/bill-status");
-      const { getRowsFromSupabase, updateRowInSupabase } = await import("@/lib/supabase-db");
+      const { updateRowInSupabase } = await import("@/lib/supabase-db");
+      const { getRows, invalidateTableCache } = await import("@/lib/db");
       const { getLineConfigIds, createWithdrawApproverFlex, sendFlexMessageDetailed } = await import("@/lib/line");
       const [rawBills, peopleRows] = await Promise.all([
-        getRowsFromSupabase("Data", 1000),
-        getRowsFromSupabase("master_members", 500).catch(() => []),
+        getRows("Data", 60_000, 1000),
+        getRows("master_members", 300_000, 500).catch(() => []),
       ]);
 
       function checkIsSubBill(b: any): boolean {
@@ -744,8 +746,8 @@ export async function handleLineCommand(
 
       // When Owner Approves successfully, forward Multi-Item Flex Message to Approvers (LINE_USER_ID_APPROVER list)
       if (isApprove && approverIds.length > 0) {
-        const peopleMap = await getPeopleMap();
-        const flexForApprover = createWithdrawApproverFlex(targetBills, peopleMap);
+        const [peopleMap, bankInfoMap] = await Promise.all([getPeopleMap(), getBankInfoMap()]);
+        const flexForApprover = createWithdrawApproverFlex(targetBills, peopleMap, bankInfoMap);
         const totalAmtStr = totalAmount.toLocaleString("th-TH");
         const altText = targetBills.length === 1
           ? `✅ รายการอนุมัติสำเร็จ (รอปิดงาน) #${targetBills[0]["ลำดับ"] || targetBills[0].id || ""} (฿${totalAmtStr})`
@@ -787,8 +789,8 @@ export async function handleLineCommand(
           if (recipients.size === 0 && validGroup) recipients.add(validGroup);
 
           if (recipients.size > 0) {
-            const peopleMap = await getPeopleMap();
-            const flexForRequester = createWithdrawCompletedRequesterFlex(reqBills, peopleMap);
+            const [peopleMap, bankInfoMap] = await Promise.all([getPeopleMap(), getBankInfoMap()]);
+            const flexForRequester = createWithdrawCompletedRequesterFlex(reqBills, peopleMap, bankInfoMap);
             const totalAmt = reqBills.reduce((sum, b) => sum + Number(b["ยอดเงิน"] || b.amount || 0), 0);
             const totalAmtStr = totalAmt.toLocaleString("th-TH");
             const altText = reqBills.length === 1
@@ -803,7 +805,7 @@ export async function handleLineCommand(
       }
 
       const formattedTotal = totalAmount.toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      const defaultRole = isApprove ? "เจ้าของโครงการ" : "ผู้อนุมัติ";
+      const defaultRole = isApprove ? "ผู้อนุมัติ" : "ฝ่ายการเงิน";
       const operatorName = await getOperatorDisplayName(userId, defaultRole);
 
       await replyTextMessage(
@@ -840,17 +842,17 @@ export async function handleLineCommand(
         .replace(/^หลัก:|^ย่อย:|^บิลหลัก:|^บิลย่อย:|^ทั้งหมด:|^บิล:|^bill:|^หลัก$|^ย่อย$|^บิลหลัก$|^บิลย่อย$/i, "")
         .trim();
 
-      // ดึงข้อมูลบิลและตารางอ้างอิงทั้งหมดเพื่อ hydrate ข้อมูลให้เหมือนหน้าเว็บ 100%
-      const { getRowsFromSupabase } = await import("@/lib/supabase-db");
+      // ดึงข้อมูลบิลและตารางอ้างอิงทั้งหมดผ่าน In-Memory Cache เพื่อความเร็วสูงสุด (< 2ms)
+      const { getRows } = await import("@/lib/db");
       const { hydrateBillRows } = await import("@/lib/formulas");
 
       const [rawBills, peopleRows, projectRows, storeRows, contractRows, contractorRows] = await Promise.all([
-        getRowsFromSupabase("Data", 1000),
-        getRowsFromSupabase("master_members", 500).catch(() => []),
-        getRowsFromSupabase("Project", 500).catch(() => []),
-        getRowsFromSupabase("ร้านค้า", 500).catch(() => []),
-        getRowsFromSupabase("งานรับเหมา", 500).catch(() => []),
-        getRowsFromSupabase("รับเหมา", 500).catch(() => []),
+        getRows("Data", 60_000, 1000),
+        getRows("master_members", 300_000, 500).catch(() => []),
+        getRows("Project", 180_000, 500).catch(() => []),
+        getRows("ร้านค้า", 300_000, 500).catch(() => []),
+        getRows("งานรับเหมา", 180_000, 500).catch(() => []),
+        getRows("รับเหมา", 300_000, 500).catch(() => []),
       ]);
 
       // สร้าง Map สำหรับแปลง รหัสพนักงาน <-> ชื่อเล่น / ชื่อ-นามสกุล
@@ -958,7 +960,8 @@ export async function handleLineCommand(
           ? `ผลการค้นหาบิล${isSub ? "ย่อย" : isMain ? "หลัก" : ""}ของ "${filterQuery}"`
           : `รายการเบิกเงิน${isSub ? "บิลย่อย" : isMain ? "บิลหลัก" : "บิล"}`;
 
-      const flexPayload = createBillSearchResultFlex(flexTitle, bills, isSub, isMain, totalCount, totalSumAmount, filterQuery);
+      const bankInfoMap = await getBankInfoMap();
+      const flexPayload = createBillSearchResultFlex(flexTitle, bills, isSub, isMain, totalCount, totalSumAmount, filterQuery, peopleMap, bankInfoMap);
 
       const sent = await replyFlexMessage(replyToken, `🧾 ${flexTitle} (${bills.length} รายการ)`, flexPayload);
       if (!sent && replyToken) {

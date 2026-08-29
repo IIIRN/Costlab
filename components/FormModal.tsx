@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { Fragment, memo, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
@@ -26,14 +26,27 @@ import {
   Trash2,
   X
 } from "lucide-react";
-import { LoadingState } from "@/components/LoadingState";
+import dynamic from "next/dynamic";
 import { TABLES } from "@/lib/config";
 import type { FieldSchema, RefOption, SheetRow } from "@/lib/types";
 import { normalizeDateToIso, parseDateStrict, toInputDateValue } from "@/lib/dates";
 import { imagePreviewUrl } from "@/components/BillImageThumbnail";
-import { ProjectBudgetAllocator } from "@/components/forms/ProjectBudgetAllocator";
-import { BillCategoryBudgetGuardrail } from "@/components/forms/BillCategoryBudgetGuardrail";
 import { compressImageFiles } from "@/lib/image-compressor";
+
+const ProjectBudgetAllocator = dynamic(
+  () => import("@/components/forms/ProjectBudgetAllocator").then(mod => mod.ProjectBudgetAllocator),
+  { ssr: false }
+);
+
+const BillCategoryBudgetGuardrail = dynamic(
+  () => import("@/components/forms/BillCategoryBudgetGuardrail").then(mod => mod.BillCategoryBudgetGuardrail),
+  { ssr: false }
+);
+
+const ContractLaborBudgetGuardrail = dynamic(
+  () => import("@/components/forms/ContractLaborBudgetGuardrail").then(mod => mod.ContractLaborBudgetGuardrail),
+  { ssr: false }
+);
 
 type FormPayload = {
   tableName: string;
@@ -175,24 +188,6 @@ function MultiLineItemsBuilder({
             <span>รายการสินค้า ({items.length})</span>
           </span>
         </div>
-
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-2 py-0.5 text-slate-500 hover:text-slate-800 bg-white border border-slate-200 text-xs rounded-md transition cursor-pointer"
-          >
-            รายการเดี่ยว
-          </button>
-          <button
-            type="button"
-            onClick={onAdd}
-            className="px-2 py-0.5 bg-emerald-700 hover:bg-emerald-800 text-white font-medium text-xs rounded-md transition cursor-pointer flex items-center gap-1 shadow-2xs"
-          >
-            <Plus size={12} />
-            <span>+ เพิ่ม</span>
-          </button>
-        </div>
       </div>
 
       {/* Minimalist Line Items Rows */}
@@ -268,7 +263,8 @@ function MultiLineItemsBuilder({
           onClick={onAdd}
           className="text-xs text-emerald-800 hover:text-emerald-900 font-medium flex items-center gap-1 cursor-pointer"
         >
-          <Plus size={12} /> <span>+ เพิ่มรายการ</span>
+          <Plus size={13} className="shrink-0" />
+          <span>เพิ่มรายการ</span>
         </button>
 
         <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-900 px-2.5 py-1 rounded-lg border border-emerald-200 text-xs">
@@ -496,9 +492,33 @@ export function FormModal({
     setError("");
     setSuccessMessage("");
     setEnumListSearch({});
-    setAttachedFilesByField({});
-    const targetRowKey = detail?.sheetRow ?? detail?.row?._sheetRow ?? detail?.row?.id ?? detail?.row?.id_bank ?? detail?.row?.id_store ?? detail?.row?.id_Contractor ?? detail?.row?.id_car ?? detail?.row?.id_cus ?? detail?.row?.id_Company;
+    const targetRowKey = detail?.sheetRow ?? detail?.row?._sheetRow ?? detail?.row?.id ?? detail?.row?.["รหัสพนักงาน"] ?? detail?.row?.id_people ?? detail?.row?.["ID Project"] ?? detail?.row?.id_Conwork ?? detail?.row?.id_bank ?? detail?.row?.id_store ?? detail?.row?.id_Contractor ?? detail?.row?.id_car ?? detail?.row?.id_cus ?? detail?.row?.id_Company ?? detail?.row?.["ลำดับ"];
     setEditSheetRow(detail?.row ? (targetRowKey !== undefined && targetRowKey !== null ? (typeof targetRowKey === "number" || typeof targetRowKey === "string" ? targetRowKey : String(targetRowKey)) : 1) : null);
+
+    if (detail?.row) {
+      const rawItems = detail.row.items || (detail.row.data as any)?.items;
+      let parsedItems: MultiLineItem[] = [];
+      if (Array.isArray(rawItems)) {
+        parsedItems = rawItems;
+      } else if (typeof rawItems === "string") {
+        try {
+          const parsed = JSON.parse(rawItems);
+          if (Array.isArray(parsed)) parsedItems = parsed;
+        } catch {}
+      }
+
+      if (parsedItems.length > 0) {
+        setMultiLineItems(parsedItems);
+        setIsMultiItemMode(true);
+      } else {
+        setMultiLineItems([]);
+        setIsMultiItemMode(false);
+      }
+    } else {
+      setMultiLineItems([]);
+      setIsMultiItemMode(false);
+    }
+
     setValues(nextValues);
     setResetKey(k => k + 1);
   }
@@ -624,7 +644,7 @@ export function FormModal({
     Object.entries(submitValues).forEach(([key, value]) => body.append(key, value));
     if (isEditing && editSheetRow !== null) body.set("sheetRow", String(editSheetRow));
 
-    if (isDataForm && !isEditing && isMultiItemMode && multiLineItems.length > 1) {
+    if (isDataForm && isMultiItemMode && multiLineItems.length > 0) {
       const invalidItem = multiLineItems.find(i => !i.amount || (Number(i.amount) || 0) <= 0);
       if (invalidItem) {
         setError("กรุณาระบุยอดเงินสำหรับทุกรายการสินค้าในบิล");
@@ -632,20 +652,44 @@ export function FormModal({
         return;
       }
 
-      const rowsToInsert = multiLineItems.map((item) => {
-        const itemValues = { ...submitValues };
-        itemValues["สินค้า"] = item.category || submitValues["สินค้า"] || "";
-        itemValues["รายละเอียดงาน"] = submitValues["รายละเอียดงาน"] || "";
-        itemValues["ประเภท"] = item.categoryType || submitValues["ประเภท"] || "1.ค่าของ";
-        itemValues["ค่าของ"] = item.categoryType === "1.ค่าของ" ? item.amount : "";
-        itemValues["เครื่องมือ"] = item.categoryType === "7.เครื่องมือ" ? item.amount : "";
-        itemValues["อื่นๆ"] = item.categoryType === "8.อื่นๆ" ? item.amount : "";
-        itemValues["ยอดเงิน"] = item.amount;
-        itemValues["ยอดโอน"] = item.amount;
-        return itemValues;
-      });
+      if (!isEditing && multiLineItems.length > 1) {
+        const rowsToInsert = multiLineItems.map((item) => {
+          const itemValues = { ...submitValues };
+          itemValues["สินค้า"] = item.category || submitValues["สินค้า"] || "";
+          itemValues["รายละเอียดงาน"] = submitValues["รายละเอียดงาน"] || "";
+          itemValues["ประเภท"] = item.categoryType || submitValues["ประเภท"] || "1.ค่าของ";
+          itemValues["ค่าของ"] = item.categoryType === "1.ค่าของ" ? item.amount : "";
+          itemValues["เครื่องมือ"] = item.categoryType === "7.เครื่องมือ" ? item.amount : "";
+          itemValues["อื่นๆ"] = item.categoryType === "8.อื่นๆ" ? item.amount : "";
+          itemValues["ยอดเงิน"] = item.amount;
+          itemValues["ยอดโอน"] = item.amount;
+          itemValues["items"] = JSON.stringify([item]);
+          return itemValues;
+        });
 
-      body.set("rows", JSON.stringify(rowsToInsert));
+        body.set("rows", JSON.stringify(rowsToInsert));
+      } else {
+        const matSum = multiLineItems.filter(i => i.categoryType === "1.ค่าของ").reduce((s, i) => s + (Number(i.amount) || 0), 0);
+        const toolSum = multiLineItems.filter(i => i.categoryType === "7.เครื่องมือ").reduce((s, i) => s + (Number(i.amount) || 0), 0);
+        const otherSum = multiLineItems.filter(i => i.categoryType === "8.อื่นๆ").reduce((s, i) => s + (Number(i.amount) || 0), 0);
+        const totalSum = multiLineItems.reduce((s, i) => s + (Number(i.amount) || 0), 0);
+
+        submitValues["ค่าของ"] = matSum > 0 ? String(matSum) : "";
+        submitValues["เครื่องมือ"] = toolSum > 0 ? String(toolSum) : "";
+        submitValues["อื่นๆ"] = otherSum > 0 ? String(otherSum) : "";
+        submitValues["ยอดเงิน"] = String(totalSum);
+        submitValues["ยอดโอน"] = String(totalSum);
+        submitValues["สินค้า"] = multiLineItems.map(i => i.category).filter(Boolean).join(", ") || submitValues["สินค้า"] || "";
+        submitValues["items"] = JSON.stringify(multiLineItems);
+
+        body.set("ค่าของ", submitValues["ค่าของ"]);
+        body.set("เครื่องมือ", submitValues["เครื่องมือ"]);
+        body.set("อื่นๆ", submitValues["อื่นๆ"]);
+        body.set("ยอดเงิน", submitValues["ยอดเงิน"]);
+        body.set("ยอดโอน", submitValues["ยอดโอน"]);
+        body.set("สินค้า", submitValues["สินค้า"]);
+        body.set("items", JSON.stringify(multiLineItems));
+      }
     }
 
     let hasFiles = false;
@@ -787,7 +831,7 @@ export function FormModal({
         </div>
       ) : null}
       {open ? (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150" role="presentation">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/65 backdrop-blur-md sm:backdrop-blur-lg animate-in fade-in duration-150" role="presentation">
           <form
             className={`w-full bg-white rounded-t-2xl sm:rounded-xl shadow-2xl overflow-hidden flex flex-col border border-slate-300 h-[92vh] sm:h-auto sm:max-h-[92vh] ${
               relaxed ? "max-w-5xl" : "max-w-3xl"
@@ -816,6 +860,13 @@ export function FormModal({
               </button>
             </header>
 
+            {/* Sleek Top Progress Loading Indicator when Saving */}
+            {saving ? (
+              <div className="h-1 w-full bg-emerald-100 overflow-hidden shrink-0">
+                <div className="h-full bg-emerald-600 w-full animate-pulse" />
+              </div>
+            ) : null}
+
             {/* Form Content */}
             <div ref={formBodyRef} className="p-3.5 sm:p-6 overflow-y-auto flex-1 space-y-3.5 bg-slate-50/70 overscroll-contain">
               {loadingSchema || !activeForm ? (
@@ -826,13 +877,7 @@ export function FormModal({
                 </div>
               ) : (
                 <>
-                  {saving ? (
-                    <div className="absolute inset-0 z-20 bg-white/80 backdrop-blur-2xs flex items-center justify-center">
-                      <LoadingState title="กำลังบันทึก" message="กำลังอัปโหลดและบันทึกข้อมูล..." compact />
-                    </div>
-                  ) : null}
-
-                  <fieldset className="space-y-4 border-0 p-0 m-0" disabled={saving}>
+                  <fieldset className={`space-y-4 border-0 p-0 m-0 ${saving ? "pointer-events-none opacity-80" : ""}`} disabled={saving}>
                     {/* Top Notification Alerts */}
                     {successMessage ? (
                       <div className="p-3 bg-emerald-50 text-emerald-800 rounded-lg border border-emerald-200 text-xs flex items-center justify-between gap-2 animate-in fade-in duration-150 font-normal">
@@ -840,22 +885,14 @@ export function FormModal({
                           <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
                           <span className="truncate sm:whitespace-normal">{successMessage}</span>
                         </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <button
-                            type="button"
-                            onClick={handleClose}
-                            className="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-md text-xs font-medium transition cursor-pointer shadow-2xs whitespace-nowrap"
-                          >
-                            ปิดฟอร์มดูตาราง
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setSuccessMessage("")}
-                            className="text-emerald-600 hover:text-emerald-800 transition cursor-pointer p-0.5"
-                          >
-                            <X size={14} />
-                          </button>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setSuccessMessage("")}
+                          className="text-emerald-600 hover:text-emerald-800 transition cursor-pointer p-0.5 ml-auto"
+                          title="ปิดการแจ้งเตือน"
+                        >
+                          <X size={14} />
+                        </button>
                       </div>
                     ) : null}
 
@@ -903,7 +940,7 @@ export function FormModal({
                                   <h4 className="text-xs text-slate-900 m-0 font-medium">{section.title}</h4>
                                 </div>
 
-                                {section.id === "vendor" && isStoreVendor && !isEditing ? (
+                                {section.id === "vendor" && isStoreVendor ? (
                                   isMultiItemMode ? (
                                     <button
                                       type="button"
@@ -926,28 +963,23 @@ export function FormModal({
                               </div>
                               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
                                 {sectionFields.map(field => (
-                                  <div className={`${getFieldClassName(field)} space-y-1 min-w-0 w-full overflow-hidden`} key={field.name}>
-                                    <label className="text-xs font-medium text-slate-700 block">
-                                      {getFieldLabel(field)}
-                                      {field.required ? <span className="text-rose-600 font-medium ml-0.5">*</span> : ""}
-                                    </label>
-                                    {renderField(
-                                      field,
-                                      activeForm,
-                                      values[field.name] || "",
-                                      values,
-                                      isEditing,
-                                      value => updateValue(field, value),
-                                      enumListSearch[field.name] || "",
-                                      value => setEnumListSearch(current => ({ ...current, [field.name]: value })),
-                                      resetKey,
-                                      attachedFilesByField[field.name] || [],
-                                      files => setAttachedFilesByField(current => ({ ...current, [field.name]: files }))
-                                    )}
-                                  </div>
+                                  <MemoizedFormField
+                                    key={field.name}
+                                    field={field}
+                                    activeForm={activeForm}
+                                    value={values[field.name] || ""}
+                                    currentValues={values}
+                                    isEditing={isEditing}
+                                    onValueChange={value => updateValue(field, value)}
+                                    enumSearchValue={enumListSearch[field.name] || ""}
+                                    onEnumSearchChange={value => setEnumListSearch(current => ({ ...current, [field.name]: value }))}
+                                    resetKey={resetKey}
+                                    attachedFiles={attachedFilesByField[field.name] || []}
+                                    onAttachedFilesChange={files => setAttachedFilesByField(current => ({ ...current, [field.name]: files }))}
+                                  />
                                 ))}
 
-                                {section.id === "vendor" && isStoreVendor && !isEditing && isMultiItemMode ? (
+                                {section.id === "vendor" && isStoreVendor && isMultiItemMode ? (
                                   <MultiLineItemsBuilder
                                     items={multiLineItems}
                                     productOptions={productOptions}
@@ -975,25 +1007,20 @@ export function FormModal({
                               </div>
                               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
                                 {unsectionedFields.map(field => (
-                                  <div className={`${getFieldClassName(field)} space-y-1 min-w-0 w-full overflow-hidden`} key={field.name}>
-                                    <label className="text-xs font-medium text-slate-700 block">
-                                      {getFieldLabel(field)}
-                                      {field.required ? <span className="text-rose-600 font-medium ml-0.5">*</span> : ""}
-                                    </label>
-                                    {renderField(
-                                      field,
-                                      activeForm,
-                                      values[field.name] || "",
-                                      values,
-                                      isEditing,
-                                      value => updateValue(field, value),
-                                      enumListSearch[field.name] || "",
-                                      value => setEnumListSearch(current => ({ ...current, [field.name]: value })),
-                                      resetKey,
-                                      attachedFilesByField[field.name] || [],
-                                      files => setAttachedFilesByField(current => ({ ...current, [field.name]: files }))
-                                    )}
-                                  </div>
+                                  <MemoizedFormField
+                                    key={field.name}
+                                    field={field}
+                                    activeForm={activeForm}
+                                    value={values[field.name] || ""}
+                                    currentValues={values}
+                                    isEditing={isEditing}
+                                    onValueChange={value => updateValue(field, value)}
+                                    enumSearchValue={enumListSearch[field.name] || ""}
+                                    onEnumSearchChange={value => setEnumListSearch(current => ({ ...current, [field.name]: value }))}
+                                    resetKey={resetKey}
+                                    attachedFiles={attachedFilesByField[field.name] || []}
+                                    onAttachedFilesChange={files => setAttachedFilesByField(current => ({ ...current, [field.name]: files }))}
+                                  />
                                 ))}
                               </div>
                             </div>
@@ -1004,24 +1031,51 @@ export function FormModal({
                       /* Standard Grid for Non-Data forms */
                       <div className="bg-white rounded-lg p-4 border border-slate-200 shadow-2xs">
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                          {visibleFields.map(field => (
-                            <div className={`${getFieldClassName(field)} space-y-1.5 min-w-0 w-full overflow-hidden`} key={field.name}>
-                              <label className="text-xs font-medium text-slate-700 block">{getFieldLabel(field)}{field.required ? <span className="text-rose-600 font-medium ml-0.5">*</span> : ""}</label>
-                              {renderField(
-                                field,
-                                activeForm,
-                                values[field.name] || "",
-                                values,
-                                isEditing,
-                                value => updateValue(field, value),
-                                enumListSearch[field.name] || "",
-                                value => setEnumListSearch(current => ({ ...current, [field.name]: value })),
-                                resetKey,
-                                attachedFilesByField[field.name] || [],
-                                files => setAttachedFilesByField(current => ({ ...current, [field.name]: files }))
-                              )}
-                            </div>
-                          ))}
+                          {visibleFields.map(field => {
+                            const isContractWorkForm =
+                              activeForm.tableName === TABLES.CONTRACT_WORK ||
+                              activeForm.tableName === "Contract_work" ||
+                              activeForm.tableName === "contract_works" ||
+                              activeForm.tableName === "งานรับเหมา";
+                            const isHireAmountField = isContractWorkForm && field.name === "ยอดเงินจ้าง";
+
+                            return (
+                              <Fragment key={field.name}>
+                                <div
+                                  className={`${getFieldClassName(field)} min-w-0 w-full overflow-hidden`}
+                                >
+                                  <MemoizedFormField
+                                    field={field}
+                                    activeForm={activeForm}
+                                    value={values[field.name] || ""}
+                                    currentValues={values}
+                                    isEditing={isEditing}
+                                    onValueChange={value => updateValue(field, value)}
+                                    enumSearchValue={enumListSearch[field.name] || ""}
+                                    onEnumSearchChange={value => setEnumListSearch(current => ({ ...current, [field.name]: value }))}
+                                    resetKey={resetKey}
+                                    attachedFiles={attachedFilesByField[field.name] || []}
+                                    onAttachedFilesChange={files => setAttachedFilesByField(current => ({ ...current, [field.name]: files }))}
+                                  />
+                                </div>
+
+                                {isHireAmountField && (
+                                  <div className="col-span-1 sm:col-span-2 lg:col-span-2 flex flex-col justify-end">
+                                    <ContractLaborBudgetGuardrail
+                                      projectId={values["ID Project"]}
+                                      currentHireAmount={values["ยอดเงินจ้าง"]}
+                                      excludeConworkId={isEditing ? String(editSheetRow || values["id_Conwork"] || "") : undefined}
+                                      projectRow={
+                                        activeForm.refOptions["ID Project"]?.find(
+                                          opt => String(opt.value) === String(values["ID Project"]) || String(opt.label) === String(values["ID Project"])
+                                        )?.row
+                                      }
+                                    />
+                                  </div>
+                                )}
+                              </Fragment>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
@@ -1062,10 +1116,19 @@ export function FormModal({
                 <button
                   type={submitPath ? "submit" : "button"}
                   disabled={saving || loadingSchema || !activeForm || !submitPath}
-                  className="flex-1 sm:flex-initial h-11 sm:h-12 inline-flex items-center justify-center gap-2 px-6 rounded-xl text-sm sm:text-base text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer shadow-md active:scale-[0.99]"
+                  className="flex-1 sm:flex-initial h-11 sm:h-12 inline-flex items-center justify-center gap-2 px-6 rounded-xl text-sm sm:text-base text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-75 transition cursor-pointer shadow-md active:scale-[0.99]"
                 >
-                  <Save size={18} />
-                  <span>{saving ? "กำลังบันทึก..." : (isEditing ? "บันทึกการแก้ไข" : (isDataForm ? "บันทึกรายการบิล" : "บันทึกข้อมูล"))}</span>
+                  {saving ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
+                      <span>กำลังบันทึกข้อมูล...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save size={18} />
+                      <span>{isEditing ? "บันทึกการแก้ไข" : (isDataForm ? "บันทึกรายการบิล" : "บันทึกข้อมูล")}</span>
+                    </>
+                  )}
                 </button>
               </div>
             </footer>
@@ -1593,10 +1656,16 @@ function SearchableRefSelect({
       String(option.row.id) === value ||
       String(option.row.id_store) === value ||
       String(option.row["ชื่อร้านค้า"]) === value ||
+      String(option.row.id_Contractor) === value ||
+      String(option.row["ชื่อเล่น"]) === value ||
+      String(option.row["ชื่อ-นามสกุล"]) === value ||
       Object.values(option.row).some(v => v !== null && v !== undefined && String(v).trim() !== "" && String(v) === value)
     ))
   ) : undefined;
-  const selectedLabel = selectedOption ? optionLabel(selectedOption, name) : value;
+  const rawLabel = selectedOption ? optionLabel(selectedOption, name) : value;
+  const selectedLabel = (name === "id_Contractor" || name === "id_contractor" || name === "ผู้รับเหมา" || name === "ช่าง") && rawLabel.includes(" - ")
+    ? rawLabel.split(" - ").slice(1).join(" - ").trim() || rawLabel
+    : rawLabel;
   const selectedImgUrl = (selectedOption?.row?.image || selectedOption?.row?.image_url || "") as string;
 
   const [query, setQuery] = useState(selectedLabel);
@@ -1747,6 +1816,21 @@ function optionLabel(option: RefOption | undefined, fieldName?: string) {
   const val = String(option.value || "").trim();
   const rawLabel = String(option.label || option.value || "").trim();
 
+  if (
+    fieldName === "id_Contractor" ||
+    fieldName === "id_contractor" ||
+    fieldName === "ผู้รับเหมา" ||
+    fieldName === "ช่าง" ||
+    fieldName === "contractor" ||
+    fieldName === "id_Contractor_name"
+  ) {
+    if (rawLabel.includes(" - ")) {
+      const parts = rawLabel.split(" - ");
+      return parts.slice(1).join(" - ").trim() || rawLabel;
+    }
+    return rawLabel;
+  }
+
   if (fieldName === "ทะเบียน" || fieldName === "ทะเบียนรถ") {
     if (rawLabel.includes(" - ")) {
       const parts = rawLabel.split(" - ");
@@ -1765,6 +1849,18 @@ function optionLabel(option: RefOption | undefined, fieldName?: string) {
       const parts = rawLabel.split(" - ");
       return parts.slice(1).join(" - ").trim() || rawLabel;
     }
+    return rawLabel;
+  }
+
+  if (fieldName === "ธนาคาร" || fieldName === "bank" || fieldName === "bank_name" || fieldName === "id_bank") {
+    if (rawLabel.includes(" - ")) {
+      const parts = rawLabel.split(" - ");
+      return parts.slice(1).join(" - ").trim() || rawLabel;
+    }
+    const cleanBank = rawLabel.replace(/^Ba\d+\s*[-–—]?\s*/i, "").trim();
+    if (cleanBank) return cleanBank;
+    if (option.row?.["ชื่อธนาคาร"]) return String(option.row["ชื่อธนาคาร"]).trim();
+    if (option.row?.name) return String(option.row.name).trim();
     return rawLabel;
   }
 
@@ -1892,23 +1988,48 @@ function firstNonEmpty(...vals: unknown[]): string {
 function getRowStringValues(form: FormPayload, row: SheetRow) {
   const values: Record<string, string> = {};
 
+  const rawCategory = String(row["ประเภท"] || row.category || "").trim();
+  const rawLaborStatus = String(row["statusค่าแรง"] || row.labor_status || "").trim();
+  const hasLaborCost = Number(row["ค่าแรง"] || row.labor_cost || 0) > 0;
   const rawVendorType = firstNonEmpty(row["ร้านค้า/ผู้รับเหมา"], row.vendor_type);
-  const vendorType = rawVendorType || (firstNonEmpty(row["ผู้รับเหมา"], row.contractor_id) ? "ผู้รับเหมา" : "ร้านค้า");
+  const isContractor =
+    rawVendorType === "ผู้รับเหมา" ||
+    Boolean(firstNonEmpty(row["ผู้รับเหมา"], row.contractor_id)) ||
+    Boolean(firstNonEmpty(row["id_Conwork"], row["งานรับเหมา"])) ||
+    rawCategory.startsWith("2.") ||
+    rawCategory.includes("ค่าแรง") ||
+    rawCategory.includes("จ้าง") ||
+    Boolean(rawLaborStatus) ||
+    hasLaborCost;
+
+  const vendorType = isContractor ? "ผู้รับเหมา" : (rawVendorType || "ร้านค้า");
 
   form.schema.forEach(field => {
-    let rawVal = firstNonEmpty(row[field.name], form.initialValues[field.name]);
+    let rawVal = firstNonEmpty(
+      row[field.name],
+      (field.name === "รหัสพนักงาน" ? row.id : undefined),
+      (field.name === "id_store" ? row.id : undefined),
+      (field.name === "id_Contractor" ? row.id : undefined),
+      (field.name === "id_bank" ? row.id : undefined),
+      (field.name === "id_car" ? row.id : undefined),
+      (field.name === "id_cus" ? row.id : undefined),
+      (field.name === "id_Company" ? row.id : undefined),
+      (field.name === "id_Conwork" ? row.id : undefined),
+      (field.name === "ID Project" ? (row["ID Project"] || row.id || row.project_id) : undefined),
+      form.initialValues[field.name]
+    );
 
     if (form.tableName === TABLES.DATA || form.tableName === "Data") {
       if (field.name === "ร้านค้า/ผู้รับเหมา") {
         rawVal = vendorType;
       } else if (field.name === "ร้านค้า") {
-        rawVal = firstNonEmpty(row["ร้านค้า"], row.store_id, row["ร้าน/บุคคล"], row.vendor_or_person);
+        rawVal = vendorType === "ร้านค้า" ? firstNonEmpty(row["ร้านค้า"], row.store_id, row["ร้าน/บุคคล"], row.vendor_or_person) : "";
       } else if (field.name === "ผู้รับเหมา") {
-        rawVal = firstNonEmpty(row["ผู้รับเหมา"], row.contractor_id, row["ร้าน/บุคคล"], row.vendor_or_person);
+        rawVal = vendorType === "ผู้รับเหมา" ? firstNonEmpty(row["ผู้รับเหมา"], row.contractor_id, row["ร้าน/บุคคล"], row.vendor_or_person) : "";
       } else if (field.name === "สินค้า") {
-        rawVal = firstNonEmpty(row["สินค้า"], row.product, row["สินค้า/ทำงาน"], row.description);
+        rawVal = vendorType === "ร้านค้า" ? firstNonEmpty(row["สินค้า"], row.product, row["สินค้า/ทำงาน"], row.description) : "";
       } else if (field.name === "รายละเอียดงาน") {
-        rawVal = firstNonEmpty(row["รายละเอียดงาน"], row.work_details, row["สินค้า/ทำงาน"], row.description);
+        rawVal = vendorType === "ผู้รับเหมา" ? firstNonEmpty(row["รายละเอียดงาน"], row.work_details, row["สินค้า/ทำงาน"], row.description) : "";
       } else if (field.name === "รายการ") {
         rawVal = firstNonEmpty(row["รายการ"], row.sub_category, row.item_name);
       } else if (field.name === "ชื่อเครื่องมือ") {
@@ -2262,6 +2383,8 @@ function getFieldClassName(field: FieldSchema) {
 
 function getFieldLabel(field: FieldSchema) {
   if (field.name === "วันออก 3%") return "วันออก";
+  if (field.name === "id_Contractor" || field.name === "id_contractor") return "ผู้รับเหมา";
+  if (field.name === "id_Conwork" || field.name === "id_conwork") return "รหัสสัญญา";
   return field.name;
 }
 
@@ -2287,4 +2410,65 @@ function toNumber(value: unknown) {
 function formatDecimal(value: number) {
   return Number.isInteger(value) ? String(value) : value.toFixed(2);
 }
+
+type MemoizedFormFieldProps = {
+  field: FieldSchema;
+  activeForm: FormPayload;
+  value: string;
+  currentValues: Record<string, string>;
+  isEditing: boolean;
+  onValueChange: (value: string) => void;
+  enumSearchValue?: string;
+  onEnumSearchChange?: (value: string) => void;
+  resetKey?: number;
+  attachedFiles?: File[];
+  onAttachedFilesChange?: (files: File[]) => void;
+};
+
+const MemoizedFormField = memo(function MemoizedFormField({
+  field,
+  activeForm,
+  value,
+  currentValues,
+  isEditing,
+  onValueChange,
+  enumSearchValue = "",
+  onEnumSearchChange = () => {},
+  resetKey = 0,
+  attachedFiles = [],
+  onAttachedFilesChange = () => {},
+}: MemoizedFormFieldProps) {
+  return (
+    <div className={`${getFieldClassName(field)} space-y-1 min-w-0 w-full overflow-hidden`} key={field.name}>
+      <label className="text-xs font-medium text-slate-700 block">
+        {getFieldLabel(field)}
+        {field.required ? <span className="text-rose-600 font-medium ml-0.5">*</span> : ""}
+      </label>
+      {renderField(
+        field,
+        activeForm,
+        value,
+        currentValues,
+        isEditing,
+        onValueChange,
+        enumSearchValue,
+        onEnumSearchChange,
+        resetKey,
+        attachedFiles,
+        onAttachedFilesChange
+      )}
+    </div>
+  );
+}, (prev, next) => {
+  return (
+    prev.field === next.field &&
+    prev.value === next.value &&
+    prev.isEditing === next.isEditing &&
+    prev.enumSearchValue === next.enumSearchValue &&
+    prev.resetKey === next.resetKey &&
+    prev.attachedFiles === next.attachedFiles &&
+    prev.currentValues[prev.field.showIf?.column || ""] === next.currentValues[next.field.showIf?.column || ""] &&
+    prev.currentValues[prev.field.filterBy?.column || ""] === next.currentValues[next.field.filterBy?.column || ""]
+  );
+});
 

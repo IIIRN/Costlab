@@ -47,6 +47,8 @@ export const TABLE_KEYS: Record<string, string> = {
   [TABLES.PEOPLE]: "รหัสพนักงาน",
   master_members: "รหัสพนักงาน",
   PEOPLE: "รหัสพนักงาน",
+  people: "รหัสพนักงาน",
+  "Master Member": "รหัสพนักงาน",
 
   [TABLES.FILTER_MAIN]: "id_fmain",
 

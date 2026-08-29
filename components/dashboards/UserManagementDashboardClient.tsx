@@ -48,8 +48,8 @@ export type SystemUser = {
   lineUserId?: string;
   pictureUrl?: string;
   isOwner?: boolean;        // 👑 เจ้าของระบบ (OWN / Admin)
-  canApprove?: boolean;     // 🟢 มีสิทธิ์อนุมัติบิล
-  canCloseBill?: boolean;   // 🔵 มีสิทธิ์ปิดบิล / Approve จ่ายเงิน
+  canApprove?: boolean;     // 🟢 ฝ่ายการเงิน – ปิดงาน & ยืนยันจ่ายเงิน (Finance/Closer)
+  canCloseBill?: boolean;   // 🔵 อนุมัติบิล (Approver – ได้รับ Flex อนุมัติ)
   canDelete?: boolean;      // 🗑️ มีสิทธิ์ลบข้อมูล (User = false)
   createdAt?: string;
 };
@@ -404,18 +404,18 @@ export function UserManagementDashboardClient() {
     <div className="space-y-4 font-sans text-xs text-slate-800">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center">
-            <Users size={16} />
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center shrink-0">
+            <Users size={17} />
           </div>
           <div>
-            <h1 className="text-base font-semibold text-slate-900 tracking-tight flex items-center gap-2">
+            <h1 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2 m-0">
               <span>จัดการผู้ใช้ระบบ & กำหนดสิทธิ์</span>
-              <span className="px-2 py-0.5 rounded-full text-xs font-mono bg-slate-100 text-slate-700 border border-slate-200">
+              <span className="px-2 py-0.5 rounded-md text-xs font-mono bg-slate-100 text-slate-700 border border-slate-200">
                 {users.length} บัญชี
               </span>
             </h1>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 mt-0.5 m-0">
               กำหนดบทบาท 4 ระดับ: 👑 ผู้บริหาร (Owner) • 🟢 ผู้อนุมัติบิล (Manager) • 🔵 ฝ่ายการเงิน (Finance) • 👤 พนักงานทั่วไป (Staff)
             </p>
           </div>
@@ -425,11 +425,11 @@ export function UserManagementDashboardClient() {
           <button
             type="button"
             onClick={handleDownloadTemplate}
-            className="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-lg transition flex items-center gap-1.5 cursor-pointer text-xs font-normal"
+            className="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-lg transition flex items-center gap-1.5 cursor-pointer text-xs font-semibold"
             title="ดาวน์โหลดไฟล์แม่แบบ CSV สำหรับกรอกรายชื่อ"
           >
             <Download size={14} className="text-slate-500" />
-            <span>ดาวน์โหลดเทมเพลต CSV</span>
+            <span>เทมเพลต CSV</span>
           </button>
 
           <button
@@ -439,7 +439,7 @@ export function UserManagementDashboardClient() {
               setImportText("");
               setParsedPreviewUsers([]);
             }}
-            className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg transition flex items-center gap-1.5 cursor-pointer text-xs font-normal"
+            className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg transition flex items-center gap-1.5 cursor-pointer text-xs font-semibold"
             title="นำเข้ารายชื่อผู้ใช้งานหลายรายการจากไฟล์หรือคัดลอกวาง"
           >
             <Upload size={14} className="text-emerald-700" />
@@ -449,9 +449,9 @@ export function UserManagementDashboardClient() {
           <button
             type="button"
             onClick={handleOpenCreateModal}
-            className="px-3.5 py-1.5 bg-[#0b3531] hover:bg-[#072724] text-white rounded-lg transition flex items-center gap-1.5 cursor-pointer shrink-0 text-xs font-normal shadow-xs"
+            className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg transition flex items-center gap-1.5 cursor-pointer shrink-0 text-xs font-semibold"
           >
-            <Plus size={14} className="text-[#d4f54e]" />
+            <Plus size={14} />
             <span>เพิ่มผู้ใช้ใหม่</span>
           </button>
         </div>
@@ -476,48 +476,48 @@ export function UserManagementDashboardClient() {
       {/* Stats Grid - 4 Roles Overview */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Card 1: Admin ปกติ */}
-        <div className="bg-white p-3 rounded-xl border border-slate-200 flex items-center gap-3 shadow-2xs">
-          <div className="w-8 h-8 rounded-lg bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-700 shrink-0">
+        <div className="bg-white p-3.5 rounded-xl border border-slate-200 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-700 shrink-0">
             <Shield size={16} />
           </div>
           <div className="min-w-0">
-            <div className="text-[11px] text-slate-500 uppercase">Admin ปกติ</div>
-            <div className="text-sm font-semibold text-purple-900 truncate">
+            <div className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">Admin ปกติ</div>
+            <div className="text-sm font-bold text-purple-950 truncate">
               {users.filter(u => u.role === "Admin" && !u.canApprove && !u.canCloseBill).length} บัญชี
             </div>
           </div>
         </div>
 
         {/* Card 2: Admin อนุมัติ */}
-        <div className="bg-white p-3 rounded-xl border border-slate-200 flex items-center gap-3 shadow-2xs">
-          <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 shrink-0">
+        <div className="bg-white p-3.5 rounded-xl border border-slate-200 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 shrink-0">
             <Check size={16} />
           </div>
           <div className="min-w-0">
-            <div className="text-[11px] text-slate-500 uppercase">Admin อนุมัติบิล</div>
-            <div className="text-sm font-semibold text-emerald-800 truncate">{approversCount} ท่าน</div>
+            <div className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">Admin อนุมัติบิล</div>
+            <div className="text-sm font-bold text-emerald-950 truncate">{approversCount} ท่าน</div>
           </div>
         </div>
 
         {/* Card 3: Admin ปิดบิล */}
-        <div className="bg-white p-3 rounded-xl border border-slate-200 flex items-center gap-3 shadow-2xs">
-          <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-700 shrink-0">
+        <div className="bg-white p-3.5 rounded-xl border border-slate-200 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-700 shrink-0">
             <CheckCheck size={16} />
           </div>
           <div className="min-w-0">
-            <div className="text-[11px] text-slate-500 uppercase">Admin ปิดบิล</div>
-            <div className="text-sm font-semibold text-blue-800 truncate">{closersCount} ท่าน</div>
+            <div className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">Admin ปิดบิล</div>
+            <div className="text-sm font-bold text-blue-950 truncate">{closersCount} ท่าน</div>
           </div>
         </div>
 
         {/* Card 4: User กรอกข้อมูลอย่างเดียว */}
-        <div className="bg-white p-3 rounded-xl border border-slate-200 flex items-center gap-3 shadow-2xs">
-          <div className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 shrink-0">
+        <div className="bg-white p-3.5 rounded-xl border border-slate-200 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 shrink-0">
             <User size={16} />
           </div>
           <div className="min-w-0">
-            <div className="text-[11px] text-slate-500 uppercase">User (กรอกอย่างเดียว)</div>
-            <div className="text-sm font-semibold text-slate-800 truncate">
+            <div className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">User (กรอกอย่างเดียว)</div>
+            <div className="text-sm font-bold text-slate-950 truncate">
               {users.filter(u => u.role === "User" || (!u.canDelete && !u.canApprove)).length} บัญชี
             </div>
           </div>
@@ -525,9 +525,9 @@ export function UserManagementDashboardClient() {
       </div>
 
       {/* User Accounts Table */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-2xs">
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         {/* Table Topbar */}
-        <div className="p-3 border-b border-slate-200 flex items-center justify-between gap-2 bg-slate-50/50">
+        <div className="p-3 border-b border-slate-200 flex items-center justify-between gap-2.5 bg-slate-50/70">
           <div className="relative flex-1 max-w-sm">
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
@@ -535,7 +535,7 @@ export function UserManagementDashboardClient() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="ค้นหาชื่อผู้ใช้, Username หรือ เบอร์โทร..."
-              className="w-full bg-white border border-slate-200 rounded-lg pl-8 pr-3 py-1.5 text-slate-800 focus:outline-none focus:border-slate-400 font-normal text-xs"
+              className="w-full bg-white border border-slate-300 rounded-lg pl-8 pr-3 py-1.5 text-slate-900 focus:outline-none focus:border-slate-400 font-medium text-xs placeholder:text-slate-400"
             />
           </div>
 
@@ -543,7 +543,7 @@ export function UserManagementDashboardClient() {
             type="button"
             onClick={fetchUsers}
             disabled={loading}
-            className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition flex items-center gap-1.5 cursor-pointer text-xs"
+            className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 transition flex items-center gap-1.5 cursor-pointer text-xs font-semibold"
           >
             <RefreshCw size={13} className={loading ? "animate-spin text-emerald-600" : "text-slate-500"} />
             <span>รีเฟรช</span>
@@ -688,25 +688,25 @@ export function UserManagementDashboardClient() {
                   const canUserDelete = u.canDelete !== undefined ? Boolean(u.canDelete) : (u.role !== "User");
 
                   return (
-                    <tr key={u.id || idx} className="hover:bg-slate-50/80 transition-colors text-xs">
-                      <td className="py-2 px-3 border-r border-slate-100 font-mono text-slate-800 font-medium">
+                    <tr key={u.id || idx} className="hover:bg-slate-50/70 transition-colors text-xs">
+                      <td className="py-2.5 px-3 border-r border-slate-100 font-mono text-slate-900 font-semibold">
                         {u.username}
                       </td>
-                      <td className="py-2 px-3 border-r border-slate-100 text-slate-900">
-                        <div className="flex items-center gap-2">
+                      <td className="py-2.5 px-3 border-r border-slate-100 text-slate-900">
+                        <div className="flex items-center gap-2.5">
                           {u.pictureUrl ? (
                             <img src={u.pictureUrl} alt={u.displayName} className="w-6 h-6 rounded-full object-cover border border-slate-200 shrink-0" />
                           ) : (
-                            <div className="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold flex items-center justify-center shrink-0">
+                            <div className="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 text-slate-700 text-[11px] font-bold flex items-center justify-center shrink-0">
                               {u.displayName ? u.displayName.charAt(0) : "U"}
                             </div>
                           )}
-                          <span className="truncate font-medium">{u.displayName}</span>
+                          <span className="truncate font-semibold text-slate-900">{u.displayName}</span>
                         </div>
                       </td>
-                      <td className="py-2 px-3 border-r border-slate-100 text-slate-600 font-mono text-xs">
+                      <td className="py-2.5 px-3 border-r border-slate-100 text-slate-700 font-mono text-xs">
                         {u.phone ? (
-                          <span className="inline-flex items-center gap-1">
+                          <span className="inline-flex items-center gap-1 font-medium">
                             <Phone size={11} className="text-slate-400" />
                             <span>{u.phone}</span>
                           </span>
@@ -714,107 +714,108 @@ export function UserManagementDashboardClient() {
                           <span className="text-slate-400">-</span>
                         )}
                       </td>
-                      <td className="py-2 px-3 border-r border-slate-100">
+                      <td className="py-2.5 px-3 border-r border-slate-100">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           {/* Role Badge */}
                           {u.role === "Admin_Closer" ? (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-semibold border bg-blue-50 text-blue-700 border-blue-200">
-                              Admin (Approve / ปิดบิล)
+                            <span className="px-2 py-0.5 rounded-md text-[10.5px] font-semibold border bg-blue-50 text-blue-800 border-blue-200">
+                              Admin (ปิดบิล/การเงิน)
                             </span>
                           ) : (u.role === "Admin_Approver" || (u.role === "Admin" && isUserApprover)) ? (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200">
-                              Admin (อนุมัติ)
+                            <span className="px-2 py-0.5 rounded-md text-[10.5px] font-semibold border bg-emerald-50 text-emerald-800 border-emerald-200">
+                              Admin (อนุมัติบิล)
                             </span>
                           ) : u.role === "Admin" ? (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-semibold border bg-purple-50 text-purple-700 border-purple-200">
+                            <span className="px-2 py-0.5 rounded-md text-[10.5px] font-semibold border bg-purple-50 text-purple-800 border-purple-200">
                               Admin (ปกติ)
                             </span>
                           ) : (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-semibold border bg-slate-100 text-slate-700 border-slate-200">
+                            <span className="px-2 py-0.5 rounded-md text-[10.5px] font-semibold border bg-slate-100 text-slate-700 border-slate-200">
                               User (กรอกข้อมูล)
                             </span>
                           )}
 
                           {/* Owner Badge */}
                           {isUserOwner && (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-amber-100 text-amber-900 border border-amber-300 font-bold" title="เจ้าของระบบ รับแจ้งเตือนหลัก">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10.5px] bg-amber-50 text-amber-900 border border-amber-300 font-bold" title="เจ้าของระบบ รับแจ้งเตือนหลัก">
                               <Crown size={10} className="text-amber-700" />
                               <span>เจ้าของระบบ</span>
                             </span>
                           )}
 
-                          {/* Approver Badge */}
+                          {/* Finance Badge (canApprove = Finance/Closer in real flow) */}
                           {isUserApprover && !isUserCloser && (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium" title="ผู้อนุมัติบิลทาง LINE">
-                              <Check size={10} className="text-emerald-600" />
-                              <span>อนุมัติบิล</span>
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10.5px] bg-blue-50 text-blue-800 border border-blue-200 font-semibold" title="ฝ่ายการเงิน – ปิดงาน & จ่ายเงินทาง LINE">
+                              <CheckCheck size={10} className="text-blue-700" />
+                              <span>ฝ่ายการเงิน</span>
                             </span>
                           )}
 
-                          {/* Closer Badge */}
+                          {/* Approver Badge (canCloseBill = Approver in real flow) */}
                           {isUserCloser && (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-blue-50 text-blue-700 border border-blue-200 font-medium" title="ผู้ปิดบิล & จ่ายเงินทาง LINE">
-                              <CheckCheck size={10} className="text-blue-600" />
-                              <span>ปิดบิล</span>
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10.5px] bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold" title="ผู้อนุมัติบิล – รับ Flex เพื่ออนุมัติผ่าน LINE">
+                              <Check size={10} className="text-emerald-700" />
+                              <span>อนุมัติบิล</span>
                             </span>
                           )}
 
                           {/* Deletion Permission Badge */}
                           {!canUserDelete && (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-rose-50 text-rose-700 border border-rose-200 font-medium" title="ไม่มีสิทธิ์ลบข้อมูล">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10.5px] bg-rose-50 text-rose-800 border border-rose-200 font-semibold" title="ไม่มีสิทธิ์ลบข้อมูล">
                               <Ban size={9} className="text-rose-600" />
                               <span>ห้ามลบ</span>
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="py-2 px-3 border-r border-slate-100">
+                      <td className="py-2.5 px-3 border-r border-slate-100">
                         {u.lineUserId ? (
                           <div className="flex items-center gap-1.5">
                             <span
                               onClick={() => copyText(u.lineUserId || "", "LINE User ID")}
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition cursor-pointer"
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-mono bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 transition cursor-pointer"
                               title="คลิกเพื่อคัดลอก LINE ID"
                             >
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                              <span className="max-w-[90px] truncate">{u.lineUserId}</span>
-                              <Copy size={10} className="text-emerald-500 ml-0.5" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                              <span className="max-w-[95px] truncate font-medium">{u.lineUserId}</span>
+                              <Copy size={10} className="text-emerald-600 ml-0.5" />
                             </span>
                           </div>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-400 border border-slate-200">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-medium bg-slate-100 text-slate-500 border border-slate-200">
                             ยังไม่ผูก LINE
                           </span>
                         )}
                       </td>
-                      <td className="py-2 px-3 border-r border-slate-100">
+                      <td className="py-2.5 px-3 border-r border-slate-100">
                         <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border ${
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-semibold border ${
                             u.status === "Active"
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                              : "bg-rose-50 text-rose-700 border-rose-200"
+                              ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                              : "bg-slate-100 text-slate-600 border-slate-200"
                           }`}
                         >
+                          <span className={`w-1.5 h-1.5 rounded-full ${u.status === "Active" ? "bg-emerald-600" : "bg-slate-400"}`}></span>
                           <span>{u.status === "Active" ? "ใช้งานได้" : "ระงับ"}</span>
                         </span>
                       </td>
-                      <td className="py-2 px-3 text-center">
+                      <td className="py-2.5 px-3 text-center">
                         <div className="flex items-center justify-center gap-1">
                           <button
                             type="button"
                             onClick={() => handleOpenEditModal(u)}
-                            className="p-1 rounded border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 flex items-center justify-center transition cursor-pointer"
+                            className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-900 flex items-center justify-center transition cursor-pointer"
                             title="แก้ไขข้อมูลและสิทธิ์"
                           >
-                            <Pencil size={12} />
+                            <Pencil size={13} />
                           </button>
                           <button
                             type="button"
                             onClick={() => handleDeleteUser(u)}
-                            className="p-1 rounded border border-rose-200 bg-white text-rose-600 hover:bg-rose-50 flex items-center justify-center transition cursor-pointer"
+                            className="p-1.5 rounded-lg border border-rose-200 bg-white text-rose-600 hover:bg-rose-50 hover:border-rose-300 flex items-center justify-center transition cursor-pointer"
                             title="ลบบัญชีผู้ใช้"
                           >
-                            <Trash2 size={12} />
+                            <Trash2 size={13} />
                           </button>
                         </div>
                       </td>
@@ -829,7 +830,7 @@ export function UserManagementDashboardClient() {
 
       {/* Add / Edit User Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md sm:backdrop-blur-lg z-50 flex items-center justify-center p-3 sm:p-4">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]">
             {/* Modal Header */}
             <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/80 shrink-0">
@@ -1062,7 +1063,7 @@ export function UserManagementDashboardClient() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white transition flex items-center gap-2 text-xs font-semibold cursor-pointer shadow-2xs disabled:opacity-50"
+                  className="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white transition flex items-center gap-2 text-xs font-semibold cursor-pointer disabled:opacity-50"
                 >
                   {saving ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
                   <span>บันทึกข้อมูลผู้ใช้งาน</span>
@@ -1075,7 +1076,7 @@ export function UserManagementDashboardClient() {
 
       {/* 📥 Modal: นำเข้ารายชื่อผู้ใช้งาน (Batch / CSV Import) */}
       {importModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-md sm:backdrop-blur-lg animate-in fade-in duration-150">
           <div className="bg-white rounded-xl max-w-2xl w-full border border-slate-300 overflow-hidden flex flex-col max-h-[90vh]">
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-50/70 shrink-0">
               <div className="flex items-center gap-2">

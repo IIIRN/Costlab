@@ -457,6 +457,105 @@ BEGIN
 END;
 $$;
 
+-- 6.2 HIGH-SPEED FINANCIAL AGGREGATE RPC FUNCTION
+CREATE OR REPLACE FUNCTION get_dashboard_financial_summary(
+    p_start_date DATE DEFAULT NULL,
+    p_end_date DATE DEFAULT NULL,
+    p_project_id TEXT DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    result JSONB;
+    v_total_bills BIGINT;
+    v_total_amount NUMERIC;
+    v_total_material NUMERIC;
+    v_total_labor NUMERIC;
+    v_total_staff NUMERIC;
+    v_total_fuel NUMERIC;
+    v_total_repair NUMERIC;
+    v_total_machine NUMERIC;
+    v_total_tool NUMERIC;
+    v_total_other NUMERIC;
+    v_total_vat NUMERIC;
+    v_total_wht NUMERIC;
+    v_total_transfer NUMERIC;
+    v_status_pending BIGINT;
+    v_status_requested BIGINT;
+    v_status_approved BIGINT;
+    v_status_paid BIGINT;
+BEGIN
+    SELECT 
+        COUNT(*),
+        COALESCE(SUM(amount), 0),
+        COALESCE(SUM(material_cost), 0),
+        COALESCE(SUM(labor_cost), 0),
+        COALESCE(SUM(staff_cost), 0),
+        COALESCE(SUM(fuel_cost), 0),
+        COALESCE(SUM(repair_cost), 0),
+        COALESCE(SUM(machine_cost), 0),
+        COALESCE(SUM(tool_cost), 0),
+        COALESCE(SUM(other_cost), 0),
+        COALESCE(SUM(vat_amount), 0),
+        COALESCE(SUM(withholding_tax), 0),
+        COALESCE(SUM(transfer_amount), 0),
+        COUNT(CASE WHEN status = 'รออนุมัติ' OR status = 'รอตรวจสอบ' THEN 1 END),
+        COUNT(CASE WHEN status = 'ตั้งเบิก' OR status = 'รอตั้งเบิก' THEN 1 END),
+        COUNT(CASE WHEN status = 'อนุมัติ' THEN 1 END),
+        COUNT(CASE WHEN status = 'เบิกแล้ว' OR status = 'ปิดงาน' THEN 1 END)
+    INTO 
+        v_total_bills,
+        v_total_amount,
+        v_total_material,
+        v_total_labor,
+        v_total_staff,
+        v_total_fuel,
+        v_total_repair,
+        v_total_machine,
+        v_total_tool,
+        v_total_other,
+        v_total_vat,
+        v_total_wht,
+        v_total_transfer,
+        v_status_pending,
+        v_status_requested,
+        v_status_approved,
+        v_status_paid
+    FROM public.bills
+    WHERE 
+        (p_start_date IS NULL OR bill_date >= p_start_date) AND
+        (p_end_date IS NULL OR bill_date <= p_end_date) AND
+        (p_project_id IS NULL OR project_id = p_project_id);
+
+    result := jsonb_build_object(
+        'total_bills', v_total_bills,
+        'total_amount', v_total_amount,
+        'material_cost', v_total_material,
+        'labor_cost', v_total_labor,
+        'staff_cost', v_total_staff,
+        'fuel_cost', v_total_fuel,
+        'repair_cost', v_total_repair,
+        'machine_cost', v_total_machine,
+        'tool_cost', v_total_tool,
+        'other_cost', v_total_other,
+        'vat_amount', v_total_vat,
+        'withholding_tax', v_total_wht,
+        'transfer_amount', v_total_transfer,
+        'status_counts', jsonb_build_object(
+            'pending', v_status_pending,
+            'requested', v_status_requested,
+            'approved', v_status_approved,
+            'paid', v_status_paid
+        ),
+        'generated_at', now()
+    );
+
+    RETURN result;
+END;
+$$;
+
 -- =========================================================================
 -- 7. INITIAL MASTER SEED DATA (ADMIN ACCOUNT 0800000000 / admin)
 -- =========================================================================

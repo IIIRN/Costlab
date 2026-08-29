@@ -27,7 +27,8 @@ import {
 import { money, toNumber } from "@/lib/numbers";
 import { formatDateDisplay, normalizeDateToIso } from "@/lib/dates";
 import { isVatActive, parseDeductPercent, parseCreditDays } from "@/lib/project-summary";
-import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { formatVatDisplay, formatDeductDisplay, formatCreditDisplay } from "@/lib/bill-status";
+import { useRealtimeSync } from "@/lib/use-realtime-sync";
 import type { SheetRow } from "@/lib/types";
 
 const PAGE_SIZE_OPTIONS = [20, 40, 60, 100];
@@ -87,33 +88,14 @@ export function BillFollowDashboardClient({
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Live sync from Supabase PostgreSQL changes + Local Form Events
-  useEffect(() => {
-    const handleDataUpdated = () => {
-      router.refresh();
-    };
-    window.addEventListener("bills-data-updated", handleDataUpdated);
-    window.addEventListener("data-updated", handleDataUpdated);
-
-    const supabase = getSupabaseBrowserClient();
-    let channel: any = null;
-    if (supabase) {
-      channel = supabase
-        .channel("bill_follow_live_sync")
-        .on("postgres_changes", { event: "*", schema: "public", table: "bills" }, () => {
-          router.refresh();
-        })
-        .subscribe();
-    }
-
-    return () => {
-      window.removeEventListener("bills-data-updated", handleDataUpdated);
-      window.removeEventListener("data-updated", handleDataUpdated);
-      if (supabase && channel) {
-        supabase.removeChannel(channel);
-      }
-    };
-  }, [router]);
+  // High-performance debounced live sync from Supabase PostgreSQL + Local Form Events
+  useRealtimeSync({
+    channelName: "bill_follow_live_sync",
+    tables: ["bills"],
+    onSync: () => router.refresh(),
+    debounceMs: 700,
+    customEvents: ["bills-data-updated", "data-updated"],
+  });
 
   // Quick Action & Notification States
   const [savingRowId, setSavingRowId] = useState<string | null>(null);
@@ -228,6 +210,9 @@ export function BillFollowDashboardClient({
     }
 
     setSavingRowId(rowId);
+    // ⚡ Optimistic UI Update: Mark row as completed immediately (< 20ms)
+    setCompletedRowIds((prev) => new Set(prev).add(rowId));
+
     try {
       const res = await fetch("/api/rows", {
         method: "PATCH",
@@ -242,10 +227,15 @@ export function BillFollowDashboardClient({
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Update failed");
 
-      setCompletedRowIds((prev) => new Set(prev).add(rowId));
       showToast(`บันทึกได้รับบิลรายการ #${rowId} เรียบร้อยแล้ว`);
       router.refresh();
     } catch (err: any) {
+      // 🔄 Rollback optimistic change on error
+      setCompletedRowIds((prev) => {
+        const next = new Set(prev);
+        next.delete(rowId);
+        return next;
+      });
       showToast(`เกิดข้อผิดพลาดในการบันทึกสถานะบิล: ${err?.message || "กรุณาลองใหม่อีกครั้ง"}`);
     } finally {
       setSavingRowId(null);
@@ -265,9 +255,9 @@ export function BillFollowDashboardClient({
     const days = calculateDaysElapsed(row["ว/ด/ป"]);
 
     const conditions = [];
-    if (row.vat && !row["วันได้บิล"]) conditions.push(`ใบกำกับภาษี VAT ${row.vat}`);
-    if (row["หัก"] && !row["วันออก 3%"]) conditions.push(`หนังสือหัก ณ ที่จ่าย ${row["หัก"]}%`);
-    if (row["เครดิต"] && !row["วันจ่าย"]) conditions.push(`บิลเครดิต ${row["เครดิต"]} วัน`);
+    if (row.vat && !row["วันได้บิล"]) conditions.push(`ใบกำกับภาษี ${formatVatDisplay(row.vat)}`);
+    if (row["หัก"] && !row["วันออก 3%"]) conditions.push(`หนังสือ${formatDeductDisplay(row["หัก"])}`);
+    if (row["เครดิต"] && !row["วันจ่าย"]) conditions.push(`บิล${formatCreditDisplay(row["เครดิต"])}`);
     const condStr = conditions.join(" / ") || "บิลสินค้า";
 
     return `📢 แจ้งติดตามเอกสารบิล/ใบเสร็จรับเงิน
@@ -621,17 +611,17 @@ export function BillFollowDashboardClient({
                     <div className="flex flex-wrap items-center gap-1">
                       {hasVat && (
                         <span className="px-1.5 py-0.2 rounded text-xs bg-sky-50 text-sky-700 border border-sky-200">
-                          VAT {row.vat}
+                          {formatVatDisplay(row.vat)}
                         </span>
                       )}
                       {hasDeduct && (
                         <span className="px-1.5 py-0.2 rounded text-xs bg-purple-50 text-purple-700 border border-purple-200">
-                          หัก {row["หัก"]}% {isCompany ? "(บ.)" : "(บุคคล)"}
+                          {formatDeductDisplay(row["หัก"])} {isCompany ? "(บ.)" : "(บุคคล)"}
                         </span>
                       )}
                       {hasCredit && (
                         <span className="px-1.5 py-0.2 rounded text-xs bg-orange-50 text-orange-700 border border-orange-200">
-                          เครดิต {row["เครดิต"]} วัน
+                          {formatCreditDisplay(row["เครดิต"])}
                         </span>
                       )}
                     </div>
@@ -772,17 +762,17 @@ export function BillFollowDashboardClient({
                       <div className="flex flex-wrap items-center justify-center gap-1">
                         {hasVat && (
                           <span className="px-1.5 py-0.5 rounded text-xs bg-slate-100 text-slate-700 border border-slate-200">
-                            vat {row.vat}
+                            {formatVatDisplay(row.vat)}
                           </span>
                         )}
                         {hasDeduct && (
                           <span className="px-1.5 py-0.5 rounded text-xs bg-slate-100 text-slate-700 border border-slate-200">
-                            หัก {row["หัก"]}% {isCompany ? "(บ.)" : "(บุคคล)"}
+                            {formatDeductDisplay(row["หัก"])} {isCompany ? "(บ.)" : "(บุคคล)"}
                           </span>
                         )}
                         {hasCredit && (
                           <span className="px-1.5 py-0.5 rounded text-xs bg-slate-100 text-slate-700 border border-slate-200">
-                            เครดิต {row["เครดิต"]} วัน
+                            {formatCreditDisplay(row["เครดิต"])}
                           </span>
                         )}
                       </div>

@@ -25,9 +25,26 @@ import {
   X
 } from "lucide-react";
 import { money, toNumber } from "@/lib/numbers";
+import { parseDeductPercent, isVatActive } from "@/lib/project-summary";
+import { formatDateDisplay } from "@/lib/dates";
 import type { SheetRow } from "@/lib/types";
 import { BillDocumentModal } from "@/components/documents/BillDocumentModal";
 import type { BillDocumentModel } from "@/lib/bill-document";
+
+function getBillWhtInfo(b: SheetRow) {
+  const percent = parseDeductPercent(b["หัก"] ?? b.deduct ?? b.withholding_tax);
+  let amount = toNumber(b["3เปอร์เซ็น"] || b["3เปอร์"] || b["จำนวนหัก"] || b.deduct_amount);
+  if (amount <= 0 && percent > 0) {
+    const base = toNumber(b["ค่าแรง+พนักงาน+อื่นๆ"] || b["ค่าแรง+พนักงาน+อื่น"] || b["ค่าแรง"] || b["ยอดเงิน"]);
+    const hasVat = isVatActive(b.vat ?? b["vat"] ?? b.VAT);
+    if (hasVat) {
+      amount = Math.round(((base / 1.07) * (percent / 100)) * 100) / 100;
+    } else {
+      amount = Math.round((base * (percent / 100)) * 100) / 100;
+    }
+  }
+  return { percent, amount, hasWht: percent > 0 || amount > 0 };
+}
 
 type DocumentsManagerClientProps = {
   bills: SheetRow[];
@@ -103,13 +120,12 @@ export function DocumentsManagerClient({
       const projName = String(b["ชื่อ Project"] || "").trim();
       const contractorName = String(b["ร้าน/บุคคล"] || b["ผู้รับเหมา"] || b["ร้านค้า"] || "").trim();
       const jobDesc = String(b["สินค้า/ทำงาน"] || b["รายละเอียดงาน"] || "").trim();
-      const taxPercent = toNumber(b["หัก"]);
-      const whtAmt = toNumber(b["3เปอร์เซ็น"] || b["จำนวนหัก"]);
-      const laborAmt = toNumber(b["ค่าแรง"]);
+      const whtInfo = getBillWhtInfo(b);
+      const laborAmt = toNumber(b["ค่าแรง"]) || toNumber(b["ค่าแรง+พนักงาน+อื่นๆ"]);
       const status = String(b["สถานะ"] || "");
 
       // Tab filter
-      if (filterTab === "tax50twi" && taxPercent <= 0 && whtAmt <= 0) {
+      if (filterTab === "tax50twi" && !whtInfo.hasWht) {
         return false;
       }
       if (filterTab === "labor" && laborAmt <= 0 && b["ร้านค้า/ผู้รับเหมา"] !== "ผู้รับเหมา" && !String(b["ประเภท"]).includes("ค่าแรง")) {
@@ -148,11 +164,11 @@ export function DocumentsManagerClient({
   // Key metrics
   const totalBillsCount = bills.length;
   const taxBillsCount = useMemo(
-    () => bills.filter((b) => toNumber(b["หัก"]) > 0 || toNumber(b["3เปอร์เซ็น"]) > 0).length,
+    () => bills.filter((b) => getBillWhtInfo(b).hasWht).length,
     [bills]
   );
   const laborBillsCount = useMemo(
-    () => bills.filter((b) => toNumber(b["ค่าแรง"]) > 0 || b["ร้านค้า/ผู้รับเหมา"] === "ผู้รับเหมา").length,
+    () => bills.filter((b) => toNumber(b["ค่าแรง"]) > 0 || toNumber(b["ค่าแรง+พนักงาน+อื่นๆ"]) > 0 || b["ร้านค้า/ผู้รับเหมา"] === "ผู้รับเหมา").length,
     [bills]
   );
 
@@ -167,7 +183,7 @@ export function DocumentsManagerClient({
     [selectedBills]
   );
   const selectedTotalWht = useMemo(
-    () => selectedBills.reduce((sum, b) => sum + toNumber(b["3เปอร์เซ็น"] || b["จำนวนหัก"]), 0),
+    () => selectedBills.reduce((sum, b) => sum + getBillWhtInfo(b).amount, 0),
     [selectedBills]
   );
 
@@ -276,7 +292,7 @@ export function DocumentsManagerClient({
               <span>บิลทั้งหมดในระบบ</span>
               <Receipt size={16} className="text-slate-400" />
             </div>
-            <div className="text-xl sm:text-2xl font-bold text-slate-900 font-mono">
+            <div className="text-xl sm:text-2xl font-bold text-slate-900">
               {totalBillsCount}
               <span className="text-xs text-slate-500 font-normal ml-1">รายการ</span>
             </div>
@@ -287,7 +303,7 @@ export function DocumentsManagerClient({
               <span>มีหัก ณ ที่จ่าย (50 ทวิ)</span>
               <FileCheck2 size={16} className="text-emerald-600" />
             </div>
-            <div className="text-xl sm:text-2xl font-bold text-emerald-700 font-mono">
+            <div className="text-xl sm:text-2xl font-bold text-emerald-700">
               {taxBillsCount}
               <span className="text-xs text-emerald-600 font-normal ml-1">รายการ</span>
             </div>
@@ -298,7 +314,7 @@ export function DocumentsManagerClient({
               <span>บิลค่าแรง / รับเหมา</span>
               <Users size={16} className="text-indigo-600" />
             </div>
-            <div className="text-xl sm:text-2xl font-bold text-indigo-700 font-mono">
+            <div className="text-xl sm:text-2xl font-bold text-indigo-700">
               {laborBillsCount}
               <span className="text-xs text-indigo-600 font-normal ml-1">รายการ</span>
             </div>
@@ -309,12 +325,12 @@ export function DocumentsManagerClient({
               <span>เลือกพิมพ์อยู่ขณะนี้</span>
               <Printer size={16} className="text-emerald-700" />
             </div>
-            <div className="text-xl sm:text-2xl font-bold text-emerald-900 font-mono flex items-baseline gap-1.5">
+            <div className="text-xl sm:text-2xl font-bold text-emerald-900 flex items-baseline gap-1.5">
               <span>{selectedIds.length}</span>
               <span className="text-xs font-normal text-emerald-700">รายการ</span>
               {selectedTotalAmount > 0 && (
                 <span className="text-xs text-emerald-800 ml-auto font-sans font-medium">
-                  ฿{money(selectedTotalAmount)}
+                  {money(selectedTotalAmount)}
                 </span>
               )}
             </div>
@@ -376,7 +392,7 @@ export function DocumentsManagerClient({
             </button>
           </div>
 
-          <span className="text-xs text-slate-400 font-mono shrink-0 hidden sm:inline">
+          <span className="text-xs text-slate-500 shrink-0 hidden sm:inline">
             แสดง {filteredBills.length} จาก {bills.length} บิล
           </span>
         </div>
@@ -469,10 +485,11 @@ export function DocumentsManagerClient({
                   const projName = String(row["ชื่อ Project"] || "-");
                   const contractorName = String(row["ร้าน/บุคคล"] || row["ผู้รับเหมา"] || row["ร้านค้า"] || "-");
                   const jobDesc = String(row["สินค้า/ทำงาน"] || row["รายละเอียดงาน"] || "-");
-                  const dateStr = String(row["ว/ด/ป"] || row["วันได้บิล"] || "-");
+                  const dateStr = formatDateDisplay(row["ว/ด/ป"] || row["วันได้บิล"] || "-");
                   const baseAmt = toNumber(row["ยอดเงิน"]);
-                  const taxPercent = toNumber(row["หัก"]);
-                  const whtAmt = toNumber(row["3เปอร์เซ็น"] || row["จำนวนหัก"]);
+                  const whtInfo = getBillWhtInfo(row);
+                  const taxPercent = whtInfo.percent;
+                  const whtAmt = whtInfo.amount;
                   const netAmt = toNumber(row["ยอดโอน"] || (baseAmt - whtAmt));
                   const status = String(row["สถานะ"] || "รออนุมัติ");
                   const isCorporate = String(row["statusค่าแรง"] || "").includes("บริษัท");
@@ -499,14 +516,14 @@ export function DocumentsManagerClient({
                       </td>
 
                       {/* Bill Sequence */}
-                      <td className="py-3 px-3 font-mono font-semibold text-slate-900">
+                      <td className="py-3 px-3 font-semibold text-slate-900">
                         <span className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-xs">
                           #{seq}
                         </span>
                       </td>
 
                       {/* Bill Date */}
-                      <td className="py-3 px-3 text-slate-600 whitespace-nowrap">
+                      <td className="py-3 px-3 text-slate-600 whitespace-nowrap text-center">
                         {dateStr}
                       </td>
 
@@ -541,25 +558,25 @@ export function DocumentsManagerClient({
                       </td>
 
                       {/* Base Amount */}
-                      <td className="py-3 px-3 text-right font-mono font-medium text-slate-900">
-                        ฿{money(baseAmt)}
+                      <td className="py-3 px-3 text-right font-medium text-slate-900">
+                        {money(baseAmt)}
                       </td>
 
                       {/* Withholding Tax */}
                       <td className="py-3 px-3 text-center">
-                        {whtAmt > 0 || taxPercent > 0 ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-mono px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium">
+                        {whtInfo.hasWht ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium">
                             <span>หัก {taxPercent ? `${taxPercent}%` : "3%"}</span>
-                            <span>(฿{money(whtAmt)})</span>
+                            <span>({money(whtAmt)})</span>
                           </span>
                         ) : (
-                          <span className="text-slate-300 font-mono">-</span>
+                          <span className="text-slate-300">-</span>
                         )}
                       </td>
 
                       {/* Net Amount */}
-                      <td className="py-3 px-3 text-right font-mono font-semibold text-emerald-700">
-                        ฿{money(netAmt)}
+                      <td className="py-3 px-3 text-right font-semibold text-emerald-700">
+                        {money(netAmt)}
                       </td>
 
                       {/* Status */}
@@ -618,15 +635,15 @@ export function DocumentsManagerClient({
             {/* Left: Summary Count */}
             <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-mono font-bold text-sm">
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm">
                   {selectedIds.length}
                 </div>
                 <div>
                   <div className="text-xs font-semibold text-slate-100">
                     เลือกแล้ว {selectedIds.length} รายการ
                   </div>
-                  <div className="text-[11px] text-slate-400 font-mono">
-                    ยอดรวม ฿{money(selectedTotalAmount)} {selectedTotalWht > 0 && `(หักภาษี ฿${money(selectedTotalWht)})`}
+                  <div className="text-[11px] text-slate-400">
+                    ยอดรวม {money(selectedTotalAmount)} {selectedTotalWht > 0 && `(หักภาษี ${money(selectedTotalWht)})`}
                   </div>
                 </div>
               </div>

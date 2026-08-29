@@ -14,6 +14,8 @@ import { getViewById, getViewColumns } from "@/lib/views";
 import { CategoryManagementClient } from "@/components/forms/CategoryManagementClient";
 import { getSystemOptionsFromSupabase } from "@/lib/supabase-db";
 import { hydrateProjectRowsForList } from "@/lib/project-summary";
+import { DetailEditTrigger } from "@/components/DetailEditTrigger";
+import { getFormPayload } from "@/lib/form";
 import type { SheetRow } from "@/lib/types";
 
 export async function renderViewForId(id: string, query?: Record<string, string | string[] | undefined>) {
@@ -70,6 +72,10 @@ export async function renderRowDetailPage(id: string, rowKey: string) {
   const relatedSections = await getRelatedSections(id, row);
   const title = detailTitle(id, row, decodedKey);
   const primaryCode = String(row[keyColumn] || "").trim();
+  const isSchemaForm = usesSchemaForm(id);
+  const displayName = getDisplayViewName(view.id, view.name);
+  const schemaEditEventName = isSchemaForm ? `open-${id}-detail-edit-form` : undefined;
+  const initialForm = isSchemaForm ? await getFormPayload(view.table).catch(() => null) : null;
 
   return (
     <div className="w-full flex flex-col gap-3 font-sans text-xs">
@@ -98,6 +104,12 @@ export async function renderRowDetailPage(id: string, rowKey: string) {
             </span>
           </div>
         </div>
+
+        {isSchemaForm ? (
+          <div className="flex items-center gap-2">
+            <DetailEditTrigger eventName={schemaEditEventName} row={row} label="แก้ไขข้อมูล" />
+          </div>
+        ) : null}
       </header>
 
       <section className="p-3 sm:p-4 max-w-[1600px] w-full mx-auto space-y-4">
@@ -164,6 +176,19 @@ export async function renderRowDetailPage(id: string, rowKey: string) {
           </section>
         ))}
       </section>
+
+      {isSchemaForm ? (
+        <FormModal
+          tableName={view.table}
+          form={initialForm}
+          title={`แก้ไข ${displayName}`}
+          buttonLabel={`แก้ไข ${displayName}`}
+          relaxed
+          submitPath="/api/rows"
+          openEventName={schemaEditEventName}
+          hideLauncher
+        />
+      ) : null}
     </div>
   );
 }
@@ -263,6 +288,9 @@ function amountField(field: string) {
 function formatDetailValue(field: string, value: unknown) {
   if (value === null || value === undefined || value === "") return "-";
   if (amountField(field) && typeof value === "number") return money(value);
+  if (field === "ธนาคาร" || field === "bank" || field === "bank_name") {
+    return String(value).replace(/^Ba\d+\s*[-–—]?\s*/i, "").trim() || String(value);
+  }
   return String(value);
 }
 
@@ -326,6 +354,7 @@ async function renderView(
       const keyColumn = tableKeyColumn(view.id, view.table);
       const schemaAddEventName = isSchemaForm ? `open-${view.id}-form` : undefined;
       const schemaEditEventName = isSchemaForm ? `open-${view.id}-edit-form` : undefined;
+      const initialForm = isSchemaForm ? await getFormPayload(view.table).catch(() => null) : null;
       return (
         <section className="p-3 sm:p-5 max-w-[1600px] mx-auto space-y-3 font-sans text-xs">
           <ManageTableClient

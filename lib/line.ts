@@ -1,105 +1,111 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { LINE_CONFIG } from "@/lib/line/config";
+import { cached } from "@/lib/cache";
 
 const LINE_API_BASE = "https://api.line.me/v2/bot/message";
 
 export async function getDynamicAccessToken(): Promise<string> {
-  try {
-    const { data } = await supabaseAdmin
-      .from("system_options")
-      .select("data")
-      .eq("id", "line_config")
-      .maybeSingle();
+  return cached("line:access_token", 120_000, async () => {
+    try {
+      const { data } = await supabaseAdmin
+        .from("system_options")
+        .select("data")
+        .eq("id", "line_config")
+        .maybeSingle();
 
-    if (data?.data?.LINE_CHANNEL_ACCESS_TOKEN) {
-      const token = String(data.data.LINE_CHANNEL_ACCESS_TOKEN).trim();
-      if (token && !token.includes("your-line")) {
-        return token;
+      if (data?.data?.LINE_CHANNEL_ACCESS_TOKEN) {
+        const token = String(data.data.LINE_CHANNEL_ACCESS_TOKEN).trim();
+        if (token && !token.includes("your-line")) {
+          return token;
+        }
       }
+    } catch (e) {
+      // Fall back to process.env or LINE_CONFIG
     }
-  } catch (e) {
-    // Fall back to process.env or LINE_CONFIG
-  }
-  return process.env.LINE_CHANNEL_ACCESS_TOKEN || LINE_CONFIG.CHANNEL_ACCESS_TOKEN || "";
+    return process.env.LINE_CHANNEL_ACCESS_TOKEN || LINE_CONFIG.CHANNEL_ACCESS_TOKEN || "";
+  });
 }
 
 export async function isLineApproverAuthorized(userId: string, targetId?: string): Promise<boolean> {
   if (!userId) return false;
+  const cacheKey = `line:auth_approver:${userId}:${targetId || "none"}`;
 
-  try {
-    const { data: configData } = await supabaseAdmin
-      .from("system_options")
-      .select("data")
-      .eq("id", "line_config")
-      .maybeSingle();
+  return cached(cacheKey, 60_000, async () => {
+    try {
+      const { data: configData } = await supabaseAdmin
+        .from("system_options")
+        .select("data")
+        .eq("id", "line_config")
+        .maybeSingle();
 
-    const cfg = configData?.data || {};
-    const rawIds = [
-      cfg.LINE_USER_ID_APPROVER,
-      cfg.LINE_USER_ID_OWN,
-      process.env.LINE_USER_ID_APPROVER,
-      process.env.LINE_USER_ID_OWN,
-      LINE_CONFIG.USER_ID_APPROVER,
-      LINE_CONFIG.USER_ID_OWN,
-    ];
-    const allowedApprovers: string[] = rawIds
-      .flatMap(v => String(v || "").split(","))
-      .map(v => v.trim())
-      .filter(Boolean);
+      const cfg = configData?.data || {};
+      const rawIds = [
+        cfg.LINE_USER_ID_APPROVER,
+        cfg.LINE_USER_ID_OWN,
+        process.env.LINE_USER_ID_APPROVER,
+        process.env.LINE_USER_ID_OWN,
+        LINE_CONFIG.USER_ID_APPROVER,
+        LINE_CONFIG.USER_ID_OWN,
+      ];
+      const allowedApprovers: string[] = rawIds
+        .flatMap(v => String(v || "").split(","))
+        .map(v => v.trim())
+        .filter(Boolean);
 
-    if (allowedApprovers.includes(userId) || (targetId && allowedApprovers.includes(targetId))) {
-      return true;
-    }
+      if (allowedApprovers.includes(userId) || (targetId && allowedApprovers.includes(targetId))) {
+        return true;
+      }
 
-    // Check users_list in system_options
-    const { data: usersRow } = await supabaseAdmin
-      .from("system_options")
-      .select("data")
-      .eq("id", "users_list")
-      .maybeSingle();
+      // Check users_list in system_options
+      const { data: usersRow } = await supabaseAdmin
+        .from("system_options")
+        .select("data")
+        .eq("id", "users_list")
+        .maybeSingle();
 
-    if (usersRow?.data && Array.isArray(usersRow.data)) {
-      for (const u of usersRow.data) {
-        if (u.status === "Inactive") continue;
-        const lineId = String(u.lineUserId || u.line_user_id || "").trim();
-        if (lineId && (lineId === userId || (targetId && lineId === targetId))) {
-          if (
-            u.isOwner ||
-            u.role === "Admin" ||
-            u.role === "Owner" ||
-            Boolean(u.canApprove) ||
-            Boolean(u.canCloseBill) ||
-            u.role === "Admin_Approver" ||
-            u.role === "Approver" ||
-            u.role === "Manager"
-          ) {
-            return true;
+      if (usersRow?.data && Array.isArray(usersRow.data)) {
+        for (const u of usersRow.data) {
+          if (u.status === "Inactive") continue;
+          const lineId = String(u.lineUserId || u.line_user_id || "").trim();
+          if (lineId && (lineId === userId || (targetId && lineId === targetId))) {
+            if (
+              u.isOwner ||
+              u.role === "Admin" ||
+              u.role === "Owner" ||
+              Boolean(u.canApprove) ||
+              Boolean(u.canCloseBill) ||
+              u.role === "Admin_Approver" ||
+              u.role === "Approver" ||
+              u.role === "Manager"
+            ) {
+              return true;
+            }
           }
         }
       }
+
+      const { data: member } = await supabaseAdmin
+        .from("master_members")
+        .select("*")
+        .or(`line_user_id.eq.${userId},id.eq.${userId}`)
+        .maybeSingle();
+
+      if (member && (member.role === "Admin" || member["สิทธิ์การใช้งาน"] === "Admin" || member.role === "Admin_Approver" || member.role === "Approver")) {
+        return true;
+      }
+
+      if (allowedApprovers.length === 0) {
+        return true;
+      }
+    } catch (e) {
+      console.warn("⚠️ Warning checking LINE approver authorization:", e);
     }
 
-    const { data: member } = await supabaseAdmin
-      .from("master_members")
-      .select("*")
-      .or(`line_user_id.eq.${userId},id.eq.${userId}`)
-      .maybeSingle();
-
-    if (member && (member.role === "Admin" || member["สิทธิ์การใช้งาน"] === "Admin" || member.role === "Admin_Approver" || member.role === "Approver")) {
-      return true;
-    }
-
-    if (allowedApprovers.length === 0) {
-      return true;
-    }
-  } catch (e) {
-    console.warn("⚠️ Warning checking LINE approver authorization:", e);
-  }
-
-  return (
-    userId === LINE_CONFIG.USER_ID_APPROVER ||
-    userId === LINE_CONFIG.USER_ID_OWN
-  );
+    return (
+      userId === LINE_CONFIG.USER_ID_APPROVER ||
+      userId === LINE_CONFIG.USER_ID_OWN
+    );
+  });
 }
 
 export async function getLineTargetGroup(
@@ -330,7 +336,9 @@ export async function sendFlexMessageDetailed(
 
     if (!res.ok) {
       const errJson = await res.json().catch(() => ({}));
-      const lineMsg = errJson.message || errJson.details?.[0]?.message || `HTTP Status ${res.status}`;
+      console.error("❌ LINE Flex Push Error Details:", JSON.stringify(errJson, null, 2));
+      console.error("❌ LINE Flex Payload:", JSON.stringify(flexContents, null, 2));
+      const lineMsg = errJson.details?.map((d: any) => `${d.property}: ${d.message}`).join(", ") || errJson.message || `HTTP Status ${res.status}`;
       return {
         success: false,
         error: `ส่งข้อความ LINE ไม่สำเร็จ (LINE API ตอบกลับ: "${lineMsg}")`,
@@ -394,17 +402,44 @@ export async function replyFlexMessage(replyToken: string, altText: string, flex
 
 export function createBillNotificationFlex(bill: {
   id?: string | number;
+  bill_no?: string | number;
   project_name?: string;
   vendor_or_person?: string;
   description?: string;
   amount?: number;
   requester?: string;
   status?: string;
-}): Record<string, any> {
+  items?: Array<{
+    category?: string;
+    categoryType?: string;
+    amount?: string | number;
+    name?: string;
+    type?: string;
+    price?: string | number;
+    total?: string | number;
+  }>;
+  bank_account?: string;
+  bank_name?: string;
+  account_name?: string;
+  data?: any;
+}, bankInfoMap?: Map<string, BankLookupInfo> | Record<string, BankLookupInfo>): Record<string, any> {
   const formattedAmount = Number(bill.amount || 0).toLocaleString("th-TH", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+
+  const rawItems = bill.items || bill.data?.items;
+  let lineItems: Array<{ category?: string; categoryType?: string; amount?: string | number; name?: string; type?: string; price?: string | number; total?: string | number }> = [];
+  if (Array.isArray(rawItems) && rawItems.length > 0) {
+    lineItems = rawItems;
+  } else if (typeof rawItems === "string" && rawItems.trim().startsWith("[")) {
+    try {
+      const parsed = JSON.parse(rawItems);
+      if (Array.isArray(parsed) && parsed.length > 0) lineItems = parsed;
+    } catch {}
+  }
+
+  const bankInfo = resolveBankInfo(bill, bankInfoMap);
 
   return {
     type: "bubble",
@@ -458,14 +493,62 @@ export function createBillNotificationFlex(bill: {
                 { type: "text", text: bill.vendor_or_person || "-", color: "#1E293B", size: "xs", flex: 5, wrap: true },
               ],
             },
-            {
-              type: "box",
-              layout: "baseline",
-              contents: [
-                { type: "text", text: "รายละเอียด:", color: "#64748B", size: "xs", flex: 2 },
-                { type: "text", text: bill.description || "-", color: "#1E293B", size: "xs", flex: 5, wrap: true },
-              ],
-            },
+            // Bank Account Information Box
+            ...(bankInfo && (bankInfo.accountNo || bankInfo.bankName || bankInfo.accountName) ? [
+              {
+                type: "box",
+                layout: "vertical",
+                margin: "xs",
+                paddingAll: "6px",
+                backgroundColor: "#F8FAFC",
+                cornerRadius: "6px",
+                borderWidth: "1px",
+                borderColor: "#E2E8F0",
+                spacing: "xs",
+                contents: [
+                  ...(bankInfo.accountName ? [
+                    {
+                      type: "box",
+                      layout: "baseline",
+                      contents: [
+                        { type: "text", text: "ชื่อบัญชี:", size: "xxs", color: "#64748B", flex: 3 },
+                        { type: "text", text: bankInfo.accountName, size: "xxs", color: "#0F172A", weight: "bold", flex: 7, wrap: true }
+                      ]
+                    }
+                  ] : []),
+                  ...(bankInfo.accountNo || bankInfo.bankName ? [
+                    {
+                      type: "box",
+                      layout: "baseline",
+                      contents: [
+                        { type: "text", text: "เลขบัญชี:", size: "xxs", color: "#64748B", flex: 3 },
+                        {
+                          type: "text",
+                          text: bankInfo.accountNo
+                            ? (bankInfo.bankName ? `${bankInfo.accountNo} (${bankInfo.bankName})` : bankInfo.accountNo)
+                            : (bankInfo.bankName || "-"),
+                          size: "xxs",
+                          color: "#059669",
+                          weight: "bold",
+                          flex: 7,
+                          wrap: true
+                        }
+                      ]
+                    }
+                  ] : [])
+                ]
+              }
+            ] : []),
+            ...(bill.description && bill.description !== "-" && lineItems.length === 0 ? [
+              {
+                type: "box",
+                layout: "baseline",
+                contents: [
+                  { type: "text", text: "รายละเอียด:", color: "#64748B", size: "xs", flex: 2 },
+                  { type: "text", text: bill.description || "-", color: "#1E293B", size: "xs", flex: 5, wrap: true },
+                ],
+              }
+            ] : []),
             {
               type: "box",
               layout: "baseline",
@@ -474,6 +557,56 @@ export function createBillNotificationFlex(bill: {
                 { type: "text", text: bill.requester || "-", color: "#1E293B", size: "xs", flex: 5 },
               ],
             },
+            ...(lineItems.length > 0 ? [
+              { type: "separator", margin: "xs" },
+              {
+                type: "box",
+                layout: "vertical",
+                margin: "xs",
+                paddingAll: "8px",
+                backgroundColor: "#F8FAFC",
+                cornerRadius: "6px",
+                spacing: "xs",
+                contents: [
+                  {
+                    type: "box",
+                    layout: "horizontal",
+                    contents: [
+                      { type: "text", text: `📦 รายการสินค้า (${lineItems.length} รายการ):`, size: "xs", weight: "bold", color: "#0F172A", flex: 7 },
+                      { type: "text", text: "ราคา", size: "xs", weight: "bold", color: "#64748B", flex: 3, align: "end" }
+                    ]
+                  },
+                  ...lineItems.map((item, idx) => {
+                    const itemAmt = Number(item.amount ?? item.price ?? item.total ?? 0).toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    const itemCat = item.category || item.name || `สินค้า ${idx + 1}`;
+                    const itemType = item.categoryType || item.type || "";
+                    return {
+                      type: "box",
+                      layout: "horizontal",
+                      contents: [
+                        {
+                          type: "text",
+                          text: `${idx + 1}. ${itemCat}${itemType ? ` (${itemType})` : ""}`,
+                          size: "xs",
+                          color: "#334155",
+                          flex: 7,
+                          wrap: true
+                        },
+                        {
+                          type: "text",
+                          text: `฿${itemAmt}`,
+                          size: "xs",
+                          color: "#059669",
+                          weight: "bold",
+                          align: "end",
+                          flex: 3
+                        }
+                      ]
+                    };
+                  })
+                ]
+              }
+            ] : []),
           ],
         },
         { type: "separator" },
@@ -879,13 +1012,18 @@ export function createBillSearchResultFlex(
     status?: string;
     image_url?: string;
     image_urls?: string[];
+    bank_account?: string;
+    bank_name?: string;
+    account_name?: string;
+    [key: string]: any;
   }>,
   isSub: boolean = false,
   isMain: boolean = false,
   totalCount?: number,
   totalSumAmount?: number,
   filterQuery: string = "",
-  peopleMap?: Map<string, string> | Record<string, string>
+  peopleMap?: Map<string, string> | Record<string, string>,
+  bankInfoMap?: Map<string, BankLookupInfo> | Record<string, BankLookupInfo>
 ): Record<string, any> {
   const count = totalCount ?? bills.length;
   const grandTotal = totalSumAmount ?? bills.reduce((sum, b) => sum + Number(b.amount || 0), 0);
@@ -935,9 +1073,9 @@ export function createBillSearchResultFlex(
                 size: "xs",
                 weight: "bold",
                 align: "end",
-                flex: 5
-              }
-            ]
+                flex: 5,
+              },
+            ],
           },
           {
             type: "box",
@@ -967,6 +1105,7 @@ export function createBillSearchResultFlex(
           const billId = String(b.id || b.bill_no || startNum + idx);
           const rawReq = b.requester || b.vendor_or_person || "-";
           const requesterName = resolveRequesterNameFromMap(rawReq, peopleMap);
+          const bankInfo = resolveBankInfo(b, bankInfoMap);
 
           // Parse single or multiple images
           let imgList: string[] = [];
@@ -978,6 +1117,17 @@ export function createBillSearchResultFlex(
           }
 
           const hasImages = imgList.length > 0;
+
+          const rawItems = (b as any).items || (b as any).data?.items;
+          let lineItems: Array<{ category?: string; categoryType?: string; amount?: string | number; name?: string; type?: string; price?: string | number; total?: string | number }> = [];
+          if (Array.isArray(rawItems) && rawItems.length > 0) {
+            lineItems = rawItems;
+          } else if (typeof rawItems === "string" && rawItems.trim().startsWith("[")) {
+            try {
+              const parsed = JSON.parse(rawItems);
+              if (Array.isArray(parsed) && parsed.length > 0) lineItems = parsed;
+            } catch {}
+          }
 
           const textDetailsBox = {
             type: "box",
@@ -1000,15 +1150,112 @@ export function createBillSearchResultFlex(
                   { type: "text", text: requesterName, size: "xxs", color: "#1E293B", flex: 7, wrap: true }
                 ]
               },
-              {
-                type: "box",
-                layout: "baseline",
-                margin: "xs",
-                contents: [
-                  { type: "text", text: "รายละเอียด:", size: "xxs", color: "#64748B", flex: 3 },
-                  { type: "text", text: b.description || "-", size: "xxs", color: "#334155", flex: 7, wrap: true }
-                ]
-              },
+              // Bank Account Information Box
+              ...(bankInfo && (bankInfo.accountNo || bankInfo.bankName || bankInfo.accountName) ? [
+                {
+                  type: "box",
+                  layout: "vertical",
+                  margin: "xs",
+                  paddingAll: "4px",
+                  backgroundColor: "#F8FAFC",
+                  cornerRadius: "4px",
+                  borderWidth: "1px",
+                  borderColor: "#E2E8F0",
+                  spacing: "xs",
+                  contents: [
+                    ...(bankInfo.accountName ? [
+                      {
+                        type: "box",
+                        layout: "baseline",
+                        contents: [
+                          { type: "text", text: "ชื่อบัญชี:", size: "xxs", color: "#64748B", flex: 3 },
+                          { type: "text", text: bankInfo.accountName, size: "xxs", color: "#0F172A", weight: "bold", flex: 7, wrap: true }
+                        ]
+                      }
+                    ] : []),
+                    ...(bankInfo.accountNo || bankInfo.bankName ? [
+                      {
+                        type: "box",
+                        layout: "baseline",
+                        contents: [
+                          { type: "text", text: "เลขบัญชี:", size: "xxs", color: "#64748B", flex: 3 },
+                          {
+                            type: "text",
+                            text: bankInfo.accountNo
+                              ? (bankInfo.bankName ? `${bankInfo.accountNo} (${bankInfo.bankName})` : bankInfo.accountNo)
+                              : (bankInfo.bankName || "-"),
+                            size: "xxs",
+                            color: "#059669",
+                            weight: "bold",
+                            flex: 7,
+                            wrap: true
+                          }
+                        ]
+                      }
+                    ] : [])
+                  ]
+                }
+              ] : []),
+              ...(b.description && b.description !== "-" && lineItems.length === 0 ? [
+                {
+                  type: "box",
+                  layout: "baseline",
+                  margin: "xs",
+                  contents: [
+                    { type: "text", text: "รายละเอียด:", size: "xxs", color: "#64748B", flex: 3 },
+                    { type: "text", text: b.description || "-", size: "xxs", color: "#334155", flex: 7, wrap: true }
+                  ]
+                }
+              ] : []),
+              ...(lineItems.length > 0 ? [
+                {
+                  type: "box",
+                  layout: "vertical",
+                  margin: "xs",
+                  paddingAll: "4px",
+                  backgroundColor: "#F1F5F9",
+                  cornerRadius: "4px",
+                  spacing: "xs",
+                  contents: [
+                    {
+                      type: "box",
+                      layout: "horizontal",
+                      contents: [
+                        { type: "text", text: `📦 สินค้า (${lineItems.length} รายการ):`, size: "xxs", weight: "bold", color: "#0F172A", flex: 7 },
+                        { type: "text", text: "ราคา", size: "xxs", weight: "bold", color: "#64748B", flex: 3, align: "end" }
+                      ]
+                    },
+                    ...lineItems.map((item, iIdx) => {
+                      const itemAmt = Number(item.amount ?? item.price ?? item.total ?? 0).toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                      const itemCat = item.category || item.name || `สินค้า ${iIdx + 1}`;
+                      const itemType = item.categoryType || item.type || "";
+                      return {
+                        type: "box",
+                        layout: "horizontal",
+                        contents: [
+                          {
+                            type: "text",
+                            text: `${iIdx + 1}. ${itemCat}${itemType ? ` (${itemType})` : ""}`,
+                            size: "xxs",
+                            color: "#334155",
+                            flex: 7,
+                            wrap: true
+                          },
+                          {
+                            type: "text",
+                            text: `฿${itemAmt}`,
+                            size: "xxs",
+                            color: "#059669",
+                            weight: "bold",
+                            align: "end",
+                            flex: 3
+                          }
+                        ]
+                      };
+                    })
+                  ]
+                }
+              ] : []),
               {
                 type: "box",
                 layout: "horizontal",
@@ -1631,82 +1878,84 @@ export async function getLineUserIdByRequester(requesterKey: string): Promise<st
 }
 
 export async function getLineTargetIds(): Promise<{ ownerId: string; approverIds: string[]; closerIds: string[] }> {
-  try {
-    let ownerId = "";
-    const approverSet = new Set<string>();
-    const closerSet = new Set<string>();
+  return cached("line:target_ids", 120_000, async () => {
+    try {
+      let ownerId = "";
+      const approverSet = new Set<string>();
+      const closerSet = new Set<string>();
 
-    // 1. Try reading dynamically from users_list in system_options
-    const { data: usersRow } = await supabaseAdmin
-      .from("system_options")
-      .select("data")
-      .eq("id", "users_list")
-      .maybeSingle();
+      // 1. Try reading dynamically from users_list in system_options
+      const { data: usersRow } = await supabaseAdmin
+        .from("system_options")
+        .select("data")
+        .eq("id", "users_list")
+        .maybeSingle();
 
-    if (usersRow?.data && Array.isArray(usersRow.data)) {
-      for (const u of usersRow.data) {
-        if (u.status === "Inactive") continue;
-        const lineId = String(u.lineUserId || u.line_user_id || "").trim();
-        if (!lineId) continue;
+      if (usersRow?.data && Array.isArray(usersRow.data)) {
+        for (const u of usersRow.data) {
+          if (u.status === "Inactive") continue;
+          const lineId = String(u.lineUserId || u.line_user_id || "").trim();
+          if (!lineId) continue;
 
-        if (u.isOwner || (!ownerId && (u.role === "Admin" || u.role === "Owner"))) {
-          ownerId = lineId;
-        }
+          if (u.isOwner || (!ownerId && (u.role === "Admin" || u.role === "Owner"))) {
+            ownerId = lineId;
+          }
 
-        // 🟢 Admin (อนุมัติ) / canApprove
-        if (Boolean(u.canApprove) || u.role === "Admin_Approver" || u.role === "Approver") {
-          approverSet.add(lineId);
-        }
+          // 🟢 Admin (อนุมัติ) / canApprove
+          if (Boolean(u.canApprove) || u.role === "Admin_Approver" || u.role === "Approver") {
+            approverSet.add(lineId);
+          }
 
-        // 🔵 Admin (Approve / ปิดบิล) / canCloseBill
-        if (Boolean(u.canCloseBill) || u.role === "Admin_Closer") {
-          closerSet.add(lineId);
-        }
-      }
-    }
-
-    // 2. Also check master_members table if sets are empty
-    if (approverSet.size === 0) {
-      const { data: members } = await supabaseAdmin.from("master_members").select("*");
-      for (const m of members || []) {
-        const lineId = String(m.line_user_id || "").trim();
-        if (!lineId) continue;
-        const role = String(m.role || m["สิทธิ์การใช้งาน"] || "");
-        if (role === "Admin_Approver" || role === "Approver" || role === "Manager") {
-          approverSet.add(lineId);
-        }
-        if (role === "Admin_Closer") {
-          closerSet.add(lineId);
+          // 🔵 Admin (Approve / ปิดบิล) / canCloseBill
+          if (Boolean(u.canCloseBill) || u.role === "Admin_Closer") {
+            closerSet.add(lineId);
+          }
         }
       }
-    }
 
-    // 3. Fallback to line_config in system_options or env
-    const { data: configRow } = await supabaseAdmin
-      .from("system_options")
-      .select("data")
-      .eq("id", "line_config")
-      .maybeSingle();
+      // 2. Also check master_members table if sets are empty
+      if (approverSet.size === 0) {
+        const { data: members } = await supabaseAdmin.from("master_members").select("*");
+        for (const m of members || []) {
+          const lineId = String(m.line_user_id || "").trim();
+          if (!lineId) continue;
+          const role = String(m.role || m["สิทธิ์การใช้งาน"] || "");
+          if (role === "Admin_Approver" || role === "Approver" || role === "Manager") {
+            approverSet.add(lineId);
+          }
+          if (role === "Admin_Closer") {
+            closerSet.add(lineId);
+          }
+        }
+      }
 
-    const cfg = configRow?.data || {};
-    if (!ownerId) {
-      ownerId = String(cfg.LINE_USER_ID_OWN || process.env.LINE_USER_ID_OWN || LINE_CONFIG.USER_ID_OWN || "").trim();
-    }
-    const rawApprovers = String(cfg.LINE_USER_ID_APPROVER || process.env.LINE_USER_ID_APPROVER || LINE_CONFIG.USER_ID_APPROVER || "").trim();
-    if (rawApprovers) {
-      rawApprovers.split(",").forEach(id => {
-        const clean = id.trim();
-        if (clean) approverSet.add(clean);
-      });
-    }
+      // 3. Fallback to line_config in system_options or env
+      const { data: configRow } = await supabaseAdmin
+        .from("system_options")
+        .select("data")
+        .eq("id", "line_config")
+        .maybeSingle();
 
-    const approverIds = Array.from(approverSet);
-    const closerIds = Array.from(closerSet);
-    return { ownerId, approverIds, closerIds };
-  } catch (e) {
-    console.error("Failed fetching LINE target IDs:", e);
-    return { ownerId: "", approverIds: [], closerIds: [] };
-  }
+      const cfg = configRow?.data || {};
+      if (!ownerId) {
+        ownerId = String(cfg.LINE_USER_ID_OWN || process.env.LINE_USER_ID_OWN || LINE_CONFIG.USER_ID_OWN || "").trim();
+      }
+      const rawApprovers = String(cfg.LINE_USER_ID_APPROVER || process.env.LINE_USER_ID_APPROVER || LINE_CONFIG.USER_ID_APPROVER || "").trim();
+      if (rawApprovers) {
+        rawApprovers.split(",").forEach(id => {
+          const clean = id.trim();
+          if (clean) approverSet.add(clean);
+        });
+      }
+
+      const approverIds = Array.from(approverSet);
+      const closerIds = Array.from(closerSet);
+      return { ownerId, approverIds, closerIds };
+    } catch (e) {
+      console.error("Failed fetching LINE target IDs:", e);
+      return { ownerId: "", approverIds: [], closerIds: [] };
+    }
+  });
 }
 
 export const getLineConfigIds = getLineTargetIds;
@@ -1812,6 +2061,219 @@ export async function getPeopleMap(forceRefresh = false): Promise<Map<string, st
   return peopleMap;
 }
 
+export type BankLookupInfo = {
+  accountName?: string;
+  accountNo?: string;
+  bankName?: string;
+};
+
+let cachedBankInfoMap: Map<string, BankLookupInfo> | null = null;
+let cachedBankInfoMapTime = 0;
+
+export async function getBankInfoMap(forceRefresh = false): Promise<Map<string, BankLookupInfo>> {
+  const now = Date.now();
+  if (!forceRefresh && cachedBankInfoMap && (now - cachedBankInfoMapTime < CACHE_TTL_MS)) {
+    return cachedBankInfoMap;
+  }
+
+  const bankInfoMap = new Map<string, BankLookupInfo>();
+
+  try {
+    const [storesRes, contractorsRes, membersRes, banksRes] = await Promise.all([
+      supabaseAdmin.from("stores").select("*"),
+      supabaseAdmin.from("contractors").select("*"),
+      supabaseAdmin.from("master_members").select("*"),
+      supabaseAdmin.from("banks").select("*"),
+    ]);
+
+    const bankNameById = new Map<string, string>();
+    if (banksRes.data) {
+      for (const b of banksRes.data) {
+        const id = String(b.id || b.id_bank || "").trim();
+        const name = String(b.name || b["ชื่อธนาคาร"] || "").trim();
+        if (id && name) {
+          bankNameById.set(id.toLowerCase(), name);
+        }
+      }
+    }
+
+    const cleanBank = (raw?: string) => {
+      if (!raw) return "";
+      const trimmed = String(raw).trim();
+      const mapped = bankNameById.get(trimmed.toLowerCase());
+      if (mapped) return mapped;
+      return trimmed.replace(/^Ba\d+\s*[-–—]?\s*/i, "").trim() || trimmed;
+    };
+
+    // 1. Stores
+    if (storesRes.data) {
+      for (const s of storesRes.data) {
+        const dataObj = (s.data && typeof s.data === "object") ? s.data : {};
+        const id = String(s.id || s.id_store || dataObj.id || dataObj.id_store || "").trim();
+        const name = String(s.name || s["ชื่อร้านค้า"] || dataObj.name || dataObj["ชื่อร้านค้า"] || "").trim();
+        const fullName = String(s.full_name || s["ชื่อเต็ม"] || dataObj.full_name || dataObj["ชื่อเต็ม"] || "").trim();
+        const accountNo = String(s.bank_account || s["เลขบัญชี"] || dataObj.bank_account || dataObj["เลขบัญชี"] || "").trim();
+        const bankName = cleanBank(s.bank_name || s.bank || s["ธนาคาร"] || dataObj.bank_name || dataObj["ธนาคาร"]);
+
+        const info: BankLookupInfo = {
+          accountName: fullName || name,
+          accountNo,
+          bankName
+        };
+
+        if (id) {
+          bankInfoMap.set(id.toLowerCase(), info);
+          bankInfoMap.set(id.toUpperCase(), info);
+          const cleanId = id.toLowerCase().replace(/^(st)[-_]?/i, "").trim();
+          if (cleanId) bankInfoMap.set(cleanId, info);
+        }
+        if (name) {
+          bankInfoMap.set(name.toLowerCase(), info);
+          bankInfoMap.set(name, info);
+        }
+        if (fullName) {
+          bankInfoMap.set(fullName.toLowerCase(), info);
+          bankInfoMap.set(fullName, info);
+        }
+      }
+    }
+
+    // 2. Contractors
+    if (contractorsRes.data) {
+      for (const c of contractorsRes.data) {
+        const dataObj = (c.data && typeof c.data === "object") ? c.data : {};
+        const id = String(c.id || c.id_Contractor || dataObj.id || dataObj.id_Contractor || "").trim();
+        const nickname = String(c.nickname || c["ชื่อเล่น"] || dataObj.nickname || dataObj["ชื่อเล่น"] || "").trim();
+        const fullName = String(c.full_name || c["ชื่อ-นามสกุล"] || dataObj.full_name || dataObj["ชื่อ-นามสกุล"] || "").trim();
+        const accountNo = String(c.bank_account || c["เลขบัญชี"] || dataObj.bank_account || dataObj["เลขบัญชี"] || "").trim();
+        const bankName = cleanBank(c.bank_name || c.bank || c["ธนาคาร"] || dataObj.bank_name || dataObj["ธนาคาร"]);
+
+        const info: BankLookupInfo = {
+          accountName: fullName || nickname,
+          accountNo,
+          bankName
+        };
+
+        if (id) {
+          bankInfoMap.set(id.toLowerCase(), info);
+          bankInfoMap.set(id.toUpperCase(), info);
+          const cleanId = id.toLowerCase().replace(/^(ct)[-_]?/i, "").trim();
+          if (cleanId) bankInfoMap.set(cleanId, info);
+        }
+        if (nickname) {
+          bankInfoMap.set(nickname.toLowerCase(), info);
+          bankInfoMap.set(nickname, info);
+        }
+        if (fullName) {
+          bankInfoMap.set(fullName.toLowerCase(), info);
+          bankInfoMap.set(fullName, info);
+        }
+      }
+    }
+
+    // 3. Members / People
+    if (membersRes.data) {
+      for (const m of membersRes.data) {
+        const dataObj = (m.data && typeof m.data === "object") ? m.data : {};
+        const id = String(m.id || m["รหัสพนักงาน"] || dataObj.id || dataObj["รหัสพนักงาน"] || "").trim();
+        const nickname = String(m.nickname || m["ชื่อเล่น"] || dataObj.nickname || dataObj["ชื่อเล่น"] || "").trim();
+        const fullName = String(m.full_name || m["ชื่อ-นามสกุล"] || dataObj.full_name || dataObj["ชื่อ-นามสกุล"] || "").trim();
+        const accountNo = String(m.bank_account || m["เลขบัญชี"] || dataObj.bank_account || dataObj["เลขบัญชี"] || "").trim();
+        const bankName = cleanBank(m.bank_name || m.bank || m["ธนาคาร"] || dataObj.bank_name || dataObj["ธนาคาร"]);
+
+        const info: BankLookupInfo = {
+          accountName: fullName || nickname,
+          accountNo,
+          bankName
+        };
+
+        if (id) {
+          bankInfoMap.set(id.toLowerCase(), info);
+          bankInfoMap.set(id.toUpperCase(), info);
+          const cleanId = id.toLowerCase().replace(/^(pt|pe)[-_]?/i, "").trim();
+          if (cleanId) bankInfoMap.set(cleanId, info);
+        }
+        if (nickname) {
+          bankInfoMap.set(nickname.toLowerCase(), info);
+          bankInfoMap.set(nickname, info);
+        }
+        if (fullName) {
+          bankInfoMap.set(fullName.toLowerCase(), info);
+          bankInfoMap.set(fullName, info);
+        }
+      }
+    }
+
+    cachedBankInfoMap = bankInfoMap;
+    cachedBankInfoMapTime = now;
+  } catch (e) {
+    console.warn("⚠️ Failed to load bank info map for Flex:", e);
+  }
+
+  return bankInfoMap;
+}
+
+export function resolveBankInfo(
+  bill: any,
+  bankInfoMap?: Map<string, BankLookupInfo> | Record<string, BankLookupInfo>
+): BankLookupInfo | null {
+  const getFromMap = (key: string): BankLookupInfo | undefined => {
+    if (!key) return undefined;
+    const cleanKey = key.trim();
+    const mapsToCheck: Array<Map<string, BankLookupInfo> | Record<string, BankLookupInfo> | undefined> = [
+      bankInfoMap,
+      cachedBankInfoMap || undefined
+    ];
+
+    for (const map of mapsToCheck) {
+      if (!map) continue;
+      if (map instanceof Map) {
+        if (map.has(cleanKey)) return map.get(cleanKey);
+        if (map.has(cleanKey.toLowerCase())) return map.get(cleanKey.toLowerCase());
+        if (map.has(cleanKey.toUpperCase())) return map.get(cleanKey.toUpperCase());
+      } else if (typeof map === "object") {
+        if (map[cleanKey]) return map[cleanKey];
+        if (map[cleanKey.toLowerCase()]) return map[cleanKey.toLowerCase()];
+        if (map[cleanKey.toUpperCase()]) return map[cleanKey.toUpperCase()];
+      }
+    }
+    return undefined;
+  };
+
+  const rawVendor = String(bill["ร้านค้า"] || bill["ผู้รับเหมา"] || bill["ร้าน/บุคคล"] || bill["ร้านค้า/ผู้รับเหมา"] || bill.store_id || bill.contractor_id || bill.vendor_or_person || "").trim();
+  const rawRequester = String(bill["ผู้เบิก"] || bill.requester || "").trim();
+
+  let vendorInfo = getFromMap(rawVendor);
+  if (!vendorInfo && rawVendor.includes(" - ")) {
+    const parts = rawVendor.split(" - ");
+    vendorInfo = getFromMap(parts[0]) || getFromMap(parts[1]);
+  }
+
+  let requesterInfo = getFromMap(rawRequester);
+  if (!requesterInfo && rawRequester.includes(" - ")) {
+    const parts = rawRequester.split(" - ");
+    requesterInfo = getFromMap(parts[0]) || getFromMap(parts[1]);
+  }
+
+  const fallbackInfo = vendorInfo || requesterInfo;
+
+  const directAccountNo = String(bill["เลขบัญชี"] || bill.bank_account || bill.data?.["เลขบัญชี"] || bill.data?.bank_account || "").trim();
+  const directBankName = String(bill["ธนาคาร"] || bill.bank_name || bill.bank || bill.data?.["ธนาคาร"] || bill.data?.bank_name || "").replace(/^Ba\d+\s*[-–—]?\s*/i, "").trim();
+  const directAccountName = String(bill["ชื่อบัญชี"] || bill.account_name || bill.data?.["ชื่อบัญชี"] || bill.data?.account_name || "").trim();
+
+  const accountNo = directAccountNo || fallbackInfo?.accountNo || "";
+  const bankName = directBankName || fallbackInfo?.bankName || "";
+  const accountName = directAccountName || fallbackInfo?.accountName || "";
+
+  if (!accountNo && !bankName && !accountName) return null;
+
+  return {
+    accountName: accountName || undefined,
+    accountNo: accountNo || undefined,
+    bankName: bankName || undefined,
+  };
+}
+
 export async function getOperatorDisplayName(userId?: string, fallbackRole = "เจ้าของโครงการ"): Promise<string> {
   if (!userId) return "ระบบ Web Dashboard";
   const pMap = await getPeopleMap();
@@ -1893,7 +2355,8 @@ export function resolveRequesterNameFromMap(
 export function createMultiBillFlex(
   billsInput: Record<string, any> | Array<Record<string, any>>,
   options: MultiBillFlexOptions,
-  peopleMap?: Map<string, string> | Record<string, string>
+  peopleMap?: Map<string, string> | Record<string, string>,
+  bankInfoMap?: Map<string, BankLookupInfo> | Record<string, BankLookupInfo>
 ): Record<string, any> {
   const bills = Array.isArray(billsInput) ? billsInput : [billsInput];
   if (bills.length === 0) {
@@ -1945,35 +2408,46 @@ export function createMultiBillFlex(
     return [];
   }
 
-  // 1. Top Summary Banner (Inside Body, replacing Header)
-  const topSummaryBanner = {
-    type: "box",
-    layout: "vertical",
-    paddingAll: "10px",
-    backgroundColor: "#ECFDF5",
-    cornerRadius: "8px",
-    margin: "none",
-    contents: [
-      {
-        type: "text",
-        text: options.title,
-        weight: "bold",
-        color: "#065F46",
-        size: "sm"
-      },
-      {
-        type: "text",
-        text: `พบทั้งหมด ${bills.length} รายการ${firstReq && firstReq !== "-" ? ` | ผู้เบิก: ${firstReq}` : ""}${firstCreator && firstCreator !== firstReq && firstCreator !== "-" ? ` (ผู้สร้าง: ${firstCreator})` : ""}`,
-        color: "#047857",
-        size: "xs",
-        margin: "xs"
-      }
-    ]
-  };
+  const pageSize = 5;
+  const maxBubbles = 10; // LINE Carousel supports up to 10 bubbles
+  const displayBills = bills.slice(0, pageSize * maxBubbles);
+  const totalPages = Math.max(1, Math.ceil(displayBills.length / pageSize));
 
-  // 2. Bill Items List
-  const itemsContents = bills.slice(0, 10).map((b, idx) => {
-    const bId = String(b._sheetRow || b.id || b["ลำดับ"] || idx + 1);
+  function buildBubblePage(pageBills: typeof displayBills, pageIndex: number) {
+    const startNum = pageIndex * pageSize + 1;
+    const endNum = startNum + pageBills.length - 1;
+
+    // 1. Top Summary Banner (Inside Body, replacing Header)
+    const topSummaryBanner = {
+      type: "box",
+      layout: "vertical",
+      paddingAll: "10px",
+      backgroundColor: "#ECFDF5",
+      cornerRadius: "8px",
+      margin: "none",
+      contents: [
+        {
+          type: "text",
+          text: options.title,
+          weight: "bold",
+          color: "#065F46",
+          size: "sm"
+        },
+        {
+          type: "text",
+          text: totalPages > 1
+            ? `หน้า ${pageIndex + 1}/${totalPages} (${startNum}-${endNum} จาก ${bills.length} รายการ)${firstReq && firstReq !== "-" ? ` | ผู้เบิก: ${firstReq}` : ""}`
+            : `พบทั้งหมด ${bills.length} รายการ${firstReq && firstReq !== "-" ? ` | ผู้เบิก: ${firstReq}` : ""}${firstCreator && firstCreator !== firstReq && firstCreator !== "-" ? ` (ผู้สร้าง: ${firstCreator})` : ""}`,
+          color: "#047857",
+          size: "xs",
+          margin: "xs"
+        }
+      ]
+    };
+
+    // 2. Bill Items List
+    const itemsContents = pageBills.map((b, idx) => {
+      const bId = String(b._sheetRow || b.id || b["ลำดับ"] || startNum + idx);
     const amt = Number(b["ยอดเงิน"] || b.amount || 0).toLocaleString("th-TH");
     const requesterName = getRequesterDisplayName(b);
     const creatorName = getCreatorDisplayName(b);
@@ -1982,6 +2456,7 @@ export function createMultiBillFlex(
     const projName = b["ชื่อ Project"] || b.project_name || "โครงการทั่วไป";
     const desc = b["สินค้า/ทำงาน"] || b.description || "-";
     const status = b["สถานะ"] || b.status || "รอตั้งเบิก";
+    const bankInfo = resolveBankInfo(b, bankInfoMap);
 
     const imgList = getBillImages(b);
     const hasImages = imgList.length > 0;
@@ -2108,6 +2583,16 @@ export function createMultiBillFlex(
 
     const productName = b["สินค้า"] || b.product || "";
     const categoryName = b["ประเภท"] || b.category || "";
+    const rawItems = b.items || b.data?.items;
+    let lineItems: Array<{ category?: string; categoryType?: string; amount?: string | number; name?: string; type?: string; price?: string | number; total?: string | number }> = [];
+    if (Array.isArray(rawItems) && rawItems.length > 0) {
+      lineItems = rawItems;
+    } else if (typeof rawItems === "string" && rawItems.trim().startsWith("[")) {
+      try {
+        const parsed = JSON.parse(rawItems);
+        if (Array.isArray(parsed) && parsed.length > 0) lineItems = parsed;
+      } catch {}
+    }
 
     const textDetailsBox: Record<string, any> = {
       type: "box",
@@ -2145,8 +2630,54 @@ export function createMultiBillFlex(
             ]
           }
         ] : []),
-        // Product Category Row (if available)
-        ...(productName && productName !== "-" ? [
+        // Bank Account Information Box
+        ...(bankInfo && (bankInfo.accountNo || bankInfo.bankName || bankInfo.accountName) ? [
+          {
+            type: "box",
+            layout: "vertical",
+            margin: "xs",
+            paddingAll: "6px",
+            backgroundColor: "#F8FAFC",
+            cornerRadius: "6px",
+            borderWidth: "1px",
+            borderColor: "#E2E8F0",
+            spacing: "xs",
+            contents: [
+              ...(bankInfo.accountName ? [
+                {
+                  type: "box",
+                  layout: "baseline",
+                  contents: [
+                    { type: "text", text: "ชื่อบัญชี:", size: "xxs", color: "#64748B", flex: 3 },
+                    { type: "text", text: bankInfo.accountName, size: "xxs", color: "#0F172A", weight: "bold", flex: 7, wrap: true }
+                  ]
+                }
+              ] : []),
+              ...(bankInfo.accountNo || bankInfo.bankName ? [
+                {
+                  type: "box",
+                  layout: "baseline",
+                  contents: [
+                    { type: "text", text: "เลขบัญชี:", size: "xxs", color: "#64748B", flex: 3 },
+                    {
+                      type: "text",
+                      text: bankInfo.accountNo
+                        ? (bankInfo.bankName ? `${bankInfo.accountNo} (${bankInfo.bankName})` : bankInfo.accountNo)
+                        : (bankInfo.bankName || "-"),
+                      size: "xxs",
+                      color: "#059669",
+                      weight: "bold",
+                      flex: 7,
+                      wrap: true
+                    }
+                  ]
+                }
+              ] : [])
+            ]
+          }
+        ] : []),
+        // Product Category Row (Only shown for single-item bills)
+        ...(productName && productName !== "-" && lineItems.length === 0 ? [
           {
             type: "box",
             layout: "baseline",
@@ -2157,16 +2688,68 @@ export function createMultiBillFlex(
             ]
           }
         ] : []),
-        // Description Row
-        {
-          type: "box",
-          layout: "baseline",
-          margin: "xs",
-          contents: [
-            { type: "text", text: "รายละเอียด:", size: "xxs", color: "#64748B", flex: 3 },
-            { type: "text", text: String(desc), size: "xxs", color: "#334155", flex: 7, wrap: true }
-          ]
-        },
+        // Itemized Multi-Line Products with Individual Prices
+        ...(lineItems.length > 0 ? [
+          {
+            type: "box",
+            layout: "vertical",
+            margin: "xs",
+            paddingAll: "6px",
+            backgroundColor: "#F1F5F9",
+            cornerRadius: "6px",
+            spacing: "xs",
+            contents: [
+              {
+                type: "box",
+                layout: "horizontal",
+                contents: [
+                  { type: "text", text: `📦 รายการสินค้า (${lineItems.length} รายการ):`, size: "xxs", weight: "bold", color: "#0F172A", flex: 7 },
+                  { type: "text", text: "ราคา", size: "xxs", weight: "bold", color: "#64748B", flex: 3, align: "end" }
+                ]
+              },
+              ...lineItems.map((item, iIdx) => {
+                const itemAmt = Number(item.amount ?? item.price ?? item.total ?? 0).toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                const itemCat = item.category || item.name || `สินค้า ${iIdx + 1}`;
+                const itemType = item.categoryType || item.type || "";
+                return {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    {
+                      type: "text",
+                      text: `${iIdx + 1}. ${itemCat}${itemType ? ` (${itemType})` : ""}`,
+                      size: "xxs",
+                      color: "#334155",
+                      flex: 7,
+                      wrap: true
+                    },
+                    {
+                      type: "text",
+                      text: `฿${itemAmt}`,
+                      size: "xxs",
+                      color: "#059669",
+                      weight: "bold",
+                      align: "end",
+                      flex: 3
+                    }
+                  ]
+                };
+              })
+            ]
+          }
+        ] : []),
+        // Description Row (Only shown if single item or contains distinct custom remarks)
+        ...(desc && desc !== "-" && (lineItems.length === 0 || (!desc.includes(productName) && desc !== productName)) ? [
+          {
+            type: "box",
+            layout: "baseline",
+            margin: "xs",
+            contents: [
+              { type: "text", text: "รายละเอียด:", size: "xxs", color: "#64748B", flex: 3 },
+              { type: "text", text: String(desc), size: "xxs", color: "#334155", flex: 7, wrap: true }
+            ]
+          }
+        ] : []),
         // Status & Per-role Action Links Row
         {
           type: "box",
@@ -2363,34 +2946,51 @@ export function createMultiBillFlex(
     ];
   }
 
+    return {
+      type: "bubble",
+      size: "mega",
+      body: {
+        type: "box",
+        layout: "vertical",
+        paddingAll: "14px",
+        spacing: "xs",
+        contents: [
+          topSummaryBanner,
+          ...itemsContents,
+          bottomTotalSumBox
+        ]
+      },
+      footer: footerButtons.length > 0 ? {
+        type: "box",
+        layout: "horizontal",
+        spacing: "sm",
+        paddingAll: "10px",
+        backgroundColor: "#F8FAFC",
+        contents: footerButtons
+      } : undefined
+    };
+  }
+
+  const bubbles: any[] = [];
+  for (let i = 0; i < totalPages; i++) {
+    const chunk = displayBills.slice(i * pageSize, (i + 1) * pageSize);
+    bubbles.push(buildBubblePage(chunk, i));
+  }
+
+  if (bubbles.length === 1) {
+    return bubbles[0];
+  }
+
   return {
-    type: "bubble",
-    size: "mega",
-    body: {
-      type: "box",
-      layout: "vertical",
-      paddingAll: "14px",
-      spacing: "xs",
-      contents: [
-        topSummaryBanner,
-        ...itemsContents,
-        bottomTotalSumBox
-      ]
-    },
-    footer: footerButtons.length > 0 ? {
-      type: "box",
-      layout: "horizontal",
-      spacing: "sm",
-      paddingAll: "10px",
-      backgroundColor: "#F8FAFC",
-      contents: footerButtons
-    } : undefined
+    type: "carousel",
+    contents: bubbles
   };
 }
 
 export function createWithdrawRequesterFlex(
   billsInput: Record<string, any> | Array<Record<string, any>>,
-  peopleMap?: Map<string, string> | Record<string, string>
+  peopleMap?: Map<string, string> | Record<string, string>,
+  bankInfoMap?: Map<string, BankLookupInfo> | Record<string, BankLookupInfo>
 ): Record<string, any> {
   const bills = (Array.isArray(billsInput) ? billsInput : [billsInput]).map(b => ({
     ...b,
@@ -2400,12 +3000,13 @@ export function createWithdrawRequesterFlex(
   return createMultiBillFlex(bills, {
     title: "📄 แจ้งเตือนรายการตั้งเบิกเงิน",
     mode: "requester"
-  }, peopleMap);
+  }, peopleMap, bankInfoMap);
 }
 
 export function createWithdrawOwnerFlex(
   billsInput: Record<string, any> | Array<Record<string, any>>,
-  peopleMap?: Map<string, string> | Record<string, string>
+  peopleMap?: Map<string, string> | Record<string, string>,
+  bankInfoMap?: Map<string, BankLookupInfo> | Record<string, BankLookupInfo>
 ): Record<string, any> {
   const bills = (Array.isArray(billsInput) ? billsInput : [billsInput]).map(b => ({
     ...b,
@@ -2415,12 +3016,13 @@ export function createWithdrawOwnerFlex(
   return createMultiBillFlex(bills, {
     title: "📋 คำขออนุมัติเบิกเงิน (ส่งจากผู้เบิก)",
     mode: "owner"
-  }, peopleMap);
+  }, peopleMap, bankInfoMap);
 }
 
 export function createWithdrawApproverFlex(
   billsInput: Record<string, any> | Array<Record<string, any>>,
-  peopleMap?: Map<string, string> | Record<string, string>
+  peopleMap?: Map<string, string> | Record<string, string>,
+  bankInfoMap?: Map<string, BankLookupInfo> | Record<string, BankLookupInfo>
 ): Record<string, any> {
   const bills = (Array.isArray(billsInput) ? billsInput : [billsInput]).map(b => ({
     ...b,
@@ -2430,12 +3032,13 @@ export function createWithdrawApproverFlex(
   return createMultiBillFlex(bills, {
     title: "✅ รายการอนุมัติสำเร็จ (รอปิดงาน)",
     mode: "approver"
-  }, peopleMap);
+  }, peopleMap, bankInfoMap);
 }
 
 export function createWithdrawCompletedRequesterFlex(
   billsInput: Record<string, any> | Array<Record<string, any>>,
-  peopleMap?: Map<string, string> | Record<string, string>
+  peopleMap?: Map<string, string> | Record<string, string>,
+  bankInfoMap?: Map<string, BankLookupInfo> | Record<string, BankLookupInfo>
 ): Record<string, any> {
   const bills = (Array.isArray(billsInput) ? billsInput : [billsInput]).map(b => ({
     ...b,
@@ -2445,7 +3048,7 @@ export function createWithdrawCompletedRequesterFlex(
   return createMultiBillFlex(bills, {
     title: "🎉 รายการเบิกเงินสำเร็จเรียบร้อย (ปิดงาน)",
     mode: "completed"
-  }, peopleMap);
+  }, peopleMap, bankInfoMap);
 }
 
 export async function getLineQuotaInfo() {

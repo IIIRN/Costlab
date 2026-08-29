@@ -54,14 +54,14 @@ export function BillDocumentModal({
               {/* Mobile: compact */}
               <p className="sm:hidden text-xs text-slate-900 font-semibold leading-tight">
                 พิมพ์เอกสาร
-                <span className="ml-1.5 text-xs px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 font-mono">
+                <span className="ml-1.5 text-xs px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                   #{data.billSequence}
                 </span>
               </p>
               {/* Desktop: full */}
               <h3 className="hidden sm:flex text-sm text-slate-900 font-semibold items-center gap-2 leading-tight">
                 <span>เอกสารสัญญาจ้าง / ใบสำคัญจ่าย / 50 ทวิ</span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 font-mono">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                   บิล #{data.billSequence}
                 </span>
               </h3>

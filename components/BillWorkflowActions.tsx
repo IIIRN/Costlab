@@ -68,7 +68,7 @@ export function BillWorkflowActions({ row, compact = false, allowEdit = false, r
     }
   }
 
-  const btnBase = "inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-all shadow-xs disabled:opacity-50 disabled:cursor-not-allowed";
+  const btnBase = "inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed";
 
   return (
     <div className="flex items-center gap-1.5 flex-wrap">
@@ -78,9 +78,9 @@ export function BillWorkflowActions({ row, compact = false, allowEdit = false, r
           onClick={editBill}
           title="แก้ไขบิล"
           aria-label="แก้ไขบิล"
-          className={`${btnBase} bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300`}
+          className={`${btnBase} bg-white text-slate-800 border border-slate-300 hover:bg-slate-100`}
         >
-          <Pencil size={14} className="shrink-0 text-slate-500" />
+          <Pencil size={14} className="shrink-0 text-slate-700" />
           {compact ? null : <span>แก้ไข</span>}
         </button>
       ) : null}
@@ -91,7 +91,7 @@ export function BillWorkflowActions({ row, compact = false, allowEdit = false, r
           disabled={busy !== null}
           onClick={() => updateStatus("อนุมัติ")}
           title="อนุมัติบิล"
-          className={`${btnBase} bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800`}
+          className={`${btnBase} bg-emerald-700 text-white hover:bg-emerald-800 active:bg-emerald-900`}
         >
           {busy === "status" ? <LoaderCircle className="animate-spin shrink-0" size={14} /> : <Check size={14} className="shrink-0" />}
           {compact ? null : <span>อนุมัติ</span>}
@@ -104,7 +104,7 @@ export function BillWorkflowActions({ row, compact = false, allowEdit = false, r
           disabled={busy !== null}
           onClick={() => updateStatus("เบิกแล้ว")}
           title="บันทึกว่าเบิกแล้ว"
-          className={`${btnBase} bg-sky-600 text-white hover:bg-sky-700 active:bg-sky-800`}
+          className={`${btnBase} bg-sky-700 text-white hover:bg-sky-800 active:bg-sky-900`}
         >
           {busy === "status" ? <LoaderCircle className="animate-spin shrink-0" size={14} /> : <Banknote size={14} className="shrink-0" />}
           {compact ? null : <span>เบิกแล้ว</span>}
@@ -117,9 +117,9 @@ export function BillWorkflowActions({ row, compact = false, allowEdit = false, r
         onClick={deleteBill}
         title="ลบบิล"
         aria-label="ลบบิล"
-        className={`${btnBase} bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 hover:border-rose-300`}
+        className={`${btnBase} bg-rose-50 text-rose-700 border border-rose-300 hover:bg-rose-100`}
       >
-        {busy === "delete" ? <LoaderCircle className="animate-spin shrink-0" size={14} /> : <Trash2 size={14} className="shrink-0 text-rose-500" />}
+        {busy === "delete" ? <LoaderCircle className="animate-spin shrink-0" size={14} /> : <Trash2 size={14} className="shrink-0 text-rose-600" />}
         {compact ? null : <span>ลบ</span>}
       </button>
 

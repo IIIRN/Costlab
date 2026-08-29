@@ -52,3 +52,36 @@ export function normalizeBillStatus(value: unknown) {
   if (str.includes("รออนุมัติ")) return "รออนุมัติ";
   return str;
 }
+
+export function formatVatDisplay(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  const str = String(value).trim();
+  if (!str || str === "-" || str === "0" || str === "0%") return "";
+  if (str.toUpperCase().startsWith("VAT")) return str;
+  return str.includes("%") ? `VAT ${str}` : `VAT ${str}%`;
+}
+
+export function formatDeductDisplay(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  const str = String(value).trim();
+  if (!str || str === "-" || str === "0" || str === "0%") return "";
+  if (str.startsWith("หัก")) return str;
+  return str.includes("%") ? `หัก ${str}` : `หัก ${str}%`;
+}
+
+export function formatCreditDisplay(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  const str = String(value).trim();
+  if (!str || str === "-" || str === "0") return "";
+  if (str.startsWith("เครดิต")) return str;
+  return str.includes("วัน") ? `เครดิต ${str}` : `เครดิต ${str} วัน`;
+}
+
+export function formatBillConditions(row: SheetRow): string {
+  if (!row) return "";
+  const vat = formatVatDisplay(row.vat ?? row["vat"]);
+  const deduct = formatDeductDisplay(row["หัก"] ?? row.deduct);
+  const credit = formatCreditDisplay(row["เครดิต"] ?? row.credit);
+  return [vat, deduct, credit].filter(Boolean).join(" · ");
+}
+

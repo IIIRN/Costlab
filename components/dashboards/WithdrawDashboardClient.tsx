@@ -7,7 +7,7 @@ import { showToast } from "@/components/ToastProvider";
 import { money, toNumber } from "@/lib/numbers";
 import type { SheetRow } from "@/lib/types";
 import { formatDateDisplay, normalizeDateToIso, parseDateStrict } from "@/lib/dates";
-import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { useRealtimeSync } from "@/lib/use-realtime-sync";
 
 export type WithdrawFilters = {
   requester?: string;
@@ -94,33 +94,14 @@ export function WithdrawDashboardClient({ rows, peopleRows, usersList = [], init
     }
   }, [peopleRows, usersList, initialFilters.requester]);
 
-  // Live sync from Supabase PostgreSQL changes + Local Form Events
-  useEffect(() => {
-    const handleDataUpdated = () => {
-      router.refresh();
-    };
-    window.addEventListener("bills-data-updated", handleDataUpdated);
-    window.addEventListener("data-updated", handleDataUpdated);
-
-    const supabase = getSupabaseBrowserClient();
-    let channel: any = null;
-    if (supabase) {
-      channel = supabase
-        .channel("withdraw_live_sync")
-        .on("postgres_changes", { event: "*", schema: "public", table: "bills" }, () => {
-          router.refresh();
-        })
-        .subscribe();
-    }
-
-    return () => {
-      window.removeEventListener("bills-data-updated", handleDataUpdated);
-      window.removeEventListener("data-updated", handleDataUpdated);
-      if (supabase && channel) {
-        supabase.removeChannel(channel);
-      }
-    };
-  }, [router]);
+  // High-performance debounced live sync from Supabase PostgreSQL + Local Form Events
+  useRealtimeSync({
+    channelName: "withdraw_live_sync",
+    tables: ["bills"],
+    onSync: () => router.refresh(),
+    debounceMs: 700,
+    customEvents: ["bills-data-updated", "data-updated"],
+  });
 
   const requesterNames = useMemo(() => requesterNameMap(peopleRows), [peopleRows]);
 
@@ -178,6 +159,10 @@ export function WithdrawDashboardClient({ rows, peopleRows, usersList = [], init
     const nextStatus = "ตั้งเบิก";
     setApprovingRow(sheetRow);
     setActionError("");
+
+    // ⚡ Optimistic UI Update: Update status immediately (< 20ms)
+    setStatusOverrides(current => ({ ...current, [sheetRow]: nextStatus }));
+
     try {
       const response = await fetch("/api/rows", {
         method: "PATCH",
@@ -188,9 +173,8 @@ export function WithdrawDashboardClient({ rows, peopleRows, usersList = [], init
       if (!response.ok) throw new Error(payload.error || "อัปเดตไม่สำเร็จ");
 
       const updatedRow = { ...row, "สถานะ": nextStatus };
-      setStatusOverrides(current => ({ ...current, [sheetRow]: nextStatus }));
 
-      // Automatically send LINE Flex message to the Requester
+      // Automatically send LINE Flex message to the Requester in background
       fetch("/api/line/notify-withdraw-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -199,6 +183,12 @@ export function WithdrawDashboardClient({ rows, peopleRows, usersList = [], init
 
       router.refresh();
     } catch (error) {
+      // 🔄 Rollback optimistic change on network/API failure
+      setStatusOverrides(current => {
+        const rollback = { ...current };
+        delete rollback[sheetRow];
+        return rollback;
+      });
       setActionError(error instanceof Error ? error.message : "อัปเดตไม่สำเร็จ");
     } finally {
       setApprovingRow(null);
@@ -210,24 +200,33 @@ export function WithdrawDashboardClient({ rows, peopleRows, usersList = [], init
     setIsBatchApproving(true);
     setActionError("");
 
-    try {
-      // Filter out rows that are already in target or finished status
-      const validSheetRows = Array.from(selectedRows).filter(sheetRow => {
-        const targetRow = rows.find(r => Number(r._sheetRow) === sheetRow);
-        if (!targetRow) return false;
-        const currentSt = normalizedStatus(targetRow["สถานะ"]);
-        // If approving or requesting withdraw, skip rows that are ALREADY approved or paid/closed
-        if (targetStatus === "อนุมัติ" && (currentSt === "อนุมัติ" || currentSt === "เบิกแล้ว")) return false;
-        if (targetStatus === "ตั้งเบิก" && (currentSt === "ตั้งเบิก" || currentSt === "อนุมัติ" || currentSt === "เบิกแล้ว")) return false;
-        return true;
+    // Filter out rows that are already in target or finished status
+    const validSheetRows = Array.from(selectedRows).filter(sheetRow => {
+      const targetRow = rows.find(r => Number(r._sheetRow) === sheetRow);
+      if (!targetRow) return false;
+      const currentSt = normalizedStatus(targetRow["สถานะ"]);
+      // If approving or requesting withdraw, skip rows that are ALREADY approved or paid/closed
+      if (targetStatus === "อนุมัติ" && (currentSt === "อนุมัติ" || currentSt === "เบิกแล้ว")) return false;
+      if (targetStatus === "ตั้งเบิก" && (currentSt === "ตั้งเบิก" || currentSt === "อนุมัติ" || currentSt === "เบิกแล้ว")) return false;
+      return true;
+    });
+
+    if (validSheetRows.length === 0) {
+      setActionError("⚠️ รายการที่เลือกอยู่ในสถานะดังกล่าวแล้ว หรือปิดงานเรียบร้อยแล้ว (ไม่สามารถสั่งซ้ำได้)");
+      setIsBatchApproving(false);
+      return;
+    }
+
+    // ⚡ Optimistic UI Update: Apply target status to all valid selected rows immediately
+    setStatusOverrides(current => {
+      const next = { ...current };
+      validSheetRows.forEach(sheetRow => {
+        next[sheetRow] = targetStatus;
       });
+      return next;
+    });
 
-      if (validSheetRows.length === 0) {
-        setActionError("⚠️ รายการที่เลือกอยู่ในสถานะดังกล่าวแล้ว หรือปิดงานเรียบร้อยแล้ว (ไม่สามารถสั่งซ้ำได้)");
-        setIsBatchApproving(false);
-        return;
-      }
-
+    try {
       const patches = validSheetRows.map(sheetRow => ({ sheetRow, values: { "สถานะ": targetStatus } }));
       const res = await fetch("/api/rows", {
         method: "PATCH",
@@ -245,7 +244,6 @@ export function WithdrawDashboardClient({ rows, peopleRows, usersList = [], init
         if (targetRow) {
           const updatedRow = { ...targetRow, "สถานะ": targetStatus };
           updatedRowsList.push(updatedRow);
-          setStatusOverrides(current => ({ ...current, [sheetRow]: targetStatus }));
         }
       });
 
@@ -261,6 +259,14 @@ export function WithdrawDashboardClient({ rows, peopleRows, usersList = [], init
       setSelectedRows(new Set());
       router.refresh();
     } catch (error) {
+      // 🔄 Rollback optimistic change on failure
+      setStatusOverrides(current => {
+        const rollback = { ...current };
+        validSheetRows.forEach(sheetRow => {
+          delete rollback[sheetRow];
+        });
+        return rollback;
+      });
       setActionError(error instanceof Error ? error.message : "อัปเดตไม่สำเร็จ");
     } finally {
       setIsBatchApproving(false);
