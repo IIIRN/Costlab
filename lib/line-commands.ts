@@ -750,7 +750,8 @@ export async function handleLineCommand(
       }
 
       let totalAmount = 0;
-      const { approverIds } = await getLineConfigIds();
+      const { approverIds, closerIds, financeIds } = await getLineConfigIds();
+      const targetFinanceList = Array.from(new Set([...(closerIds || []), ...(financeIds || [])].filter(Boolean)));
 
       for (const b of targetBills) {
         const bId = b.id || b["ลำดับ"] || b._sheetRow;
@@ -763,21 +764,21 @@ export async function handleLineCommand(
         b.status = newStatus;
       }
 
-      // When Owner Approves successfully, forward Multi-Item Flex Message to Approvers (LINE_USER_ID_APPROVER list)
-      if (isApprove && approverIds.length > 0) {
+      // When Approver Approves successfully, forward Multi-Item Flex Message to Finance / Closers to pay & close job
+      if (isApprove && targetFinanceList.length > 0) {
         const [peopleMap, bankInfoMap] = await Promise.all([getPeopleMap(), getBankInfoMap()]);
-        const flexForApprover = createWithdrawApproverFlex(targetBills, peopleMap, bankInfoMap);
+        const flexForFinance = createWithdrawApproverFlex(targetBills, peopleMap, bankInfoMap);
         const totalAmtStr = totalAmount.toLocaleString("th-TH");
         const altText = targetBills.length === 1
           ? `✅ รายการอนุมัติสำเร็จ (รอปิดงาน) #${targetBills[0]["ลำดับ"] || targetBills[0].id || ""} (฿${totalAmtStr})`
           : `✅ รายการอนุมัติสำเร็จ ${targetBills.length} รายการ (รวม ฿${totalAmtStr})`;
 
-        for (const approverId of approverIds) {
-          await sendFlexMessageDetailed(approverId, altText, flexForApprover);
+        for (const financeId of targetFinanceList) {
+          await sendFlexMessageDetailed(financeId, altText, flexForFinance);
         }
       }
 
-      // When Approver Closes bills successfully (!isApprove && !isReject), notify each Requester via LINE Flex Message
+      // When Finance Closes bills successfully (!isApprove && !isReject), notify each Requester via LINE Flex Message
       if (!isApprove && !isReject && targetBills.length > 0) {
         const { getLineUserIdByRequester, getLineTargetGroup, createWithdrawCompletedRequesterFlex, sendFlexMessageDetailed } = await import("@/lib/line");
 
@@ -829,7 +830,7 @@ export async function handleLineCommand(
 
       await replyTextMessage(
         replyToken,
-        `✅ ${isApprove ? "อนุมัติ" : "ปิดงาน"}บิล${isSubBatch ? "ย่อย" : isMainBatch ? "หลัก" : ""}ของ "${rawTarget}" เรียบร้อยแล้ว!\n\n📊 จำนวน: ${targetBills.length} รายการ\n💰 ยอดเงินรวม: ฿${formattedTotal}\n👮‍♂️ ผู้ดำเนินการ: ${operatorName}${isApprove && approverIds.length > 0 ? `\n📲 ส่ง Flex ต่อไปยังผู้อนุมัติ (${approverIds.length} ท่าน) เพื่อปิดงานแล้ว` : ""}`
+        `✅ ${isApprove ? "อนุมัติ" : "ปิดงาน"}บิล${isSubBatch ? "ย่อย" : isMainBatch ? "หลัก" : ""}ของ "${rawTarget}" เรียบร้อยแล้ว!\n\n📊 จำนวน: ${targetBills.length} รายการ\n💰 ยอดเงินรวม: ฿${formattedTotal}\n👮‍♂️ ผู้ดำเนินการ: ${operatorName}${isApprove && targetFinanceList.length > 0 ? `\n📲 ส่ง Flex ต่อไปยังฝ่ายการเงิน (${targetFinanceList.length} ท่าน) เพื่อปิดงานแล้ว` : ""}`
       );
       return true;
     }

@@ -1877,12 +1877,17 @@ export async function getLineUserIdByRequester(requesterKey: string): Promise<st
   return "";
 }
 
-export async function getLineTargetIds(): Promise<{ ownerId: string; approverIds: string[]; closerIds: string[] }> {
-  return cached("line:target_ids", 120_000, async () => {
+export async function getLineTargetIds(): Promise<{
+  ownerId: string;
+  approverIds: string[];
+  closerIds: string[];
+  financeIds: string[];
+}> {
+  return cached("line:target_ids", 30_000, async () => {
     try {
       let ownerId = "";
       const approverSet = new Set<string>();
-      const closerSet = new Set<string>();
+      const financeSet = new Set<string>();
 
       // 1. Primary Source: master_members table
       const { data: members } = await supabaseAdmin.from("master_members").select("*");
@@ -1890,26 +1895,46 @@ export async function getLineTargetIds(): Promise<{ ownerId: string; approverIds
       if (members && Array.isArray(members)) {
         for (const m of members) {
           if (m.status === "Inactive") continue;
-          const lineId = String(m.line_user_id || "").trim();
+          const lineId = String(m.line_user_id || m["LINE User ID"] || m.data?.line_user_id || m.data?.["LINE User ID"] || "").trim();
           if (!lineId) continue;
 
-          if (Boolean(m.is_owner) || (!ownerId && (m.role === "Admin" || m.system_role === "Admin" || m.system_role === "Owner"))) {
-            ownerId = lineId;
-          }
+          const d = (m.data && typeof m.data === "object") ? m.data : {};
+          const permStr = String(m["สิทธิ์การใช้งาน"] || d["สิทธิ์การใช้งาน"] || "");
 
-          // 🟢 Finance (canApprove)
-          if (Boolean(m.can_approve) || m.system_role === "Admin_Approver" || m.role === "Admin_Approver" || m.role === "Approver") {
+          // 1. เจ้าของระบบ (Owner)
+          const isOwner = Boolean(
+            m.is_owner || d.is_owner || d["เจ้าของระบบ"] || m["เจ้าของระบบ"] ||
+            m.role === "Owner" || m.system_role === "Owner" ||
+            permStr.includes("Owner") || permStr.includes("เจ้าของระบบ")
+          );
+          if (isOwner) {
+            if (!ownerId) ownerId = lineId;
             approverSet.add(lineId);
           }
 
-          // 🔵 Approver (canCloseBill)
-          if (Boolean(m.can_close_bill) || m.system_role === "Admin_Closer" || m.role === "Admin_Closer") {
-            closerSet.add(lineId);
+          // 2. ผู้อนุมัติบิล (Approver - ตรวจสอบและกดอนุมัติบิล)
+          const isApprover = Boolean(
+            m.can_close_bill || d.can_close_bill || d["อนุมัติบิล"] || m["อนุมัติบิล"] ||
+            m.system_role === "Admin_Approver" ||
+            permStr.includes("Approver") || permStr.includes("อนุมัติบิล")
+          );
+          if (isApprover) {
+            approverSet.add(lineId);
+          }
+
+          // 3. ฝ่ายการเงิน (Finance / Closer - ตรวจสอบจ่ายเงินและกดปิดงาน)
+          const isFinance = Boolean(
+            m.can_approve || d.can_approve || d["ฝ่ายการเงิน"] || m["ฝ่ายการเงิน"] ||
+            m.system_role === "Admin_Closer" ||
+            permStr.includes("Finance") || permStr.includes("ฝ่ายการเงิน") || permStr.includes("ปิดบิล")
+          );
+          if (isFinance) {
+            financeSet.add(lineId);
           }
         }
       }
 
-      // 3. Fallback to line_config in system_options or env
+      // 2. Fallback to line_config in system_options or env
       const { data: configRow } = await supabaseAdmin
         .from("system_options")
         .select("data")
@@ -1920,20 +1945,33 @@ export async function getLineTargetIds(): Promise<{ ownerId: string; approverIds
       if (!ownerId) {
         ownerId = String(cfg.LINE_USER_ID_OWN || process.env.LINE_USER_ID_OWN || LINE_CONFIG.USER_ID_OWN || "").trim();
       }
-      const rawApprovers = String(cfg.LINE_USER_ID_APPROVER || process.env.LINE_USER_ID_APPROVER || LINE_CONFIG.USER_ID_APPROVER || "").trim();
-      if (rawApprovers) {
-        rawApprovers.split(",").forEach(id => {
-          const clean = id.trim();
-          if (clean) approverSet.add(clean);
-        });
+
+      if (approverSet.size === 0) {
+        const rawApprovers = String(cfg.LINE_USER_ID_APPROVER || process.env.LINE_USER_ID_APPROVER || LINE_CONFIG.USER_ID_APPROVER || "").trim();
+        if (rawApprovers) {
+          rawApprovers.split(",").forEach(id => {
+            const clean = id.trim();
+            if (clean) approverSet.add(clean);
+          });
+        }
+      }
+
+      if (financeSet.size === 0) {
+        const rawClosers = String(cfg.LINE_USER_ID_CLOSER || cfg.LINE_USER_ID_FINANCE || process.env.LINE_USER_ID_CLOSER || "").trim();
+        if (rawClosers) {
+          rawClosers.split(",").forEach(id => {
+            const clean = id.trim();
+            if (clean) financeSet.add(clean);
+          });
+        }
       }
 
       const approverIds = Array.from(approverSet);
-      const closerIds = Array.from(closerSet);
-      return { ownerId, approverIds, closerIds };
+      const closerIds = Array.from(financeSet);
+      return { ownerId, approverIds, closerIds, financeIds: closerIds };
     } catch (e) {
       console.error("Failed fetching LINE target IDs:", e);
-      return { ownerId: "", approverIds: [], closerIds: [] };
+      return { ownerId: "", approverIds: [], closerIds: [], financeIds: [] };
     }
   });
 }

@@ -107,6 +107,8 @@ export function invalidateTableCache(tableName: string) {
     clearCache("headers:master_members");
     clearCache("sys_opt:entity_banks");
     clearCache("sys_opt:users_list");
+    clearCache("line:");
+    clearCache("line:target_ids");
   } else if (canonical === "banks" || normalized === "ธนาคาร" || normalized === "banks" || normalized === "BANK") {
     clearCache("rows:banks");
     clearCache("rows:ธนาคาร");
