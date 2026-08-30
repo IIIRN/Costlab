@@ -30,54 +30,19 @@ export async function isLineApproverAuthorized(userId: string, targetId?: string
   if (!userId) return false;
   const cacheKey = `line:auth_approver:${userId}:${targetId || "none"}`;
 
-  return cached(cacheKey, 30_000, async () => {
+  return cached(cacheKey, 10_000, async () => {
     try {
-      const { data: configData } = await supabaseAdmin
-        .from("system_options")
-        .select("data")
-        .eq("id", "line_config")
-        .maybeSingle();
-
-      const cfg = configData?.data || {};
-      const rawApproverIds = [
-        cfg.LINE_USER_ID_APPROVER,
-        cfg.LINE_USER_ID_OWN,
-        process.env.LINE_USER_ID_APPROVER,
-        process.env.LINE_USER_ID_OWN,
-        LINE_CONFIG.USER_ID_APPROVER,
-        LINE_CONFIG.USER_ID_OWN,
-      ];
-      const allowedApprovers: string[] = rawApproverIds
-        .flatMap(v => String(v || "").split(","))
-        .map(v => v.trim())
-        .filter(Boolean);
-
-      if (allowedApprovers.includes(userId) || (targetId && allowedApprovers.includes(targetId))) {
+      const { approverIds, ownerId } = await getLineTargetIds();
+      if (approverIds.includes(userId) || (targetId && approverIds.includes(targetId))) {
         return true;
       }
-
-      // Check master_members table
-      const { data: member } = await supabaseAdmin
-        .from("master_members")
-        .select("*")
-        .or(`line_user_id.eq.${userId},id.eq.${userId}`)
-        .maybeSingle();
-
-      if (member && member.status !== "Inactive") {
-        const isOwner = Boolean(member.is_owner) || member.role === "Admin" || member.system_role === "Admin" || member["สิทธิ์การใช้งาน"] === "Admin";
-        const isApprover = Boolean(member.can_close_bill) || member.system_role === "Admin_Approver" || member.id === "PT104";
-        if (isOwner || isApprover) {
-          return true;
-        }
+      if (ownerId && (userId === ownerId || targetId === ownerId)) {
+        return true;
       }
     } catch (e) {
       console.warn("⚠️ Warning checking LINE approver authorization:", e);
     }
-
-    return (
-      userId === LINE_CONFIG.USER_ID_APPROVER ||
-      userId === LINE_CONFIG.USER_ID_OWN
-    );
+    return false;
   });
 }
 
@@ -85,51 +50,19 @@ export async function isLineCloserAuthorized(userId: string, targetId?: string):
   if (!userId) return false;
   const cacheKey = `line:auth_closer:${userId}:${targetId || "none"}`;
 
-  return cached(cacheKey, 30_000, async () => {
+  return cached(cacheKey, 10_000, async () => {
     try {
-      const { data: configData } = await supabaseAdmin
-        .from("system_options")
-        .select("data")
-        .eq("id", "line_config")
-        .maybeSingle();
-
-      const cfg = configData?.data || {};
-      const rawFinanceIds = [
-        cfg.LINE_USER_ID_FINANCE,
-        cfg.LINE_USER_ID_CLOSER,
-        cfg.LINE_USER_ID_OWN,
-        process.env.LINE_USER_ID_FINANCE,
-        process.env.LINE_USER_ID_OWN,
-        LINE_CONFIG.USER_ID_OWN,
-      ];
-      const allowedFinances: string[] = rawFinanceIds
-        .flatMap(v => String(v || "").split(","))
-        .map(v => v.trim())
-        .filter(Boolean);
-
-      if (allowedFinances.includes(userId) || (targetId && allowedFinances.includes(targetId))) {
+      const { closerIds, ownerId } = await getLineTargetIds();
+      if (closerIds.includes(userId) || (targetId && closerIds.includes(targetId))) {
         return true;
       }
-
-      // Check master_members table
-      const { data: member } = await supabaseAdmin
-        .from("master_members")
-        .select("*")
-        .or(`line_user_id.eq.${userId},id.eq.${userId}`)
-        .maybeSingle();
-
-      if (member && member.status !== "Inactive") {
-        const isOwner = Boolean(member.is_owner) || member.role === "Admin" || member.system_role === "Admin" || member["สิทธิ์การใช้งาน"] === "Admin";
-        const isFinance = Boolean(member.can_approve) || member.system_role === "Admin_Closer" || member.id === "PT105";
-        if (isOwner || isFinance) {
-          return true;
-        }
+      if (ownerId && (userId === ownerId || targetId === ownerId)) {
+        return true;
       }
     } catch (e) {
       console.warn("⚠️ Warning checking LINE closer/finance authorization:", e);
     }
-
-    return userId === LINE_CONFIG.USER_ID_OWN;
+    return false;
   });
 }
 
