@@ -31,8 +31,9 @@ export async function POST(req: NextRequest) {
     const amountStr = totalAmount.toLocaleString("th-TH");
 
     if (targetRole === "approver" || targetRole === "finance" || targetRole === "closer") {
-      const { closerIds, financeIds } = await getLineConfigIds();
-      const targetFinanceList = Array.from(new Set([...(closerIds || []), ...(financeIds || [])].filter(Boolean)));
+      const { ownerId, closerIds, financeIds } = await getLineConfigIds();
+      const rawFinanceList = Array.from(new Set([...(closerIds || []), ...(financeIds || [])].filter(Boolean)));
+      const targetFinanceList = rawFinanceList.length > 0 ? rawFinanceList : (ownerId ? [ownerId] : []);
       if (targetFinanceList.length === 0) {
         return NextResponse.json({ error: "No Finance/Closer LINE User IDs configured" }, { status: 400 });
       }
@@ -51,7 +52,9 @@ export async function POST(req: NextRequest) {
 
     if (targetRole === "owner" || targetRole === "request_approval") {
       const { ownerId, approverIds } = await getLineConfigIds();
-      const targetApprovers = Array.from(new Set([ownerId, ...(approverIds || [])].filter(Boolean)));
+      const targetApprovers = (approverIds && approverIds.length > 0)
+        ? approverIds
+        : (ownerId ? [ownerId] : []);
       if (targetApprovers.length === 0) {
         return NextResponse.json({ error: "No Owner/Approver LINE User ID configured" }, { status: 400 });
       }
