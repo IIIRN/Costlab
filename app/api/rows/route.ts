@@ -8,8 +8,9 @@ import { uploadTableImage } from "@/lib/drive";
 import { applyBillFormulas, applyContractFormulas, applyProjectFormulas } from "@/lib/formulas";
 import { getFormSchema } from "@/lib/schemas";
 import { isVatActive, parseDeductPercent, parseCreditDays } from "@/lib/project-summary";
-import { appendAuditLog, appendRow, bulkAppendRows, deleteRows, getRows, invalidateTableCache, updateRow } from "@/lib/db";
+import { appendAuditLog, appendRow, bulkAppendRows, deleteRows, getRows, getSystemOptions, invalidateTableCache, updateRow } from "@/lib/db";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { getNextBillSequence } from "@/lib/supabase-db";
 import type { SheetRow } from "@/lib/types";
 
 async function verifyDeletePermission(request: NextRequest): Promise<boolean> {
@@ -102,9 +103,22 @@ export async function POST(request: NextRequest) {
       const rows = body.rows as SheetRow[];
       const actor = actorFromRequest(request);
       const processedRows: SheetRow[] = [];
-      for (const r of rows) {
-        const itemRow = { ...r };
+
+      let startSeq = Number(rows[0]["ลำดับ"] || 0);
+      if (startSeq <= 0 && (tableName === TABLES.DATA || tableName === "Data" || tableName === "bills")) {
+        try {
+          const sysOptions = await getSystemOptions();
+          const configuredStart = Number((sysOptions as any)?.bill_start_sequence || (sysOptions as any)?.["ลำดับบิลเริ่มต้น"] || 1);
+          startSeq = await getNextBillSequence(configuredStart);
+        } catch {}
+      }
+
+      for (let i = 0; i < rows.length; i++) {
+        const itemRow = { ...rows[i] };
         if (tableName === TABLES.DATA || tableName === "Data" || tableName === "bills") {
+          if (startSeq > 0) {
+            itemRow["ลำดับ"] = String(startSeq + i);
+          }
           if (!itemRow["ผู้สร้างบิล"] && !itemRow["created_by"]) {
             itemRow["ผู้สร้างบิล"] = actor;
             itemRow["created_by"] = actor;
@@ -244,6 +258,44 @@ export async function PATCH(request: NextRequest) {
     );
     if (!existing) throw new Error("ไม่พบข้อมูลที่ต้องการแก้ไข");
     const values = { ...existing, ...patch };
+    if (patch["รหัสพนักงาน"] !== undefined && String(patch["รหัสพนักงาน"]).trim() !== "") {
+      values.id = String(patch["รหัสพนักงาน"]).trim();
+    } else if (patch["id_Contractor"] !== undefined && String(patch["id_Contractor"]).trim() !== "") {
+      values.id = String(patch["id_Contractor"]).trim();
+    } else if (patch["id_store"] !== undefined && String(patch["id_store"]).trim() !== "") {
+      values.id = String(patch["id_store"]).trim();
+    } else if (patch["id_bank"] !== undefined && String(patch["id_bank"]).trim() !== "") {
+      values.id = String(patch["id_bank"]).trim();
+    } else if (patch["id_car"] !== undefined && String(patch["id_car"]).trim() !== "") {
+      values.id = String(patch["id_car"]).trim();
+    } else if (patch["id_cus"] !== undefined && String(patch["id_cus"]).trim() !== "") {
+      values.id = String(patch["id_cus"]).trim();
+    } else if (patch["id_Company"] !== undefined && String(patch["id_Company"]).trim() !== "") {
+      values.id = String(patch["id_Company"]).trim();
+    }
+
+    if (patch["สิทธิ์การใช้งาน"] !== undefined) {
+      const permStr = String(patch["สิทธิ์การใช้งาน"] || "");
+      const hasOwner = permStr.includes("Owner") || permStr.includes("เจ้าของระบบ");
+      const hasApprover = permStr.includes("Approver") || permStr.includes("อนุมัติบิล");
+      const hasFinance = permStr.includes("Finance") || permStr.includes("ฝ่ายการเงิน") || permStr.includes("ปิดบิล");
+      const hasDelete = permStr.includes("Delete") || permStr.includes("ลบข้อมูล");
+
+      values["เจ้าของระบบ"] = hasOwner;
+      values["อนุมัติบิล"] = hasApprover;
+      values["ฝ่ายการเงิน"] = hasFinance;
+      values["สิทธิ์ลบข้อมูล"] = hasDelete;
+      values.is_owner = hasOwner;
+      values.can_close_bill = hasApprover;
+      values.can_approve = hasFinance;
+      values.can_delete = hasDelete;
+    }
+
+    if (patch["LINE"] !== undefined) {
+      values.line_user_id = patch["LINE"];
+      values["LINE User ID"] = patch["LINE"];
+      values["LINE"] = patch["LINE"];
+    }
     const patchKeys = Object.keys(patch).filter(key => key !== "_sheetRow");
     const isFollowUpOrStatusPatch = tableName === TABLES.DATA && patchKeys.length > 0 && patchKeys.every(key =>
       ["สถานะ", "วันได้บิล", "วันออก 3%", "วันจ่าย", "รูปถ่ายบิล", "ลำดับ"].includes(key)
@@ -408,22 +460,23 @@ function validateBillDelete(_deletingRows: SheetRow[]) {
 function canManageTable(tableName: string) {
   if (!tableName) return false;
   const knownTables = new Set([
-    "Data", "bills", "data", "Data",
-    "Project", "projects", "project",
-    "ร้านค้า", "stores", "store",
-    "รับเหมา", "contractors", "contractor",
-    "งานรับเหมา", "contract_works", "ContractWork", "contractwork", "CONTRACT_WORK", "Contract_work",
-    "รายชื่อ", "master_members", "PEOPLE", "Master Member", "people",
-    "ธนาคาร", "banks", "bank", "BANK",
-    "ทะเบียน", "cars", "car", "CAR",
-    "ประเภท", "categories", "category",
-    "ลูกค้า", "customers", "customer",
-    "บริษัท", "companies", "company",
-    "ยืมเงิน", "loans", "loan",
-    "สินค้า", "products", "product"
+    "Data", "bills", "data", "bills", "กรอกบิล",
+    "Project", "projects", "project", "1. Project รวม",
+    "ร้านค้า", "stores", "store", "4. ร้านค้า",
+    "รับเหมา", "contractors", "contractor", "5. รับเหมา",
+    "งานรับเหมา", "contract_works", "ContractWork", "contractwork", "CONTRACT_WORK", "Contract_work", "เปิดจ้าง",
+    "รายชื่อ", "master_members", "PEOPLE", "Master Member", "people", "พนักงาน", "ชื่อพนักงาน", "6. ชื่อพนักงาน", "รายชื่อพนักงาน",
+    "ธนาคาร", "banks", "bank", "BANK", "2. ธนาคาร",
+    "ทะเบียน", "cars", "car", "CAR", "7. ทะเบียนรถ",
+    "ประเภท", "categories", "category", "3. ประเภท",
+    "ลูกค้า", "customers", "customer", "8. ลูกค้า",
+    "บริษัท", "companies", "company", "9. บริษัท",
+    "ยืมเงิน", "loans", "loan", "10. ยืมเงิน",
+    "สินค้า", "products", "product",
+    "Tasks", "tasks", "Works", "works", "Plan", "plans"
   ]);
   if (knownTables.has(tableName)) return true;
-  return PRIMARY_VIEWS.some(view => view.type === "table" && view.table === tableName);
+  return PRIMARY_VIEWS.some(view => (view as any).table === tableName || (view as any).name === tableName || view.id === tableName);
 }
 
 function actorFromRequest(request: NextRequest) {

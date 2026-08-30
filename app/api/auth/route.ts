@@ -8,31 +8,6 @@ function normalizePhone(p?: string) {
   return String(p || "").replace(/\D/g, "");
 }
 
-async function getUsersList(): Promise<any[]> {
-  try {
-    const { data } = await supabaseAdmin
-      .from("system_options")
-      .select("data")
-      .eq("id", "users_list")
-      .maybeSingle();
-
-    if (data?.data && Array.isArray(data.data)) {
-      return data.data;
-    }
-  } catch (e) {}
-  return [];
-}
-
-async function saveUsersList(users: any[]) {
-  return await supabaseAdmin
-    .from("system_options")
-    .upsert({
-      id: "users_list",
-      data: users,
-      updated_at: new Date().toISOString(),
-    });
-}
-
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -48,69 +23,94 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: false, error: "Missing LINE User ID" }, { status: 400 });
       }
 
-      const users = await getUsersList();
-      let matchedUser = users.find(u =>
-        u.status !== "Inactive" && (
-          u.lineUserId === lineUserId ||
-          u.line_user_id === lineUserId ||
-          u.LINE_USER_ID === lineUserId
-        )
-      );
+      // 1. Search in master_members (Primary Table)
+      const { data: member, error: memberErr } = await supabaseAdmin
+        .from("master_members")
+        .select("*")
+        .eq("line_user_id", lineUserId)
+        .maybeSingle();
 
-      // Fallback: Search in master_members (PEOPLE table)
+      if (memberErr) {
+        console.warn("⚠️ Query master_members by line_user_id error:", memberErr.message);
+      }
+
+      let matchedUser: any = null;
+
+      if (member) {
+        matchedUser = {
+          id: member.id,
+          username: member.id,
+          displayName: member.nickname || member.full_name || member.id,
+          fullName: member.full_name || "",
+          phone: member.phone || "",
+          role: member.system_role || member.role || "User",
+          status: member.status || "Active",
+          isOwner: Boolean(member.is_owner),
+          canApprove: Boolean(member.can_approve),
+          canCloseBill: Boolean(member.can_close_bill),
+          canDelete: Boolean(member.can_delete),
+          lineUserId: lineUserId,
+          pictureUrl: pictureUrl || member.pictureurl || "",
+        };
+
+        // Update profile picture if newer from LINE
+        if (pictureUrl && member.pictureurl !== pictureUrl) {
+          await supabaseAdmin
+            .from("master_members")
+            .update({ pictureurl: pictureUrl })
+            .eq("id", member.id);
+        }
+      }
+
+      // Fallback: Check system_options.users_list cache
       if (!matchedUser) {
         try {
-          const { data: member } = await supabaseAdmin
-            .from("master_members")
-            .select("*")
-            .or(`line_user_id.eq.${lineUserId},lineUserId.eq.${lineUserId}`)
+          const { data: usersOpt } = await supabaseAdmin
+            .from("system_options")
+            .select("data")
+            .eq("id", "users_list")
             .maybeSingle();
 
-          if (member) {
-            matchedUser = {
-              id: String(member.id || member.id_Contractor || member["รหัสพนักงาน"] || lineUserId),
-              username: String(member["เบอร์โทรศัพท์"] || member.phone || member.id || lineUserId),
-              displayName: String(member["ชื่อเล่น"] || member["ชื่อ-นามสกุล"] || member.name || lineUserId),
-              role: String(member["สิทธิ์การใช้งาน"] || member.role || "User"),
-              status: "Active",
-              phone: String(member["เบอร์โทรศัพท์"] || member.phone || ""),
-              lineUserId: lineUserId,
-              pictureUrl: String(pictureUrl || member.pictureUrl || member.image_url || member.image || "")
-            };
+          const list = usersOpt?.data || [];
+          const found = list.find((u: any) =>
+            u.status !== "Inactive" && (
+              u.lineUserId === lineUserId ||
+              u.line_user_id === lineUserId
+            )
+          );
 
-            // Sync into users_list so future lookups are instant
-            users.push(matchedUser);
-            await saveUsersList(users);
+          if (found) {
+            matchedUser = {
+              id: found.id || found.username,
+              username: found.username || found.id,
+              displayName: found.displayName || found.name || found.id,
+              role: found.role || "User",
+              status: found.status || "Active",
+              phone: found.phone || "",
+              isOwner: Boolean(found.isOwner),
+              canApprove: Boolean(found.canApprove),
+              canCloseBill: Boolean(found.canCloseBill),
+              canDelete: Boolean(found.canDelete),
+              lineUserId: lineUserId,
+              pictureUrl: pictureUrl || found.pictureUrl || "",
+            };
           }
-        } catch (e) {
-          console.warn("⚠️ Failed to search master_members for LINE user:", e);
-        }
+        } catch (e) {}
       }
 
       if (!matchedUser) {
         return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
       }
 
-      if (pictureUrl && matchedUser.pictureUrl !== pictureUrl) {
-        matchedUser.pictureUrl = pictureUrl;
-        await saveUsersList(users);
-
-        // Also sync latest profile picture to master_members table
-        try {
-          await supabaseAdmin
-            .from("master_members")
-            .update({ pictureUrl: pictureUrl, image_url: pictureUrl })
-            .or(`line_user_id.eq.${lineUserId},lineUserId.eq.${lineUserId}`);
-        } catch (e) {
-          console.warn("⚠️ Failed to sync pictureUrl to master_members:", e);
-        }
+      if (matchedUser.status === "Inactive") {
+        return NextResponse.json({ success: false, error: "บัญชีนี้ถูกระงับการใช้งานชั่วคราว กรุณาติดต่อผู้ดูแลระบบ" }, { status: 403 });
       }
 
       const empId = matchedUser.username || matchedUser.id;
-      const userName = matchedUser.displayName || matchedUser.name || empId;
+      const userName = matchedUser.displayName || empId;
       const userRole = matchedUser.role || "User";
       const finalPicUrl = pictureUrl || matchedUser.pictureUrl || "";
-      const canDelete = matchedUser.canDelete !== undefined ? Boolean(matchedUser.canDelete) : (userRole !== "User");
+      const canDelete = Boolean(matchedUser.canDelete);
 
       cookieStore.set("auth_employee_id", empId, { expires, path: "/" });
       cookieStore.set("auth_name", userName, { expires, path: "/" });
@@ -138,120 +138,106 @@ export async function POST(request: Request) {
       }
 
       const inputPhoneClean = normalizePhone(phone);
-      if (!inputPhoneClean || inputPhoneClean.length < 9) {
-        return NextResponse.json({ success: false, error: "รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง" }, { status: 400 });
+      const rawInputTrimmed = String(phone).trim().toLowerCase();
+
+      // 1. Search in master_members (Primary Table)
+      const { data: members } = await supabaseAdmin
+        .from("master_members")
+        .select("*");
+
+      let matchedMember: any = null;
+
+      if (members && Array.isArray(members)) {
+        matchedMember = members.find((m: any) => {
+          const mPhoneClean = normalizePhone(m.phone || m["เบอร์โทร"] || m["เบอร์โทรศัพท์"]);
+          const mIdClean = String(m.id || m["รหัสพนักงาน"] || "").trim().toLowerCase();
+          const mNicknameClean = String(m.nickname || m["ชื่อเล่น"] || "").trim().toLowerCase();
+          const mFullNameClean = String(m.full_name || m["ชื่อ-นามสกุล"] || "").trim().toLowerCase();
+
+          return (
+            (inputPhoneClean && inputPhoneClean.length >= 8 && mPhoneClean && mPhoneClean === inputPhoneClean) ||
+            mIdClean === rawInputTrimmed ||
+            mNicknameClean === rawInputTrimmed ||
+            mFullNameClean === rawInputTrimmed
+          );
+        });
       }
 
-      const users = await getUsersList();
-      const existingUserIndex = users.findIndex(u => {
-        const uPhoneClean = normalizePhone(u.phone);
-        const uUsernameClean = normalizePhone(u.username);
-        const uIdClean = normalizePhone(u.id);
-        return inputPhoneClean && (
-          (uPhoneClean && uPhoneClean === inputPhoneClean) ||
-          (uUsernameClean && uUsernameClean === inputPhoneClean) ||
-          (uIdClean && uIdClean === inputPhoneClean)
-        );
-      });
+      if (matchedMember) {
+        // Update LINE User ID and pictureurl in master_members
+        const updatePayload: Record<string, any> = {
+          line_user_id: lineUserId,
+        };
+        if (pictureUrl) updatePayload.pictureurl = pictureUrl;
+        if (!matchedMember.phone && inputPhoneClean) updatePayload.phone = phone.trim();
 
-      if (existingUserIndex !== -1) {
-        const existingUser = users[existingUserIndex];
-        existingUser.lineUserId = lineUserId;
-        if (pictureUrl) existingUser.pictureUrl = pictureUrl;
-        if (!existingUser.phone) existingUser.phone = phone;
+        await supabaseAdmin
+          .from("master_members")
+          .update(updatePayload)
+          .eq("id", matchedMember.id);
 
-        users[existingUserIndex] = existingUser;
-        await saveUsersList(users);
+        const empId = matchedMember.id;
+        const userName = matchedMember.nickname || matchedMember.full_name || empId;
+        const userRole = matchedMember.system_role || matchedMember.role || "User";
+        const canDelete = Boolean(matchedMember.can_delete);
+        const finalPic = pictureUrl || matchedMember.pictureurl || "";
 
-        const empId = existingUser.username || existingUser.id;
-        const userName = existingUser.displayName || existingUser.name || empId;
-        const userRole = existingUser.role || "User";
-        const canDelete = existingUser.canDelete !== undefined ? Boolean(existingUser.canDelete) : (userRole !== "User");
+        // Sync LINE Config for notifications if user is Owner / Approver / Finance
+        try {
+          if (matchedMember.is_owner || matchedMember.can_approve || matchedMember.can_close_bill) {
+            const { data: currentLineCfg } = await supabaseAdmin
+              .from("system_options")
+              .select("data")
+              .eq("id", "line_config")
+              .maybeSingle();
 
+            const existingCfg = currentLineCfg?.data || {};
+            const updatedLineCfg = { ...existingCfg };
+
+            if (matchedMember.is_owner && !existingCfg.LINE_USER_ID_OWN) {
+              updatedLineCfg.LINE_USER_ID_OWN = lineUserId;
+            }
+            if (matchedMember.can_approve) {
+              const approvers = String(existingCfg.LINE_USER_ID_APPROVER || "").split(",").map((s: string) => s.trim()).filter(Boolean);
+              if (!approvers.includes(lineUserId)) approvers.push(lineUserId);
+              updatedLineCfg.LINE_USER_ID_APPROVER = approvers.join(",");
+            }
+            if (matchedMember.can_close_bill) {
+              const closers = String(existingCfg.LINE_USER_ID_CLOSER || "").split(",").map((s: string) => s.trim()).filter(Boolean);
+              if (!closers.includes(lineUserId)) closers.push(lineUserId);
+              updatedLineCfg.LINE_USER_ID_CLOSER = closers.join(",");
+            }
+
+            await supabaseAdmin.from("system_options").upsert({
+              id: "line_config",
+              data: updatedLineCfg,
+              updated_at: new Date().toISOString()
+            });
+          }
+        } catch (syncErr) {
+          console.warn("Failed auto-syncing line_config on linking:", syncErr);
+        }
+
+        // Set cookies
         cookieStore.set("auth_employee_id", empId, { expires, path: "/" });
         cookieStore.set("auth_name", userName, { expires, path: "/" });
         cookieStore.set("auth_role", userRole, { expires, path: "/" });
         cookieStore.set("auth_can_delete", String(canDelete), { expires, path: "/" });
-        if (pictureUrl) cookieStore.set("auth_picture_url", pictureUrl, { expires, path: "/" });
+        if (finalPic) cookieStore.set("auth_picture_url", finalPic, { expires, path: "/" });
         cookieStore.set("auth_line_user_id", lineUserId, { expires, path: "/" });
 
         return NextResponse.json({
           success: true,
           isLinked: true,
-          user: existingUser,
-          message: `ผูกบัญชี LINE กับผู้ใช้งาน "${userName}" สำเร็จ!`
+          user: { ...matchedMember, lineUserId },
+          message: `ผูกบัญชี LINE กับพนักงาน "${userName}" (${userRole}) สำเร็จ!`
         });
       }
 
-      // Check master_members (employee table) by phone number or employee ID
-      try {
-        const { data: members } = await supabaseAdmin
-          .from("master_members")
-          .select("*");
-
-        if (members && members.length > 0) {
-          const member = members.find((m: any) => {
-            const mPhoneClean = normalizePhone(m.phone || m["เบอร์โทรศัพท์"]);
-            const mIdClean = String(m.id || m["รหัสพนักงาน"] || "").trim().toLowerCase();
-            const rawPhoneClean = String(phone).trim().toLowerCase();
-            return (
-              (inputPhoneClean && mPhoneClean && mPhoneClean === inputPhoneClean) ||
-              (mIdClean && (mIdClean === rawPhoneClean || mIdClean === inputPhoneClean))
-            );
-          });
-
-          if (member) {
-            // Sync LINE User ID into master_members
-            await supabaseAdmin
-              .from("master_members")
-              .update({
-                line_user_id: lineUserId,
-                lineUserId: lineUserId
-              })
-              .eq("id", member.id);
-
-            const matchedUser = {
-              id: String(member.id || member.id_Contractor || member["รหัสพนักงาน"] || phone),
-              username: String(member["เบอร์โทรศัพท์"] || member.phone || member.id || phone),
-              displayName: String(member["ชื่อเล่น"] || member["ชื่อ-นามสกุล"] || member.name || displayName || phone),
-              role: String(member["สิทธิ์การใช้งาน"] || member.role || "User"),
-              status: "Active",
-              phone: String(member.phone || member["เบอร์โทรศัพท์"] || phone),
-              lineUserId: lineUserId,
-              pictureUrl: pictureUrl || String(member.pictureUrl || member.image_url || "")
-            };
-
-            users.push(matchedUser);
-            await saveUsersList(users);
-
-            const empId = matchedUser.username || matchedUser.id;
-            const userName = matchedUser.displayName || empId;
-            const userRole = matchedUser.role || "User";
-            const canDelete = matchedUser.role !== "User";
-
-            cookieStore.set("auth_employee_id", empId, { expires, path: "/" });
-            cookieStore.set("auth_name", userName, { expires, path: "/" });
-            cookieStore.set("auth_role", userRole, { expires, path: "/" });
-            cookieStore.set("auth_can_delete", String(canDelete), { expires, path: "/" });
-            if (pictureUrl) cookieStore.set("auth_picture_url", pictureUrl, { expires, path: "/" });
-            cookieStore.set("auth_line_user_id", lineUserId, { expires, path: "/" });
-
-            return NextResponse.json({
-              success: true,
-              isLinked: true,
-              user: matchedUser,
-              message: `ผูกบัญชี LINE กับพนักงาน "${userName}" (${userRole}) สำเร็จ!`
-            });
-          }
-        }
-      } catch (e) {
-        console.warn("⚠️ Failed searching master_members during registration:", e);
-      }
-
-      // If not found in users_list or master_members, do NOT create a new account
+      // If not found in master_members
       return NextResponse.json({
         success: false,
-        error: `ไม่พบเบอร์โทรศัพท์ "${phone}" ในระบบ กรุณากรอกเบอร์โทรศัพท์ให้ตรงกับข้อมูลพนักงานในระบบ หรือติดต่อผู้ดูแลระบบ`
+        error: `ไม่พบข้อมูลเบอร์โทรศัพท์ "${phone}" ในระบบพนักงาน กรุณาระบุเบอร์โทรศัพท์ให้ตรงกับข้อมูลพนักงาน หรือติดต่อผู้ดูแลระบบ`
       }, { status: 404 });
     }
 
@@ -283,8 +269,10 @@ export async function DELETE() {
   cookieStore.delete("auth_employee_id");
   cookieStore.delete("auth_name");
   cookieStore.delete("auth_role");
+  cookieStore.delete("auth_can_delete");
   cookieStore.delete("auth_picture_url");
   cookieStore.delete("auth_line_user_id");
   return NextResponse.json({ success: true });
 }
+
 

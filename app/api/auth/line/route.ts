@@ -4,38 +4,8 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const dynamic = "force-dynamic";
 
-const DEFAULT_USERS = [
-  { id: "PT101", username: "PT101", displayName: "คุณแมน", role: "Admin", status: "Active", phone: "081-999-9999", createdAt: "2026-01-01" },
-  { id: "PT102", username: "PT102", displayName: "คุณซ้อ", role: "Manager", status: "Active", phone: "081-888-8888", createdAt: "2026-01-01" },
-  { id: "PT103", username: "PT103", displayName: "บัญชี/การเงิน", role: "Manager", status: "Active", phone: "081-777-7777", createdAt: "2026-01-02" },
-  { id: "PT104", username: "PT104", displayName: "ช่างรับเหมา 1", role: "User", status: "Active", phone: "081-666-6666", createdAt: "2026-01-05" },
-];
-
 function normalizePhone(p?: string) {
   return String(p || "").replace(/\D/g, "");
-}
-
-async function getUsersList(): Promise<any[]> {
-  const { data } = await supabaseAdmin
-    .from("system_options")
-    .select("data")
-    .eq("id", "users_list")
-    .maybeSingle();
-
-  if (data?.data && Array.isArray(data.data) && data.data.length > 0) {
-    return data.data;
-  }
-  return DEFAULT_USERS;
-}
-
-async function saveUsersList(users: any[]) {
-  return await supabaseAdmin
-    .from("system_options")
-    .upsert({
-      id: "users_list",
-      data: users,
-      updated_at: new Date().toISOString(),
-    });
 }
 
 export async function POST(req: NextRequest) {
@@ -47,7 +17,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Missing LINE User ID" }, { status: 400 });
     }
 
-    const users = await getUsersList();
     const cookieStore = await cookies();
     const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
 
@@ -55,36 +24,44 @@ export async function POST(req: NextRequest) {
     // 1. ACTION: LOGIN WITH LINE USER ID
     // ==========================================
     if (action === "login") {
-      let matchedUser = users.find(u =>
-        u.status === "Active" && (
-          u.lineUserId === lineUserId ||
-          u.line_user_id === lineUserId
-        )
-      );
+      const { data: member } = await supabaseAdmin
+        .from("master_members")
+        .select("*")
+        .eq("line_user_id", lineUserId)
+        .maybeSingle();
 
-      if (!matchedUser) {
+      if (!member) {
         return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
       }
 
-      // Update profile picture if updated on LINE
-      if (pictureUrl && matchedUser.pictureUrl !== pictureUrl) {
-        matchedUser.pictureUrl = pictureUrl;
-        await saveUsersList(users);
+      if (member.status === "Inactive") {
+        return NextResponse.json({ success: false, error: "บัญชีนี้ถูกระงับการใช้งานชั่วคราว" }, { status: 403 });
       }
 
-      const empId = matchedUser.username || matchedUser.id;
-      const name = matchedUser.displayName || matchedUser.name || empId;
-      const role = matchedUser.role || "User";
+      // Update profile picture if updated on LINE
+      if (pictureUrl && member.pictureurl !== pictureUrl) {
+        await supabaseAdmin
+          .from("master_members")
+          .update({ pictureurl: pictureUrl })
+          .eq("id", member.id);
+      }
+
+      const empId = member.id;
+      const name = member.nickname || member.full_name || empId;
+      const role = member.system_role || member.role || "User";
+      const canDelete = Boolean(member.can_delete);
+      const finalPic = pictureUrl || member.pictureurl || "";
 
       cookieStore.set("auth_employee_id", empId, { expires, path: "/" });
       cookieStore.set("auth_name", name, { expires, path: "/" });
       cookieStore.set("auth_role", role, { expires, path: "/" });
-      if (pictureUrl) cookieStore.set("auth_picture_url", pictureUrl, { expires, path: "/" });
+      cookieStore.set("auth_can_delete", String(canDelete), { expires, path: "/" });
+      if (finalPic) cookieStore.set("auth_picture_url", finalPic, { expires, path: "/" });
       cookieStore.set("auth_line_user_id", lineUserId, { expires, path: "/" });
 
       return NextResponse.json({
         success: true,
-        user: matchedUser,
+        user: member,
         message: `ยินดีต้อนรับ ${name} เข้าสู่ระบบ`
       });
     }
@@ -98,79 +75,69 @@ export async function POST(req: NextRequest) {
       }
 
       const inputPhoneClean = normalizePhone(phone);
-      if (!inputPhoneClean || inputPhoneClean.length < 9) {
-        return NextResponse.json({ success: false, error: "รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง" }, { status: 400 });
+      const rawInputTrimmed = String(phone).trim().toLowerCase();
+
+      // Find if phone exists in master_members
+      const { data: members } = await supabaseAdmin
+        .from("master_members")
+        .select("*");
+
+      let matchedMember: any = null;
+
+      if (members && Array.isArray(members)) {
+        matchedMember = members.find((m: any) => {
+          const mPhoneClean = normalizePhone(m.phone || m["เบอร์โทร"] || m["เบอร์โทรศัพท์"]);
+          const mIdClean = String(m.id || m["รหัสพนักงาน"] || "").trim().toLowerCase();
+          const mNicknameClean = String(m.nickname || m["ชื่อเล่น"] || "").trim().toLowerCase();
+          const mFullNameClean = String(m.full_name || m["ชื่อ-นามสกุล"] || "").trim().toLowerCase();
+
+          return (
+            (inputPhoneClean && inputPhoneClean.length >= 8 && mPhoneClean && mPhoneClean === inputPhoneClean) ||
+            mIdClean === rawInputTrimmed ||
+            mNicknameClean === rawInputTrimmed ||
+            mFullNameClean === rawInputTrimmed
+          );
+        });
       }
 
-      // Find if phone exists in existing users (Account Linking)
-      const existingUserIndex = users.findIndex(u => {
-        const uPhoneClean = normalizePhone(u.phone);
-        const uUsernameClean = normalizePhone(u.username);
-        const uIdClean = normalizePhone(u.id);
-        return inputPhoneClean && (
-          (uPhoneClean && uPhoneClean === inputPhoneClean) ||
-          (uUsernameClean && uUsernameClean === inputPhoneClean) ||
-          (uIdClean && uIdClean === inputPhoneClean)
-        );
-      });
+      if (matchedMember) {
+        // Link with master_members
+        const updatePayload: Record<string, any> = {
+          line_user_id: lineUserId,
+        };
+        if (pictureUrl) updatePayload.pictureurl = pictureUrl;
+        if (!matchedMember.phone && inputPhoneClean) updatePayload.phone = phone.trim();
 
-      if (existingUserIndex !== -1) {
-        // CASE A: Account Linking with existing user
-        const existingUser = users[existingUserIndex];
-        existingUser.lineUserId = lineUserId;
-        if (pictureUrl) existingUser.pictureUrl = pictureUrl;
-        if (!existingUser.phone) existingUser.phone = phone;
+        await supabaseAdmin
+          .from("master_members")
+          .update(updatePayload)
+          .eq("id", matchedMember.id);
 
-        users[existingUserIndex] = existingUser;
-        await saveUsersList(users);
-
-        const empId = existingUser.username || existingUser.id;
-        const name = existingUser.displayName || existingUser.name || empId;
-        const role = existingUser.role || "User";
+        const empId = matchedMember.id;
+        const name = matchedMember.nickname || matchedMember.full_name || empId;
+        const role = matchedMember.system_role || matchedMember.role || "User";
+        const canDelete = Boolean(matchedMember.can_delete);
+        const finalPic = pictureUrl || matchedMember.pictureurl || "";
 
         cookieStore.set("auth_employee_id", empId, { expires, path: "/" });
         cookieStore.set("auth_name", name, { expires, path: "/" });
         cookieStore.set("auth_role", role, { expires, path: "/" });
-        if (pictureUrl) cookieStore.set("auth_picture_url", pictureUrl, { expires, path: "/" });
+        cookieStore.set("auth_can_delete", String(canDelete), { expires, path: "/" });
+        if (finalPic) cookieStore.set("auth_picture_url", finalPic, { expires, path: "/" });
         cookieStore.set("auth_line_user_id", lineUserId, { expires, path: "/" });
 
         return NextResponse.json({
           success: true,
           isLinked: true,
-          user: existingUser,
+          user: matchedMember,
           message: `ผูกบัญชี LINE กับผู้ใช้งาน "${name}" สำเร็จ!`
         });
       }
 
-      // CASE B: New Account Provisioning
-      const newUserId = phone;
-      const newUser = {
-        id: newUserId,
-        username: phone,
-        displayName: displayName || `ผู้ใช้ LINE (${phone})`,
-        role: "User",
-        status: "Active",
-        phone: phone,
-        lineUserId: lineUserId,
-        pictureUrl: pictureUrl || "",
-        createdAt: new Date().toISOString().slice(0, 10)
-      };
-
-      users.push(newUser);
-      await saveUsersList(users);
-
-      cookieStore.set("auth_employee_id", newUserId, { expires, path: "/" });
-      cookieStore.set("auth_name", newUser.displayName, { expires, path: "/" });
-      cookieStore.set("auth_role", "User", { expires, path: "/" });
-      if (pictureUrl) cookieStore.set("auth_picture_url", pictureUrl, { expires, path: "/" });
-      cookieStore.set("auth_line_user_id", lineUserId, { expires, path: "/" });
-
       return NextResponse.json({
-        success: true,
-        isLinked: false,
-        user: newUser,
-        message: "ลงทะเบียนบัญชีใหม่สำเร็จ!"
-      });
+        success: false,
+        error: `ไม่พบข้อมูลเบอร์โทรศัพท์ "${phone}" ในระบบ กรุณาตรวจสอบข้อมูลพนักงานหรือติดต่อผู้ดูแลระบบ`
+      }, { status: 404 });
     }
 
     return NextResponse.json({ success: false, error: "Unknown action" }, { status: 400 });
@@ -179,3 +146,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: error.message || "Failed to process LINE authentication" }, { status: 500 });
   }
 }
+
