@@ -40,6 +40,8 @@ export default async function BillsPage({ searchParams }: BillsPageProps) {
   const role = cookieStore.get("auth_role")?.value || "";
   const canDeleteCookie = cookieStore.get("auth_can_delete")?.value;
   const canDelete = canDeleteCookie === "true" || (canDeleteCookie !== "false" && role !== "User" && Boolean(role));
+  const authEmpId = cookieStore.get("auth_employee_id")?.value || "";
+  const authName = cookieStore.get("auth_name")?.value || "";
 
   const [allRows, peopleRows] = await Promise.all([
     safeRows(TABLES.DATA),
@@ -55,6 +57,8 @@ export default async function BillsPage({ searchParams }: BillsPageProps) {
       initialRows={rows}
       isAdmin={canDelete}
       peopleRows={peopleRows}
+      authEmpId={authEmpId}
+      authName={authName}
       search={search}
       page={page}
       pageSize={pageSize}
