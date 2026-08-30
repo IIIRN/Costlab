@@ -1861,7 +1861,7 @@ export async function getLineTargetIds(): Promise<{
   closerIds: string[];
   financeIds: string[];
 }> {
-  return cached("line:target_ids", 30_000, async () => {
+  return cached("line:target_ids", 2_000, async () => {
     try {
       let ownerId = "";
       const approverSet = new Set<string>();
@@ -1874,44 +1874,50 @@ export async function getLineTargetIds(): Promise<{
         for (const m of members) {
           if (m.status === "Inactive") continue;
           const lineId = String(m.line_user_id || m["LINE User ID"] || m.data?.line_user_id || m.data?.["LINE User ID"] || "").trim();
-          if (!lineId) continue;
+          if (!lineId || lineId === "-") continue;
 
           const d = (m.data && typeof m.data === "object") ? m.data : {};
           const permStr = String(m["สิทธิ์การใช้งาน"] || d["สิทธิ์การใช้งาน"] || "");
 
           // 1. เจ้าของระบบ (Owner)
-          const isOwner = Boolean(
-            m.is_owner || d.is_owner || d["เจ้าของระบบ"] || m["เจ้าของระบบ"] ||
-            m.role === "Owner" || m.system_role === "Owner" ||
-            permStr.includes("Owner") || permStr.includes("เจ้าของระบบ")
-          );
+          const isOwner = (m.is_owner !== undefined && m.is_owner !== null)
+            ? Boolean(m.is_owner)
+            : Boolean(
+                d.is_owner || d["เจ้าของระบบ"] || m["เจ้าของระบบ"] ||
+                m.role === "Owner" || m.system_role === "Owner" ||
+                permStr.includes("Owner") || permStr.includes("เจ้าของระบบ")
+              );
           if (isOwner) {
             if (!ownerId) ownerId = lineId;
           }
 
           // 2. ผู้อนุมัติบิล (Approver - ตรวจสอบและกดอนุมัติบิล)
-          const isApprover = Boolean(
-            m.can_close_bill || d.can_close_bill || d["อนุมัติบิล"] || m["อนุมัติบิล"] ||
-            m.system_role === "Admin_Approver" || m.id === "PT104" ||
-            permStr.includes("Approver") || permStr.includes("อนุมัติบิล")
-          );
+          const isApprover = (m.can_close_bill !== undefined && m.can_close_bill !== null)
+            ? Boolean(m.can_close_bill)
+            : Boolean(
+                d.can_close_bill || d["อนุมัติบิล"] || m["อนุมัติบิล"] ||
+                m.system_role === "Admin_Approver" ||
+                permStr.includes("Approver") || permStr.includes("อนุมัติบิล")
+              );
           if (isApprover) {
             approverSet.add(lineId);
           }
 
           // 3. ฝ่ายการเงิน (Finance / Closer - ตรวจสอบจ่ายเงินและกดปิดงาน)
-          const isFinance = Boolean(
-            m.can_approve || d.can_approve || d["ฝ่ายการเงิน"] || m["ฝ่ายการเงิน"] ||
-            m.system_role === "Admin_Closer" || m.id === "PT105" ||
-            permStr.includes("Finance") || permStr.includes("ฝ่ายการเงิน") || permStr.includes("ปิดบิล")
-          );
+          const isFinance = (m.can_approve !== undefined && m.can_approve !== null)
+            ? Boolean(m.can_approve)
+            : Boolean(
+                d.can_approve || d["ฝ่ายการเงิน"] || m["ฝ่ายการเงิน"] ||
+                m.system_role === "Admin_Closer" ||
+                permStr.includes("Finance") || permStr.includes("ฝ่ายการเงิน") || permStr.includes("ปิดบิล")
+              );
           if (isFinance) {
             financeSet.add(lineId);
           }
         }
       }
 
-      // 2. Fallback to line_config in system_options or env
+      // 2. Fallback to line_config in system_options only when no members are assigned
       const { data: configRow } = await supabaseAdmin
         .from("system_options")
         .select("data")
