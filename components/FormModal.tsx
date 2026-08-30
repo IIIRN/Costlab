@@ -783,7 +783,7 @@ export function FormModal({
         setError("");
         setSuccessMessage(
           prevSeq
-            ? `บันทึกรายการบิลลำดับที่ ${prevSeq} สำเร็จเรียบร้อย! ระบบเตรียมเลขลำดับถัดไป (#${nextSeq || Number(prevSeq) + 1}) ให้พร้อมกรอกต่อแล้ว`
+            ? `บันทึกบิลลำดับที่ ${prevSeq} สำเร็จเรียบร้อย! ระบบเตรียมเลขถัดไป (#${nextSeq || Number(prevSeq) + 1}) พร้อมกรอกต่อแล้ว`
             : "บันทึกรายการเรียบร้อยแล้ว สามารถสร้างรายการถัดไปต่อได้เลย"
         );
         setResetKey(k => k + 1);
@@ -869,7 +869,7 @@ export function FormModal({
             ) : null}
 
             {/* Form Content */}
-            <div ref={formBodyRef} className="p-3.5 sm:p-6 overflow-y-auto flex-1 space-y-3.5 bg-slate-50/70 overscroll-contain">
+            <div ref={formBodyRef} className="p-3.5 sm:p-6 overflow-y-auto overflow-x-hidden flex-1 space-y-3.5 bg-slate-50/70 overscroll-contain w-full min-w-0 max-w-full">
               {loadingSchema || !activeForm ? (
                 <div className="py-16 flex flex-col items-center justify-center gap-3 text-center">
                   <div className="w-9 h-9 border-3 border-slate-200 border-t-slate-800 rounded-full animate-spin" />
@@ -878,18 +878,18 @@ export function FormModal({
                 </div>
               ) : (
                 <>
-                  <fieldset className={`space-y-4 border-0 p-0 m-0 ${saving ? "pointer-events-none opacity-80" : ""}`} disabled={saving}>
+                  <fieldset className={`w-full min-w-0 max-w-full space-y-4 border-0 p-0 m-0 ${saving ? "pointer-events-none opacity-80" : ""}`} disabled={saving}>
                     {/* Top Notification Alerts */}
                     {successMessage ? (
-                      <div className="p-3 bg-emerald-50 text-emerald-800 rounded-lg border border-emerald-200 text-xs flex items-center justify-between gap-2 animate-in fade-in duration-150 font-normal">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
-                          <span className="truncate sm:whitespace-normal">{successMessage}</span>
+                      <div className="w-full min-w-0 max-w-full p-3 bg-emerald-50 text-emerald-800 rounded-lg border border-emerald-200 text-xs flex items-start justify-between gap-2 animate-in fade-in duration-150 font-normal">
+                        <div className="flex items-start gap-2 min-w-0 flex-1">
+                          <CheckCircle2 size={16} className="text-emerald-600 shrink-0 mt-0.5" />
+                          <span className="break-words leading-relaxed flex-1 min-w-0">{successMessage}</span>
                         </div>
                         <button
                           type="button"
                           onClick={() => setSuccessMessage("")}
-                          className="text-emerald-600 hover:text-emerald-800 transition cursor-pointer p-0.5 ml-auto"
+                          className="text-emerald-600 hover:text-emerald-800 transition cursor-pointer p-0.5 shrink-0 ml-1"
                           title="ปิดการแจ้งเตือน"
                         >
                           <X size={14} />
@@ -898,15 +898,15 @@ export function FormModal({
                     ) : null}
 
                     {error ? (
-                      <div className="p-3 bg-rose-50 text-rose-700 rounded-lg border border-rose-200 text-xs font-normal flex items-center justify-between animate-in fade-in duration-150">
-                        <div className="flex items-center gap-2">
-                          <AlertCircle size={16} className="text-rose-600 shrink-0" />
-                          <span>{error}</span>
+                      <div className="w-full min-w-0 max-w-full p-3 bg-rose-50 text-rose-700 rounded-lg border border-rose-200 text-xs font-normal flex items-start justify-between gap-2 animate-in fade-in duration-150">
+                        <div className="flex items-start gap-2 min-w-0 flex-1">
+                          <AlertCircle size={16} className="text-rose-600 shrink-0 mt-0.5" />
+                          <span className="break-words leading-relaxed flex-1 min-w-0">{error}</span>
                         </div>
                         <button
                           type="button"
                           onClick={() => setError("")}
-                          className="text-rose-600 hover:text-rose-800 transition cursor-pointer p-0.5"
+                          className="text-rose-600 hover:text-rose-800 transition cursor-pointer p-0.5 shrink-0 ml-1"
                         >
                           <X size={14} />
                         </button>
@@ -1092,7 +1092,7 @@ export function FormModal({
             {/* Action Footer Bar (Mobile Full-Width Buttons & Summary) */}
             <footer className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-4 sm:px-6 py-3.5 sm:py-4 bg-white border-t border-slate-200 shrink-0 shadow-lg sm:shadow-none">
               {isDataForm && baseAmt > 0 ? (
-                <div className="flex items-center justify-between sm:justify-start gap-2.5 text-xs sm:text-sm bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-200 font-sans">
+                <div className="flex items-center justify-between sm:justify-start gap-2.5 text-xs sm:text-sm bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-200 font-sans w-full sm:w-auto min-w-0 max-w-full overflow-hidden">
                   <span className="text-slate-500 font-medium">ยอดเงิน: <strong className="text-slate-900 ">{baseAmt.toLocaleString("th-TH", { minimumFractionDigits: 2 })} ฿</strong></span>
                   {deductAmt > 0 ? (
                     <>
@@ -1157,7 +1157,8 @@ function ImageFileFieldInput({
   onAttachedFilesChange: (files: File[]) => void;
   resetKey?: number;
 }) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   // Existing image URLs from database (comma-separated string)
   const existingUrls = value
@@ -1186,9 +1187,8 @@ function ImageFileFieldInput({
   const handleFilesAdded = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawFiles = Array.from(e.target.files || []);
     if (!rawFiles.length) return;
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    if (cameraInputRef.current) cameraInputRef.current.value = "";
+    if (galleryInputRef.current) galleryInputRef.current.value = "";
     setCompressing(true);
     try {
       const compressed = await compressImageFiles(rawFiles, 1920, 0.82);
@@ -1215,12 +1215,24 @@ function ImageFileFieldInput({
 
   return (
     <div className="space-y-2.5">
-      {/* Hidden File Input for triggering native camera / file picker */}
+      {/* 1. Direct Native Camera Input (Opens Camera on Android & iOS) */}
       <input
-        ref={fileInputRef}
+        ref={cameraInputRef}
         type="file"
-        name={field.name}
-        accept={field.type === "Image" ? "image/*" : undefined}
+        name={`${field.name}_camera`}
+        accept="image/*"
+        capture="environment"
+        disabled={readOnly || compressing}
+        onChange={handleFilesAdded}
+        className="hidden"
+      />
+
+      {/* 2. Media / Photo Gallery Input (Allows multi-image picking) */}
+      <input
+        ref={galleryInputRef}
+        type="file"
+        name={`${field.name}_gallery`}
+        accept="image/*"
         multiple
         disabled={readOnly || compressing}
         onChange={handleFilesAdded}
@@ -1307,52 +1319,58 @@ function ImageFileFieldInput({
               </div>
             ))}
 
-            {/* Quick Add More Tile inside the grid */}
+            {/* Quick Action Tiles inside the grid */}
             {!readOnly && (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="aspect-square rounded-md border-2 border-dashed border-slate-300 hover:border-slate-800 hover:bg-white bg-slate-100/60 flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-slate-900 transition cursor-pointer active:scale-95"
-                title="กดเพื่อแนบรูปเพิ่มอีก"
-              >
-                <Plus size={18} />
-                <span className="text-[10px] text-center leading-tight font-normal">แนบเพิ่ม</span>
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => cameraInputRef.current?.click()}
+                  className="aspect-square rounded-md border-2 border-dashed border-slate-300 hover:border-slate-800 hover:bg-white bg-slate-100/60 flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-slate-900 transition cursor-pointer active:scale-95"
+                  title="ถ่ายรูปจากกล้อง"
+                >
+                  <Camera size={16} />
+                  <span className="text-[10px] text-center leading-tight font-normal">ถ่ายรูป</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => galleryInputRef.current?.click()}
+                  className="aspect-square rounded-md border-2 border-dashed border-slate-300 hover:border-slate-800 hover:bg-white bg-slate-100/60 flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-slate-900 transition cursor-pointer active:scale-95"
+                  title="เลือกรูปเพิ่มจากเครื่อง"
+                >
+                  <Plus size={16} />
+                  <span className="text-[10px] text-center leading-tight font-normal">แนบเพิ่ม</span>
+                </button>
+              </>
             )}
           </div>
         </div>
       ) : null}
 
-      {/* Main Upload Dropzone / Button (Shown when no images attached yet) */}
+      {/* Main Upload Buttons (Shown when no images attached yet) */}
       {!readOnly && totalImageCount === 0 && (
-        <div
-          onClick={() => fileInputRef.current?.click()}
-          className="border-2 border-dashed border-slate-300 hover:border-slate-700 hover:bg-slate-50 rounded-lg p-4 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2 group active:scale-[0.99]"
-        >
-          <div className="w-10 h-10 rounded-full bg-slate-100 group-hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors">
-            <Camera size={20} />
-          </div>
-          <div>
-            <div className="text-xs text-slate-800 font-normal">
-              กดเพื่อถ่ายรูป หรือเลือกรูปภาพจากเครื่อง
-            </div>
-            <div className="text-[11px] text-slate-400 mt-0.5 font-normal">
-              สามารถแนบทีละรูป หรือเลือกหลายรูปพร้อมกันได้
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Action button when images already exist */}
-      {!readOnly && totalImageCount > 0 && (
-        <div className="flex items-center gap-2 pt-0.5">
+        <div className="grid grid-cols-2 gap-2.5">
           <button
             type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="flex-1 py-2 px-3 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 rounded-md text-xs flex items-center justify-center gap-1.5 transition cursor-pointer active:scale-95 font-normal"
+            onClick={() => cameraInputRef.current?.click()}
+            className="p-3.5 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-800 rounded-xl flex flex-col items-center justify-center gap-1.5 transition cursor-pointer active:scale-98 text-slate-800 shadow-2xs group"
           >
-            <ImagePlus size={14} className="text-slate-600" />
-            <span>ถ่ายรูป / แนบรูปเพิ่มอีก</span>
+            <div className="w-9 h-9 rounded-full bg-slate-100 group-hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors">
+              <Camera size={18} />
+            </div>
+            <span className="text-xs font-normal">ถ่ายรูปจากกล้อง</span>
+            <span className="text-[10px] text-slate-400 font-normal">เปิดกล้องถ่ายสด</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => galleryInputRef.current?.click()}
+            className="p-3.5 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-800 rounded-xl flex flex-col items-center justify-center gap-1.5 transition cursor-pointer active:scale-98 text-slate-800 shadow-2xs group"
+          >
+            <div className="w-9 h-9 rounded-full bg-slate-100 group-hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors">
+              <ImagePlus size={18} />
+            </div>
+            <span className="text-xs font-normal">เลือกรูปจากเครื่อง</span>
+            <span className="text-[10px] text-slate-400 font-normal">เลือกรูปเดี่ยว/หลายรูป</span>
           </button>
         </div>
       )}

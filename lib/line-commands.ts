@@ -11,6 +11,7 @@ import {
   createMemberTaskTableFlex,
   createBillSearchResultFlex,
   isLineApproverAuthorized,
+  isLineCloserAuthorized,
   getOperatorDisplayName,
   getPeopleMap,
   getBankInfoMap
@@ -571,12 +572,14 @@ export async function handleLineCommand(
       }
 
       const { ownerId, approverIds } = await getLineConfigIds();
-      const targetApprovers = Array.from(new Set([ownerId, ...(approverIds || [])].filter(Boolean)));
+      const targetApprovers = (approverIds && approverIds.length > 0)
+        ? approverIds
+        : (ownerId ? [ownerId] : []);
 
       if (targetApprovers.length === 0) {
         await replyTextMessage(
           replyToken,
-          "⚠️ ยังไม่ได้ระบุ LINE User ID เจ้าของระบบ (OWN) หรือผู้อนุมัติ (Approver) ในการตั้งค่า LINE System กรุณาตรวจสอบที่เมนูตั้งค่า LINE ครับ"
+          "⚠️ ยังไม่ได้ระบุ LINE User ID ผู้อนุมัติ (Approver) หรือ เจ้าของระบบ (OWN) ในการตั้งค่า LINE System กรุณาตรวจสอบที่เมนูตั้งค่า LINE ครับ"
         );
         return true;
       }
@@ -644,14 +647,26 @@ export async function handleLineCommand(
         return true;
       }
 
-      // Check LINE Approver Authorization
-      const isAuthorized = await isLineApproverAuthorized(userId, targetId);
-      if (!isAuthorized) {
-        await replyTextMessage(
-          replyToken,
-          `⛔ ขออภัยครับ บัญชี LINE ของคุณไม่มีสิทธิ์ในการ${isReject ? "ไม่อนุมัติ" : isApprove ? "อนุมัติ" : "ปิดงาน"}บิล\n\n(สิทธิ์นี้สงวนไว้เฉพาะผู้ดูแลระบบ Admin หรือ ผู้อนุมัติที่ได้รับอนุญาตเท่านั้น)`
-        );
-        return true;
+      // Check LINE Authorization based on specific action (Approval vs Close)
+      if (isApprove || isReject) {
+        const isAuthorized = await isLineApproverAuthorized(userId, targetId);
+        if (!isAuthorized) {
+          await replyTextMessage(
+            replyToken,
+            `⛔ ขออภัยครับ บัญชี LINE ของคุณไม่มีสิทธิ์ในการ${isReject ? "ไม่อนุมัติ" : "อนุมัติ"}บิล\n\n(สิทธิ์การอนุมัติสงวนไว้เฉพาะผู้อนุมัติบิล หรือ ผู้ดูแลระบบเท่านั้น ฝ่ายการเงินไม่มีสิทธิ์อนุมัติบิล)`
+          );
+          return true;
+        }
+      } else {
+        // ปิดงาน / จ่ายเงิน
+        const isAuthorized = await isLineCloserAuthorized(userId, targetId);
+        if (!isAuthorized) {
+          await replyTextMessage(
+            replyToken,
+            `⛔ ขออภัยครับ บัญชี LINE ของคุณไม่มีสิทธิ์ในการปิดงาน/จ่ายเงินบิล\n\n(สิทธิ์การปิดงานสงวนไว้เฉพาะฝ่ายการเงิน หรือ ผู้ดูแลระบบเท่านั้น)`
+          );
+          return true;
+        }
       }
 
       const newStatus = isReject ? "ไม่อนุมัติ" : isApprove ? "อนุมัติ" : "เบิกแล้ว";
@@ -707,11 +722,11 @@ export async function handleLineCommand(
         const normSt = normalizeBillStatus(currentSt);
 
         // Skip bills that are already approved or finished when performing approval
-        if (isApprove && (normSt === "อนุมัติ" || normSt === "เบิกแล้ว" || currentSt.includes("เสร็จ") || currentSt.includes("ปิดงาน") || currentSt.includes("จ่ายแล้ว"))) {
+        if ((isApprove || isReject) && (normSt === "อนุมัติ" || normSt === "เบิกแล้ว" || currentSt.includes("เสร็จ") || currentSt.includes("ปิดงาน") || currentSt.includes("จ่ายแล้ว"))) {
           return false;
         }
-        // Skip bills that are already completed/closed when performing close
-        if (!isApprove && (normSt === "เบิกแล้ว" || currentSt.includes("เสร็จ") || currentSt.includes("ปิดงาน"))) {
+        // When performing close, only bills that are ALREADY APPROVED ("อนุมัติ") can be closed!
+        if (!isApprove && !isReject && normSt !== "อนุมัติ") {
           return false;
         }
 
@@ -742,6 +757,21 @@ export async function handleLineCommand(
       });
 
       if (targetBills.length === 0) {
+        if (!isApprove && !isReject && isExplicitIdList) {
+          const unapprovedMatches = rawBills.filter(b => {
+            const bId = String(b["ลำดับ"] || b.id || b._sheetRow || "").trim();
+            return targetIdList.includes(bId);
+          });
+          if (unapprovedMatches.length > 0) {
+            const stList = unapprovedMatches.map(b => `#${b["ลำดับ"] || b.id || b._sheetRow} (${b["สถานะ"] || b.status || "ตั้งเบิก"})`).join(", ");
+            await replyTextMessage(
+              replyToken,
+              `⚠️ ไม่สามารถปิดงานได้ เนื่องจากบิล ${stList} ยังไม่ได้รับการอนุมัติจากผู้อนุมัติบิล\n\n(ฝ่ายการเงินสามารถปิดงานได้เฉพาะบิลที่มีสถานะ "อนุมัติ" แล้วเท่านั้นครับ)`
+            );
+            return true;
+          }
+        }
+
         await replyTextMessage(
           replyToken,
           `🔍 ไม่พบรายการบิล${isSubBatch ? "ย่อย" : isMainBatch ? "หลัก" : ""}ที่สามารถ${isApprove ? "อนุมัติ" : "ปิดงาน"}ได้สำหรับ "${rawTarget || "รายการที่เลือก"}"`
@@ -750,8 +780,9 @@ export async function handleLineCommand(
       }
 
       let totalAmount = 0;
-      const { approverIds, closerIds, financeIds } = await getLineConfigIds();
-      const targetFinanceList = Array.from(new Set([...(closerIds || []), ...(financeIds || [])].filter(Boolean)));
+      const { ownerId, closerIds, financeIds } = await getLineConfigIds();
+      const rawFinanceList = Array.from(new Set([...(closerIds || []), ...(financeIds || [])].filter(Boolean)));
+      const targetFinanceList = rawFinanceList.length > 0 ? rawFinanceList : (ownerId ? [ownerId] : []);
 
       for (const b of targetBills) {
         const bId = b.id || b["ลำดับ"] || b._sheetRow;
