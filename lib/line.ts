@@ -490,6 +490,16 @@ export function createBillNotificationFlex(bill: {
                 borderColor: "#E2E8F0",
                 spacing: "xs",
                 contents: [
+                  ...(bankInfo.bankName ? [
+                    {
+                      type: "box",
+                      layout: "baseline",
+                      contents: [
+                        { type: "text", text: "ธนาคาร:", size: "xxs", color: "#64748B", flex: 3 },
+                        { type: "text", text: bankInfo.bankName, size: "xxs", color: "#0F172A", weight: "bold", flex: 7, wrap: true }
+                      ]
+                    }
+                  ] : []),
                   ...(bankInfo.accountName ? [
                     {
                       type: "box",
@@ -500,7 +510,7 @@ export function createBillNotificationFlex(bill: {
                       ]
                     }
                   ] : []),
-                  ...(bankInfo.accountNo || bankInfo.bankName ? [
+                  ...(bankInfo.accountNo ? [
                     {
                       type: "box",
                       layout: "baseline",
@@ -508,9 +518,7 @@ export function createBillNotificationFlex(bill: {
                         { type: "text", text: "เลขบัญชี:", size: "xxs", color: "#64748B", flex: 3 },
                         {
                           type: "text",
-                          text: bankInfo.accountNo
-                            ? (bankInfo.bankName ? `${bankInfo.accountNo} (${bankInfo.bankName})` : bankInfo.accountNo)
-                            : (bankInfo.bankName || "-"),
+                          text: bankInfo.accountNo,
                           size: "xxs",
                           color: "#059669",
                           weight: "bold",
@@ -1147,6 +1155,16 @@ export function createBillSearchResultFlex(
                   borderColor: "#E2E8F0",
                   spacing: "xs",
                   contents: [
+                    ...(bankInfo.bankName ? [
+                      {
+                        type: "box",
+                        layout: "baseline",
+                        contents: [
+                          { type: "text", text: "ธนาคาร:", size: "xxs", color: "#64748B", flex: 3 },
+                          { type: "text", text: bankInfo.bankName, size: "xxs", color: "#0F172A", weight: "bold", flex: 7, wrap: true }
+                        ]
+                      }
+                    ] : []),
                     ...(bankInfo.accountName ? [
                       {
                         type: "box",
@@ -1157,7 +1175,7 @@ export function createBillSearchResultFlex(
                         ]
                       }
                     ] : []),
-                    ...(bankInfo.accountNo || bankInfo.bankName ? [
+                    ...(bankInfo.accountNo ? [
                       {
                         type: "box",
                         layout: "baseline",
@@ -1165,9 +1183,7 @@ export function createBillSearchResultFlex(
                           { type: "text", text: "เลขบัญชี:", size: "xxs", color: "#64748B", flex: 3 },
                           {
                             type: "text",
-                            text: bankInfo.accountNo
-                              ? (bankInfo.bankName ? `${bankInfo.accountNo} (${bankInfo.bankName})` : bankInfo.accountNo)
-                              : (bankInfo.bankName || "-"),
+                            text: bankInfo.accountNo,
                             size: "xxs",
                             color: "#059669",
                             weight: "bold",
@@ -2031,6 +2047,65 @@ export type BankLookupInfo = {
   bankName?: string;
 };
 
+export const DEFAULT_THAI_BANKS: Record<string, string> = {
+  ba101: "กรุงเทพ",
+  ba102: "กสิกรไทย",
+  ba103: "ไทยพาณิชย์",
+  ba104: "กรุงไทย",
+  ba105: "ทหารไทยธนชาต",
+  ba106: "ออมสิน",
+  ba107: "กรุงศรีอยุธยา",
+  ba108: "เกียรตินาคินภัทร",
+  ba109: "ธนชาต",
+  ba110: "เพื่อการเกษตรและสหกรณ์การเกษตร",
+  ba111: "ยูโอบี",
+  ba112: "ซีไอเอ็มบีไทย",
+  ba113: "ทิสโก้",
+  ba114: "อาคารสงเคราะห์",
+};
+
+export function inferThaiBankFromAccount(accountNo?: string): string {
+  if (!accountNo) return "";
+  const raw = String(accountNo).trim();
+  const digits = raw.replace(/\D/g, "");
+  if (!digits || digits.length < 8) return "";
+
+  if (digits.length === 12 && digits.startsWith("020")) return "ออมสิน";
+  if (raw.startsWith("020-") || raw.startsWith("02-04")) return "ออมสิน";
+  if (digits.length === 12 && digits.startsWith("0101")) return "เพื่อการเกษตรและสหกรณ์การเกษตร";
+
+  if (
+    digits.startsWith("051") || digits.startsWith("009") || digits.startsWith("024") ||
+    digits.startsWith("411") || digits.startsWith("437") || digits.startsWith("984") ||
+    digits.startsWith("563") || digits.startsWith("026") || digits.startsWith("052") ||
+    digits.startsWith("102") || digits.startsWith("115") || digits.startsWith("120")
+  ) {
+    return "กรุงไทย";
+  }
+
+  if (/^\d{3}[-\s]?\d{6}[-\s]?\d$/.test(raw) || digits.startsWith("503") || digits.startsWith("248") || digits.startsWith("399") || digits.startsWith("071")) {
+    return "ไทยพาณิชย์";
+  }
+
+  if (/^\d{3}[-\s]?[03][-\s]?\d{5}[-\s]?\d$/.test(raw) || digits.startsWith("114") || digits.startsWith("119") || digits.startsWith("0718")) {
+    return "กรุงเทพ";
+  }
+
+  if (
+    /^\d{3}[-\s]?[1246][-\s]?\d{5}[-\s]?\d$/.test(raw) ||
+    digits.startsWith("789") || digits.startsWith("725") || digits.startsWith("017") ||
+    digits.startsWith("019") || digits.startsWith("243") || digits.startsWith("322") ||
+    digits.startsWith("649") || digits.startsWith("760") || digits.startsWith("441") ||
+    digits.startsWith("164") || digits.startsWith("720") || digits.startsWith("139") ||
+    digits.startsWith("029") || digits.startsWith("296") || digits.startsWith("334") ||
+    digits.startsWith("983")
+  ) {
+    return "กสิกรไทย";
+  }
+
+  return "";
+}
+
 let cachedBankInfoMap: Map<string, BankLookupInfo> | null = null;
 let cachedBankInfoMapTime = 0;
 
@@ -2043,30 +2118,46 @@ export async function getBankInfoMap(forceRefresh = false): Promise<Map<string, 
   const bankInfoMap = new Map<string, BankLookupInfo>();
 
   try {
-    const [storesRes, contractorsRes, membersRes, banksRes] = await Promise.all([
+    const [storesRes, contractorsRes, membersRes, banksRes, sysOptRes] = await Promise.all([
       supabaseAdmin.from("stores").select("*"),
       supabaseAdmin.from("contractors").select("*"),
       supabaseAdmin.from("master_members").select("*"),
       supabaseAdmin.from("banks").select("*"),
+      supabaseAdmin.from("system_options").select("*").eq("id", "entity_banks").maybeSingle(),
     ]);
 
+    const entityBanksMap: Record<string, string> = (sysOptRes?.data?.data && typeof sysOptRes.data.data === "object")
+      ? sysOptRes.data.data
+      : {};
+
     const bankNameById = new Map<string, string>();
+    for (const [k, v] of Object.entries(DEFAULT_THAI_BANKS)) {
+      bankNameById.set(k.toLowerCase(), v);
+    }
     if (banksRes.data) {
       for (const b of banksRes.data) {
         const id = String(b.id || b.id_bank || "").trim();
         const name = String(b.name || b["ชื่อธนาคาร"] || "").trim();
-        if (id && name) {
+        if (id && name && name !== "non" && name !== "-") {
           bankNameById.set(id.toLowerCase(), name);
         }
       }
     }
 
-    const cleanBank = (raw?: string) => {
-      if (!raw) return "";
+    const cleanBank = (raw?: string, accountNo?: string) => {
+      if (!raw || raw === "non" || raw === "-") {
+        return inferThaiBankFromAccount(accountNo);
+      }
       const trimmed = String(raw).trim();
-      const mapped = bankNameById.get(trimmed.toLowerCase());
+      const lower = trimmed.toLowerCase();
+      const mapped = bankNameById.get(lower);
       if (mapped) return mapped;
-      return trimmed.replace(/^Ba\d+\s*[-–—]?\s*/i, "").trim() || trimmed;
+      const stripped = trimmed.replace(/^Ba\d+\s*[-–—]?\s*/i, "").replace(/^ธนาคาร\s*/, "").trim();
+      if (stripped && stripped !== "non" && stripped !== "-") {
+        const strippedMapped = bankNameById.get(stripped.toLowerCase());
+        return strippedMapped || stripped;
+      }
+      return inferThaiBankFromAccount(accountNo) || trimmed;
     };
 
     // 1. Stores
@@ -2077,12 +2168,17 @@ export async function getBankInfoMap(forceRefresh = false): Promise<Map<string, 
         const name = String(s.name || s["ชื่อร้านค้า"] || dataObj.name || dataObj["ชื่อร้านค้า"] || "").trim();
         const fullName = String(s.full_name || s["ชื่อเต็ม"] || dataObj.full_name || dataObj["ชื่อเต็ม"] || "").trim();
         const accountNo = String(s.bank_account || s["เลขบัญชี"] || dataObj.bank_account || dataObj["เลขบัญชี"] || "").trim();
-        const bankName = cleanBank(s.bank_name || s.bank || s["ธนาคาร"] || dataObj.bank_name || dataObj["ธนาคาร"]);
+
+        const rawBankVal = s.bank_name || s.bank || s["ธนาคาร"] || dataObj.bank_name || dataObj["ธนาคาร"] ||
+          entityBanksMap[id] || entityBanksMap[id.toLowerCase()] || entityBanksMap[id.toUpperCase()] ||
+          (name ? entityBanksMap[name] : "") || (fullName ? entityBanksMap[fullName] : "");
+
+        const bankName = cleanBank(rawBankVal, accountNo);
 
         const info: BankLookupInfo = {
           accountName: fullName || name,
-          accountNo,
-          bankName
+          accountNo: accountNo && accountNo !== "non" && accountNo !== "-" ? accountNo : undefined,
+          bankName: bankName || undefined,
         };
 
         if (id) {
@@ -2110,12 +2206,17 @@ export async function getBankInfoMap(forceRefresh = false): Promise<Map<string, 
         const nickname = String(c.nickname || c["ชื่อเล่น"] || dataObj.nickname || dataObj["ชื่อเล่น"] || "").trim();
         const fullName = String(c.full_name || c["ชื่อ-นามสกุล"] || dataObj.full_name || dataObj["ชื่อ-นามสกุล"] || "").trim();
         const accountNo = String(c.bank_account || c["เลขบัญชี"] || dataObj.bank_account || dataObj["เลขบัญชี"] || "").trim();
-        const bankName = cleanBank(c.bank_name || c.bank || c["ธนาคาร"] || dataObj.bank_name || dataObj["ธนาคาร"]);
+
+        const rawBankVal = c.bank_name || c.bank || c["ธนาคาร"] || dataObj.bank_name || dataObj["ธนาคาร"] ||
+          entityBanksMap[id] || entityBanksMap[id.toLowerCase()] || entityBanksMap[id.toUpperCase()] ||
+          (nickname ? entityBanksMap[nickname] : "") || (fullName ? entityBanksMap[fullName] : "");
+
+        const bankName = cleanBank(rawBankVal, accountNo);
 
         const info: BankLookupInfo = {
           accountName: fullName || nickname,
-          accountNo,
-          bankName
+          accountNo: accountNo && accountNo !== "non" && accountNo !== "-" ? accountNo : undefined,
+          bankName: bankName || undefined,
         };
 
         if (id) {
@@ -2143,12 +2244,17 @@ export async function getBankInfoMap(forceRefresh = false): Promise<Map<string, 
         const nickname = String(m.nickname || m["ชื่อเล่น"] || dataObj.nickname || dataObj["ชื่อเล่น"] || "").trim();
         const fullName = String(m.full_name || m["ชื่อ-นามสกุล"] || dataObj.full_name || dataObj["ชื่อ-นามสกุล"] || "").trim();
         const accountNo = String(m.bank_account || m["เลขบัญชี"] || dataObj.bank_account || dataObj["เลขบัญชี"] || "").trim();
-        const bankName = cleanBank(m.bank_name || m.bank || m["ธนาคาร"] || dataObj.bank_name || dataObj["ธนาคาร"]);
+
+        const rawBankVal = m.bank_name || m.bank || m["ธนาคาร"] || dataObj.bank_name || dataObj["ธนาคาร"] ||
+          entityBanksMap[id] || entityBanksMap[id.toLowerCase()] || entityBanksMap[id.toUpperCase()] ||
+          (nickname ? entityBanksMap[nickname] : "") || (fullName ? entityBanksMap[fullName] : "");
+
+        const bankName = cleanBank(rawBankVal, accountNo);
 
         const info: BankLookupInfo = {
           accountName: fullName || nickname,
-          accountNo,
-          bankName
+          accountNo: accountNo && accountNo !== "non" && accountNo !== "-" ? accountNo : undefined,
+          bankName: bankName || undefined,
         };
 
         if (id) {
@@ -2204,13 +2310,34 @@ export function resolveBankInfo(
     return undefined;
   };
 
-  const rawVendor = String(bill["ร้านค้า"] || bill["ผู้รับเหมา"] || bill["ร้าน/บุคคล"] || bill["ร้านค้า/ผู้รับเหมา"] || bill.store_id || bill.contractor_id || bill.vendor_or_person || "").trim();
-  const rawRequester = String(bill["ผู้เบิก"] || bill.requester || "").trim();
+  const cleanBankVal = (raw?: string, accountNo?: string) => {
+    if (!raw || raw === "non" || raw === "-") {
+      return inferThaiBankFromAccount(accountNo);
+    }
+    const trimmed = String(raw).trim();
+    const lower = trimmed.toLowerCase();
+    const mapped = DEFAULT_THAI_BANKS[lower];
+    if (mapped) return mapped;
+    const stripped = trimmed.replace(/^Ba\d+\s*[-–—]?\s*/i, "").replace(/^ธนาคาร\s*/, "").trim();
+    if (stripped && stripped !== "non" && stripped !== "-") {
+      return DEFAULT_THAI_BANKS[stripped.toLowerCase()] || stripped;
+    }
+    return inferThaiBankFromAccount(accountNo) || trimmed;
+  };
 
-  let vendorInfo = getFromMap(rawVendor);
+  const rawStore = String(bill["ร้านค้า"] || bill.store_id || bill.data?.["ร้านค้า"] || bill.data?.data?.["ร้านค้า"] || "").trim();
+  const rawContractor = String(bill["ผู้รับเหมา"] || bill.contractor_id || bill.data?.["ผู้รับเหมา"] || bill.data?.data?.["ผู้รับเหมา"] || "").trim();
+  const rawVendor = String(bill["ร้าน/บุคคล"] || bill["ร้านค้า/ผู้รับเหมา"] || bill.vendor_or_person || bill.data?.["ร้าน/บุคคล"] || bill.data?.data?.["ร้าน/บุคคล"] || "").trim();
+  const rawRequester = String(bill["ผู้เบิก"] || bill.requester || bill.data?.["ผู้เบิก"] || bill.data?.data?.["ผู้เบิก"] || "").trim();
+
+  let vendorInfo = getFromMap(rawStore) || getFromMap(rawContractor) || getFromMap(rawVendor);
   if (!vendorInfo && rawVendor.includes(" - ")) {
     const parts = rawVendor.split(" - ");
     vendorInfo = getFromMap(parts[0]) || getFromMap(parts[1]);
+  }
+  if (!vendorInfo && rawVendor.includes("/")) {
+    const parts = rawVendor.split("/");
+    vendorInfo = getFromMap(parts[0].trim()) || getFromMap(parts[1].trim());
   }
 
   let requesterInfo = getFromMap(rawRequester);
@@ -2221,13 +2348,13 @@ export function resolveBankInfo(
 
   const fallbackInfo = vendorInfo || requesterInfo;
 
-  const directAccountNo = String(bill["เลขบัญชี"] || bill.bank_account || bill.data?.["เลขบัญชี"] || bill.data?.bank_account || "").trim();
-  const directBankName = String(bill["ธนาคาร"] || bill.bank_name || bill.bank || bill.data?.["ธนาคาร"] || bill.data?.bank_name || "").replace(/^Ba\d+\s*[-–—]?\s*/i, "").trim();
-  const directAccountName = String(bill["ชื่อบัญชี"] || bill.account_name || bill.data?.["ชื่อบัญชี"] || bill.data?.account_name || "").trim();
+  const directAccountNo = String(bill["เลขบัญชี"] || bill.bank_account || bill.data?.["เลขบัญชี"] || bill.data?.bank_account || bill.data?.data?.["เลขบัญชี"] || "").trim();
+  const rawDirectBank = String(bill["ธนาคาร"] || bill.bank_name || bill.bank || bill.data?.["ธนาคาร"] || bill.data?.bank_name || bill.data?.data?.["ธนาคาร"] || "").trim();
+  const directAccountName = String(bill["ชื่อบัญชี"] || bill.account_name || bill.data?.["ชื่อบัญชี"] || bill.data?.account_name || bill.data?.data?.["ชื่อบัญชี"] || "").trim();
 
   const accountNo = directAccountNo || fallbackInfo?.accountNo || "";
-  const bankName = directBankName || fallbackInfo?.bankName || "";
   const accountName = directAccountName || fallbackInfo?.accountName || "";
+  const bankName = cleanBankVal(rawDirectBank || fallbackInfo?.bankName, accountNo);
 
   if (!accountNo && !bankName && !accountName) return null;
 
@@ -2607,6 +2734,16 @@ export function createMultiBillFlex(
             borderColor: "#E2E8F0",
             spacing: "xs",
             contents: [
+              ...(bankInfo.bankName ? [
+                {
+                  type: "box",
+                  layout: "baseline",
+                  contents: [
+                    { type: "text", text: "ธนาคาร:", size: "xxs", color: "#64748B", flex: 3 },
+                    { type: "text", text: bankInfo.bankName, size: "xxs", color: "#0F172A", weight: "bold", flex: 7, wrap: true }
+                  ]
+                }
+              ] : []),
               ...(bankInfo.accountName ? [
                 {
                   type: "box",
@@ -2617,7 +2754,7 @@ export function createMultiBillFlex(
                   ]
                 }
               ] : []),
-              ...(bankInfo.accountNo || bankInfo.bankName ? [
+              ...(bankInfo.accountNo ? [
                 {
                   type: "box",
                   layout: "baseline",
@@ -2625,9 +2762,7 @@ export function createMultiBillFlex(
                     { type: "text", text: "เลขบัญชี:", size: "xxs", color: "#64748B", flex: 3 },
                     {
                       type: "text",
-                      text: bankInfo.accountNo
-                        ? (bankInfo.bankName ? `${bankInfo.accountNo} (${bankInfo.bankName})` : bankInfo.accountNo)
-                        : (bankInfo.bankName || "-"),
+                      text: bankInfo.accountNo,
                       size: "xxs",
                       color: "#059669",
                       weight: "bold",

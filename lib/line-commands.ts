@@ -514,25 +514,32 @@ export async function handleLineCommand(
       }
 
       const targetIdList = sheetRowStr.split(/[,,\s]+/).map(id => id.trim()).filter(Boolean);
+      const isExplicitIdList = (
+        rawText.startsWith("ส่งไปเพื่ออนุมัติบิลลำดับที่:") ||
+        rawText.startsWith("ส่งอนุมัติบิลลำดับที่:") ||
+        (targetIdList.length > 0 && targetIdList.every(id => /^\d+$/.test(id)))
+      );
 
       let targetBills = rawBills.filter(b => {
         const st = normalizeBillStatus(b["สถานะ"] || b.status);
         // Only select bills that are pending approval
         if (st === "อนุมัติ" || st === "เบิกแล้ว") return false;
 
+        const bId = String(b["ลำดับ"] || b.id || b._sheetRow || "").trim();
+
+        if (isExplicitIdList) {
+          return targetIdList.includes(bId);
+        }
+
         if (!sheetRowStr || sheetRowStr === "ทั้งหมด" || sheetRowStr === "บิล") {
           return true;
         }
-
-        const bId = String(b["ลำดับ"] || b.id || b._sheetRow || "").trim();
-        if (targetIdList.includes(bId)) return true;
 
         const bReq = String(b["ผู้เบิก"] || b.requester || "").trim();
         const bReqName = peopleMap.get(bReq) || bReq;
         const matchedEmpId = nameToEmpIdMap.get(sheetRowStr) || sheetRowStr;
 
         return (
-          targetIdList.includes(bReq) ||
           bReq === sheetRowStr ||
           bReq === matchedEmpId ||
           bReqName.toLowerCase().includes(sheetRowStr.toLowerCase())
@@ -652,6 +659,17 @@ export async function handleLineCommand(
       const isMainBatch = rawText.includes("หลัก") || rawTarget.includes("หลัก");
       const cleanTarget = rawTarget.replace(/^หลัก:|^ย่อย:|^บิลหลัก:|^บิลย่อย:|^บิล:|^ลำดับที่:|^บิลลำดับที่:|^หลักลำดับที่:|^ย่อยลำดับที่:/i, "").trim();
       const targetIdList = cleanTarget.split(/[,,\s]+/).map(id => id.trim()).filter(Boolean);
+      const isExplicitIdList = (
+        rawText.startsWith("อนุมัติบิลลำดับที่:") ||
+        rawText.startsWith("อนุมัติบิลหลักลำดับที่:") ||
+        rawText.startsWith("อนุมัติเงินสดบิลย่อยลำดับที่:") ||
+        rawText.startsWith("ปิดงานบิลลำดับที่:") ||
+        rawText.startsWith("ปิดงานบิลหลักลำดับที่:") ||
+        rawText.startsWith("ปิดงานเงินสดบิลย่อยลำดับที่:") ||
+        rawText.startsWith("ปิดงานบิลย่อยลำดับที่:") ||
+        rawText.startsWith("ไม่อนุมัติบิลลำดับที่:") ||
+        (targetIdList.length > 0 && targetIdList.every(id => /^\d+$/.test(id)))
+      );
 
       const { normalizeBillStatus } = await import("@/lib/bill-status");
       const { updateRowInSupabase } = await import("@/lib/supabase-db");
@@ -702,8 +720,10 @@ export async function handleLineCommand(
 
         const bId = String(b["ลำดับ"] || b.id || b._sheetRow || "").trim();
 
-        // Exact match by Bill ID or ID in targetIdList takes priority (for single/multi bill button actions)
-        if (targetIdList.length > 0 && targetIdList.includes(bId)) return true;
+        // Exact match by Bill ID takes absolute priority for single/multi bill ID actions
+        if (isExplicitIdList) {
+          return targetIdList.includes(bId);
+        }
 
         if (!target || target === "ทั้งหมด" || target === "หลัก" || target === "ย่อย") return true;
 
@@ -713,7 +733,6 @@ export async function handleLineCommand(
         const bDesc = String(b["สินค้า/ทำงาน"] || b.description || "").trim();
 
         return (
-          targetIdList.includes(bReq) ||
           bReq === target ||
           bReq === matchedEmpId ||
           bReqName.toLowerCase().includes(target.toLowerCase()) ||
