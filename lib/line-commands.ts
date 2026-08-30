@@ -10,6 +10,7 @@ import {
   createTaskSummaryFlex,
   createMemberTaskTableFlex,
   createBillSearchResultFlex,
+  createWithdrawApproverFlex,
   isLineApproverAuthorized,
   isLineCloserAuthorized,
   getOperatorDisplayName,
@@ -54,7 +55,7 @@ export async function handleLineCommand(
 
     // 2. Menu & Help Commands
     if (lowerText === "ช่วยด้วย" || lowerText === "ช่วยเหลือ" || lowerText === "ช่วย" || lowerText === "เมนู" || lowerText === "คำสั่ง" || lowerText === "help") {
-      const menuText = `🤖 ระบบ LINE Bot ประจำ CostCode Supabase\n\n📌 คำสั่งที่รองรับทั้งหมด (63 คำสั่ง):\n\n1. 📊 หมวดสรุปการเงิน/เบิกเงิน:\n   - พิมพ์ "สรุป" / "สรุปบิล" / "สรุปวันนี้"\n   - พิมพ์ "รออนุมัติ"\n   - พิมพ์ "บิลหลัก: [ชื่อ]" หรือ "บิลย่อย: [ชื่อ]"\n   - พิมพ์ "อนุมัติบิลหลักของ:" / "อนุมัติเงินสดบิลย่อยของ:"\n   - พิมพ์ "ปิดงานบิลหลักลำดับที่:"\n\n2. 🎯 หมวดงาน & PW มอบหมาย:\n   - พิมพ์ "งาน2: [ชื่อพนักงาน]" (ดูตารางงานแผนงาน)\n   - พิมพ์ "งาน: [รายละเอียดงาน]" (สร้างงานใหม่)\n   - พิมพ์ "งานด่วน:" / "ปิดงาน:" / "ยืนยันปิดงาน:" / "s:" (ค้นหา)\n   - พิมพ์ "มอบหมาย:" / "กิจกรรม:" / "PW:" / "PW1:work" / "PWALL:work"\n\n3. ⚡ หมวดคำสั่งลัด (Shortcuts):\n   - พิมพ์ "copy" / "add1" / "add3" / "addp" / "doo"\n\n4. ⚙️ หมวดตรวจสอบระบบ:\n   - พิมพ์ "testbot" / "check" / "getid"`;
+      const menuText = `🤖 ระบบ LINE Bot ประจำ CostCode Supabase\n\n📌 คำสั่งที่รองรับทั้งหมด:\n\n1. 📊 หมวดสรุปการเงิน/เบิกเงิน:\n   - พิมพ์ "สรุป" / "สรุปบิล" / "สรุปวันนี้"\n   - พิมพ์ "รออนุมัติ" (ดูบิลที่รอพิจารณาอนุมัติ)\n   - พิมพ์ "รอปิดงาน" / "รอจ่าย" / "อนุมัติแล้ว" (ดูบิลที่อนุมัติแล้ว รอการเงินปิดงาน)\n   - พิมพ์ "บิลหลัก: [ชื่อ]" หรือ "บิลย่อย: [ชื่อ]"\n   - พิมพ์ "ส่งไปเพื่ออนุมัติ" (ส่งแจ้งเตือนหาผู้อนุมัติ)\n   - พิมพ์ "อนุมัติบิลหลักของ:" / "อนุมัติเงินสดบิลย่อยของ:"\n   - พิมพ์ "ปิดงานบิลหลักลำดับที่:" / "ปิดงานเงินสดบิลย่อยลำดับที่:"\n\n2. 🎯 หมวดงาน & PW มอบหมาย:\n   - พิมพ์ "งาน2: [ชื่อพนักงาน]" (ดูตารางงานแผนงาน)\n   - พิมพ์ "งาน: [รายละเอียดงาน]" (สร้างงานใหม่)\n   - พิมพ์ "งานด่วน:" / "ปิดงาน:" / "ยืนยันปิดงาน:" / "s:" (ค้นหา)\n   - พิมพ์ "มอบหมาย:" / "กิจกรรม:" / "PW:" / "PW1:work" / "PWALL:work"\n\n3. ⚡ หมวดคำสั่งลัด (Shortcuts):\n   - พิมพ์ "copy" / "add1" / "add3" / "addp" / "doo"\n\n4. ⚙️ หมวดตรวจสอบระบบ:\n   - พิมพ์ "testbot" / "check" / "getid"`;
       await replyTextMessage(replyToken, menuText);
       return true;
     }
@@ -867,7 +868,7 @@ export async function handleLineCommand(
     }
 
     // 6. Query Bills Specific Commands
-    // "หลัก", "ย่อย", "บิลหลัก", "บิลย่อย", "หลัก:", "บิลหลัก:", "ย่อย:", "บิลย่อย:", "ทั้งหมด:", "รออนุมัติ", "ตั้งเบิก"
+    // "หลัก", "ย่อย", "บิลหลัก", "บิลย่อย", "หลัก:", "บิลหลัก:", "ย่อย:", "บิลย่อย:", "ทั้งหมด:", "รออนุมัติ", "ตั้งเบิก", "รอปิดงาน", "รอจ่าย", "อนุมัติแล้ว"
     // "บิล:", "bill:" — ค้นหาทั่วไป (ทั้งบิลหลักและย่อย)
     if (
       rawText === "หลัก" ||
@@ -883,19 +884,42 @@ export async function handleLineCommand(
       rawText.toLowerCase().startsWith("bill:") ||
       lowerText === "รอตั้งเบิก" ||
       lowerText === "รออนุมัติ" ||
-      lowerText === "ตั้งเบิก"
+      lowerText === "ตั้งเบิก" ||
+      lowerText === "รอปิดงาน" ||
+      lowerText === "รอจ่าย" ||
+      lowerText === "รอโอน" ||
+      lowerText === "อนุมัติแล้ว" ||
+      lowerText === "รอปิดบิล" ||
+      rawText.startsWith("รอปิดงาน:") ||
+      rawText.startsWith("รอจ่าย:") ||
+      rawText.startsWith("รอโอน:") ||
+      rawText.startsWith("อนุมัติแล้ว:") ||
+      rawText.startsWith("รอปิดบิล:")
     ) {
       const isSub = rawText.includes("ย่อย");
       const isMain = rawText.includes("หลัก");
-      const isPendingFilter = isMain || isSub || lowerText === "รอตั้งเบิก" || lowerText === "รออนุมัติ" || lowerText === "ตั้งเบิก";
+      const isApprovedFilter = (
+        lowerText === "รอปิดงาน" ||
+        lowerText === "รอจ่าย" ||
+        lowerText === "รอโอน" ||
+        lowerText === "อนุมัติแล้ว" ||
+        lowerText === "รอปิดบิล" ||
+        rawText.startsWith("รอปิดงาน:") ||
+        rawText.startsWith("รอจ่าย:") ||
+        rawText.startsWith("รอโอน:") ||
+        rawText.startsWith("อนุมัติแล้ว:") ||
+        rawText.startsWith("รอปิดบิล:")
+      );
+      const isPendingFilter = !isApprovedFilter && (isMain || isSub || lowerText === "รอตั้งเบิก" || lowerText === "รออนุมัติ" || lowerText === "ตั้งเบิก");
 
       const filterQuery = rawText
-        .replace(/^หลัก:|^ย่อย:|^บิลหลัก:|^บิลย่อย:|^ทั้งหมด:|^บิล:|^bill:|^หลัก$|^ย่อย$|^บิลหลัก$|^บิลย่อย$/i, "")
+        .replace(/^หลัก:|^ย่อย:|^บิลหลัก:|^บิลย่อย:|^ทั้งหมด:|^บิล:|^bill:|^รอปิดงาน:|^รอจ่าย:|^รอโอน:|^อนุมัติแล้ว:|^รอปิดบิล:|^หลัก$|^ย่อย$|^บิลหลัก$|^บิลย่อย$|^รอปิดงาน$|^รอจ่าย$|^รอโอน$|^อนุมัติแล้ว$|^รอปิดบิล$/i, "")
         .trim();
 
       // ดึงข้อมูลบิลและตารางอ้างอิงทั้งหมดผ่าน In-Memory Cache เพื่อความเร็วสูงสุด (< 2ms)
       const { getRows } = await import("@/lib/db");
       const { hydrateBillRows } = await import("@/lib/formulas");
+      const { normalizeBillStatus } = await import("@/lib/bill-status");
 
       const [rawBills, peopleRows, projectRows, storeRows, contractRows, contractorRows] = await Promise.all([
         getRows("Data", 60_000, 1000),
@@ -926,8 +950,15 @@ export async function handleLineCommand(
 
       let filtered = hydratedBills;
 
-      // ✅ กรองเฉพาะบิลสถานะ "รอตั้งเบิก", "ตั้งเบิก" และ "รออนุมัติ" เมื่อพิมพ์ หลัก หรือ ย่อย
-      if (isPendingFilter && !rawText.startsWith("ทั้งหมด:")) {
+      // ✅ กรองสถานะบิลตามประเภทคำสั่ง
+      if (isApprovedFilter) {
+        // กรองเฉพาะบิลที่ "อนุมัติแล้ว" แต่ยังไม่ได้ "ปิดงาน/เบิกแล้ว"
+        filtered = filtered.filter(b => {
+          const st = normalizeBillStatus(b["สถานะ"] || b.status);
+          return st === "อนุมัติ";
+        });
+      } else if (isPendingFilter && !rawText.startsWith("ทั้งหมด:")) {
+        // กรองเฉพาะบิลสถานะ "รอตั้งเบิก", "ตั้งเบิก" และ "รออนุมัติ" เมื่อพิมพ์ หลัก หรือ ย่อย หรือ รออนุมัติ
         filtered = filtered.filter(b => {
           const st = String(b["สถานะ"] || b.status || "").trim();
           return (
@@ -987,32 +1018,46 @@ export async function handleLineCommand(
           vendor_or_person: String(b["ร้าน/บุคคล"] || b.vendor_or_person || "-"),
           description: String(b["สินค้า/ทำงาน"] || b.description || "-"),
           amount: Number(b["ยอดเงิน"] || b.amount || 0),
-          status: String(b["สถานะ"] || b.status || "ตั้งเบิก"),
+          status: String(b["สถานะ"] || b.status || (isApprovedFilter ? "อนุมัติแล้ว" : "ตั้งเบิก")),
           requester: String(resolvedRequester),
           image_url: String(b["รูปถ่ายบิล"] || b.image_url || ""),
-          image_urls: typeof b["รูปถ่ายบิล"] === "string" ? b["รูปถ่ายบิล"].split(",") : undefined
+          image_urls: typeof b["รูปถ่ายบิล"] === "string" ? b["รูปถ่ายบิล"].split(",") : undefined,
+          bank_name: b["ธนาคาร"] || b.bank_name,
+          account_no: b["เลขบัญชี"] || b.account_no,
+          account_name: b["ชื่อบัญชี"] || b.account_name,
+          items: b.items || b["รายการสินค้า"]
         };
       });
 
       // ✅ FIX: ลบ hardcoded fallback — แสดง "ไม่พบรายการ" แทนข้อมูลปลอม
       if (!bills || bills.length === 0) {
-        const noResultMsg = lowerText === "รออนุมัติ"
-          ? "✅ ไม่มีรายการรออนุมัติในขณะนี้ครับ\n\nบิลทั้งหมดได้รับการอนุมัติหรือดำเนินการแล้ว"
-          : filterQuery
-            ? `🔍 ไม่พบรายการบิล${isSub ? "ย่อย" : isMain ? "หลัก" : ""}ที่ตรงกับ "${filterQuery}"\n\nกรุณาตรวจสอบชื่อผู้เบิกหรือรายละเอียดที่ค้นหาอีกครั้งครับ`
-            : "ไม่พบรายการบิลในระบบ";
+        const noResultMsg = isApprovedFilter
+          ? (filterQuery
+              ? `✅ ไม่พบรายการบิลที่รอปิดงาน/จ่ายเงินสำหรับ "${filterQuery}"\n\n(บิลทั้งหมดได้รับการปิดงานเรียบร้อยแล้ว หรือยังไม่ผ่านการอนุมัติ)`
+              : "✅ ไม่มีรายการบิลที่รอปิดงาน/จ่ายเงินในขณะนี้ครับ\n\nบิลทั้งหมดได้รับการปิดงานและโอนเงินเรียบร้อยแล้ว")
+          : lowerText === "รออนุมัติ"
+            ? "✅ ไม่มีรายการรออนุมัติในขณะนี้ครับ\n\nบิลทั้งหมดได้รับการอนุมัติหรือดำเนินการแล้ว"
+            : filterQuery
+              ? `🔍 ไม่พบรายการบิล${isSub ? "ย่อย" : isMain ? "หลัก" : ""}ที่ตรงกับ "${filterQuery}"\n\nกรุณาตรวจสอบชื่อผู้เบิกหรือรายละเอียดที่ค้นหาอีกครั้งครับ`
+              : "ไม่พบรายการบิลในระบบ";
         await replyTextMessage(replyToken, noResultMsg);
         return true;
       }
 
-      const flexTitle = lowerText === "รออนุมัติ"
-        ? `รายการรออนุมัติ`
-        : filterQuery
-          ? `ผลการค้นหาบิล${isSub ? "ย่อย" : isMain ? "หลัก" : ""}ของ "${filterQuery}"`
-          : `รายการเบิกเงิน${isSub ? "บิลย่อย" : isMain ? "บิลหลัก" : "บิล"}`;
+      const flexTitle = isApprovedFilter
+        ? (filterQuery ? `รายการอนุมัติแล้วของ "${filterQuery}" (รอปิดงาน)` : `รายการอนุมัติแล้ว (รอปิดงาน/จ่ายเงิน)`)
+        : lowerText === "รออนุมัติ"
+          ? `รายการรออนุมัติ`
+          : filterQuery
+            ? `ผลการค้นหาบิล${isSub ? "ย่อย" : isMain ? "หลัก" : ""}ของ "${filterQuery}"`
+            : `รายการเบิกเงิน${isSub ? "บิลย่อย" : isMain ? "บิลหลัก" : "บิล"}`;
 
       const bankInfoMap = await getBankInfoMap();
-      const flexPayload = createBillSearchResultFlex(flexTitle, bills, isSub, isMain, totalCount, totalSumAmount, filterQuery, peopleMap, bankInfoMap);
+
+      // For approved bills awaiting finance closing, use createWithdrawApproverFlex with close buttons & bank details
+      const flexPayload = isApprovedFilter
+        ? createWithdrawApproverFlex(bills, peopleMap, bankInfoMap)
+        : createBillSearchResultFlex(flexTitle, bills, isSub, isMain, totalCount, totalSumAmount, filterQuery, peopleMap, bankInfoMap);
 
       const sent = await replyFlexMessage(replyToken, `🧾 ${flexTitle} (${bills.length} รายการ)`, flexPayload);
       if (!sent && replyToken) {
