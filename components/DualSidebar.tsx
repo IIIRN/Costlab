@@ -548,27 +548,6 @@ export function DualSidebar({ collapsed, onToggleCollapse, currentUser }: DualSi
                   </Link>
 
                   <Link
-                    href="/settings/users"
-                    prefetch={false}
-                    className={`group flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-all duration-150 text-xs font-sans ${
-                      pathname.startsWith("/settings/users") || pathname.startsWith("/users")
-                        ? "bg-[#d4f54e] text-[#0b3531] font-semibold shadow-xs"
-                        : "text-[#d6eee9] hover:text-white hover:bg-[#124d45] font-medium"
-                    }`}
-                  >
-                    <span
-                      className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 transition-colors ${
-                        pathname.startsWith("/settings/users") || pathname.startsWith("/users")
-                          ? "bg-[#0b3531] text-[#d4f54e]"
-                          : "bg-[#083a34] text-[#a5dad0] border border-[#144d45] group-hover:bg-[#195a52] group-hover:text-white"
-                      }`}
-                    >
-                      <IdCard size={14} />
-                    </span>
-                    <span className="truncate">จัดการผู้ใช้ระบบ</span>
-                  </Link>
-
-                  <Link
                     href="/settings/import-export"
                     prefetch={false}
                     className={`group flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-all duration-150 text-xs font-sans ${

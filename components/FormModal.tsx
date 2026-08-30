@@ -319,12 +319,14 @@ export function FormModal({
   const [successMessage, setSuccessMessage] = useState("");
   const [attachedFilesByField, setAttachedFilesByField] = useState<Record<string, File[]>>({});
   const isEditing = editSheetRow !== null && editSheetRow !== undefined;
-  const isDataForm = resolvedTableName === TABLES.DATA || resolvedTableName === "Data";
+  const isDataForm = resolvedTableName === TABLES.DATA || resolvedTableName === "Data" || resolvedTableName === "bills" || resolvedTableName === "DATA" || resolvedTableName === "กรอกบิล";
   const hasSavedDuringSession = useRef(false);
 
   function handleClose() {
     setOpen(false);
     setEditSheetRow(null);
+    setMultiLineItems([]);
+    setIsMultiItemMode(false);
     setSuccessMessage("");
     setError("");
     if (hasSavedDuringSession.current) {
@@ -359,24 +361,30 @@ export function FormModal({
 
     setValues(current => {
       const next = { ...current };
-      if (matSum > 0) next["ค่าของ"] = String(matSum);
-      if (toolSum > 0) next["เครื่องมือ"] = String(toolSum);
-      if (otherSum > 0) next["อื่นๆ"] = String(otherSum);
+      next["ค่าของ"] = matSum > 0 ? String(matSum) : "";
+      next["เครื่องมือ"] = toolSum > 0 ? String(toolSum) : "";
+      next["อื่นๆ"] = otherSum > 0 ? String(otherSum) : "";
       next["ยอดเงิน"] = String(totalSum);
       next["ยอดโอน"] = String(totalSum);
       if (items[0]?.category) next["สินค้า"] = items[0].category;
+      next["ประเภท"] = items[0]?.categoryType || current["ประเภท"] || "1.ค่าของ";
       return next;
     });
   }
 
   function enableMultiItemMode() {
     setIsMultiItemMode(true);
+    const primaryType = values["ประเภท"] || "1.ค่าของ";
+    setValues(current => ({
+      ...current,
+      "ประเภท": current["ประเภท"] || "1.ค่าของ"
+    }));
     if (multiLineItems.length === 0) {
       const initialItems: MultiLineItem[] = [
         {
           id: "1",
           category: values["สินค้า"] || "",
-          categoryType: values["ประเภท"] || "1.ค่าของ",
+          categoryType: primaryType,
           amount: values["ค่าของ"] || values["ยอดเงิน"] || "",
         },
         {
@@ -652,44 +660,32 @@ export function FormModal({
         return;
       }
 
-      if (!isEditing && multiLineItems.length > 1) {
-        const rowsToInsert = multiLineItems.map((item) => {
-          const itemValues = { ...submitValues };
-          itemValues["สินค้า"] = item.category || submitValues["สินค้า"] || "";
-          itemValues["รายละเอียดงาน"] = submitValues["รายละเอียดงาน"] || "";
-          itemValues["ประเภท"] = item.categoryType || submitValues["ประเภท"] || "1.ค่าของ";
-          itemValues["ค่าของ"] = item.categoryType === "1.ค่าของ" ? item.amount : "";
-          itemValues["เครื่องมือ"] = item.categoryType === "7.เครื่องมือ" ? item.amount : "";
-          itemValues["อื่นๆ"] = item.categoryType === "8.อื่นๆ" ? item.amount : "";
-          itemValues["ยอดเงิน"] = item.amount;
-          itemValues["ยอดโอน"] = item.amount;
-          itemValues["items"] = JSON.stringify([item]);
-          return itemValues;
-        });
+      const matSum = multiLineItems.filter(i => i.categoryType === "1.ค่าของ").reduce((s, i) => s + (Number(i.amount) || 0), 0);
+      const toolSum = multiLineItems.filter(i => i.categoryType === "7.เครื่องมือ").reduce((s, i) => s + (Number(i.amount) || 0), 0);
+      const otherSum = multiLineItems.filter(i => i.categoryType === "8.อื่นๆ").reduce((s, i) => s + (Number(i.amount) || 0), 0);
+      const totalSum = multiLineItems.reduce((s, i) => s + (Number(i.amount) || 0), 0);
 
-        body.set("rows", JSON.stringify(rowsToInsert));
-      } else {
-        const matSum = multiLineItems.filter(i => i.categoryType === "1.ค่าของ").reduce((s, i) => s + (Number(i.amount) || 0), 0);
-        const toolSum = multiLineItems.filter(i => i.categoryType === "7.เครื่องมือ").reduce((s, i) => s + (Number(i.amount) || 0), 0);
-        const otherSum = multiLineItems.filter(i => i.categoryType === "8.อื่นๆ").reduce((s, i) => s + (Number(i.amount) || 0), 0);
-        const totalSum = multiLineItems.reduce((s, i) => s + (Number(i.amount) || 0), 0);
+      submitValues["ค่าของ"] = matSum > 0 ? String(matSum) : "";
+      submitValues["เครื่องมือ"] = toolSum > 0 ? String(toolSum) : "";
+      submitValues["อื่นๆ"] = otherSum > 0 ? String(otherSum) : "";
+      submitValues["ยอดเงิน"] = String(totalSum);
+      submitValues["ยอดโอน"] = String(totalSum);
+      submitValues["ประเภท"] = multiLineItems[0]?.categoryType || submitValues["ประเภท"] || "1.ค่าของ";
+      const prodNames = multiLineItems.map(i => i.category).filter(Boolean);
+      submitValues["สินค้า"] = prodNames.join(", ") || submitValues["สินค้า"] || "";
+      submitValues["สินค้า/ทำงาน"] = prodNames.join(", ") || submitValues["สินค้า/ทำงาน"] || "";
+      submitValues["items"] = JSON.stringify(multiLineItems);
 
-        submitValues["ค่าของ"] = matSum > 0 ? String(matSum) : "";
-        submitValues["เครื่องมือ"] = toolSum > 0 ? String(toolSum) : "";
-        submitValues["อื่นๆ"] = otherSum > 0 ? String(otherSum) : "";
-        submitValues["ยอดเงิน"] = String(totalSum);
-        submitValues["ยอดโอน"] = String(totalSum);
-        submitValues["สินค้า"] = multiLineItems.map(i => i.category).filter(Boolean).join(", ") || submitValues["สินค้า"] || "";
-        submitValues["items"] = JSON.stringify(multiLineItems);
-
-        body.set("ค่าของ", submitValues["ค่าของ"]);
-        body.set("เครื่องมือ", submitValues["เครื่องมือ"]);
-        body.set("อื่นๆ", submitValues["อื่นๆ"]);
-        body.set("ยอดเงิน", submitValues["ยอดเงิน"]);
-        body.set("ยอดโอน", submitValues["ยอดโอน"]);
-        body.set("สินค้า", submitValues["สินค้า"]);
-        body.set("items", JSON.stringify(multiLineItems));
-      }
+      body.set("ประเภท", submitValues["ประเภท"]);
+      body.set("ค่าของ", submitValues["ค่าของ"]);
+      body.set("เครื่องมือ", submitValues["เครื่องมือ"]);
+      body.set("อื่นๆ", submitValues["อื่นๆ"]);
+      body.set("ยอดเงิน", submitValues["ยอดเงิน"]);
+      body.set("ยอดโอน", submitValues["ยอดโอน"]);
+      body.set("สินค้า", submitValues["สินค้า"]);
+      body.set("สินค้า/ทำงาน", submitValues["สินค้า/ทำงาน"]);
+      body.set("items", JSON.stringify(multiLineItems));
+      body.delete("rows");
     }
 
     let hasFiles = false;
@@ -742,8 +738,8 @@ export function FormModal({
       clearFormSchemaCache();
       if (typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent("schema-cache-invalidated"));
-        window.dispatchEvent(new CustomEvent("bills-data-updated", { detail: { row: payload.row } }));
-        window.dispatchEvent(new CustomEvent("data-updated", { detail: { tableName: activeForm.tableName, row: payload.row } }));
+        window.dispatchEvent(new CustomEvent("bills-data-updated", { detail: { row: payload.row, rows: payload.rows } }));
+        window.dispatchEvent(new CustomEvent("data-updated", { detail: { tableName: activeForm.tableName, row: payload.row, rows: payload.rows } }));
       }
 
       setAttachedFilesByField({});
@@ -752,6 +748,8 @@ export function FormModal({
         setOpen(false);
         setEditSheetRow(null);
         setValues(getInitialStringValues(activeForm));
+        setMultiLineItems([]);
+        setIsMultiItemMode(false);
         setResetKey(k => k + 1);
         router.refresh();
       } else {
@@ -763,7 +761,8 @@ export function FormModal({
           setActiveForm(freshForm);
         }
 
-        const prevSeq = String(payload.row?.["ลำดับ"] || payload.row?.["ลำดับtest"] || submitValues["ลำดับ"] || "");
+        const lastRow = Array.isArray(payload.rows) && payload.rows.length > 0 ? payload.rows[payload.rows.length - 1] : payload.row;
+        const prevSeq = String(lastRow?.["ลำดับ"] || lastRow?.["ลำดับtest"] || submitValues["ลำดับ"] || "");
         const prevSeqNum = Number(prevSeq);
 
         let nextSeq = freshForm?.initialValues?.["ลำดับ"] ? String(freshForm.initialValues["ลำดับ"]) : "";
@@ -772,11 +771,13 @@ export function FormModal({
         }
 
         const baseValues = freshForm ? getInitialStringValues(freshForm) : getInitialStringValues(activeForm);
-        if (nextSeq && (activeForm.tableName === TABLES.DATA || activeForm.tableName === "Data")) {
+        if (nextSeq && (activeForm.tableName === TABLES.DATA || activeForm.tableName === "Data" || activeForm.tableName === "bills")) {
           baseValues["ลำดับ"] = nextSeq;
         }
 
         setValues(baseValues);
+        setMultiLineItems([]);
+        setIsMultiItemMode(false);
         setEnumListSearch({});
         setAttachedFilesByField({});
         setError("");
@@ -820,12 +821,12 @@ export function FormModal({
         <div className={open ? "hidden" : ""}>
           <button
             type="button"
-            className="inline-flex items-center justify-center gap-1.5 h-9 px-4 bg-slate-900 hover:bg-slate-800 text-white text-xs rounded-lg shadow-xs transition-all cursor-pointer whitespace-nowrap"
+            className="px-2.5 py-1.5 border border-slate-900 bg-slate-900 hover:bg-slate-800 text-white rounded-md text-xs flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap shadow-2xs"
             onClick={() => handleOpen()}
             onMouseEnter={() => { if (!activeForm && resolvedTableName) prefetchFormSchema(resolvedTableName); }}
             onTouchStart={() => { if (!activeForm && resolvedTableName) prefetchFormSchema(resolvedTableName); }}
           >
-            <Plus size={15} className="text-white" />
+            <Plus size={14} className="text-white" />
             <span>{buttonLabel}</span>
           </button>
         </div>
@@ -931,7 +932,7 @@ export function FormModal({
                             }
                             return section.fields.includes(f.name);
                           });
-                          if (!sectionFields.length && (!isStoreVendor || !isMultiItemMode)) return null;
+                          if (!sectionFields.length && (section.id !== "vendor" || !isStoreVendor || !isMultiItemMode)) return null;
                           return (
                             <div key={section.id} className="bg-white rounded-lg p-4 border border-slate-200 shadow-2xs space-y-3">
                               <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-100">
@@ -1399,6 +1400,50 @@ function renderField(
           placeholder="พิมพ์ชื่อร้านค้า หรือรหัสร้านค้า"
           onChange={onChange}
         />
+      );
+    }
+
+    if (field.type === "EnumList" && field.inputMode === "buttons") {
+      const selectedValues = splitEnumListValue(value);
+
+      function toggleOption(optionValue: string) {
+        if (readOnly) return;
+        const exists = selectedValues.includes(optionValue);
+        const next = exists
+          ? selectedValues.filter(v => v !== optionValue)
+          : [...selectedValues, optionValue];
+        onChange(next.join(", "));
+      }
+
+      return (
+        <div className="space-y-2">
+          <input type="hidden" name={field.name} value={value} />
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label={field.name}>
+            {options.map((option, index) => {
+              const optionValue = String(option.value);
+              const checked = selectedValues.includes(optionValue);
+              const buttonStyle = getOptionButtonStyle(field.name, optionValue, checked);
+              return (
+                <button
+                  type="button"
+                  key={`${optionValue}-${index}`}
+                  disabled={readOnly}
+                  onClick={() => toggleOption(optionValue)}
+                  className={`px-3 py-1.5 rounded-lg border text-xs cursor-pointer transition-all flex items-center gap-1.5 select-none ${buttonStyle}`}
+                >
+                  <span className={`w-3.5 h-3.5 rounded flex items-center justify-center text-[10px] shrink-0 border transition-all ${
+                    checked
+                      ? "bg-white/20 border-white text-white font-bold"
+                      : "bg-slate-50 border-slate-300 text-transparent"
+                  }`}>
+                    ✓
+                  </span>
+                  <span>{getFieldOptionLabel(field.name, String(option.label || option.value))}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       );
     }
 
@@ -1897,6 +1942,30 @@ function getFieldOptionLabel(fieldName: string, label: string): string {
 }
 
 function getOptionButtonStyle(fieldName: string, optionValue: string, checked: boolean): string {
+  if (fieldName === "สิทธิ์การใช้งาน") {
+    const val = optionValue.trim();
+    if (val.includes("เจ้าของ") || val.includes("Owner")) {
+      return checked
+        ? "bg-amber-500 text-white border-amber-600 shadow-xs font-semibold ring-1 ring-amber-400"
+        : "bg-amber-50/70 text-amber-900 border-amber-200 hover:bg-amber-100 font-medium";
+    }
+    if (val.includes("อนุมัติ") || val.includes("Approver")) {
+      return checked
+        ? "bg-emerald-600 text-white border-emerald-600 shadow-xs font-semibold ring-1 ring-emerald-400"
+        : "bg-emerald-50/70 text-emerald-900 border-emerald-200 hover:bg-emerald-100 font-medium";
+    }
+    if (val.includes("การเงิน") || val.includes("Finance") || val.includes("ปิดบิล")) {
+      return checked
+        ? "bg-blue-600 text-white border-blue-600 shadow-xs font-semibold ring-1 ring-blue-400"
+        : "bg-blue-50/70 text-blue-900 border-blue-200 hover:bg-blue-100 font-medium";
+    }
+    if (val.includes("ลบ") || val.includes("Delete")) {
+      return checked
+        ? "bg-slate-900 text-white border-slate-900 shadow-xs font-semibold ring-1 ring-slate-400"
+        : "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200 font-medium";
+    }
+  }
+
   if (fieldName === "color" || fieldName === "COLOR") {
     const val = optionValue.trim().toLowerCase();
     if (val === "red" || val.includes("แดง") || val.includes("ใหญ่")) {
@@ -2047,6 +2116,26 @@ function getRowStringValues(form: FormPayload, row: SheetRow) {
           rawVal = String(rowAmount);
         }
       }
+    }
+
+    if (field.name === "สิทธิ์การใช้งาน") {
+      const active: string[] = [];
+      const permStr = String(row["สิทธิ์การใช้งาน"] || "");
+      const d = (row.data && typeof row.data === "object") ? row.data : {};
+      const hasOwner = permStr.includes("Owner") || permStr.includes("เจ้าของระบบ") || Boolean(row.is_owner) || Boolean(row["เจ้าของระบบ"]) || Boolean(d.is_owner) || Boolean(d["เจ้าของระบบ"]);
+      const hasApprover = permStr.includes("Approver") || permStr.includes("อนุมัติบิล") || Boolean(row.can_close_bill) || Boolean(row["อนุมัติบิล"]) || Boolean(d.can_close_bill) || Boolean(d["อนุมัติบิล"]);
+      const hasFinance = permStr.includes("Finance") || permStr.includes("ฝ่ายการเงิน") || permStr.includes("ปิดบิล") || Boolean(row.can_approve) || Boolean(row["ฝ่ายการเงิน"]) || Boolean(d.can_approve) || Boolean(d["ฝ่ายการเงิน"]);
+      const hasDelete = permStr.includes("Delete") || permStr.includes("ลบข้อมูล") || Boolean(row.can_delete) || Boolean(row["สิทธิ์ลบข้อมูล"]) || Boolean(d.can_delete) || Boolean(d["สิทธิ์ลบข้อมูล"]);
+
+      if (hasOwner) active.push("เจ้าของระบบ (Owner)");
+      if (hasApprover) active.push("อนุมัติบิล (Approver)");
+      if (hasFinance) active.push("ฝ่ายการเงิน (Finance)");
+      if (hasDelete) active.push("ลบข้อมูล (Delete)");
+
+      rawVal = active.join(", ");
+    } else if (field.name === "LINE User ID" || field.name === "LINE") {
+      const d = (row.data && typeof row.data === "object") ? row.data : {};
+      rawVal = String(row["LINE User ID"] || row["LINE"] || row.line_user_id || d.line_user_id || d["LINE User ID"] || d["LINE"] || "").trim();
     }
 
     if ((field.name === "vat" || field.name === "หัก" || field.name === "เครดิต") && (rawVal === "0" || rawVal === "0.00" || String(rawVal) === "0")) {
@@ -2360,6 +2449,9 @@ function isFieldVisible(field: FieldSchema, values: Record<string, string>) {
     const hasVat = isVatActive(values["vat"]);
     const hasCredit = parseCreditDays(values["เครดิต"]) > 0;
     return hasVat && !hasCredit;
+  }
+  if (field.name === "vat" && values["ร้านค้า/ผู้รับเหมา"] === "ร้านค้า") {
+    return true;
   }
   if (!field.showIf) return true;
   const actual = values[field.showIf.column] || "";

@@ -68,8 +68,13 @@ export async function renderRowDetailPage(id: string, rowKey: string) {
   });
   if (!row) notFound();
 
+  const bankRows = await safeRows(TABLES.BANK);
+  const peopleRows = await safeRows(TABLES.PEOPLE);
+  const bLookup = bankLookup(bankRows);
+  const pLookup = peopleLookup(peopleRows);
+
   const columns = getViewColumns(view.name, Object.keys(row).filter(column => !column.startsWith("_")));
-  const relatedSections = await getRelatedSections(id, row);
+  const relatedSections = await getRelatedSections(id, row, { banks: bLookup, people: pLookup });
   const title = detailTitle(id, row, decodedKey);
   const primaryCode = String(row[keyColumn] || "").trim();
   const isSchemaForm = usesSchemaForm(id);
@@ -141,15 +146,15 @@ export async function renderRowDetailPage(id: string, rowKey: string) {
                         <span className="text-slate-400 font-normal text-xs">-</span>
                       ) : isAmount ? (
                         <span className="text-xs font-mono text-slate-900">
-                          {formatDetailValue(column, val)}
+                          {formatDetailValue(column, val, { banks: bLookup, people: pLookup })}
                         </span>
                       ) : isCode ? (
                         <span className="text-xs font-mono text-slate-900">
-                          {formatDetailValue(column, val)}
+                          {formatDetailValue(column, val, { banks: bLookup, people: pLookup })}
                         </span>
                       ) : (
                         <span className="text-xs text-slate-800 break-words">
-                          {formatDetailValue(column, val)}
+                          {formatDetailValue(column, val, { banks: bLookup, people: pLookup })}
                         </span>
                       )}
                     </dd>
@@ -200,12 +205,15 @@ type RelatedSection = {
   rows: SheetRow[];
 };
 
-async function getRelatedSections(id: string, row: SheetRow): Promise<RelatedSection[]> {
+async function getRelatedSections(id: string, row: SheetRow, lookups?: { banks?: Record<string, string>; people?: Record<string, string> }): Promise<RelatedSection[]> {
   const sections: RelatedSection[] = [];
   const keyColumn = tableKeyColumn(id, "");
   const keyValue = String(row[keyColumn] || "").trim();
   const storeId = String(row["id_store"] || row["id_bank"] || row["id_Contractor"] || row["รหัสพนักงาน"] || keyValue).trim();
   const storeName = String(row["ชื่อร้าน"] || row["ชื่อร้านค้า"] || row["ร้าน/บุคคล"] || row["ชื่อธนาคาร"] || row["ชื่อ-นามสกุล"] || row["ชื่อเล่น"] || "").trim();
+
+  const pLookup = lookups?.people || peopleLookup(await safeRows(TABLES.PEOPLE));
+  const bLookup = lookups?.banks || bankLookup(await safeRows(TABLES.BANK));
 
   if (id === "stores") {
     const dataRows = await safeRows(TABLES.DATA);
@@ -221,11 +229,19 @@ async function getRelatedSections(id: string, row: SheetRow): Promise<RelatedSec
       );
     });
 
+    const mappedRelated = related.map(item => {
+      const req = String(item["ผู้เบิก"] || "").trim();
+      return {
+        ...item,
+        "ผู้เบิก": pLookup[req] || req
+      };
+    });
+
     sections.push({
       title: `รายการบิลจากร้านค้า ${storeName || storeId}`,
-      subtitle: related.length ? `${related.length} รายการบิลและค่าใช้จ่ายจาก Data` : `ยังไม่มีรายการบันทึกบิลจากร้านนี้`,
+      subtitle: mappedRelated.length ? `${mappedRelated.length} รายการบิลและค่าใช้จ่ายจาก Data` : `ยังไม่มีรายการบันทึกบิลจากร้านนี้`,
       columns: ["ลำดับ", "ID Project", "ชื่อ Project", "ผู้เบิก", "ร้าน/บุคคล", "สินค้า/ทำงาน", "บิล", "ยอดเงิน", "ยอดโอน", "ว/ด/ป", "สถานะ"],
-      rows: related
+      rows: mappedRelated
     });
   }
 
@@ -240,11 +256,20 @@ async function getRelatedSections(id: string, row: SheetRow): Promise<RelatedSec
       return (code && (requester === code || vendor === code)) || (name && (requester === name || vendor === name));
     });
 
+    const mappedRelated = related.map(item => {
+      const req = String(item["ผู้เบิก"] || "").trim();
+      const resolvedName = pLookup[req] || (code && req === code ? (name || req) : req);
+      return {
+        ...item,
+        "ผู้เบิก": resolvedName
+      };
+    });
+
     sections.push({
       title: `รายการบิลเบิกจ่ายที่เกี่ยวข้อง`,
-      subtitle: related.length ? `${related.length} รายการจาก Data` : `ยังไม่มีรายการเบิกจ่าย`,
+      subtitle: mappedRelated.length ? `${mappedRelated.length} รายการจาก Data` : `ยังไม่มีรายการเบิกจ่าย`,
       columns: ["ลำดับ", "ID Project", "ชื่อ Project", "ผู้เบิก", "ร้าน/บุคคล", "สินค้า/ทำงาน", "ยอดเงิน", "ยอดโอน", "ว/ด/ป", "สถานะ"],
-      rows: related
+      rows: mappedRelated
     });
   }
 
@@ -258,11 +283,21 @@ async function getRelatedSections(id: string, row: SheetRow): Promise<RelatedSec
       return (bankId && bankVal === bankId) || (bankName && bankVal === bankName);
     });
 
+    const mappedRelated = related.map(item => {
+      const req = String(item["ผู้เบิก"] || "").trim();
+      const bankVal = String(item["ธนาคาร"] || "").trim();
+      return {
+        ...item,
+        "ผู้เบิก": pLookup[req] || req,
+        "ธนาคาร": bLookup[bankVal] || bankVal
+      };
+    });
+
     sections.push({
       title: `รายการโอนผ่านธนาคารนี้`,
-      subtitle: related.length ? `${related.length} รายการจาก Data` : `ยังไม่มีรายการโอนผ่านธนาคารนี้`,
+      subtitle: mappedRelated.length ? `${mappedRelated.length} รายการจาก Data` : `ยังไม่มีรายการโอนผ่านธนาคารนี้`,
       columns: ["ลำดับ", "ID Project", "ชื่อ Project", "ผู้เบิก", "ร้าน/บุคคล", "ยอดโอน", "ธนาคาร", "ว/ด/ป", "สถานะ"],
-      rows: related
+      rows: mappedRelated
     });
   }
 
@@ -285,13 +320,29 @@ function amountField(field: string) {
   return /ยอด|เงิน|ราคา|vat|หัก|เครดิต|ค่าแรง|รวม|คงเหลือ|โอน|งบ/.test(field);
 }
 
-function formatDetailValue(field: string, value: unknown) {
+function formatDetailValue(field: string, value: unknown, lookups?: { banks?: Record<string, string>; people?: Record<string, string> }) {
   if (value === null || value === undefined || value === "") return "-";
   if (amountField(field) && typeof value === "number") return money(value);
+  const strVal = String(value).trim();
   if (field === "ธนาคาร" || field === "bank" || field === "bank_name") {
-    return String(value).replace(/^Ba\d+\s*[-–—]?\s*/i, "").trim() || String(value);
+    if (lookups?.banks && lookups.banks[strVal]) {
+      return lookups.banks[strVal];
+    }
+    return strVal.replace(/^Ba\d+\s*[-–—]?\s*/i, "").trim() || strVal;
   }
-  return String(value);
+  if (field === "ผู้เบิก" || field === "requester") {
+    if (lookups?.people && lookups.people[strVal]) {
+      return lookups.people[strVal];
+    }
+    return strVal;
+  }
+  if (field === "LINE" || field === "LINE User ID") {
+    if (strVal && strVal.length > 5 && strVal !== "-") {
+      return "เชื่อมต่อแล้ว";
+    }
+    return "ยังไม่ผูก";
+  }
+  return strVal;
 }
 
 async function renderView(
@@ -575,6 +626,22 @@ function bankLookup(bankRows: Awaited<ReturnType<typeof getRows>>) {
       lookup[displayVal] = displayVal;
       if (name && key !== name) lookup[`${key} - ${name}`] = displayVal;
     }
+    return lookup;
+  }, {});
+}
+
+function peopleLookup(peopleRows: Awaited<ReturnType<typeof getRows>>) {
+  return peopleRows.reduce<Record<string, string>>((lookup, row) => {
+    const key = String(row["รหัสพนักงาน"] || row.id || "").trim();
+    const nickname = String(row["ชื่อเล่น"] || row.nickname || "").trim();
+    const fullName = String(row["ชื่อ-นามสกุล"] || row.full_name || "").trim();
+    const displayName = nickname || fullName || key;
+    if (key) {
+      lookup[key] = displayName;
+      lookup[key.toLowerCase()] = displayName;
+    }
+    if (fullName) lookup[fullName] = displayName;
+    if (nickname) lookup[nickname] = displayName;
     return lookup;
   }, {});
 }

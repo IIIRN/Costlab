@@ -164,7 +164,7 @@ CREATE TABLE IF NOT EXISTS public.plans (
   created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 9. Master Members Table (รายชื่อพนักงาน)
+-- 9. Master Members Table (รายชื่อพนักงาน & สิทธิ์การใช้งาน)
 CREATE TABLE IF NOT EXISTS public.master_members (
   id TEXT PRIMARY KEY,                                      -- รหัสพนักงาน (e.g. admin, PT101)
   nickname TEXT,                                            -- ชื่อเล่น
@@ -174,7 +174,13 @@ CREATE TABLE IF NOT EXISTS public.master_members (
   phone TEXT,                                               -- เบอร์โทร
   address TEXT,                                             -- ที่อยู่
   id_card TEXT,                                             -- เลขบัตรประชาชน
-  role TEXT,                                                -- สิทธิ์การใช้งาน (Admin, Manager, User)
+  role TEXT,                                                -- สิทธิ์การใช้งานแบบเดิม (Admin, Manager, User)
+  system_role TEXT DEFAULT 'User',                          -- สิทธิ์ระบบละเอียด (Admin_Approver, Admin_Closer, Admin, User)
+  status TEXT DEFAULT 'Active',                             -- สถานะ (Active / Inactive)
+  is_owner BOOLEAN DEFAULT false,                           -- เจ้าของระบบ (Owner) รับแจ้งเตือนหลัก
+  can_approve BOOLEAN DEFAULT false,                        -- สิทธิ์ฝ่ายการเงิน / ปิดบิล & ยืนยันจ่ายเงิน
+  can_close_bill BOOLEAN DEFAULT false,                     -- สิทธิ์อนุมัติบิล (Approver) รับแจ้งเตือนและกดอนุมัติ
+  can_delete BOOLEAN DEFAULT false,                         -- สิทธิ์ลบข้อมูลบิลและโครงการ
   line_user_id TEXT,                                        -- LINE User ID
   pictureUrl TEXT,                                          -- รูปโปรไฟล์
   data JSONB DEFAULT '{}'::jsonb
@@ -563,10 +569,7 @@ $$;
 -- 7.1 สร้าง Admin ในตารางพนักงาน (master_members)
 INSERT INTO public.master_members (id, nickname, full_name, bank_account, phone, address, id_card, role)
 VALUES 
-  ('admin', 'Admin', 'ผู้ดูแลระบบ (Admin)', '-', '0800000000', '-', '-', 'Admin'),
-  ('PT101', 'แมน', 'คุณแมน', '-', '099-999-9999', '-', '-', 'Admin'),
-  ('PT102', 'ซ้อ', 'คุณซ้อ', '-', '081-888-8888', '-', '-', 'Manager'),
-  ('PT103', 'การเงิน', 'บัญชี/การเงิน', '-', '081-777-7777', '-', '-', 'Manager')
+  ('admin', 'Admin', 'ผู้ดูแลระบบ (Admin)', '-', '0800000000', '-', '-', 'Admin')
 ON CONFLICT (id) DO UPDATE SET 
   nickname = EXCLUDED.nickname,
   full_name = EXCLUDED.full_name,
@@ -588,33 +591,6 @@ VALUES (
       "lineUserId": "",
       "pictureUrl": "",
       "createdAt": "2026-08-22"
-    },
-    {
-      "id": "PT101",
-      "username": "PT101",
-      "displayName": "คุณแมน",
-      "role": "Admin",
-      "status": "Active",
-      "phone": "099-999-9999",
-      "createdAt": "2026-01-01"
-    },
-    {
-      "id": "PT102",
-      "username": "PT102",
-      "displayName": "คุณซ้อ",
-      "role": "Manager",
-      "status": "Active",
-      "phone": "081-888-8888",
-      "createdAt": "2026-01-01"
-    },
-    {
-      "id": "PT103",
-      "username": "PT103",
-      "displayName": "บัญชี/การเงิน",
-      "role": "Manager",
-      "status": "Active",
-      "phone": "081-777-7777",
-      "createdAt": "2026-01-02"
     }
   ]'::jsonb,
   timezone('utc'::text, now())
@@ -633,10 +609,10 @@ INSERT INTO public.system_options (id, data, updated_at)
 VALUES (
   'system_options',
   '{
-    "vat": ["รวม VAT", "ไม่รวม VAT", "ไม่มี VAT", "VAT 7%"],
-    "หัก": ["ไม่มี", "หัก 1%", "หัก 3%", "หัก 5%"],
-    "เครดิต": ["เงินสด", "7 วัน", "15 วัน", "30 วัน", "60 วัน"],
-    "ประเภทบิล": ["หลัก", "ย่อย", "หลัก2", "ย่อย2"],
+    "vat": ["VAT 7%"],
+    "หัก": ["หัก 1%","หัก 2%","หัก 3%", "หัก 5%"],
+    "เครดิต": ["15 วัน", "30 วัน", "60 วัน"],
+    "ประเภทบิล": ["หลัก", "ย่อย"],
     "statusค่าแรง": ["บุคคลธรรมดา", "บริษัท"],
     "ยี่ห้อรถ": ["Toyota", "Isuzu", "Ford", "Mitsubishi", "Nissan", "Honda", "MG", "Mazda"],
     "รับผิดชอบ": ["PW1", "PW2", "PW3", "PW4", "PW"],

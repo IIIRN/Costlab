@@ -45,11 +45,18 @@ const TABLE_MAP: Record<string, string> = {
   contractWork: "contract_works",
   contractwork: "contract_works",
   contract_works: "contract_works",
+  เปิดจ้าง: "contract_works",
+  "5. เปิดจ้าง": "contract_works",
+  เปิดจ้างงาน: "contract_works",
   Tasks: "tasks",
   Works: "works",
   Plan: "plans",
   "Master Member": "master_members",
   รายชื่อ: "master_members",
+  พนักงาน: "master_members",
+  ชื่อพนักงาน: "master_members",
+  "6. ชื่อพนักงาน": "master_members",
+  รายชื่อพนักงาน: "master_members",
   PEOPLE: "master_members",
   people: "master_members",
   master_members: "master_members",
@@ -316,7 +323,35 @@ export function mapSupabaseRowToSheetRow(dbTable: string, row: Record<string, an
     res["เบอร์โทร"] = row.phone ?? row["เบอร์โทร"];
     res["ที่อยู่"] = row.address ?? row["ที่อยู่"];
     res["เลขที่บัตรประชาชน"] = row.id_card ?? row["เลขที่บัตรประชาชน"];
-    res["สิทธิ์การใช้งาน"] = row.role ?? row["สิทธิ์การใช้งาน"];
+
+    const d = (row.data && typeof row.data === "object") ? row.data : {};
+    const isOwner = Boolean(row.is_owner ?? d.is_owner ?? d["เจ้าของระบบ"] ?? row["เจ้าของระบบ"]);
+    const canClose = Boolean(row.can_close_bill ?? d.can_close_bill ?? d["อนุมัติบิล"] ?? row["อนุมัติบิล"]);
+    const canApprove = Boolean(row.can_approve ?? d.can_approve ?? d["ฝ่ายการเงิน"] ?? row["ฝ่ายการเงิน"]);
+    const canDelete = Boolean(row.can_delete ?? d.can_delete ?? d["สิทธิ์ลบข้อมูล"] ?? row["สิทธิ์ลบข้อมูล"]);
+
+    const rawPermStr = String(row["สิทธิ์การใช้งาน"] ?? d["สิทธิ์การใช้งาน"] ?? "");
+    const activePerms: string[] = [];
+    if (isOwner || rawPermStr.includes("Owner") || rawPermStr.includes("เจ้าของระบบ")) activePerms.push("เจ้าของระบบ (Owner)");
+    if (canClose || rawPermStr.includes("Approver") || rawPermStr.includes("อนุมัติบิล")) activePerms.push("อนุมัติบิล (Approver)");
+    if (canApprove || rawPermStr.includes("Finance") || rawPermStr.includes("ฝ่ายการเงิน") || rawPermStr.includes("ปิดบิล")) activePerms.push("ฝ่ายการเงิน (Finance)");
+    if (canDelete || rawPermStr.includes("Delete") || rawPermStr.includes("ลบข้อมูล")) activePerms.push("ลบข้อมูล (Delete)");
+
+    res["สิทธิ์การใช้งาน"] = activePerms.join(", ");
+    const lineId = row.line_user_id ?? d.line_user_id ?? row["LINE User ID"] ?? d["LINE User ID"] ?? row["LINE"] ?? d["LINE"] ?? "";
+    res["LINE"] = lineId;
+    res["LINE User ID"] = lineId;
+    res["สถานะ"] = row.status ?? d.status ?? row["สถานะ"] ?? d["สถานะ"] ?? "Active";
+    res["เจ้าของระบบ"] = isOwner;
+    res["ฝ่ายการเงิน"] = canApprove;
+    res["อนุมัติบิล"] = canClose;
+    res["สิทธิ์ลบข้อมูล"] = canDelete;
+    res.is_owner = isOwner;
+    res.can_close_bill = canClose;
+    res.can_approve = canApprove;
+    res.can_delete = canDelete;
+    res["pictureUrl"] = row.pictureurl ?? d.pictureUrl ?? d.pictureurl ?? row["pictureUrl"] ?? "";
+    res["pictureurl"] = row.pictureurl ?? d.pictureUrl ?? d.pictureurl ?? row["pictureUrl"] ?? "";
   } else if (dbTable === "banks") {
     res["id_bank"] = row.id ?? row["id_bank"];
     res["_sheetRow"] = row.id ?? row._sheetRow;
@@ -532,6 +567,9 @@ export function mapSheetRowToSupabaseRow(tableName: string, row: Record<string, 
     if (hasValue(row["สินค้า"] ?? row.product)) dbRow.product = String(row["สินค้า"] ?? row.product).trim();
     if (hasValue(row["รายละเอียดงาน"] ?? row.work_details)) dbRow.work_details = String(row["รายละเอียดงาน"] ?? row.work_details).trim();
     if (hasValue(row["รายการ"] ?? row.sub_category)) dbRow.sub_category = String(row["รายการ"] ?? row.sub_category).trim();
+    if (row.items !== undefined || row["items"] !== undefined) {
+      dbRow.items = row.items ?? row["items"];
+    }
   } else if (dbTable === "projects") {
     if (row["ID Project"] !== undefined) dbRow.id = row["ID Project"];
     if (row["ชื่อ Project"] !== undefined) dbRow.name = row["ชื่อ Project"];
@@ -602,8 +640,10 @@ export function mapSheetRowToSupabaseRow(tableName: string, row: Record<string, 
     if (row["เลขที่สียภาษี "] !== undefined || row["เลขที่ผู้เสียภาษี"] !== undefined) dbRow.tax_id = row["เลขที่สียภาษี "] ?? row["เลขที่ผู้เสียภาษี"];
     if (row["เบอร์โทร"] !== undefined) dbRow.phone = row["เบอร์โทร"];
   } else if (dbTable === "master_members") {
-    if (row["รหัสพนักงาน"] !== undefined || row["id"] !== undefined) {
-      dbRow.id = row["รหัสพนักงาน"] ?? row["id"];
+    if (row["รหัสพนักงาน"] !== undefined && String(row["รหัสพนักงาน"]).trim() !== "") {
+      dbRow.id = String(row["รหัสพนักงาน"]).trim();
+    } else if (row["id"] !== undefined && String(row["id"]).trim() !== "") {
+      dbRow.id = String(row["id"]).trim();
     }
     if (row["ชื่อเล่น"] !== undefined) dbRow.nickname = row["ชื่อเล่น"];
     if (row["ชื่อ-นามสกุล"] !== undefined) dbRow.full_name = row["ชื่อ-นามสกุล"];
@@ -612,7 +652,45 @@ export function mapSheetRowToSupabaseRow(tableName: string, row: Record<string, 
     if (row["เบอร์โทร"] !== undefined) dbRow.phone = row["เบอร์โทร"];
     if (row["ที่อยู่"] !== undefined) dbRow.address = row["ที่อยู่"];
     if (row["เลขที่บัตรประชาชน"] !== undefined) dbRow.id_card = row["เลขที่บัตรประชาชน"];
-    if (row["สิทธิ์การใช้งาน"] !== undefined) dbRow.role = row["สิทธิ์การใช้งาน"];
+    if (row["สิทธิ์การใช้งาน"] !== undefined) {
+      const permStr = String(row["สิทธิ์การใช้งาน"] || "");
+      const hasOwner = permStr.includes("Owner") || permStr.includes("เจ้าของระบบ");
+      const hasApprover = permStr.includes("Approver") || permStr.includes("อนุมัติบิล");
+      const hasFinance = permStr.includes("Finance") || permStr.includes("ฝ่ายการเงิน") || permStr.includes("ปิดบิล");
+      const hasDelete = permStr.includes("Delete") || permStr.includes("ลบข้อมูล");
+      const hasAdmin = permStr.includes("Admin") || hasOwner;
+
+      dbRow.is_owner = hasOwner;
+      dbRow.can_close_bill = hasApprover;
+      dbRow.can_approve = hasFinance;
+      dbRow.can_delete = hasDelete;
+
+      dbRow.role = (hasAdmin || hasOwner || hasApprover || hasFinance || hasDelete) ? "Admin" : "User";
+      dbRow.system_role = hasFinance ? "Admin_Closer" : hasApprover ? "Admin_Approver" : hasAdmin ? "Admin" : "User";
+    } else {
+      if (row["เจ้าของระบบ"] !== undefined || row["is_owner"] !== undefined) {
+        dbRow.is_owner = Boolean(row["เจ้าของระบบ"] ?? row["is_owner"]);
+      }
+      if (row["ฝ่ายการเงิน"] !== undefined || row["can_approve"] !== undefined) {
+        dbRow.can_approve = Boolean(row["ฝ่ายการเงิน"] ?? row["can_approve"]);
+      }
+      if (row["อนุมัติบิล"] !== undefined || row["can_close_bill"] !== undefined) {
+        dbRow.can_close_bill = Boolean(row["อนุมัติบิล"] ?? row["can_close_bill"]);
+      }
+      if (row["สิทธิ์ลบข้อมูล"] !== undefined || row["can_delete"] !== undefined) {
+        dbRow.can_delete = Boolean(row["สิทธิ์ลบข้อมูล"] ?? row["can_delete"]);
+      }
+    }
+    if (row["LINE"] !== undefined || row["LINE User ID"] !== undefined || row["line_user_id"] !== undefined || row["Line"] !== undefined || row["line"] !== undefined) {
+      const lineVal = String(row["LINE"] ?? row["LINE User ID"] ?? row["line_user_id"] ?? row["Line"] ?? row["line"] ?? "").trim();
+      dbRow.line_user_id = lineVal;
+    }
+    if (row["สถานะ"] !== undefined || row["status"] !== undefined) {
+      dbRow.status = row["สถานะ"] ?? row["status"];
+    }
+    if (row["pictureUrl"] !== undefined || row["pictureurl"] !== undefined) {
+      dbRow.pictureurl = row["pictureUrl"] ?? row["pictureurl"];
+    }
   } else if (dbTable === "contract_works") {
     if (row["id_Conwork"] !== undefined || row["id"] !== undefined) {
       dbRow.id = row["id_Conwork"] ?? row["id"];
@@ -973,13 +1051,11 @@ export async function updateRowInSupabase(tableName: string, keyColumn: string, 
   const dbTable = getDbTableName(tableName);
   const dbPatch = mapSheetRowToSupabaseRow(tableName, patch);
   delete dbPatch._sheetRow;
-  delete dbPatch.id;
 
   // Determine the true Supabase primary key ID:
   // For master entities, prioritize the entity code (e.g. CT362, PT105, ST101, etc.) over numeric sheetRow numbers
-  const entityCode = patch[keyColumn] ??
+  const entityCode = patch["รหัสพนักงาน"] ??
     patch["id_Contractor"] ??
-    patch["รหัสพนักงาน"] ??
     patch["id_store"] ??
     patch["id_bank"] ??
     patch["id_car"] ??
@@ -987,18 +1063,21 @@ export async function updateRowInSupabase(tableName: string, keyColumn: string, 
     patch["id_Company"] ??
     patch["id_Conwork"] ??
     patch["ID Project"] ??
+    (keyColumn !== "id" && keyColumn !== "_sheetRow" ? patch[keyColumn] : undefined) ??
     patch.id;
 
-  let primaryVal: any = keyValue;
-
-  if (dbTable !== "bills" && dbTable !== "tasks" && dbTable !== "loans") {
-    if (entityCode !== undefined && entityCode !== null && String(entityCode).trim() !== "") {
-      primaryVal = entityCode;
-    }
+  // For auto-increment tables (bills, tasks, loans), prevent updating primary key id
+  if (dbTable === "bills" || dbTable === "tasks" || dbTable === "loans") {
+    delete dbPatch.id;
+  } else if (entityCode !== undefined && entityCode !== null && String(entityCode).trim() !== "") {
+    // For entity master tables (like master_members), allow updating the ID (e.g. employee code)
+    dbPatch.id = String(entityCode).trim();
   }
 
-  if (primaryVal === undefined || primaryVal === null || String(primaryVal).trim() === "") {
-    primaryVal = entityCode ?? keyValue;
+  // The primary target is the existing record's original ID (keyValue)
+  let primaryVal: any = keyValue;
+  if (primaryVal === undefined || primaryVal === null || String(primaryVal).trim() === "" || String(primaryVal) === "0") {
+    primaryVal = entityCode;
   }
 
   const numId = Number(primaryVal);
@@ -1671,6 +1750,7 @@ export async function insertRowToSupabase(tableName: string, rowData: Record<str
 
   const dbTable = getDbTableName(tableName);
   const dbRow = mapSheetRowToSupabaseRow(tableName, rowData);
+  dbRow.data = { ...(rowData.data || {}), ...rowData };
 
   const bankVal = rowData["ธนาคาร"] || rowData["bank_name"];
   const entityId = dbRow.id || rowData["id_store"] || rowData["id_Contractor"] || rowData["รหัสพนักงาน"];

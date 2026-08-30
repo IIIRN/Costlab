@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { ChevronLeft, ChevronRight, List, Pencil, Plus, Save, Trash2, X, Search, ArrowDownUp, Download, Upload, FileSpreadsheet, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, List, Pencil, Plus, Save, Trash2, X, Search, ArrowDownUp, Download, Upload, FileSpreadsheet, Loader2, Crown, Check, CheckCheck, User, MessageSquare } from "lucide-react";
 import { BillImageThumbnail } from "@/components/BillImageThumbnail";
 import { showConfirm, showToast } from "@/components/ToastProvider";
 import type { RowValue, SheetRow } from "@/lib/types";
@@ -496,31 +496,31 @@ export function ManageTableClient({
 
   return (
     <div className="w-full flex flex-col gap-3 p-3 sm:p-4 max-w-[1600px] mx-auto font-sans text-xs text-slate-800">
-      {/* 1. COMPACT PAGE HEADER */}
-      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-        <div className="flex items-center gap-2">
-          <h1 className="text-base text-slate-900 tracking-tight">{viewName}</h1>
-          <span className="px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-700 border border-slate-200">
-            {filteredAndSortedRows.length} {rowLabel}
-          </span>
-        </div>
-      </div>
+      {/* FILTER & ACTION TOOLBAR (With View Name & Count) */}
+      <div className="border border-slate-200 rounded-md p-2.5 sm:p-3 bg-white flex flex-col lg:flex-row lg:items-center justify-between gap-3 shadow-2xs">
+        {/* Left Side: Title & Live Search */}
+        <div className="flex flex-wrap items-center gap-3 flex-1 min-w-0">
+          <div className="flex items-center gap-2 shrink-0">
+            <h1 className="text-sm sm:text-base font-semibold text-slate-900 tracking-tight">{viewName}</h1>
+            <span className="px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-600 border border-slate-200 font-medium">
+              {filteredAndSortedRows.length} {rowLabel}
+            </span>
+          </div>
 
-      {/* 2. FILTER & ACTION TOOLBAR */}
-      <div className="border border-slate-200 rounded-md p-3 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        {/* Live Search Input Box */}
-        <div className="relative flex items-center flex-1 min-w-[220px] max-w-md">
-          <Search size={14} className="absolute left-2.5 text-slate-400 pointer-events-none" />
-          <input
-            type="text"
-            placeholder="ค้นหา..."
-            value={localSearch}
-            onChange={e => setLocalSearch(e.target.value)}
-            className="w-full bg-white text-slate-800 text-xs pl-8 pr-7 py-1 rounded-md border border-slate-300 focus:outline-none focus:border-slate-500 placeholder:text-slate-400"
-          />
-          {localSearch && (
-            <X size={14} className="absolute right-2 text-slate-400 cursor-pointer hover:text-slate-600" onClick={() => setLocalSearch("")} />
-          )}
+          {/* Live Search Input Box */}
+          <div className="relative flex items-center flex-1 min-w-[180px] max-w-xs">
+            <Search size={14} className="absolute left-2.5 text-slate-400 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="ค้นหา..."
+              value={localSearch}
+              onChange={e => setLocalSearch(e.target.value)}
+              className="w-full bg-white text-slate-800 text-xs pl-8 pr-7 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:border-slate-500 placeholder:text-slate-400 transition"
+            />
+            {localSearch && (
+              <X size={14} className="absolute right-2 text-slate-400 cursor-pointer hover:text-slate-600" onClick={() => setLocalSearch("")} />
+            )}
+          </div>
         </div>
 
         {/* Action Controls */}
@@ -573,38 +573,7 @@ export function ManageTableClient({
             <span>{sortDesc ? "ล่าสุดก่อน" : "เก่าสุดก่อน"}</span>
           </button>
 
-          {editing ? (
-            <>
-              <button
-                type="button"
-                className="px-3 py-1.5 bg-[#0b3531] hover:bg-[#072724] text-white rounded-lg text-xs flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
-                disabled={busy === "edit"}
-                onClick={saveEdit}
-              >
-                <Save size={14} />
-                <span>บันทึก</span>
-              </button>
-              <button
-                type="button"
-                className="px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
-                disabled={Boolean(busy)}
-                onClick={cancelEdit}
-              >
-                <X size={14} />
-                <span>ยกเลิก</span>
-              </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              className="px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
-              disabled={Boolean(busy) || !rows.length}
-              onClick={beginEdit}
-            >
-              <Pencil size={14} />
-              <span>แก้ไขด่วน</span>
-            </button>
-          )}
+
 
           {deleteMode ? (
             <>
@@ -711,7 +680,7 @@ export function ManageTableClient({
                       ) : null}
                       {visibleColumns.map(column => {
                         const draftValue = draftRows[id]?.[column] ?? stringify(row[column]);
-                        const cellContent = renderDisplayCell(column, row[column], displayLookups);
+                        const cellContent = renderDisplayCell(column, row[column], displayLookups, row);
                         const isLinkColumn = column === primaryLinkColumn;
 
                         return (
@@ -1086,9 +1055,103 @@ function formatValue(value: RowValue | undefined, column = "") {
   return String(value);
 }
 
-function renderDisplayCell(column: string, value: RowValue | undefined, displayLookups: Record<string, Record<string, string>>) {
+function renderDisplayCell(column: string, value: RowValue | undefined, displayLookups: Record<string, Record<string, string>>, row?: SheetRow) {
   if (isImageColumn(column)) return <BillImageThumbnail value={value} />;
   if (column === "color") return <ColorDot value={value} />;
+
+  // 1. LINE Column Display with Icon
+  if (column === "LINE" || column === "LINE User ID" || column === "สถานะ LINE") {
+    const lineUserId = String(row?.line_user_id || row?.["LINE User ID"] || row?.["LINE"] || value || "").trim();
+    const pic = row?.pictureUrl || row?.pictureurl;
+    const isLinked = Boolean(lineUserId && lineUserId.length > 5 && lineUserId !== "-");
+
+    if (isLinked) {
+      return (
+        <div
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium cursor-pointer hover:bg-emerald-100 hover:border-emerald-300 transition shadow-2xs group"
+          title={`LINE ID: ${lineUserId} (คลิกเพื่อคัดลอก ID)`}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (typeof navigator !== "undefined" && navigator.clipboard) {
+              navigator.clipboard.writeText(lineUserId);
+              showToast("success", "คัดลอก LINE User ID เรียบร้อย");
+            }
+          }}
+        >
+          {pic ? (
+            <img src={pic} alt="" className="w-4 h-4 rounded-full object-cover border border-emerald-400 shrink-0" />
+          ) : (
+            <svg className="w-3.5 h-3.5 fill-[#06C755] shrink-0" viewBox="0 0 24 24">
+              <path d="M24 10.304c0-4.58-4.51-8.304-10.05-8.304-5.543 0-10.05 3.724-10.05 8.304 0 4.1 3.58 7.53 8.42 8.16.33.07.77.21.88.49.1.26.07.66.03.93l-.15.93c-.05.29-.24 1.13.99.62 1.23-.52 6.64-3.91 9.07-6.69 1.57-1.74 2.86-3.83 2.86-6.44zm-14.88 1.9h-1.87v-3.79h.61v3.18h1.26v.61zm2.39 0h-.61v-3.79h.61v3.79zm3.56 0h-.62l-1.39-2.07v2.07h-.61v-3.79h.62l1.39 2.06v-2.06h.61v3.79zm3.32-3.18h-1.25v.98h1.25v.6h-1.25v1.0h1.25v.6h-1.86v-3.79h1.86v.61z" />
+            </svg>
+          )}
+          <span className="text-[11px] font-semibold text-emerald-700">เชื่อมต่อแล้ว</span>
+        </div>
+      );
+    }
+
+    return (
+      <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-400 text-xs">
+        <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+        <span className="text-[11px]">ยังไม่ผูก</span>
+      </div>
+    );
+  }
+
+  // 2. Permission Column Display with Icons
+  if (column === "สิทธิ์การใช้งาน" || column === "สิทธิ์") {
+    const permStr = String(value || row?.["สิทธิ์การใช้งาน"] || "");
+    const hasOwner = permStr.includes("Owner") || permStr.includes("เจ้าของระบบ") || Boolean(row?.is_owner) || Boolean(row?.["เจ้าของระบบ"]);
+    const hasApprover = permStr.includes("Approver") || permStr.includes("อนุมัติบิล") || Boolean(row?.can_close_bill) || Boolean(row?.["อนุมัติบิล"]);
+    const hasFinance = permStr.includes("Finance") || permStr.includes("ฝ่ายการเงิน") || permStr.includes("ปิดบิล") || Boolean(row?.can_approve) || Boolean(row?.["ฝ่ายการเงิน"]);
+    const hasDelete = permStr.includes("Delete") || permStr.includes("ลบข้อมูล") || Boolean(row?.can_delete) || Boolean(row?.["สิทธิ์ลบข้อมูล"]);
+
+    const badges: ReactNode[] = [];
+    if (hasOwner) {
+      badges.push(
+        <span key="owner" title="เจ้าของระบบ (Owner)" className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-amber-900 text-xs font-semibold shadow-2xs">
+          <Crown size={12} className="text-amber-600 shrink-0" />
+          <span>เจ้าของ</span>
+        </span>
+      );
+    }
+    if (hasApprover) {
+      badges.push(
+        <span key="approver" title="อนุมัติบิล (Approver)" className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold shadow-2xs">
+          <Check size={12} className="text-emerald-600 shrink-0" />
+          <span>อนุมัติ</span>
+        </span>
+      );
+    }
+    if (hasFinance) {
+      badges.push(
+        <span key="finance" title="ฝ่ายการเงิน (Finance)" className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-blue-50 border border-blue-200 text-blue-900 text-xs font-semibold shadow-2xs">
+          <CheckCheck size={12} className="text-blue-600 shrink-0" />
+          <span>การเงิน</span>
+        </span>
+      );
+    }
+    if (hasDelete) {
+      badges.push(
+        <span key="delete" title="สิทธิ์ลบข้อมูล (Delete)" className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-100 border border-slate-300 text-slate-700 text-xs font-medium shadow-2xs">
+          <Trash2 size={11} className="text-rose-600 shrink-0" />
+          <span>ลบได้</span>
+        </span>
+      );
+    }
+
+    if (badges.length === 0) {
+      return (
+        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-50 text-slate-400 text-xs">
+          <User size={11} className="text-slate-400" />
+          <span>ทั่วไป</span>
+        </span>
+      );
+    }
+
+    return <div className="inline-flex flex-wrap items-center gap-1">{badges}</div>;
+  }
+
   const rawValue = stringify(value);
   const lookup = displayLookups[column];
   if (lookup && rawValue) return lookup[rawValue] || rawValue.replace(/^Ba\d+\s*[-–—]?\s*/i, "");

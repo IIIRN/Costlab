@@ -143,7 +143,20 @@ export const FORM_SCHEMAS: Record<string, FieldSchema[]> = {
     { name: "เบอร์โทร", type: "Text" },
     { name: "ที่อยู่", type: "LongText" },
     { name: "เลขที่บัตรประชาชน", type: "Text" },
-    { name: "สิทธิ์การใช้งาน", type: "Enum", values: ["Admin", "User"], inputMode: "buttons", initialValue: "User" }
+    { name: "LINE User ID", type: "Text" },
+    { name: "สถานะ", type: "Enum", values: ["Active", "Inactive"], inputMode: "buttons", initialValue: "Active" },
+    {
+      name: "สิทธิ์การใช้งาน",
+      type: "EnumList",
+      values: [
+        "เจ้าของระบบ (Owner)",
+        "อนุมัติบิล (Approver)",
+        "ฝ่ายการเงิน (Finance)",
+        "ลบข้อมูล (Delete)"
+      ],
+      inputMode: "buttons",
+      initialValue: ""
+    }
   ],
   [TABLES.CAR]: [
     { name: "id_car", type: "Text", key: true, initialValue: "nextCarId", required: true },

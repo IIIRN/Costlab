@@ -56,42 +56,26 @@ export async function isLineApproverAuthorized(userId: string, targetId?: string
         return true;
       }
 
-      // Check users_list in system_options
-      const { data: usersRow } = await supabaseAdmin
-        .from("system_options")
-        .select("data")
-        .eq("id", "users_list")
-        .maybeSingle();
-
-      if (usersRow?.data && Array.isArray(usersRow.data)) {
-        for (const u of usersRow.data) {
-          if (u.status === "Inactive") continue;
-          const lineId = String(u.lineUserId || u.line_user_id || "").trim();
-          if (lineId && (lineId === userId || (targetId && lineId === targetId))) {
-            if (
-              u.isOwner ||
-              u.role === "Admin" ||
-              u.role === "Owner" ||
-              Boolean(u.canApprove) ||
-              Boolean(u.canCloseBill) ||
-              u.role === "Admin_Approver" ||
-              u.role === "Approver" ||
-              u.role === "Manager"
-            ) {
-              return true;
-            }
-          }
-        }
-      }
-
+      // Primary check: master_members table
       const { data: member } = await supabaseAdmin
         .from("master_members")
         .select("*")
         .or(`line_user_id.eq.${userId},id.eq.${userId}`)
         .maybeSingle();
 
-      if (member && (member.role === "Admin" || member["สิทธิ์การใช้งาน"] === "Admin" || member.role === "Admin_Approver" || member.role === "Approver")) {
-        return true;
+      if (member && member.status !== "Inactive") {
+        if (
+          Boolean(member.is_owner) ||
+          Boolean(member.can_approve) ||
+          Boolean(member.can_close_bill) ||
+          member.role === "Admin" ||
+          member.system_role === "Admin" ||
+          member.system_role === "Admin_Approver" ||
+          member.system_role === "Admin_Closer" ||
+          member["สิทธิ์การใช้งาน"] === "Admin"
+        ) {
+          return true;
+        }
       }
 
       if (allowedApprovers.length === 0) {
@@ -1884,46 +1868,26 @@ export async function getLineTargetIds(): Promise<{ ownerId: string; approverIds
       const approverSet = new Set<string>();
       const closerSet = new Set<string>();
 
-      // 1. Try reading dynamically from users_list in system_options
-      const { data: usersRow } = await supabaseAdmin
-        .from("system_options")
-        .select("data")
-        .eq("id", "users_list")
-        .maybeSingle();
+      // 1. Primary Source: master_members table
+      const { data: members } = await supabaseAdmin.from("master_members").select("*");
 
-      if (usersRow?.data && Array.isArray(usersRow.data)) {
-        for (const u of usersRow.data) {
-          if (u.status === "Inactive") continue;
-          const lineId = String(u.lineUserId || u.line_user_id || "").trim();
+      if (members && Array.isArray(members)) {
+        for (const m of members) {
+          if (m.status === "Inactive") continue;
+          const lineId = String(m.line_user_id || "").trim();
           if (!lineId) continue;
 
-          if (u.isOwner || (!ownerId && (u.role === "Admin" || u.role === "Owner"))) {
+          if (Boolean(m.is_owner) || (!ownerId && (m.role === "Admin" || m.system_role === "Admin" || m.system_role === "Owner"))) {
             ownerId = lineId;
           }
 
-          // 🟢 Admin (อนุมัติ) / canApprove
-          if (Boolean(u.canApprove) || u.role === "Admin_Approver" || u.role === "Approver") {
+          // 🟢 Finance (canApprove)
+          if (Boolean(m.can_approve) || m.system_role === "Admin_Approver" || m.role === "Admin_Approver" || m.role === "Approver") {
             approverSet.add(lineId);
           }
 
-          // 🔵 Admin (Approve / ปิดบิล) / canCloseBill
-          if (Boolean(u.canCloseBill) || u.role === "Admin_Closer") {
-            closerSet.add(lineId);
-          }
-        }
-      }
-
-      // 2. Also check master_members table if sets are empty
-      if (approverSet.size === 0) {
-        const { data: members } = await supabaseAdmin.from("master_members").select("*");
-        for (const m of members || []) {
-          const lineId = String(m.line_user_id || "").trim();
-          if (!lineId) continue;
-          const role = String(m.role || m["สิทธิ์การใช้งาน"] || "");
-          if (role === "Admin_Approver" || role === "Approver" || role === "Manager") {
-            approverSet.add(lineId);
-          }
-          if (role === "Admin_Closer") {
+          // 🔵 Approver (canCloseBill)
+          if (Boolean(m.can_close_bill) || m.system_role === "Admin_Closer" || m.role === "Admin_Closer") {
             closerSet.add(lineId);
           }
         }
