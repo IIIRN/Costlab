@@ -1,10 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
+    // 1. Enforce authentication check: reject unauthenticated guests
+    const cookieStore = await cookies();
+    const empId = cookieStore.get("auth_employee_id")?.value;
+    if (!empId) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized: กรุณาเข้าสู่ระบบก่อนเข้าถึงข้อมูลพนักงาน" },
+        { status: 401 }
+      );
+    }
+
     const { data, error } = await supabaseAdmin
       .from("master_members")
       .select("*")
@@ -71,17 +82,6 @@ export async function GET() {
       };
     });
 
-    // Auto-synchronize and purge stale users in system_options.users_list cache
-    try {
-      await supabaseAdmin.from("system_options").upsert({
-        id: "users_list",
-        data: users,
-        updated_at: new Date().toISOString()
-      });
-    } catch (e) {
-      console.warn("⚠️ Warning syncing users_list from master_members:", e);
-    }
-
     return NextResponse.json({ success: true, users });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
@@ -90,6 +90,12 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const cookieStore = await cookies();
+    const empId = cookieStore.get("auth_employee_id")?.value;
+    if (!empId) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
     const { users } = body;
 
@@ -159,8 +165,8 @@ export async function POST(req: NextRequest) {
           ownerLineId = lineId;
         }
 
-        // 🟢 Approver (canCloseBill / isOwner)
-        if (Boolean(u.canCloseBill) || u.isOwner || u.role === "Admin_Approver" || u.role === "Approver") {
+        // 🟢 Approver (canCloseBill / Approver)
+        if (Boolean(u.canCloseBill) || u.role === "Admin_Approver" || u.role === "Approver") {
           if (!approverLineIds.includes(lineId)) {
             approverLineIds.push(lineId);
           }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { sendTextMessageDetailed, sendFlexMessageDetailed, createMorningTasksCarouselFlex, getLineTargetIds } from "@/lib/line";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
@@ -6,6 +7,16 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
+    // 0. Authorization check: Protect against unauthenticated public requests
+    const authHeader = req.headers.get("authorization");
+    const cronSecret = process.env.CRON_SECRET;
+    const cookieStore = await cookies();
+    const isAuthedSession = Boolean(cookieStore.get("auth_employee_id")?.value);
+
+    if (cronSecret && authHeader !== `Bearer ${cronSecret}` && !isAuthedSession) {
+      return NextResponse.json({ error: "Unauthorized: Missing or invalid CRON_SECRET" }, { status: 401 });
+    }
+
     // 1. Check custom target query parameter ?target=...
     const searchTarget = req.nextUrl.searchParams.get("target")?.trim();
 

@@ -10,7 +10,8 @@ import { getFormSchema } from "@/lib/schemas";
 import { isVatActive, parseDeductPercent, parseCreditDays } from "@/lib/project-summary";
 import { appendAuditLog, appendRow, bulkAppendRows, deleteRows, getRows, getSystemOptions, invalidateTableCache, updateRow } from "@/lib/db";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { getNextBillSequence } from "@/lib/supabase-db";
+import { getNextBillSequence, syncContractWorkPaidAmount } from "@/lib/supabase-db";
+import { extractMemberPermissions } from "@/lib/user-permissions";
 import type { SheetRow } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -25,49 +26,48 @@ const NO_CACHE_HEADERS = {
 };
 
 async function verifyDeletePermission(request: NextRequest): Promise<boolean> {
-  const role = request.cookies.get("auth_role")?.value;
   const empId = request.cookies.get("auth_employee_id")?.value;
-  const canDeleteCookie = request.cookies.get("auth_can_delete")?.value;
+  if (!empId) return false;
 
-  // 1. If explicit cookie set to false, deny
-  if (canDeleteCookie === "false") return false;
-  if (canDeleteCookie === "true") return true;
+  // 1. Direct server-side verification in master_members table (Source of Truth)
+  try {
+    const { data: member } = await supabaseAdmin
+      .from("master_members")
+      .select("*")
+      .eq("id", empId)
+      .maybeSingle();
 
-  // 2. If role is explicit Admin or Owner, check users_list for granular override
-  if (role === "Admin" || role === "Owner" || role === "admin" || role === "Admin_Closer" || role === "Admin_Approver") {
-    if (empId) {
-      try {
-        const { data } = await supabaseAdmin.from("system_options").select("data").eq("id", "users_list").maybeSingle();
-        if (data?.data && Array.isArray(data.data)) {
-          const u = data.data.find((x: any) => x.id === empId || x.username === empId);
-          if (u && u.canDelete === false) return false;
-        }
-      } catch (e) {}
-    }
-    return true;
-  }
-
-  // 3. Check users_list in database by employeeId
-  if (empId) {
-    try {
-      const { data } = await supabaseAdmin.from("system_options").select("data").eq("id", "users_list").maybeSingle();
-      if (data?.data && Array.isArray(data.data)) {
-        const u = data.data.find((x: any) => x.id === empId || x.username === empId);
-        if (u) {
-          if (u.canDelete !== undefined) return Boolean(u.canDelete);
-          if (u.role === "User") return false;
-          return true;
-        }
+    if (member) {
+      const perms = extractMemberPermissions(member);
+      if (perms.canDelete || perms.isOwner || perms.role === "Owner" || perms.role === "Admin") {
+        return true;
       }
-    } catch (e) {}
+      return false;
+    }
+  } catch (e) {
+    console.warn("verifyDeletePermission master_members lookup error:", e);
   }
 
-  // Fallback: If role is "User" or missing, deny deletion
-  if (role === "User" || role === "user" || !role) {
-    return false;
-  }
+  // 3. Fallback: Check users_list cache in database by employeeId
+  try {
+    const { data } = await supabaseAdmin
+      .from("system_options")
+      .select("data")
+      .eq("id", "users_list")
+      .maybeSingle();
 
-  return true;
+    if (data?.data && Array.isArray(data.data)) {
+      const u = data.data.find((x: any) => x.id === empId || x.username === empId);
+      if (u) {
+        if (u.isOwner || u.role === "Owner" || u.role === "Admin") {
+          return u.canDelete !== false;
+        }
+        return Boolean(u.canDelete);
+      }
+    }
+  } catch (e) {}
+
+  return false;
 }
 
 export async function GET(request: NextRequest) {
@@ -337,6 +337,14 @@ export async function PATCH(request: NextRequest) {
     const originalTarget = (keyCol && existing[keyCol] ? existing[keyCol] : undefined) || existing.id || targetRowKey || existing._sheetRow;
     const row = await updateRow(tableName, originalTarget, output);
     console.log(`[PATCH /api/rows SUCCESS] updated "${tableName}" row key: "${originalTarget}"`);
+
+    if (tableName === TABLES.DATA || tableName === "Data" || tableName === "bills") {
+      const cRef = String(row._rawContractor || row["_rawContractor"] || row.conwork_id || row["สัญญา"] || row.contractor_id || row["ผู้รับเหมา"] || existing._rawContractor || existing.conwork_id || existing["ผู้รับเหมา"] || "").trim();
+      const pId = String(row.project_id || row["ID Project"] || existing.project_id || existing["ID Project"] || "").trim();
+      if (cRef) {
+        syncContractWorkPaidAmount(cRef, pId).catch(() => null);
+      }
+    }
     await appendAuditLog({
       action: tableName === TABLES.DATA && Object.keys(patch).every(key => key === "สถานะ") ? "STATUS" : "UPDATE",
       tableName,
@@ -358,6 +366,7 @@ export async function PATCH(request: NextRequest) {
       revalidatePath("/documents");
       revalidatePath("/dashboards");
       revalidatePath("/contract-open");
+      revalidatePath("/bill-follow");
       revalidatePath("/", "layout");
     } catch {}
     return NextResponse.json({ ok: true, row });
@@ -410,6 +419,15 @@ export async function DELETE(request: NextRequest) {
     }).catch(() => undefined)));
 
     invalidateTableCache(tableName);
+    if (tableName === TABLES.DATA || tableName === "Data" || tableName === "bills") {
+      for (const dRow of deletingRows) {
+        const cRef = String(dRow._rawContractor || dRow["_rawContractor"] || dRow.conwork_id || dRow["สัญญา"] || dRow.contractor_id || dRow["ผู้รับเหมา"] || "").trim();
+        const pId = String(dRow.project_id || dRow["ID Project"] || "").trim();
+        if (cRef) {
+          syncContractWorkPaidAmount(cRef, pId).catch(() => null);
+        }
+      }
+    }
     try {
       revalidatePath("/bills");
       revalidatePath("/documents");
@@ -626,7 +644,7 @@ async function attachUploadedFiles(formData: FormData, tableName: string, row: S
   const filesByColumn = new Map<string, File[]>();
   for (const [key, value] of formData.entries()) {
     if (!isFile(value) || value.size <= 0) continue;
-    if (!value.type.startsWith("image/")) continue;
+    if (!value.type.startsWith("image/") && value.type !== "application/pdf") continue;
     filesByColumn.set(key, [...(filesByColumn.get(key) || []), value]);
   }
 

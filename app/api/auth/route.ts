@@ -8,12 +8,75 @@ function normalizePhone(p?: string) {
   return String(p || "").replace(/\D/g, "");
 }
 
+function parseMemberPermissions(member: any) {
+  const d = (member.data && typeof member.data === "object") ? member.data : {};
+  const isOwner = (member.is_owner !== undefined && member.is_owner !== null)
+    ? Boolean(member.is_owner)
+    : Boolean(d.is_owner || d["เจ้าของระบบ"] || member["เจ้าของระบบ"] || member.role === "Owner" || member.system_role === "Owner");
+
+  const canCloseBill = (member.can_close_bill !== undefined && member.can_close_bill !== null)
+    ? Boolean(member.can_close_bill)
+    : Boolean(d.can_close_bill || d["อนุมัติบิล"] || member["อนุมัติบิล"]);
+
+  const canApprove = (member.can_approve !== undefined && member.can_approve !== null)
+    ? Boolean(member.can_approve)
+    : Boolean(d.can_approve || d["ฝ่ายการเงิน"] || member["ฝ่ายการเงิน"]);
+
+  const canDelete = (member.can_delete !== undefined && member.can_delete !== null)
+    ? Boolean(member.can_delete)
+    : Boolean(d.can_delete || d["สิทธิ์ลบข้อมูล"] || member["สิทธิ์ลบข้อมูล"]);
+
+  const userRole = isOwner
+    ? "Owner"
+    : (canCloseBill ? "Approver" : (canApprove ? "Finance" : (member.system_role || member.role || d.role || "User")));
+
+  const empId = member.id || d.id || "";
+  const displayName = member.nickname || d.nickname || member.full_name || d.full_name || empId;
+
+  return {
+    id: empId,
+    username: empId,
+    displayName,
+    fullName: member.full_name || d.full_name || "",
+    phone: member.phone || d.phone || member["เบอร์โทร"] || d["เบอร์โทร"] || "",
+    role: userRole,
+    status: member.status || d.status || "Active",
+    isOwner,
+    canApprove,
+    canCloseBill,
+    canDelete,
+    pictureUrl: member.pictureurl || d.pictureurl || "",
+    lineUserId: member.line_user_id || d.line_user_id || "",
+  };
+}
+
+function setAuthCookies(
+  cookieStore: any,
+  user: ReturnType<typeof parseMemberPermissions>,
+  pictureUrl?: string,
+  lineUserId?: string
+) {
+  const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+  const isProd = process.env.NODE_ENV === "production";
+  const cookieOptions = { expires, path: "/", sameSite: "lax" as const, secure: isProd };
+
+  cookieStore.set("auth_employee_id", user.id, cookieOptions);
+  cookieStore.set("auth_name", user.displayName, cookieOptions);
+  cookieStore.set("auth_role", user.role, cookieOptions);
+  cookieStore.set("auth_can_delete", String(user.canDelete), cookieOptions);
+
+  const finalPic = pictureUrl || user.pictureUrl;
+  if (finalPic) cookieStore.set("auth_picture_url", finalPic, cookieOptions);
+
+  const finalLineId = lineUserId || user.lineUserId;
+  if (finalLineId) cookieStore.set("auth_line_user_id", finalLineId, cookieOptions);
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { action, lineUserId, displayName, pictureUrl, phone, employeeId, name, role } = body;
+    const { action, lineUserId, pictureUrl, phone, employeeId, identifier } = body;
     const cookieStore = await cookies();
-    const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
 
     // ==========================================
     // 1. ACTION: LOGIN WITH LINE USER ID
@@ -23,109 +86,54 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: false, error: "Missing LINE User ID" }, { status: 400 });
       }
 
-      // 1. Search in master_members (Primary Table)
-      const { data: members, error: memberErr } = await supabaseAdmin
+      // Query master_members directly by indexed line_user_id
+      let { data: foundMember, error: memberErr } = await supabaseAdmin
         .from("master_members")
-        .select("*");
+        .select("*")
+        .eq("line_user_id", lineUserId)
+        .maybeSingle();
 
       if (memberErr) {
         console.warn("⚠️ Query master_members error:", memberErr.message);
       }
 
-      let matchedUser: any = null;
-
-      if (members && Array.isArray(members)) {
-        const foundMember = members.find((m: any) => {
-          const d = (m.data && typeof m.data === "object") ? m.data : {};
-          const mLineId = String(
-            m.line_user_id ||
-            m["LINE User ID"] ||
-            m["LINE"] ||
-            d.line_user_id ||
-            d.lineUserId ||
-            d["LINE User ID"] ||
-            d["LINE"] ||
-            ""
-          ).trim();
-          return mLineId && mLineId === lineUserId;
-        });
-
-        if (foundMember) {
-          const d = (foundMember.data && typeof foundMember.data === "object") ? foundMember.data : {};
-          const isOwner = (foundMember.is_owner !== undefined && foundMember.is_owner !== null)
-            ? Boolean(foundMember.is_owner)
-            : Boolean(d.is_owner || d["เจ้าของระบบ"] || foundMember["เจ้าของระบบ"] || foundMember.role === "Owner" || foundMember.system_role === "Owner");
-
-          const canCloseBill = (foundMember.can_close_bill !== undefined && foundMember.can_close_bill !== null)
-            ? Boolean(foundMember.can_close_bill)
-            : Boolean(d.can_close_bill || d["อนุมัติบิล"] || foundMember["อนุมัติบิล"]);
-
-          const canApprove = (foundMember.can_approve !== undefined && foundMember.can_approve !== null)
-            ? Boolean(foundMember.can_approve)
-            : Boolean(d.can_approve || d["ฝ่ายการเงิน"] || foundMember["ฝ่ายการเงิน"]);
-
-          const canDelete = (foundMember.can_delete !== undefined && foundMember.can_delete !== null)
-            ? Boolean(foundMember.can_delete)
-            : Boolean(d.can_delete || d["สิทธิ์ลบข้อมูล"] || foundMember["สิทธิ์ลบข้อมูล"]);
-
-          const userRole = isOwner
-            ? "Owner"
-            : (canCloseBill ? "Approver" : (canApprove ? "Finance" : (foundMember.system_role || foundMember.role || d.role || "User")));
-
-          matchedUser = {
-            id: foundMember.id || d.id || "",
-            username: foundMember.id || d.id || "",
-            displayName: foundMember.nickname || d.nickname || foundMember.full_name || d.full_name || foundMember.id,
-            fullName: foundMember.full_name || d.full_name || "",
-            phone: foundMember.phone || d.phone || foundMember["เบอร์โทร"] || d["เบอร์โทร"] || "",
-            role: userRole,
-            status: foundMember.status || d.status || "Active",
-            isOwner,
-            canApprove,
-            canCloseBill,
-            canDelete,
-            lineUserId: lineUserId,
-            pictureUrl: pictureUrl || foundMember.pictureurl || d.pictureurl || "",
-          };
-
-          // Update profile picture if newer from LINE
-          if (pictureUrl && foundMember.pictureurl !== pictureUrl) {
-            await supabaseAdmin
-              .from("master_members")
-              .update({ pictureurl: pictureUrl })
-              .eq("id", foundMember.id);
-          }
-        }
+      // Fallback: Check inside JSONB data->>line_user_id
+      if (!foundMember) {
+        const { data: jsonMember } = await supabaseAdmin
+          .from("master_members")
+          .select("*")
+          .filter("data->>line_user_id", "eq", lineUserId)
+          .maybeSingle();
+        foundMember = jsonMember;
       }
 
-      if (!matchedUser) {
+      if (!foundMember) {
         return NextResponse.json({
           success: false,
           error: "ไม่พบบัญชีพนักงานที่ผูกกับ LINE ID นี้ในตาราง 6. ชื่อพนักงาน กรุณายืนยันตัวตนด้วยเบอร์โทรศัพท์ หรือติดต่อผู้ดูแลระบบ"
         }, { status: 404 });
       }
 
-      if (matchedUser.status === "Inactive") {
+      const parsedUser = parseMemberPermissions(foundMember);
+
+      if (parsedUser.status === "Inactive") {
         return NextResponse.json({ success: false, error: "บัญชีนี้ถูกระงับการใช้งานชั่วคราว กรุณาติดต่อผู้ดูแลระบบ" }, { status: 403 });
       }
 
-      const empId = matchedUser.username || matchedUser.id;
-      const userName = matchedUser.displayName || empId;
-      const userRole = matchedUser.role || "User";
-      const finalPicUrl = pictureUrl || matchedUser.pictureUrl || "";
-      const canDelete = Boolean(matchedUser.canDelete);
+      // Update profile picture if updated from LINE
+      if (pictureUrl && foundMember.pictureurl !== pictureUrl) {
+        await supabaseAdmin
+          .from("master_members")
+          .update({ pictureurl: pictureUrl })
+          .eq("id", foundMember.id);
+      }
 
-      cookieStore.set("auth_employee_id", empId, { expires, path: "/" });
-      cookieStore.set("auth_name", userName, { expires, path: "/" });
-      cookieStore.set("auth_role", userRole, { expires, path: "/" });
-      cookieStore.set("auth_can_delete", String(canDelete), { expires, path: "/" });
-      if (finalPicUrl) cookieStore.set("auth_picture_url", finalPicUrl, { expires, path: "/" });
-      cookieStore.set("auth_line_user_id", lineUserId, { expires, path: "/" });
+      setAuthCookies(cookieStore, parsedUser, pictureUrl, lineUserId);
 
       return NextResponse.json({
         success: true,
-        user: matchedUser,
-        message: `ยินดีต้อนรับ ${userName} เข้าสู่ระบบ`
+        user: parsedUser,
+        message: `ยินดีต้อนรับ ${parsedUser.displayName} เข้าสู่ระบบ`
       });
     }
 
@@ -141,29 +149,29 @@ export async function POST(request: Request) {
       }
 
       const inputPhoneClean = normalizePhone(phone);
-      const rawInputTrimmed = String(phone).trim().toLowerCase();
-
-      // 1. Search in master_members (Primary Table)
-      const { data: members } = await supabaseAdmin
-        .from("master_members")
-        .select("*");
+      const rawInputTrimmed = String(phone).trim();
 
       let matchedMember: any = null;
 
-      if (members && Array.isArray(members)) {
-        matchedMember = members.find((m: any) => {
-          const mPhoneClean = normalizePhone(m.phone || m["เบอร์โทร"] || m["เบอร์โทรศัพท์"]);
-          const mIdClean = String(m.id || m["รหัสพนักงาน"] || "").trim().toLowerCase();
-          const mNicknameClean = String(m.nickname || m["ชื่อเล่น"] || "").trim().toLowerCase();
-          const mFullNameClean = String(m.full_name || m["ชื่อ-นามสกุล"] || "").trim().toLowerCase();
+      // 1. Search by clean phone
+      if (inputPhoneClean && inputPhoneClean.length >= 8) {
+        const { data } = await supabaseAdmin
+          .from("master_members")
+          .select("*")
+          .eq("phone", inputPhoneClean)
+          .maybeSingle();
+        matchedMember = data;
+      }
 
-          return (
-            (inputPhoneClean && inputPhoneClean.length >= 8 && mPhoneClean && mPhoneClean === inputPhoneClean) ||
-            mIdClean === rawInputTrimmed ||
-            mNicknameClean === rawInputTrimmed ||
-            mFullNameClean === rawInputTrimmed
-          );
-        });
+      // 2. Fallback search by ID or Nickname
+      if (!matchedMember) {
+        const { data } = await supabaseAdmin
+          .from("master_members")
+          .select("*")
+          .or(`id.ilike.${rawInputTrimmed},nickname.ilike.${rawInputTrimmed}`)
+          .limit(1)
+          .maybeSingle();
+        matchedMember = data;
       }
 
       if (matchedMember) {
@@ -179,15 +187,11 @@ export async function POST(request: Request) {
           .update(updatePayload)
           .eq("id", matchedMember.id);
 
-        const empId = matchedMember.id;
-        const userName = matchedMember.nickname || matchedMember.full_name || empId;
-        const userRole = matchedMember.system_role || matchedMember.role || "User";
-        const canDelete = Boolean(matchedMember.can_delete);
-        const finalPic = pictureUrl || matchedMember.pictureurl || "";
+        const parsedUser = parseMemberPermissions({ ...matchedMember, line_user_id: lineUserId });
 
         // Sync LINE Config for notifications if user is Owner / Approver / Finance
         try {
-          if (matchedMember.is_owner || matchedMember.can_approve || matchedMember.can_close_bill) {
+          if (parsedUser.isOwner || parsedUser.canApprove || parsedUser.canCloseBill) {
             const { data: currentLineCfg } = await supabaseAdmin
               .from("system_options")
               .select("data")
@@ -197,15 +201,15 @@ export async function POST(request: Request) {
             const existingCfg = currentLineCfg?.data || {};
             const updatedLineCfg = { ...existingCfg };
 
-            if (matchedMember.is_owner && !existingCfg.LINE_USER_ID_OWN) {
+            if (parsedUser.isOwner && !existingCfg.LINE_USER_ID_OWN) {
               updatedLineCfg.LINE_USER_ID_OWN = lineUserId;
             }
-            if (matchedMember.can_approve) {
+            if (parsedUser.canApprove) {
               const approvers = String(existingCfg.LINE_USER_ID_APPROVER || "").split(",").map((s: string) => s.trim()).filter(Boolean);
               if (!approvers.includes(lineUserId)) approvers.push(lineUserId);
               updatedLineCfg.LINE_USER_ID_APPROVER = approvers.join(",");
             }
-            if (matchedMember.can_close_bill) {
+            if (parsedUser.canCloseBill) {
               const closers = String(existingCfg.LINE_USER_ID_CLOSER || "").split(",").map((s: string) => s.trim()).filter(Boolean);
               if (!closers.includes(lineUserId)) closers.push(lineUserId);
               updatedLineCfg.LINE_USER_ID_CLOSER = closers.join(",");
@@ -221,23 +225,16 @@ export async function POST(request: Request) {
           console.warn("Failed auto-syncing line_config on linking:", syncErr);
         }
 
-        // Set cookies
-        cookieStore.set("auth_employee_id", empId, { expires, path: "/" });
-        cookieStore.set("auth_name", userName, { expires, path: "/" });
-        cookieStore.set("auth_role", userRole, { expires, path: "/" });
-        cookieStore.set("auth_can_delete", String(canDelete), { expires, path: "/" });
-        if (finalPic) cookieStore.set("auth_picture_url", finalPic, { expires, path: "/" });
-        cookieStore.set("auth_line_user_id", lineUserId, { expires, path: "/" });
+        setAuthCookies(cookieStore, parsedUser, pictureUrl, lineUserId);
 
         return NextResponse.json({
           success: true,
           isLinked: true,
-          user: { ...matchedMember, lineUserId },
-          message: `ผูกบัญชี LINE กับพนักงาน "${userName}" (${userRole}) สำเร็จ!`
+          user: parsedUser,
+          message: `ผูกบัญชี LINE กับพนักงาน "${parsedUser.displayName}" (${parsedUser.role}) สำเร็จ!`
         });
       }
 
-      // If not found in master_members
       return NextResponse.json({
         success: false,
         error: `ไม่พบข้อมูลเบอร์โทรศัพท์ "${phone}" ในระบบพนักงาน กรุณาระบุเบอร์โทรศัพท์ให้ตรงกับข้อมูลพนักงาน หรือติดต่อผู้ดูแลระบบ`
@@ -245,25 +242,69 @@ export async function POST(request: Request) {
     }
 
     // ==========================================
-    // 3. STANDARD PHONE / EMPLOYEE ID LOGIN
+    // 3. SECURE IDENTIFIER / PHONE / EMPLOYEE LOGIN
     // ==========================================
-    if (!employeeId) {
-      return NextResponse.json({ error: "Missing employee ID" }, { status: 400 });
+    const rawInput = String(identifier || phone || employeeId || "").trim();
+    if (!rawInput) {
+      return NextResponse.json({ success: false, error: "กรุณาระบุเบอร์โทรศัพท์หรือรหัสพนักงาน" }, { status: 400 });
     }
 
-    cookieStore.set("auth_employee_id", employeeId, { expires, path: "/" });
-    cookieStore.set("auth_name", name || "", { expires, path: "/" });
-    cookieStore.set("auth_role", role || "User", { expires, path: "/" });
-    if (pictureUrl) {
-      cookieStore.set("auth_picture_url", pictureUrl, { expires, path: "/" });
-    }
-    if (lineUserId) {
-      cookieStore.set("auth_line_user_id", lineUserId, { expires, path: "/" });
+    const cleanPhone = normalizePhone(rawInput);
+    let matchedMember: any = null;
+
+    // Search by clean phone digits if length >= 8
+    if (cleanPhone && cleanPhone.length >= 8) {
+      const { data } = await supabaseAdmin
+        .from("master_members")
+        .select("*")
+        .eq("phone", cleanPhone)
+        .maybeSingle();
+      matchedMember = data;
+
+      if (!matchedMember) {
+        const { data: ilikePhone } = await supabaseAdmin
+          .from("master_members")
+          .select("*")
+          .ilike("phone", `%${cleanPhone}%`)
+          .limit(1)
+          .maybeSingle();
+        matchedMember = ilikePhone;
+      }
     }
 
-    return NextResponse.json({ success: true });
+    // Fallback: Search by ID or Nickname or Full Name
+    if (!matchedMember) {
+      const { data } = await supabaseAdmin
+        .from("master_members")
+        .select("*")
+        .or(`id.ilike.${rawInput},nickname.ilike.${rawInput},full_name.ilike.${rawInput}`)
+        .limit(1)
+        .maybeSingle();
+      matchedMember = data;
+    }
+
+    if (!matchedMember) {
+      return NextResponse.json({
+        success: false,
+        error: `ไม่พบเบอร์โทรศัพท์หรือชื่อผู้ใช้ "${rawInput}" ในระบบพนักงาน กรุณาตรวจสอบหรือติดต่อผู้ดูแลระบบ`
+      }, { status: 404 });
+    }
+
+    const parsedUser = parseMemberPermissions(matchedMember);
+
+    if (parsedUser.status === "Inactive") {
+      return NextResponse.json({ success: false, error: "บัญชีนี้ถูกระงับการใช้งานชั่วคราว กรุณาติดต่อผู้ดูแลระบบ" }, { status: 403 });
+    }
+
+    setAuthCookies(cookieStore, parsedUser, pictureUrl);
+
+    return NextResponse.json({
+      success: true,
+      user: parsedUser,
+      message: `ยินดีต้อนรับ ${parsedUser.displayName} เข้าสู่ระบบ`
+    });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to set auth cookies" }, { status: 500 });
+    return NextResponse.json({ success: false, error: error.message || "Failed to authenticate" }, { status: 500 });
   }
 }
 
@@ -277,5 +318,6 @@ export async function DELETE() {
   cookieStore.delete("auth_line_user_id");
   return NextResponse.json({ success: true });
 }
+
 
 
