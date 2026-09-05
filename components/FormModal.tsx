@@ -31,7 +31,7 @@ import {
 import dynamic from "next/dynamic";
 import { TABLES } from "@/lib/config";
 import type { FieldSchema, RefOption, SheetRow } from "@/lib/types";
-import { normalizeDateToIso, parseDateStrict, toInputDateValue } from "@/lib/dates";
+import { normalizeDateToIso, parseDateStrict, toInputDateValue, getTodayDateIso } from "@/lib/dates";
 import { imagePreviewUrl } from "@/components/BillImageThumbnail";
 import { compressImageFiles } from "@/lib/image-compressor";
 
@@ -473,6 +473,17 @@ export function FormModal({
     const nextValues = detail?.row
       ? getRowStringValues(targetForm, detail.row)
       : getInitialStringValues(targetForm);
+
+    // When creating a new entry, ensure all date fields configured for today (e.g. ว/ด/ป, วันที่) use current Thai local date
+    if (!detail?.row) {
+      const todayIso = getTodayDateIso();
+      targetForm.schema.forEach(field => {
+        if (field.initialValue === "today" || (field.type === "Date" && (field.initialValue === "today" || field.name === "ว/ด/ป" || field.name === "วันที่" || field.name === "ดู/ทำ"))) {
+          nextValues[field.name] = todayIso;
+        }
+      });
+    }
+
     if (detail?.row) {
       targetForm.schema.filter(f => f.type === "Ref" && f.refFill).forEach(field => {
         const refVal = nextValues[field.name];
@@ -562,11 +573,19 @@ export function FormModal({
         setActiveForm(fresh);
         if (!detail?.row) {
           const freshInitial = getInitialStringValues(fresh);
+          const todayIso = getTodayDateIso();
           setValues(prev => {
             const next = { ...prev };
             if (freshInitial["ลำดับ"]) next["ลำดับ"] = freshInitial["ลำดับ"];
             if (freshInitial["ID Project"] && !next["ID Project"]) next["ID Project"] = freshInitial["ID Project"];
             if (freshInitial["id_Conwork"] && !next["id_Conwork"]) next["id_Conwork"] = freshInitial["id_Conwork"];
+            fresh.schema.forEach(field => {
+              if (field.initialValue === "today" || (field.type === "Date" && (field.name === "ว/ด/ป" || field.name === "วันที่" || field.name === "ดู/ทำ"))) {
+                if (!next[field.name]) {
+                  next[field.name] = todayIso;
+                }
+              }
+            });
             return next;
           });
         } else {
@@ -691,27 +710,29 @@ export function FormModal({
 
     let hasFiles = false;
 
-    // 1. Append all attached files from state
-    Object.entries(attachedFilesByField).forEach(([fieldName, files]) => {
-      files.forEach(file => {
+    // 1. Append all attached files from state (with automatic image compression)
+    for (const [fieldName, files] of Object.entries(attachedFilesByField)) {
+      const compressed = await compressImageFiles(files, 1600, 0.8);
+      compressed.forEach(file => {
         if (file && file.size > 0) {
           hasFiles = true;
           body.append(fieldName, file);
         }
       });
-    });
+    }
 
-    // 2. Also fallback check any native file inputs
-    formElement.querySelectorAll<HTMLInputElement>('input[type="file"]').forEach(input => {
+    // 2. Also fallback check any native file inputs (with automatic image compression)
+    const fileInputs = Array.from(formElement.querySelectorAll<HTMLInputElement>('input[type="file"]'));
+    for (const input of fileInputs) {
       if (!attachedFilesByField[input.name]) {
-        Array.from(input.files || []).forEach(file => {
-          if (file.size > 0) {
-            hasFiles = true;
-            body.append(input.name, file);
-          }
+        const rawFiles = Array.from(input.files || []).filter(f => f.size > 0);
+        const compressed = await compressImageFiles(rawFiles, 1600, 0.8);
+        compressed.forEach(file => {
+          hasFiles = true;
+          body.append(input.name, file);
         });
       }
-    });
+    }
 
     setSaving(true);
     setError("");
@@ -947,24 +968,31 @@ export function FormModal({
                                 </div>
 
                                 {section.id === "vendor" && isStoreVendor ? (
-                                  isMultiItemMode ? (
+                                  <div className="inline-flex items-center p-0.5 bg-slate-100 rounded-lg border border-slate-200 shadow-2xs">
                                     <button
                                       type="button"
                                       onClick={disableMultiItemMode}
-                                      className="text-[11px] text-slate-500 hover:text-slate-800 font-normal px-2 py-0.5 rounded-md border border-slate-200 hover:bg-slate-50 transition cursor-pointer"
+                                      className={`h-7 sm:h-8 px-3 rounded-md text-xs sm:text-sm transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                                        !isMultiItemMode
+                                          ? "bg-white text-slate-900 shadow-2xs border border-slate-200/80 font-semibold"
+                                          : "text-slate-500 hover:text-slate-800 font-medium"
+                                      }`}
                                     >
-                                      รายการเดี่ยว
+                                      <span>รายการเดี่ยว</span>
                                     </button>
-                                  ) : (
                                     <button
                                       type="button"
                                       onClick={enableMultiItemMode}
-                                      className="text-[11px] text-emerald-800 hover:text-emerald-950 font-medium flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition cursor-pointer shadow-2xs"
+                                      className={`h-7 sm:h-8 px-3 rounded-md text-xs sm:text-sm transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                                        isMultiItemMode
+                                          ? "bg-emerald-600 text-white shadow-2xs font-semibold"
+                                          : "text-emerald-800 hover:text-emerald-950 font-medium hover:bg-emerald-50/60"
+                                      }`}
                                     >
-                                      <span>📦</span>
-                                      <span>+ หลายรายการ</span>
+                                      <span className="text-xs sm:text-sm">📦</span>
+                                      <span>หลายรายการ</span>
                                     </button>
-                                  )
+                                  </div>
                                 ) : null}
                               </div>
                               <div className={sectionGridClass}>
@@ -2213,7 +2241,15 @@ function getCookie(name: string): string {
 }
 
 function getInitialStringValues(form: FormPayload) {
-  const values = Object.fromEntries(form.schema.map(field => [field.name, String(form.initialValues[field.name] ?? "")]));
+  const todayIso = getTodayDateIso();
+  const values = Object.fromEntries(
+    form.schema.map(field => {
+      if (field.initialValue === "today" || (field.type === "Date" && (field.initialValue === "today" || field.name === "ว/ด/ป" || field.name === "วันที่" || field.name === "ดู/ทำ"))) {
+        return [field.name, todayIso];
+      }
+      return [field.name, String(form.initialValues[field.name] ?? "")];
+    })
+  );
   if (form.tableName === TABLES.DATA || form.tableName === "Data") {
     const loggedInEmployeeId = getCookie("auth_employee_id");
     const loggedInName = getCookie("auth_name");
@@ -2469,7 +2505,7 @@ function normalizeDependentValues(values: Record<string, string>, changedField: 
     const creditDays = parseCreditDays(values["เครดิต"]);
     if (creditDays > 0) {
       values["วันได้บิล"] = ""; // เคลียร์ข้อมูลวันที่ได้บิลทันที
-      const baseDate = values["ว/ด/ป"] || values["วันที่"] || new Date().toISOString().slice(0, 10);
+      const baseDate = values["ว/ด/ป"] || values["วันที่"] || getTodayDateIso();
       const dueDate = calculateDueDate(baseDate, creditDays);
       if (dueDate) {
         values["วันจ่าย"] = dueDate;

@@ -754,6 +754,61 @@ BEGIN
 END $$;
 
 -- =========================================================================
+-- 8. PERFORMANCE INDEXES, STORAGE BUCKET & REALTIME PUBLICATION
+-- =========================================================================
+
+-- 8.1 Critical B-Tree Indexes for Fast Filtering & Joins
+CREATE INDEX IF NOT EXISTS idx_bills_status ON public.bills(status);
+CREATE INDEX IF NOT EXISTS idx_bills_project_id ON public.bills(project_id);
+CREATE INDEX IF NOT EXISTS idx_bills_date ON public.bills(date DESC);
+CREATE INDEX IF NOT EXISTS idx_contract_works_project_id ON public.contract_works(project_id);
+CREATE INDEX IF NOT EXISTS idx_contract_works_contractor_id ON public.contract_works(contractor_id);
+CREATE INDEX IF NOT EXISTS idx_withdraw_requests_status ON public.withdraw_requests(status);
+CREATE INDEX IF NOT EXISTS idx_master_members_line_id ON public.master_members(line_user_id);
+CREATE INDEX IF NOT EXISTS idx_master_members_phone ON public.master_members(phone);
+
+-- 8.2 Storage Bucket "repairs" Setup (for Bill Images & Attachments)
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('repairs', 'repairs', true) 
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'objects' AND schemaname = 'storage' AND policyname = 'Public Read Access repairs'
+  ) THEN
+    CREATE POLICY "Public Read Access repairs" ON storage.objects FOR SELECT TO public USING (bucket_id = 'repairs');
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'objects' AND schemaname = 'storage' AND policyname = 'Anyone Upload Access repairs'
+  ) THEN
+    CREATE POLICY "Anyone Upload Access repairs" ON storage.objects FOR INSERT TO public WITH CHECK (bucket_id = 'repairs');
+  END IF;
+END $$;
+
+-- 8.3 Enable Realtime Publication for Main Tables
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.bills;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.withdraw_requests;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.contract_works;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+-- =========================================================================
 -- COMPLETION MESSAGE
 -- =========================================================================
 DO $$
@@ -764,3 +819,4 @@ BEGIN
   RAISE NOTICE '👉 Admin account "0800000000" / "admin" are Ready!';
   RAISE NOTICE '=======================================================';
 END $$;
+

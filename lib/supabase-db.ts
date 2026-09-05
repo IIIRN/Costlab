@@ -1,6 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
 export { supabaseAdmin };
-import { normalizeDateToIso, formatDateDisplay } from "@/lib/dates";
+import { normalizeDateToIso, formatDateDisplay, getTodayDateIso } from "@/lib/dates";
 import { cached, clearCache } from "@/lib/cache";
 import { isVatActive, parseDeductPercent, parseCreditDays } from "@/lib/project-summary";
 
@@ -151,20 +151,20 @@ export function getDbTableName(tableName: string): string {
 }
 
 export const DEFAULT_PRODUCT_CATEGORIES: SheetRow[] = [
-  { _sheetRow: 1, id_product: "1", รหัสสินค้า: "1", ชื่อประเภทสินค้า: "เหล็กเส้น", หมายเหตุ: "" },
-  { _sheetRow: 2, id_product: "2", รหัสสินค้า: "2", ชื่อประเภทสินค้า: "รูปพรรณ", หมายเหตุ: "" },
-  { _sheetRow: 3, id_product: "3", รหัสสินค้า: "3", ชื่อประเภทสินค้า: "คอนกรีต", หมายเหตุ: "" },
-  { _sheetRow: 4, id_product: "4", รหัสสินค้า: "4", ชื่อประเภทสินค้า: "ไม้แบบ", หมายเหตุ: "" },
+  { _sheetRow: 1, id_product: "1", รหัสสินค้า: "1", ชื่อประเภทสินค้า: "ปูน/ทราย/หิน", หมายเหตุ: "" },
+  { _sheetRow: 2, id_product: "2", รหัสสินค้า: "2", ชื่อประเภทสินค้า: "เหล็กเส้น/รูปพรรณ", หมายเหตุ: "" },
+  { _sheetRow: 3, id_product: "3", รหัสสินค้า: "3", ชื่อประเภทสินค้า: "คอนกรีตผสมเสร็จ", หมายเหตุ: "" },
+  { _sheetRow: 4, id_product: "4", รหัสสินค้า: "4", ชื่อประเภทสินค้า: "ไม้แบบ/ไม้อัด", หมายเหตุ: "" },
   { _sheetRow: 5, id_product: "5", รหัสสินค้า: "5", ชื่อประเภทสินค้า: "วัสดุมุง", หมายเหตุ: "" },
   { _sheetRow: 6, id_product: "6", รหัสสินค้า: "6", ชื่อประเภทสินค้า: "ฝ้าผนัง", หมายเหตุ: "" },
   { _sheetRow: 7, id_product: "7", รหัสสินค้า: "7", ชื่อประเภทสินค้า: "ปูพื้น", หมายเหตุ: "" },
   { _sheetRow: 8, id_product: "8", รหัสสินค้า: "8", ชื่อประเภทสินค้า: "กระจก", หมายเหตุ: "" },
   { _sheetRow: 9, id_product: "9", รหัสสินค้า: "9", ชื่อประเภทสินค้า: "ไฟฟ้า", หมายเหตุ: "" },
   { _sheetRow: 10, id_product: "10", รหัสสินค้า: "10", ชื่อประเภทสินค้า: "ประปา", หมายเหตุ: "" },
-  { _sheetRow: 11, id_product: "11", รหัสสินค้า: "11", ชื่อประเภทสินค้า: "อื่นๆ", หมายเหตุ: "" },
+  { _sheetRow: 11, id_product: "11", รหัสสินค้า: "11", ชื่อประเภทสินค้า: "อื่นๆ(วัสดุ)", หมายเหตุ: "" },
   { _sheetRow: 12, id_product: "12", รหัสสินค้า: "12", ชื่อประเภทสินค้า: "สีเคมี", หมายเหตุ: "" },
   { _sheetRow: 13, id_product: "13", รหัสสินค้า: "13", ชื่อประเภทสินค้า: "สุขภัณฑ์", หมายเหตุ: "" },
-  { _sheetRow: 14, id_product: "14", รหัสสินค้า: "14", ชื่อประเภทสินค้า: "นั่งร้าน", หมายเหตุ: "" },
+  { _sheetRow: 14, id_product: "14", รหัสสินค้า: "14", ชื่อประเภทสินค้า: "บิวอิน", หมายเหตุ: "" },
   { _sheetRow: 15, id_product: "15", รหัสสินค้า: "15", ชื่อประเภทสินค้า: "แอร์", หมายเหตุ: "" },
   { _sheetRow: 16, id_product: "16", รหัสสินค้า: "16", ชื่อประเภทสินค้า: "ดิน", หมายเหตุ: "" },
   { _sheetRow: 17, id_product: "17", รหัสสินค้า: "17", ชื่อประเภทสินค้า: "หินทราย", หมายเหตุ: "" },
@@ -201,7 +201,7 @@ export function mapSupabaseRowToSheetRow(dbTable: string, row: Record<string, an
     res["created_by"] = res["ผู้สร้างบิล"];
     res["รูปถ่ายบิล"] = row.image_url ?? row["รูปถ่ายบิล"] ?? dataObj["รูปถ่ายบิล"];
     res["สถานะ"] = row.status ?? row["สถานะ"] ?? dataObj["สถานะ"];
-    res["ว/ด/ป"] = row.bill_date ? String(row.bill_date) : row["ว/ด/ป"] ?? dataObj["ว/ด/ป"] ?? (row.created_at ? new Date(row.created_at).toISOString().slice(0, 10) : "");
+    res["ว/ด/ป"] = row.bill_date ? String(row.bill_date) : row["ว/ด/ป"] ?? dataObj["ว/ด/ป"] ?? (row.created_at ? getTodayDateIso(new Date(row.created_at)) : "");
 
     res["ค่าของ"] = row.material_cost ?? row["ค่าของ"] ?? dataObj["ค่าของ"] ?? "";
     res["ค่าแรง"] = row.labor_cost ?? row["ค่าแรง"] ?? dataObj["ค่าแรง"] ?? "";
@@ -269,7 +269,7 @@ export function mapSupabaseRowToSheetRow(dbTable: string, row: Record<string, an
     res["ยอดงาน"] = row.work_amount ?? row["ยอดงาน"];
     res["งบไม่เกิน"] = row.budget ?? row["งบไม่เกิน"];
     res["ยอดรวม vat"] = row.vat_total ?? row["ยอดรวม vat"];
-    res["วันที่"] = row.start_date ? String(row.start_date) : (row.created_at ? new Date(row.created_at).toISOString().slice(0, 10) : "");
+    res["วันที่"] = row.start_date ? String(row.start_date) : (row.created_at ? getTodayDateIso(new Date(row.created_at)) : "");
     res["color"] = row.color ?? row["color"];
     res["บริษัท"] = row.company ?? row["บริษัท"];
     res["รับผิดชอบ"] = row.responsible_person ?? row["รับผิดชอบ"];
@@ -2345,6 +2345,92 @@ export async function cleanupOrphanedStorageImages(bucketName = "repairs", dryRu
       freedBytesEstimate: 0,
       error: err?.message || String(err),
     };
+  }
+}
+
+export async function syncContractWorkPaidAmount(conworkIdOrRef: string, projectId?: string): Promise<number | null> {
+  if (!isSupabaseConfigured() || !conworkIdOrRef) return null;
+  try {
+    const rawRef = String(conworkIdOrRef).trim();
+    if (!rawRef) return null;
+
+    // 1. Find the contract in contract_works table
+    let contractQuery = supabaseAdmin.from("contract_works").select("*");
+    if (rawRef.startsWith("CW") || !isNaN(Number(rawRef))) {
+      contractQuery = contractQuery.eq("id", rawRef);
+    } else if (projectId) {
+      contractQuery = contractQuery.eq("project_id", projectId).or(`contractor_id.eq.${rawRef},work_details.ilike.%${rawRef}%`);
+    } else {
+      contractQuery = contractQuery.or(`id.eq.${rawRef},contractor_id.eq.${rawRef}`);
+    }
+
+    const { data: matchedContracts } = await contractQuery.limit(1);
+    const contract = matchedContracts?.[0];
+    if (!contract) return null;
+
+    const targetContractId = contract.id;
+    const targetProjectId = contract.project_id;
+    const contractorId = contract.contractor_id;
+
+    // 2. Query all paid bills matching this contract
+    const { data: bills, error: billsErr } = await supabaseAdmin
+      .from("bills")
+      .select("id, project_id, vendor_or_person, labor_cost, amount, status, paid_date, data");
+
+    if (billsErr || !bills) return null;
+
+    let totalPaid = 0;
+    for (const b of bills) {
+      const d = (b.data && typeof b.data === "object") ? b.data : {};
+      const status = String(b.status || d["สถานะ"] || "").trim().toLowerCase();
+      const isPaid = status.includes("เบิกแล้ว") || status === "paid" || status === "withdrawn" || Boolean(b.paid_date);
+      if (!isPaid) continue;
+      const bRef = String(d._rawContractor || d.conwork_id || d["สัญญา"] || d["_rawVendor"] || "").trim();
+      const bContractor = String(d["ผู้รับเหมา"] || b.vendor_or_person || "").trim();
+      const bProjId = String(b.project_id || d["ID Project"] || "").trim();
+
+      let isMatch = false;
+      if (bRef && (bRef === targetContractId || bRef.includes(targetContractId))) {
+        isMatch = true;
+      } else if (targetProjectId && bProjId === targetProjectId) {
+        if (contractorId && (bContractor === contractorId || bRef === contractorId)) {
+          isMatch = true;
+        } else if (contract.nickname && (bContractor === contract.nickname || bContractor.includes(contract.nickname))) {
+          isMatch = true;
+        }
+      }
+
+      if (isMatch) {
+        const labor = Number(b.labor_cost || d["ค่าแรง"] || b.amount || 0);
+        totalPaid += labor;
+      }
+    }
+
+    // 3. Update contract_works
+    const contractTotal = Number(contract.total_contract_amount || 0);
+    const remainingLabor = Math.max(0, contractTotal - totalPaid);
+
+    const updatePayload: Record<string, any> = {
+      paid_amount: totalPaid
+    };
+    if ("remaining_amount" in contract) {
+      updatePayload.remaining_amount = remainingLabor;
+    }
+
+    await supabaseAdmin
+      .from("contract_works")
+      .update(updatePayload)
+      .eq("id", targetContractId);
+
+    clearCache("rows:contract_works");
+    clearCache("rows:งานรับเหมา");
+    clearCache("rows:Contract_work");
+    clearCache("headers:contract_works");
+
+    return totalPaid;
+  } catch (e) {
+    console.warn("Error in syncContractWorkPaidAmount:", e);
+    return null;
   }
 }
 

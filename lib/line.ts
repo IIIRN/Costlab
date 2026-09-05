@@ -32,11 +32,8 @@ export async function isLineApproverAuthorized(userId: string, targetId?: string
 
   return cached(cacheKey, 10_000, async () => {
     try {
-      const { approverIds, ownerId } = await getLineTargetIds();
+      const { approverIds } = await getLineTargetIds();
       if (approverIds.includes(userId) || (targetId && approverIds.includes(targetId))) {
-        return true;
-      }
-      if (ownerId && (userId === ownerId || targetId === ownerId)) {
         return true;
       }
     } catch (e) {
@@ -52,11 +49,8 @@ export async function isLineCloserAuthorized(userId: string, targetId?: string):
 
   return cached(cacheKey, 10_000, async () => {
     try {
-      const { closerIds, ownerId } = await getLineTargetIds();
+      const { closerIds } = await getLineTargetIds();
       if (closerIds.includes(userId) || (targetId && closerIds.includes(targetId))) {
-        return true;
-      }
-      if (ownerId && (userId === ownerId || targetId === ownerId)) {
         return true;
       }
     } catch (e) {
@@ -358,6 +352,38 @@ export async function replyFlexMessage(replyToken: string, altText: string, flex
   }
 }
 
+/**
+ * Helper to determine if a bill record is a sub-bill ("บิลย่อย")
+ */
+export function isSubBillRecord(b: Record<string, any> | undefined | null): boolean {
+  if (!b || typeof b !== "object") return false;
+  const billVal = String(
+    b["บิล"] ??
+    b.bill ??
+    b.bill_type ??
+    b.billType ??
+    b["ประเภทบิล"] ??
+    b.data?.["บิล"] ??
+    b.data?.bill ??
+    b.data?.bill_type ??
+    b.data?.["ประเภทบิล"] ??
+    ""
+  ).trim();
+
+  if (billVal) {
+    if (billVal.includes("ย่อย")) return true;
+    if (billVal.includes("หลัก")) return false;
+  }
+
+  // Fallback check on category / type if "บิล" is not explicitly set
+  const cat = String(b["ประเภท"] ?? b.category ?? b.categoryType ?? b.data?.["ประเภท"] ?? "").trim();
+  if (cat.includes("สดย่อย") || cat.includes("บิลย่อย")) {
+    return true;
+  }
+
+  return false;
+}
+
 export function createBillNotificationFlex(bill: {
   id?: string | number;
   bill_no?: string | number;
@@ -398,6 +424,7 @@ export function createBillNotificationFlex(bill: {
   }
 
   const bankInfo = resolveBankInfo(bill, bankInfoMap);
+  const isSubBill = isSubBillRecord(bill);
 
   return {
     type: "bubble",
@@ -448,11 +475,18 @@ export function createBillNotificationFlex(bill: {
               layout: "baseline",
               contents: [
                 { type: "text", text: "ร้าน/บุคคล:", color: "#64748B", size: "xs", flex: 2 },
-                { type: "text", text: bill.vendor_or_person || "-", color: "#1E293B", size: "xs", flex: 5, wrap: true },
+                {
+                  type: "text",
+                  text: resolveVendorName(bill.vendor_or_person, bankInfoMap, bill) || bankInfo?.storeName || bankInfo?.accountName || bill.vendor_or_person || "-",
+                  color: "#1E293B",
+                  size: "xs",
+                  flex: 5,
+                  wrap: true
+                },
               ],
             },
-            // Bank Account Information Box
-            ...(bankInfo && (bankInfo.accountNo || bankInfo.bankName || bankInfo.accountName) ? [
+            // Bank Account Information Box (skip for sub-bills / บิลย่อย)
+            ...(!isSubBill && bankInfo && (bankInfo.accountNo || bankInfo.bankName || bankInfo.accountName) ? [
               {
                 type: "box",
                 layout: "vertical",
@@ -1070,8 +1104,9 @@ export function createBillSearchResultFlex(
           const amt = Number(b.amount || 0).toLocaleString("th-TH");
           const billId = String(b.id || b.bill_no || startNum + idx);
           const rawReq = b.requester || b.vendor_or_person || "-";
-          const requesterName = resolveRequesterNameFromMap(rawReq, peopleMap);
           const bankInfo = resolveBankInfo(b, bankInfoMap);
+          const itemIsSub = Boolean(isSub) || isSubBillRecord(b);
+          const requesterName = resolveVendorName(rawReq, bankInfoMap, b, peopleMap) || resolveRequesterNameFromMap(rawReq, peopleMap) || bankInfo?.storeName || bankInfo?.accountName || rawReq;
 
           // Parse single or multiple images
           let imgList: string[] = [];
@@ -1116,64 +1151,66 @@ export function createBillSearchResultFlex(
                   { type: "text", text: requesterName, size: "xxs", color: "#1E293B", flex: 7, wrap: true }
                 ]
               },
-              // Bank Account Information Box
-              ...(bankInfo && (bankInfo.accountNo || bankInfo.bankName || bankInfo.accountName) ? [
-                {
-                  type: "box",
-                  layout: "vertical",
-                  margin: "xs",
-                  paddingAll: "4px",
-                  backgroundColor: "#F8FAFC",
-                  cornerRadius: "4px",
-                  borderWidth: "1px",
-                  borderColor: "#E2E8F0",
-                  spacing: "xs",
-                  contents: [
-                    {
-                      type: "box",
-                      layout: "baseline",
-                      contents: [
-                        { type: "text", text: "ธนาคาร:", size: "xxs", color: "#64748B", flex: 3 },
-                        { type: "text", text: bankInfo.bankName || "-", size: "xxs", color: bankInfo.bankName ? "#0F172A" : "#94A3B8", weight: "bold", flex: 7, wrap: true }
-                      ]
-                    },
-                    {
-                      type: "box",
-                      layout: "baseline",
-                      contents: [
-                        { type: "text", text: "ชื่อบัญชี:", size: "xxs", color: "#64748B", flex: 3 },
-                        { type: "text", text: bankInfo.accountName || "-", size: "xxs", color: bankInfo.accountName ? "#0F172A" : "#94A3B8", weight: "bold", flex: 7, wrap: true }
-                      ]
-                    },
-                    {
-                      type: "box",
-                      layout: "baseline",
-                      contents: [
-                        { type: "text", text: "เลขบัญชี:", size: "xxs", color: "#64748B", flex: 3 },
-                        {
-                          type: "text",
-                          text: bankInfo.accountNo || "-",
-                          size: "xxs",
-                          color: bankInfo.accountNo ? "#059669" : "#94A3B8",
-                          weight: "bold",
-                          flex: 7,
-                          wrap: true
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ] : [
-                {
-                  type: "box",
-                  layout: "baseline",
-                  margin: "xs",
-                  contents: [
-                    { type: "text", text: "ธนาคาร:", size: "xxs", color: "#64748B", flex: 3 },
-                    { type: "text", text: "-", size: "xxs", color: "#94A3B8", flex: 7 }
-                  ]
-                }
-              ]),
+              // Bank Account Information Box (only for main bills)
+              ...(!itemIsSub ? (
+                bankInfo && (bankInfo.accountNo || bankInfo.bankName || bankInfo.accountName) ? [
+                  {
+                    type: "box",
+                    layout: "vertical",
+                    margin: "xs",
+                    paddingAll: "4px",
+                    backgroundColor: "#F8FAFC",
+                    cornerRadius: "4px",
+                    borderWidth: "1px",
+                    borderColor: "#E2E8F0",
+                    spacing: "xs",
+                    contents: [
+                      {
+                        type: "box",
+                        layout: "baseline",
+                        contents: [
+                          { type: "text", text: "ธนาคาร:", size: "xxs", color: "#64748B", flex: 3 },
+                          { type: "text", text: bankInfo.bankName || "-", size: "xxs", color: bankInfo.bankName ? "#0F172A" : "#94A3B8", weight: "bold", flex: 7, wrap: true }
+                        ]
+                      },
+                      {
+                        type: "box",
+                        layout: "baseline",
+                        contents: [
+                          { type: "text", text: "ชื่อบัญชี:", size: "xxs", color: "#64748B", flex: 3 },
+                          { type: "text", text: bankInfo.accountName || "-", size: "xxs", color: bankInfo.accountName ? "#0F172A" : "#94A3B8", weight: "bold", flex: 7, wrap: true }
+                        ]
+                      },
+                      {
+                        type: "box",
+                        layout: "baseline",
+                        contents: [
+                          { type: "text", text: "เลขบัญชี:", size: "xxs", color: "#64748B", flex: 3 },
+                          {
+                            type: "text",
+                            text: bankInfo.accountNo || "-",
+                            size: "xxs",
+                            color: bankInfo.accountNo ? "#059669" : "#94A3B8",
+                            weight: "bold",
+                            flex: 7,
+                            wrap: true
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ] : [
+                  {
+                    type: "box",
+                    layout: "baseline",
+                    margin: "xs",
+                    contents: [
+                      { type: "text", text: "ธนาคาร:", size: "xxs", color: "#64748B", flex: 3 },
+                      { type: "text", text: "-", size: "xxs", color: "#94A3B8", flex: 7 }
+                    ]
+                  }
+                ]
+              ) : []),
               ...(b.description && b.description !== "-" && lineItems.length === 0 ? [
                 {
                   type: "box",
@@ -2010,6 +2047,7 @@ export async function getLineTargetIds(): Promise<{
         }
       }
 
+      // เจ้าของระบบ (Owner) มีสิทธิ์แค่รับแจ้งเตือนประจำวันเท่านั้น (ตัดออกจาก approverSet และ financeSet)
       const approverIds = Array.from(approverSet);
       const closerIds = Array.from(financeSet);
       return { ownerId, approverIds, closerIds, financeIds: closerIds };
@@ -2042,7 +2080,15 @@ export async function getPeopleMap(forceRefresh = false): Promise<Map<string, st
 
   const peopleMap = new Map<string, string>();
   try {
-    const { data: members } = await supabaseAdmin.from("master_members").select("*");
+    const [membersRes, usersRes, storesRes, contractorsRes, sysUsersRes] = await Promise.all([
+      supabaseAdmin.from("master_members").select("*"),
+      supabaseAdmin.from("users").select("*"),
+      supabaseAdmin.from("stores").select("*"),
+      supabaseAdmin.from("contractors").select("*"),
+      supabaseAdmin.from("system_options").select("data").eq("id", "users_list").maybeSingle(),
+    ]);
+
+    const members = membersRes.data;
     if (members && members.length > 0) {
       for (const m of members) {
         const dataObj = (m.data && typeof m.data === "object") ? m.data : {};
@@ -2083,7 +2129,7 @@ export async function getPeopleMap(forceRefresh = false): Promise<Map<string, st
       }
     }
 
-    const { data: users } = await supabaseAdmin.from("users").select("*");
+    const users = usersRes.data;
     if (users && users.length > 0) {
       for (const u of users) {
         const dataObj = (u.data && typeof u.data === "object") ? u.data : {};
@@ -2114,6 +2160,77 @@ export async function getPeopleMap(forceRefresh = false): Promise<Map<string, st
       }
     }
 
+    // Stores (resolve store IDs like ST101 -> store name)
+    const stores = storesRes.data;
+    if (stores && stores.length > 0) {
+      for (const s of stores) {
+        const dataObj = (s.data && typeof s.data === "object") ? s.data : {};
+        const id = String(s.id || s.id_store || dataObj.id || dataObj.id_store || "").trim();
+        const name = String(s.name || s["ชื่อร้านค้า"] || dataObj.name || dataObj["ชื่อร้านค้า"] || "").trim();
+        const fullName = String(s.full_name || s["ชื่อเต็ม"] || dataObj.full_name || dataObj["ชื่อเต็ม"] || "").trim();
+        const storeName = name || fullName;
+        if (storeName && id) {
+          peopleMap.set(id, storeName);
+          peopleMap.set(id.toLowerCase(), storeName);
+          peopleMap.set(id.toUpperCase(), storeName);
+          const cleanId = id.toLowerCase().replace(/^(st)[-_]?/i, "").trim();
+          if (cleanId) peopleMap.set(cleanId, storeName);
+        }
+      }
+    }
+
+    // Contractors (resolve contractor IDs like CT101 -> contractor nickname/name)
+    const contractors = contractorsRes.data;
+    if (contractors && contractors.length > 0) {
+      for (const c of contractors) {
+        const dataObj = (c.data && typeof c.data === "object") ? c.data : {};
+        const id = String(c.id || c.id_Contractor || dataObj.id || dataObj.id_Contractor || "").trim();
+        const nickname = String(c.nickname || c["ชื่อเล่น"] || dataObj.nickname || dataObj["ชื่อเล่น"] || "").trim();
+        const fullName = String(c.full_name || c["ชื่อ-นามสกุล"] || dataObj.full_name || dataObj["ชื่อ-นามสกุล"] || "").trim();
+        const conName = nickname || fullName;
+        if (conName && id) {
+          peopleMap.set(id, conName);
+          peopleMap.set(id.toLowerCase(), conName);
+          peopleMap.set(id.toUpperCase(), conName);
+          const cleanId = id.toLowerCase().replace(/^(ct)[-_]?/i, "").trim();
+          if (cleanId) peopleMap.set(cleanId, conName);
+        }
+      }
+    }
+
+    // Users List from system_options (User Management)
+    const sysUsersList = Array.isArray(sysUsersRes?.data?.data) ? sysUsersRes.data.data : [];
+    if (sysUsersList.length > 0) {
+      for (const u of sysUsersList) {
+        const empId = String(u.id || u.employeeId || u.username || "").trim();
+        const nickname = String(u.nickname || u.displayName || "").trim();
+        const name = String(u.name || u.fullName || "").trim();
+        const empName = nickname || name || empId;
+
+        if (empName) {
+          if (empId) {
+            if (!peopleMap.has(empId)) peopleMap.set(empId, empName);
+            if (!peopleMap.has(empId.toLowerCase())) peopleMap.set(empId.toLowerCase(), empName);
+            if (!peopleMap.has(empId.toUpperCase())) peopleMap.set(empId.toUpperCase(), empName);
+            const cleanId = empId.toLowerCase().replace(/^(pt|pe)[-_]?/i, "").trim();
+            if (cleanId && !peopleMap.has(cleanId)) peopleMap.set(cleanId, empName);
+          }
+          const lineUserId = String(u.lineUserId || u.line_user_id || "").trim();
+          if (lineUserId && !peopleMap.has(lineUserId)) {
+            peopleMap.set(lineUserId, empName);
+          }
+          if (nickname && !peopleMap.has(nickname)) {
+            peopleMap.set(nickname, empName);
+            peopleMap.set(nickname.toLowerCase(), empName);
+          }
+          if (name && !peopleMap.has(name)) {
+            peopleMap.set(name, empName);
+            peopleMap.set(name.toLowerCase(), empName);
+          }
+        }
+      }
+    }
+
     cachedPeopleMap = peopleMap;
     cachedPeopleMapTime = now;
   } catch (e) {
@@ -2127,6 +2244,8 @@ export type BankLookupInfo = {
   accountName?: string;
   accountNo?: string;
   bankName?: string;
+  storeName?: string;
+  vendorName?: string;
 };
 
 export const DEFAULT_THAI_BANKS: Record<string, string> = {
@@ -2257,14 +2376,18 @@ export async function getBankInfoMap(forceRefresh = false): Promise<Map<string, 
           (name ? entityBanksMap[name] : "") || (fullName ? entityBanksMap[fullName] : "");
 
         const bankName = cleanBank(rawBankVal);
+        const storeDisplayName = name || fullName || id;
 
         const info: BankLookupInfo = {
           accountName: fullName || name,
           accountNo: accountNo && accountNo !== "non" && accountNo !== "-" ? accountNo : undefined,
           bankName: bankName || undefined,
+          storeName: storeDisplayName,
+          vendorName: storeDisplayName,
         };
 
         if (id) {
+          bankInfoMap.set(id, info);
           bankInfoMap.set(id.toLowerCase(), info);
           bankInfoMap.set(id.toUpperCase(), info);
           const cleanId = id.toLowerCase().replace(/^(st)[-_]?/i, "").trim();
@@ -2295,14 +2418,18 @@ export async function getBankInfoMap(forceRefresh = false): Promise<Map<string, 
           (nickname ? entityBanksMap[nickname] : "") || (fullName ? entityBanksMap[fullName] : "");
 
         const bankName = cleanBank(rawBankVal);
+        const contractorDisplayName = nickname || fullName || id;
 
         const info: BankLookupInfo = {
           accountName: fullName || nickname,
           accountNo: accountNo && accountNo !== "non" && accountNo !== "-" ? accountNo : undefined,
           bankName: bankName || undefined,
+          storeName: contractorDisplayName,
+          vendorName: contractorDisplayName,
         };
 
         if (id) {
+          bankInfoMap.set(id, info);
           bankInfoMap.set(id.toLowerCase(), info);
           bankInfoMap.set(id.toUpperCase(), info);
           const cleanId = id.toLowerCase().replace(/^(ct)[-_]?/i, "").trim();
@@ -2333,14 +2460,18 @@ export async function getBankInfoMap(forceRefresh = false): Promise<Map<string, 
           (nickname ? entityBanksMap[nickname] : "") || (fullName ? entityBanksMap[fullName] : "");
 
         const bankName = cleanBank(rawBankVal);
+        const memberDisplayName = nickname || fullName || id;
 
         const info: BankLookupInfo = {
           accountName: fullName || nickname,
           accountNo: accountNo && accountNo !== "non" && accountNo !== "-" ? accountNo : undefined,
           bankName: bankName || undefined,
+          storeName: memberDisplayName,
+          vendorName: memberDisplayName,
         };
 
         if (id) {
+          bankInfoMap.set(id, info);
           bankInfoMap.set(id.toLowerCase(), info);
           bankInfoMap.set(id.toUpperCase(), info);
           const cleanId = id.toLowerCase().replace(/^(pt|pe)[-_]?/i, "").trim();
@@ -2364,6 +2495,459 @@ export async function getBankInfoMap(forceRefresh = false): Promise<Map<string, 
   }
 
   return bankInfoMap;
+}
+
+let cachedContractMap: Map<string, any> | null = null;
+let cachedContractMapTime = 0;
+
+export async function getContractWorkMap(forceRefresh = false): Promise<Map<string, any>> {
+  const now = Date.now();
+  if (!forceRefresh && cachedContractMap && (now - cachedContractMapTime < CACHE_TTL_MS)) {
+    return cachedContractMap;
+  }
+
+  const contractMap = new Map<string, any>();
+  try {
+    const { data: contracts } = await supabaseAdmin.from("contract_works").select("*");
+    if (contracts && contracts.length > 0) {
+      const projectContractTotals = new Map<string, number>();
+
+      for (const c of contracts) {
+        const id = String(c.id || c.id_Conwork || "").trim();
+        const pId = String(c.project_id || c["ID Project"] || "").trim();
+        const pName = String(c.project_name || c["ชื่อ Project"] || "").trim();
+        const cId = String(c.contractor_id || c.id_Contractor || "").trim();
+        const cName = String(c.contractor_name || c["ชื่อเล่น"] || c["ผู้รับเหมา"] || c["ชื่อ-นามสกุล"] || "").trim();
+        const amt = Number(c.total_contract_amount || c["ยอดเงินจ้าง"] || c.amount || 0);
+
+        if (pId && amt > 0) {
+          projectContractTotals.set(pId, (projectContractTotals.get(pId) || 0) + amt);
+          if (pId.toLowerCase() !== pId) {
+            projectContractTotals.set(pId.toLowerCase(), (projectContractTotals.get(pId.toLowerCase()) || 0) + amt);
+          }
+        }
+        if (pName && amt > 0) {
+          projectContractTotals.set(pName, (projectContractTotals.get(pName) || 0) + amt);
+          if (pName.toLowerCase() !== pName) {
+            projectContractTotals.set(pName.toLowerCase(), (projectContractTotals.get(pName.toLowerCase()) || 0) + amt);
+          }
+        }
+
+        if (id) {
+          contractMap.set(id, c);
+          contractMap.set(id.toLowerCase(), c);
+          contractMap.set(id.toUpperCase(), c);
+        }
+        if (pId && cId) {
+          contractMap.set(`${pId}_${cId}`, c);
+          contractMap.set(`${pId}_${cId.toLowerCase()}`, c);
+          contractMap.set(`${pId}_${cId.toUpperCase()}`, c);
+        }
+        if (pId && cName) {
+          contractMap.set(`${pId}_${cName}`, c);
+        }
+        if (cName) {
+          contractMap.set(cName, c);
+        }
+        if (cId) {
+          contractMap.set(cId, c);
+        }
+      }
+
+      for (const [key, sumAmt] of projectContractTotals.entries()) {
+        contractMap.set(`__total_contracted_${key}`, sumAmt);
+      }
+    }
+    cachedContractMap = contractMap;
+    cachedContractMapTime = now;
+  } catch (err) {
+    console.warn("⚠️ Failed to fetch contract_works map:", err);
+  }
+
+  return contractMap;
+}
+
+export type ProjectBudgetLookupInfo = {
+  budget: number;
+  spent: number;
+  paidSpent: number;
+  name: string;
+  catBudgets?: Record<string, number>;
+  catSpent?: Record<string, number>;
+  catPaidSpent?: Record<string, number>;
+  allBudgets?: Record<string, number>;
+  productSpent?: Record<string, number>;
+  productPaidSpent?: Record<string, number>;
+  paidBillIds?: Set<string>;
+};
+
+export const PRODUCT_BUDGET_FIELD_MAP: Record<string, string> = {
+  // Current Master Data Options (Dropdown values)
+  "1 ปูน/ทราย/หิน": "งบไม่เกินปูนทรายหิน",
+  "2 เหล็กเส้น/รูปพรรณ": "งบไม่เกินเหล็กเส้น",
+  "3 คอนกรีตผสมเสร็จ": "งบไม่เกินคอนกรีต",
+  "4 ไม้แบบ/ไม้อัด": "งบไม่เกินไม้แบบ",
+  "5 วัสดุมุง": "งบไม่เกินวัสดุมุง",
+  "6 ฝ้าผนัง": "งบไม่เกินฝ้าผนัง",
+  "7 ปูพื้น": "งบไม่เกินปูพื้น",
+  "8 กระจก": "งบไม่เกินกระจก",
+  "9 ไฟฟ้า": "งบไม่เกินไฟฟ้า",
+  "10 ประปา": "งบไม่เกินประปา",
+  "11 อื่นๆ(วัสดุ)": "งบไม่เกินวัสดุอื่นๆ",
+  "12 สีเคมี": "งบไม่เกินสีเคมี",
+  "13 สุขภัณฑ์": "งบไม่เกินสุขภัณฑ์",
+  "14 บิวอิน": "งบไม่เกินบิวอิน",
+  "15 แอร์": "งบไม่เกินแอร์",
+  "16 ดิน": "งบไม่เกินดิน",
+  "17 หินทราย": "งบไม่เกินหินทราย",
+  "18 เตรียมงาน": "งบไม่เกินเตรียมงาน",
+  "101 น้ำมัน": "งบไม่เกินน้ำมัน",
+  "102 ค่าขนส่ง": "งบไม่เกินค่าขนส่ง",
+  "103 เครื่องจักร": "งบไม่เกินเครื่องจักร",
+  "200 ดำเนินการ(อื่นๆ)": "งบไม่เกินดำเนินการ",
+  "ค่าขนส่ง": "งบไม่เกินค่าขนส่ง",
+  "ดำเนินการ(อื่นๆ)": "งบไม่เกินดำเนินการ",
+
+  // Clean names
+  "ปูน/ทราย/หิน": "งบไม่เกินปูนทรายหิน",
+  "ปูนทรายหิน": "งบไม่เกินปูนทรายหิน",
+  "เหล็กเส้น": "งบไม่เกินเหล็กเส้น",
+  "เหล็กรูปพรรณ": "งบไม่เกินรูปพรรณ",
+  "รูปพรรณ": "งบไม่เกินรูปพรรณ",
+  "เหล็กเส้น/รูปพรรณ": "งบไม่เกินเหล็กเส้น",
+  "คอนกรีต": "งบไม่เกินคอนกรีต",
+  "คอนกรีตผสมเสร็จ": "งบไม่เกินคอนกรีต",
+  "ไม้แบบ": "งบไม่เกินไม้แบบ",
+  "ไม้อัด": "งบไม่เกินไม้แบบ",
+  "ไม้แบบ/ไม้อัด": "งบไม่เกินไม้แบบ",
+  "วัสดุมุง": "งบไม่เกินวัสดุมุง",
+  "ฝ้าผนัง": "งบไม่เกินฝ้าผนัง",
+  "ปูพื้น": "งบไม่เกินปูพื้น",
+  "กระจก": "งบไม่เกินกระจก",
+  "ไฟฟ้า": "งบไม่เกินไฟฟ้า",
+  "ประปา": "งบไม่เกินประปา",
+  "อื่นๆ(วัสดุ)": "งบไม่เกินวัสดุอื่นๆ",
+  "วัสดุอื่นๆ": "งบไม่เกินวัสดุอื่นๆ",
+  "สีเคมี": "งบไม่เกินสีเคมี",
+  "สุขภัณฑ์": "งบไม่เกินสุขภัณฑ์",
+  "บิวอิน": "งบไม่เกินบิวอิน",
+  "แอร์": "งบไม่เกินแอร์",
+  "ดิน": "งบไม่เกินดิน",
+  "หินทราย": "งบไม่เกินหินทราย",
+  "เตรียมงาน": "งบไม่เกินเตรียมงาน",
+  "น้ำมัน": "งบไม่เกินน้ำมัน",
+  "เครื่องจักร": "งบไม่เกินเครื่องจักร",
+  "เครื่องมือ": "งบไม่เกินเครื่องมือ",
+
+  // Legacy format
+  "1 เหล็กเส้น": "งบไม่เกินเหล็กเส้น",
+  "2 เหล็กรูปพรรณ": "งบไม่เกินรูปพรรณ",
+  "3 คอนกรีต": "งบไม่เกินคอนกรีต",
+  "4 ไม้แบบ": "งบไม่เกินไม้แบบ",
+};
+
+export function resolveProductBudgetField(raw: string): string {
+  if (!raw) return "";
+  const trimmed = String(raw).trim();
+  if (PRODUCT_BUDGET_FIELD_MAP[trimmed]) return PRODUCT_BUDGET_FIELD_MAP[trimmed];
+
+  const cleaned = trimmed.replace(/^\d+[\.\s\-]+/, "").trim();
+  if (PRODUCT_BUDGET_FIELD_MAP[cleaned]) return PRODUCT_BUDGET_FIELD_MAP[cleaned];
+
+  // Keyword matching
+  if (trimmed.includes("เหล็กเส้น")) return "งบไม่เกินเหล็กเส้น";
+  if (trimmed.includes("รูปพรรณ")) return "งบไม่เกินรูปพรรณ";
+  if (trimmed.includes("คอนกรีต")) return "งบไม่เกินคอนกรีต";
+  if (trimmed.includes("หินทราย")) return "งบไม่เกินหินทราย";
+  if (trimmed.includes("ปูน") || trimmed.includes("ทราย") || trimmed.includes("หิน")) return "งบไม่เกินปูนทรายหิน";
+  if (trimmed.includes("ไม้แบบ") || trimmed.includes("ไม้อัด")) return "งบไม่เกินไม้แบบ";
+  if (trimmed.includes("วัสดุมุง") || trimmed.includes("หลังคา")) return "งบไม่เกินวัสดุมุง";
+  if (trimmed.includes("ฝ้า") || trimmed.includes("ผนัง")) return "งบไม่เกินฝ้าผนัง";
+  if (trimmed.includes("ปูพื้น") || trimmed.includes("กระเบื้อง")) return "งบไม่เกินปูพื้น";
+  if (trimmed.includes("กระจก") || trimmed.includes("อลูมิเนียม")) return "งบไม่เกินกระจก";
+  if (trimmed.includes("ไฟฟ้า")) return "งบไม่เกินไฟฟ้า";
+  if (trimmed.includes("ประปา")) return "งบไม่เกินประปา";
+  if (trimmed.includes("สี") || trimmed.includes("เคมี")) return "งบไม่เกินสีเคมี";
+  if (trimmed.includes("สุขภัณฑ์")) return "งบไม่เกินสุขภัณฑ์";
+  if (trimmed.includes("บิวอิน") || trimmed.includes("บิ้วอิน")) return "งบไม่เกินบิวอิน";
+  if (trimmed.includes("แอร์")) return "งบไม่เกินแอร์";
+  if (trimmed.includes("ดิน")) return "งบไม่เกินดิน";
+  if (trimmed.includes("เตรียมงาน")) return "งบไม่เกินเตรียมงาน";
+  if (trimmed.includes("น้ำมัน")) return "งบไม่เกินน้ำมัน";
+  if (trimmed.includes("ขนส่ง")) return "งบไม่เกินค่าขนส่ง";
+  if (trimmed.includes("เครื่องจักร")) return "งบไม่เกินเครื่องจักร";
+  if (trimmed.includes("เครื่องมือ")) return "งบไม่เกินเครื่องมือ";
+  if (trimmed.includes("ดำเนินการ")) return "งบไม่เกินดำเนินการ";
+  if (trimmed.includes("วัสดุ")) return "งบไม่เกินวัสดุอื่นๆ";
+
+  return "";
+}
+
+export function getBudgetCapForField(field: string, allBudgets?: Record<string, number>): { cap: number; actualField: string } {
+  if (!field || !allBudgets) return { cap: 0, actualField: "" };
+  if (Number(allBudgets[field] || 0) > 0) return { cap: Number(allBudgets[field]), actualField: field };
+  if (field === "งบไม่เกินรูปพรรณ" && Number(allBudgets["งบไม่เกินเหล็กเส้น"] || 0) > 0) {
+    return { cap: Number(allBudgets["งบไม่เกินเหล็กเส้น"]), actualField: "งบไม่เกินเหล็กเส้น" };
+  }
+  if (field === "งบไม่เกินเหล็กเส้น" && Number(allBudgets["งบไม่เกินรูปพรรณ"] || 0) > 0) {
+    return { cap: Number(allBudgets["งบไม่เกินรูปพรรณ"]), actualField: "งบไม่เกินรูปพรรณ" };
+  }
+  return { cap: 0, actualField: field };
+}
+
+const EXPENSE_CATEGORIES_LIST = [
+  "ค่าของ",
+  "ค่าแรง",
+  "พนักงาน",
+  "น้ำมัน",
+  "ซ่อมรถ",
+  "เครื่องจักร",
+  "เครื่องมือ",
+  "อื่นๆ"
+];
+
+export function resolveBillExpenseCategory(b: Record<string, any>): string {
+  const rawCat = String(b["ประเภท"] || b.category || b.data?.["ประเภท"] || "").trim();
+  for (const cat of EXPENSE_CATEGORIES_LIST) {
+    if (rawCat.includes(cat)) return cat;
+  }
+
+  const rawItems = b.items || b.data?.items;
+  let lineItems: any[] = [];
+  if (Array.isArray(rawItems)) {
+    lineItems = rawItems;
+  } else if (typeof rawItems === "string" && rawItems.trim().startsWith("[")) {
+    try {
+      const parsed = JSON.parse(rawItems);
+      if (Array.isArray(parsed)) lineItems = parsed;
+    } catch {}
+  }
+
+  for (const it of lineItems) {
+    const itCat = String(it.categoryType || it.category || "").trim();
+    for (const cat of EXPENSE_CATEGORIES_LIST) {
+      if (itCat.includes(cat)) return cat;
+    }
+  }
+
+  for (const cat of EXPENSE_CATEGORIES_LIST) {
+    if (Number(b[cat] || b.data?.[cat] || 0) > 0) return cat;
+  }
+
+  return "";
+}
+
+let cachedProjectBudgetMap: Map<string, ProjectBudgetLookupInfo> | null = null;
+let cachedProjectBudgetMapTime = 0;
+
+export async function getProjectBudgetMap(forceRefresh = false): Promise<Map<string, ProjectBudgetLookupInfo>> {
+  const now = Date.now();
+  if (!forceRefresh && cachedProjectBudgetMap && (now - cachedProjectBudgetMapTime < CACHE_TTL_MS)) {
+    return cachedProjectBudgetMap;
+  }
+
+  const pMap = new Map<string, ProjectBudgetLookupInfo>();
+  try {
+    const [{ data: projects }, { data: bills }, { data: allocOpt }] = await Promise.all([
+      supabaseAdmin.from("projects").select("id, name, budget, data"),
+      supabaseAdmin.from("bills").select("id, project_id, project_name, amount, status, data"),
+      supabaseAdmin.from("system_options").select("data").eq("id", "project_budget_allocations").maybeSingle()
+    ]);
+
+    const budgetAllocations: Record<string, Record<string, any>> = (allocOpt?.data && typeof allocOpt.data === "object") ? allocOpt.data : {};
+
+    const spentByProject = new Map<string, number>();
+    const paidByProject = new Map<string, number>();
+    const catSpentByProject = new Map<string, Record<string, number>>();
+    const catPaidByProject = new Map<string, Record<string, number>>();
+    const productSpentByProject = new Map<string, Record<string, number>>();
+    const productPaidByProject = new Map<string, Record<string, number>>();
+    const paidBillIdsByProject = new Map<string, Set<string>>();
+
+    if (bills && bills.length > 0) {
+      for (const b of bills) {
+        const d = (b.data && typeof b.data === "object") ? b.data : {};
+        const innerData = (d.data && typeof d.data === "object") ? d.data : {};
+        const st = String(b.status || d.status || d["สถานะ"] || innerData["สถานะ"] || "").trim().toLowerCase();
+        if (st === "ยกเลิก" || st === "ไม่อนุมัติ") continue;
+
+        const isPaid = st.includes("เบิกแล้ว") || st === "paid" || st === "withdrawn";
+
+        const pId = String(b.project_id || d.project_id || d["ID Project"] || innerData["ID Project"] || "").trim();
+        const pName = String(b.project_name || d.project_name || d["ชื่อ Project"] || innerData["ชื่อ Project"] || "").trim();
+        const amt = Number(b.amount || d.amount || d["ยอดเงิน"] || innerData["ยอดเงิน"] || 0);
+
+        const primaryKey = pId || pName;
+        if (!primaryKey) continue;
+
+        const billKey = String(b.id || d.id || d["ลำดับ"] || innerData["ลำดับ"] || "").trim();
+        const targetKeys = Array.from(new Set([pId, pName].filter(Boolean)));
+
+        for (const k of targetKeys) {
+          spentByProject.set(k, (spentByProject.get(k) || 0) + amt);
+          if (isPaid) {
+            paidByProject.set(k, (paidByProject.get(k) || 0) + amt);
+            if (!paidBillIdsByProject.has(k)) {
+              paidBillIdsByProject.set(k, new Set<string>());
+            }
+            if (billKey) paidBillIdsByProject.get(k)!.add(billKey);
+          }
+
+          if (!catSpentByProject.has(k)) {
+            catSpentByProject.set(k, { ค่าของ: 0, ค่าแรง: 0, พนักงาน: 0, น้ำมัน: 0, ซ่อมรถ: 0, เครื่องจักร: 0, เครื่องมือ: 0, อื่นๆ: 0 });
+          }
+          if (!catPaidByProject.has(k)) {
+            catPaidByProject.set(k, { ค่าของ: 0, ค่าแรง: 0, พนักงาน: 0, น้ำมัน: 0, ซ่อมรถ: 0, เครื่องจักร: 0, เครื่องมือ: 0, อื่นๆ: 0 });
+          }
+          const cs = catSpentByProject.get(k)!;
+          const cp = catPaidByProject.get(k)!;
+
+          for (const cat of EXPENSE_CATEGORIES_LIST) {
+            const directAmt = Number((b as any)[cat] || d[cat] || innerData[cat] || 0);
+            if (directAmt > 0) {
+              cs[cat] += directAmt;
+              if (isPaid) cp[cat] += directAmt;
+            } else {
+              const rawCat = String((b as any).category || d["ประเภท"] || innerData["ประเภท"] || "").trim();
+              if (rawCat.includes(cat)) {
+                cs[cat] += amt;
+                if (isPaid) cp[cat] += amt;
+              }
+            }
+          }
+        }
+
+        // Sub-category / Product item level spending tracking
+        const rawItems = (b as any).items || d.items || innerData.items;
+        let bLineItems: any[] = [];
+        if (Array.isArray(rawItems) && rawItems.length > 0) {
+          bLineItems = rawItems;
+        } else if (typeof rawItems === "string" && rawItems.trim().startsWith("[")) {
+          try {
+            const parsed = JSON.parse(rawItems);
+            if (Array.isArray(parsed)) bLineItems = parsed;
+          } catch {}
+        }
+
+        if (bLineItems.length > 0) {
+          for (const it of bLineItems) {
+            const itAmt = Number(it.amount ?? it.price ?? it.total ?? 0);
+            if (itAmt > 0) {
+              const itName = String(it.category || it.name || "").trim();
+              const fld = resolveProductBudgetField(itName);
+              if (fld) {
+                for (const k of targetKeys) {
+                  if (!productSpentByProject.has(k)) productSpentByProject.set(k, {});
+                  if (!productPaidByProject.has(k)) productPaidByProject.set(k, {});
+                  const ps = productSpentByProject.get(k)!;
+                  const pp = productPaidByProject.get(k)!;
+                  ps[fld] = (ps[fld] || 0) + itAmt;
+                  if (isPaid) {
+                    pp[fld] = (pp[fld] || 0) + itAmt;
+                  }
+                }
+              }
+            }
+          }
+        } else {
+          // Single product bill
+          const bProd = String((b as any).product || d["สินค้า"] || d.product || innerData["สินค้า"] || "").trim();
+          const fld = resolveProductBudgetField(bProd);
+          if (fld && amt > 0) {
+            for (const k of targetKeys) {
+              if (!productSpentByProject.has(k)) productSpentByProject.set(k, {});
+              if (!productPaidByProject.has(k)) productPaidByProject.set(k, {});
+              const ps = productSpentByProject.get(k)!;
+              const pp = productPaidByProject.get(k)!;
+              ps[fld] = (ps[fld] || 0) + amt;
+              if (isPaid) {
+                pp[fld] = (pp[fld] || 0) + amt;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (projects && projects.length > 0) {
+      for (const p of projects) {
+        const id = String(p.id).trim();
+        const name = String(p.name).trim();
+        const alloc = (budgetAllocations && (budgetAllocations[id] || budgetAllocations[name])) || {};
+        const d = { ...(p.data || {}), ...alloc };
+
+        // 1. Calculate 8 category budgets
+        const catBudgets: Record<string, number> = {};
+        for (const cat of EXPENSE_CATEGORIES_LIST) {
+          const budgetKey = `งบไม่เกิน${cat}`;
+          let bVal = Number(d[budgetKey] || (p as any)[budgetKey] || 0);
+          if (cat === "ค่าของ" && bVal === 0) {
+            const productSum = Object.keys(d)
+              .filter(k => k.startsWith("งบไม่เกิน") && k !== "งบไม่เกิน" && k !== "งบไม่เกินค่าของ" && k !== "งบไม่เกินค่าแรง")
+              .reduce((sum, k) => sum + Number(d[k] || 0), 0);
+            if (productSum > 0) bVal = productSum;
+          }
+          catBudgets[cat] = bVal;
+        }
+
+        // 2. Extract all sub-category budgets (งบไม่เกิน...)
+        const allBudgets: Record<string, number> = {};
+        for (const k of Object.keys(d)) {
+          if (k.startsWith("งบไม่เกิน")) {
+            const num = Number(d[k] || 0);
+            if (num > 0) {
+              allBudgets[k] = num;
+            }
+          }
+        }
+
+        const totalCatBudgetSum = Object.values(catBudgets).reduce((sum, v) => sum + v, 0);
+        let budget = Number(p.budget ?? d.budget ?? d["งบไม่เกิน"] ?? 0);
+        if (budget <= 0 && totalCatBudgetSum > 0) {
+          budget = totalCatBudgetSum;
+        }
+        if (budget <= 0 && Number(d["ยอดงาน"] || (p as any).work_amount || 0) > 0) {
+          budget = Number(d["ยอดงาน"] || (p as any).work_amount || 0);
+        }
+
+        const spent = (id ? spentByProject.get(id) : 0) || (name ? spentByProject.get(name) : 0) || 0;
+        const paidSpent = (id ? paidByProject.get(id) : 0) || (name ? paidByProject.get(name) : 0) || 0;
+        const catSpent = (id ? catSpentByProject.get(id) : null) || (name ? catSpentByProject.get(name) : null) || { ค่าของ: 0, ค่าแรง: 0, พนักงาน: 0, น้ำมัน: 0, ซ่อมรถ: 0, เครื่องจักร: 0, เครื่องมือ: 0, อื่นๆ: 0 };
+        const catPaidSpent = (id ? catPaidByProject.get(id) : null) || (name ? catPaidByProject.get(name) : null) || { ค่าของ: 0, ค่าแรง: 0, พนักงาน: 0, น้ำมัน: 0, ซ่อมรถ: 0, เครื่องจักร: 0, เครื่องมือ: 0, อื่นๆ: 0 };
+        const productSpent = (id ? productSpentByProject.get(id) : null) || (name ? productSpentByProject.get(name) : null) || {};
+        const productPaidSpent = (id ? productPaidByProject.get(id) : null) || (name ? productPaidByProject.get(name) : null) || {};
+        const paidBillIds = (id ? paidBillIdsByProject.get(id) : null) || (name ? paidBillIdsByProject.get(name) : null) || new Set<string>();
+
+        const info: ProjectBudgetLookupInfo = {
+          budget,
+          spent,
+          paidSpent,
+          name,
+          catBudgets,
+          catSpent,
+          catPaidSpent,
+          allBudgets,
+          productSpent,
+          productPaidSpent,
+          paidBillIds
+        };
+        if (id) {
+          pMap.set(id, info);
+          pMap.set(id.toLowerCase(), info);
+        }
+        if (name) {
+          pMap.set(name, info);
+          pMap.set(name.toLowerCase(), info);
+        }
+      }
+    }
+    cachedProjectBudgetMap = pMap;
+    cachedProjectBudgetMapTime = now;
+  } catch (err) {
+    console.warn("⚠️ Failed to build project budget map:", err);
+  }
+
+  return pMap;
 }
 
 export function resolveBankInfo(
@@ -2460,6 +3044,36 @@ export async function getOperatorDisplayName(userId?: string, fallbackRole = "�
   return fallbackRole;
 }
 
+export async function getRecipientDisplayNames(
+  ids: string[],
+  defaultRole = "ท่าน"
+): Promise<string> {
+  if (!ids || ids.length === 0) return `0 ${defaultRole}`;
+  const pMap = await getPeopleMap();
+  const names: string[] = [];
+
+  for (const id of ids) {
+    if (!id) continue;
+    if (id.startsWith("C") || id.startsWith("R")) {
+      names.push("กลุ่ม LINE");
+      continue;
+    }
+    const resolved = resolveRequesterNameFromMap(id, pMap);
+    if (resolved && resolved !== id && resolved !== "-") {
+      names.push(resolved);
+    }
+  }
+
+  const unique = Array.from(new Set(names.filter(Boolean)));
+  if (unique.length === 0) {
+    return `${ids.length} ${defaultRole}`;
+  }
+  if (unique.length === 1 && ids.length === 1) {
+    return unique[0];
+  }
+  return `${unique.join(", ")} - ${ids.length} ${defaultRole}`;
+}
+
 export function resolveRequesterNameFromMap(
   rawRequester: unknown,
   peopleMap?: Map<string, string> | Record<string, string>
@@ -2528,11 +3142,112 @@ export function resolveRequesterNameFromMap(
   return str;
 }
 
+export function resolveVendorName(
+  rawVendor: unknown,
+  bankInfoMap?: Map<string, BankLookupInfo> | Record<string, BankLookupInfo>,
+  bill?: Record<string, any>,
+  peopleMap?: Map<string, string> | Record<string, string>
+): string {
+  if (bill) {
+    const explicit = String(
+      bill["ชื่อร้านค้า"] ||
+      bill.store_name ||
+      bill.storeName ||
+      bill["ชื่อผู้รับเหมา"] ||
+      bill.contractor_name ||
+      bill.contractorName ||
+      ""
+    ).trim();
+    if (explicit && explicit !== "-" && explicit !== "non" && !/^[a-zA-Z]{1,3}[-_]?\d+$/.test(explicit)) {
+      return explicit;
+    }
+
+    const vendorOrPerson = String(
+      bill["ร้าน/บุคคล"] ||
+      bill.vendor_or_person ||
+      bill.data?.["ร้าน/บุคคล"] ||
+      bill.data?.vendor_or_person ||
+      bill.data?.data?.["ร้าน/บุคคล"] ||
+      bill.data?.data?.vendor_or_person ||
+      ""
+    ).trim();
+    if (vendorOrPerson && vendorOrPerson !== "-" && vendorOrPerson !== "non" && !/^[a-zA-Z]{1,3}[-_]?\d+$/.test(vendorOrPerson)) {
+      return vendorOrPerson;
+    }
+  }
+
+  const raw = String(rawVendor || "").trim();
+  if (!raw || raw === "-" || raw === "non") return "-";
+
+  const getFromBankMap = (k: string): BankLookupInfo | undefined => {
+    if (!k) return undefined;
+    const cleanK = k.trim();
+    const mapsToCheck: Array<Map<string, BankLookupInfo> | Record<string, BankLookupInfo> | undefined> = [
+      bankInfoMap,
+      cachedBankInfoMap || undefined
+    ];
+    for (const map of mapsToCheck) {
+      if (!map) continue;
+      if (map instanceof Map) {
+        if (map.has(cleanK)) return map.get(cleanK);
+        if (map.has(cleanK.toLowerCase())) return map.get(cleanK.toLowerCase());
+        if (map.has(cleanK.toUpperCase())) return map.get(cleanK.toUpperCase());
+      } else if (typeof map === "object") {
+        if (map[cleanK]) return map[cleanK];
+        if (map[cleanK.toLowerCase()]) return map[cleanK.toLowerCase()];
+        if (map[cleanK.toUpperCase()]) return map[cleanK.toUpperCase()];
+      }
+    }
+    return undefined;
+  };
+
+  // 1. Direct ID match in bankInfoMap
+  const info = getFromBankMap(raw);
+  if (info && (info.storeName || info.vendorName || info.accountName)) {
+    return info.storeName || info.vendorName || info.accountName!;
+  }
+
+  // 2. Prefix stripped match (e.g. "st101" -> "101" or "ct101" -> "101")
+  if (/^(st|ct|pe|pt)[-_]?\d+/i.test(raw)) {
+    const clean = raw.toLowerCase().replace(/^(st|ct|pe|pt)[-_]?/i, "").trim();
+    const infoClean = getFromBankMap(clean);
+    if (infoClean && (infoClean.storeName || infoClean.vendorName || infoClean.accountName)) {
+      return infoClean.storeName || infoClean.vendorName || infoClean.accountName!;
+    }
+  }
+
+  // 3. Check peopleMap (which indexes stores and contractors too)
+  const fromPeople = resolveRequesterNameFromMap(raw, peopleMap);
+  if (fromPeople && fromPeople !== raw && fromPeople !== "-") {
+    return fromPeople;
+  }
+
+  // 4. Composite format (e.g. "ST101 - ปัญญาสตีล")
+  if (raw.includes(" - ")) {
+    const parts = raw.split(" - ");
+    const info0 = getFromBankMap(parts[0].trim());
+    if (info0 && (info0.storeName || info0.vendorName)) return info0.storeName || info0.vendorName!;
+    if (parts[1] && !/^[a-zA-Z]{1,3}[-_]?\d+$/.test(parts[1].trim())) return parts[1].trim();
+  }
+
+  // 5. Fallback: if bill has bankInfo already resolved and raw is an ID code
+  if (bill) {
+    const bInfo = resolveBankInfo(bill, bankInfoMap);
+    if (bInfo && (bInfo.storeName || bInfo.accountName) && /^[a-zA-Z]{1,3}[-_]?\d+$/.test(raw)) {
+      return bInfo.storeName || bInfo.accountName!;
+    }
+  }
+
+  return raw;
+}
+
 export function createMultiBillFlex(
   billsInput: Record<string, any> | Array<Record<string, any>>,
   options: MultiBillFlexOptions,
   peopleMap?: Map<string, string> | Record<string, string>,
-  bankInfoMap?: Map<string, BankLookupInfo> | Record<string, BankLookupInfo>
+  bankInfoMap?: Map<string, BankLookupInfo> | Record<string, BankLookupInfo>,
+  contractMap?: Map<string, any> | Record<string, any>,
+  projectBudgetMap?: Map<string, any> | Record<string, any>
 ): Record<string, any> {
   const bills = Array.isArray(billsInput) ? billsInput : [billsInput];
   if (bills.length === 0) {
@@ -2680,14 +3395,60 @@ export function createMultiBillFlex(
       const rawVendorType = String(b["ร้านค้า/ผู้รับเหมา"] || b.vendor_type || "").trim();
       const isContractor = rawVendorType === "ผู้รับเหมา" || Boolean(b["ผู้รับเหมา"]) || Boolean(b.contractor_id);
       const vendorLabel = isContractor ? "ผู้รับเหมา" : "ร้าน";
-      const vendorName = isContractor
-        ? (b["ผู้รับเหมา"] || b.contractor_id || b["ร้าน/บุคคล"] || b.vendor_or_person || "-")
-        : (b["ร้านค้า"] || b.store_id || b["ร้าน/บุคคล"] || b.vendor_or_person || "-");
+      let rawVendorCandidate = "";
+      if (isContractor) {
+        rawVendorCandidate = b["ชื่อผู้รับเหมา"] || b.contractor_name || b["ผู้รับเหมา"] || b.contractor_id || b["ร้าน/บุคคล"] || b.vendor_or_person || "-";
+      } else {
+        const namedVendor = String(b["ชื่อร้านค้า"] || b.store_name || b["ร้าน/บุคคล"] || b.vendor_or_person || b.data?.["ร้าน/บุคคล"] || b.data?.vendor_or_person || "").trim();
+        const idStore = String(b["ร้านค้า"] || b.store_id || b.data?.["ร้านค้า"] || "").trim();
+        if (namedVendor && namedVendor !== "-" && namedVendor !== "non" && !/^[a-zA-Z]{1,3}[-_]?\d+$/.test(namedVendor)) {
+          rawVendorCandidate = namedVendor;
+        } else if (idStore) {
+          rawVendorCandidate = idStore;
+        } else {
+          rawVendorCandidate = namedVendor || "-";
+        }
+      }
+      const bankInfo = resolveBankInfo(b, bankInfoMap);
+      const isSubBill = isSubBillRecord(b);
+      let vendorName = resolveVendorName(rawVendorCandidate, bankInfoMap, b, peopleMap);
+      if ((!vendorName || vendorName === "-" || /^[a-zA-Z]{1,3}[-_]?\d+$/.test(vendorName)) && bankInfo) {
+        vendorName = bankInfo.storeName || bankInfo.accountName || vendorName;
+      }
       const projName = b["ชื่อ Project"] || b.project_name || "โครงการทั่วไป";
       const desc = b["สินค้า/ทำงาน"] || b.description || b["รายละเอียดงาน"] || "-";
       const remainingLabor = String(b["ค่าแรงคงเหลือ"] || b.remaining_labor || "").trim();
       const laborStatus = String(b["statusค่าแรง"] || b.labor_status || "").trim();
-      const bankInfo = resolveBankInfo(b, bankInfoMap);
+
+      // Resolve contract details for contractor bills
+      let matchedContract: any = null;
+      const activeContractMap = contractMap || cachedContractMap;
+      if (activeContractMap) {
+        const rawContractor = String(b["_rawContractor"] || b.data?.["_rawContractor"] || b.conwork_id || b.contractor_id || b["ผู้รับเหมา"] || b.vendor_or_person || "").trim();
+        const pId = String(b["ID Project"] || b.project_id || "").trim();
+        const vendor = String(b["ผู้รับเหมา"] || b.vendor_or_person || b["ร้าน/บุคคล"] || "").trim();
+
+        if (activeContractMap instanceof Map) {
+          matchedContract = activeContractMap.get(rawContractor) ||
+                            (pId && rawContractor ? activeContractMap.get(`${pId}_${rawContractor}`) : null) ||
+                            (pId && vendor ? activeContractMap.get(`${pId}_${vendor}`) : null) ||
+                            (vendor ? activeContractMap.get(vendor) : null) ||
+                            (rawContractor ? activeContractMap.get(rawContractor.toLowerCase()) : null);
+        } else if (typeof activeContractMap === "object") {
+          matchedContract = activeContractMap[rawContractor] ||
+                            (pId && rawContractor ? activeContractMap[`${pId}_${rawContractor}`] : null) ||
+                            (pId && vendor ? activeContractMap[`${pId}_${vendor}`] : null) ||
+                            (vendor ? activeContractMap[vendor] : null);
+        }
+      }
+
+      const contractTotal = Number(
+        matchedContract?.total_contract_amount ||
+        matchedContract?.["ยอดเงินจ้าง"] ||
+        b["ยอดเงินจ้าง"] ||
+        b.total_contract_amount ||
+        0
+      );
 
       let paidNum = 0;
       if (b["ยอดเงินจ่าย"] && !isNaN(Number(b["ยอดเงินจ่าย"]))) {
@@ -2699,11 +3460,138 @@ export function createMultiBillFlex(
         if (!isNaN(remNum) && !isNaN(totalNum) && totalNum > remNum) {
           paidNum = totalNum - remNum;
         }
+      } else if (contractTotal > 0 && remainingLabor !== "") {
+        const remNum = Number(remainingLabor.replace(/,/g, ""));
+        if (!isNaN(remNum) && contractTotal >= remNum) {
+          paidNum = contractTotal - remNum;
+        }
+      } else if (matchedContract && Number(matchedContract.paid_amount || matchedContract["ยอดเงินจ่าย"] || 0) > 0) {
+        paidNum = Number(matchedContract.paid_amount || matchedContract["ยอดเงินจ่าย"]);
       }
 
-      const paidText = `จ่ายแล้ว ${paidNum > 0 ? `฿${paidNum.toLocaleString("th-TH")}` : "0"}`;
-      const drawText = `เบิก ฿${grossAmt.toLocaleString("th-TH")}${cleanPercent ? ` (${cleanPercent}%)` : ""}`;
-      const contractorSummaryText = `${paidText}   |   ${drawText}`;
+      let derivedContractTotal = contractTotal;
+      if (derivedContractTotal <= 0 && remainingLabor.includes("จาก")) {
+        const parts = remainingLabor.split("จาก").map(p => p.trim());
+        const totalNum = Number(parts[1].replace(/,/g, ""));
+        if (!isNaN(totalNum) && totalNum > 0) {
+          derivedContractTotal = totalNum;
+        }
+      }
+
+      // Resolve project budget info for all bills
+      const activeProjectMap = projectBudgetMap || cachedProjectBudgetMap;
+      let projInfo: ProjectBudgetLookupInfo | null = null;
+      if (activeProjectMap) {
+        const pId = String(b["ID Project"] || b.project_id || b.data?.project_id || b.data?.["ID Project"] || "").trim();
+        const pName = String(b["ชื่อ Project"] || b.project_name || b.data?.project_name || b.data?.["ชื่อ Project"] || "").trim();
+
+        projInfo = (activeProjectMap instanceof Map)
+          ? (activeProjectMap.get(pId) || activeProjectMap.get(pId.toLowerCase()) || activeProjectMap.get(pName) || activeProjectMap.get(pName.toLowerCase()))
+          : (activeProjectMap[pId] || activeProjectMap[pName]);
+      }
+
+      const bStatus = String(b["สถานะ"] || b.status || b.data?.["สถานะ"] || b.data?.status || "").trim().toLowerCase();
+      const isBillPaid = mode === "completed" || bStatus.includes("เบิกแล้ว") || bStatus === "paid" || bStatus === "withdrawn";
+      const billKey = String(b.id || b._sheetRow || b["ลำดับ"] || b.data?.id || b.data?.["ลำดับ"] || "").trim();
+      const alreadyCountedInPaid = Boolean(billKey && projInfo?.paidBillIds && projInfo.paidBillIds.has(billKey));
+
+      const rawCatName = String(b["ประเภท"] || b.category || b.data?.["ประเภท"] || "").trim();
+      const isLaborBill = isContractor || rawCatName.includes("ค่าแรง") || rawCatName.startsWith("2.") || Boolean(matchedContract) || derivedContractTotal > 0;
+
+      let laborLine1 = "";
+      let laborLine2 = "";
+      let laborLine3 = "";
+      let budgetSummaryText = "";
+      let percentUsed = 0;
+
+      if (isLaborBill) {
+        // Line 1: Overall Project Labor Budget (e.g. งบค่าแรงทั้งหมด 100,000 | 50,000 (50%))
+        const openHireBudget = Number(b["งบไม่เกินค่าแรง"] || b.data?.["งบไม่เกินค่าแรง"] || projInfo?.catBudgets?.["ค่าแรง"] || 0);
+        const staffLaborBudget = Number(b["งบไม่เกินพนักงาน"] || b.data?.["งบไม่เกินพนักงาน"] || projInfo?.catBudgets?.["พนักงาน"] || 0);
+        const totalLaborBudget = (openHireBudget + staffLaborBudget) > 0 ? (openHireBudget + staffLaborBudget) : openHireBudget;
+
+        let projectLaborSpent = Number(projInfo?.catSpent?.["ค่าแรง"] || projInfo?.catPaidSpent?.["ค่าแรง"] || 0);
+        if (projectLaborSpent === 0 && grossAmt > 0) {
+          projectLaborSpent = grossAmt;
+        } else if (!alreadyCountedInPaid && isBillPaid) {
+          projectLaborSpent += grossAmt;
+        }
+        const laborPercent = totalLaborBudget > 0 ? Math.round((projectLaborSpent / totalLaborBudget) * 100) : 0;
+        laborLine1 = totalLaborBudget > 0
+          ? `งบค่าแรงทั้งหมด ${totalLaborBudget.toLocaleString("th-TH")} | ${projectLaborSpent.toLocaleString("th-TH")} (${laborPercent}%)`
+          : (projectLaborSpent > 0 ? `งบค่าแรงทั้งหมด: ไม่ได้ตั้ง | ${projectLaborSpent.toLocaleString("th-TH")}` : `งบค่าแรงทั้งหมด: -`);
+
+        // Line 2: งบเปิดจ้าง [ยอดงบเปิดจ้าง] | ใช้ไป [ค่าที่เปิดสำเร็จไปแล้ว]([%])
+        const pIdKey = String(b["ID Project"] || b.project_id || b.data?.project_id || b.data?.["ID Project"] || "").trim();
+        const pNameKey = String(b["ชื่อ Project"] || b.project_name || b.data?.project_name || b.data?.["ชื่อ Project"] || "").trim();
+        const totalContractedSoFar = Number(
+          (activeContractMap instanceof Map
+            ? (activeContractMap.get(`__total_contracted_${pIdKey}`) ||
+               activeContractMap.get(`__total_contracted_${pIdKey.toLowerCase()}`) ||
+               activeContractMap.get(`__total_contracted_${pNameKey}`) ||
+               activeContractMap.get(`__total_contracted_${pNameKey.toLowerCase()}`))
+            : ((activeContractMap as any)?.[`__total_contracted_${pIdKey}`] || (activeContractMap as any)?.[`__total_contracted_${pNameKey}`])) ||
+          0
+        );
+
+        // Line 2: งบเปิดจ้าง [ยอดงบเปิดจ้าง] | เบิก [ยอดขอเบิกบิลนี้]([หัก %])
+        const hireBudgetCap = derivedContractTotal > 0 ? derivedContractTotal : openHireBudget;
+
+        // ดึงเปอร์เซ็นต์หัก ณ ที่จ่าย (เช่น 3% สำหรับค่าแรงบุคคลธรรมดา หรือตามที่ระบุในบิล)
+        let billDeductPercent = cleanPercent;
+        if (!billDeductPercent) {
+          const rawD = String(b["หัก"] || b.deduct_percent || b.data?.["หัก"] || "").replace(/หัก|\s|%/g, "").trim();
+          if (rawD && Number(rawD) > 0) {
+            billDeductPercent = rawD;
+          }
+        }
+        if (!billDeductPercent && deductAmt > 0 && grossAmt > 0) {
+          billDeductPercent = String(Math.round((deductAmt / grossAmt) * 100));
+        }
+        if (!billDeductPercent && isLaborBill) {
+          const laborStatus = String(b["statusค่าแรง"] || b.labor_status || b.data?.["statusค่าแรง"] || "").trim();
+          if (laborStatus === "บุคคลธรรมดา" || isContractor || Boolean(matchedContract)) {
+            billDeductPercent = "3";
+          }
+        }
+
+        const deductTag = billDeductPercent ? `(${billDeductPercent}%)` : (hasDeduct ? "(หัก)" : "");
+
+        if (hireBudgetCap > 0 || grossAmt > 0) {
+          laborLine2 = `งบเปิดจ้าง ${hireBudgetCap.toLocaleString("th-TH")} | เบิก ${grossAmt.toLocaleString("th-TH")}${deductTag}`;
+        }
+
+        // Line 3: จ่ายแล้ว [ยอดจ่ายสะสมของสัญญา] ([%])
+        if (derivedContractTotal > 0) {
+          const paidPercent = Math.round((paidNum / derivedContractTotal) * 100);
+          laborLine3 = `จ่ายแล้ว ${paidNum.toLocaleString("th-TH")} (${paidPercent}%)`;
+        } else if (paidNum > 0) {
+          laborLine3 = `จ่ายแล้ว ${paidNum.toLocaleString("th-TH")}`;
+        }
+      } else {
+        // General Store Bill / Bill without contract -> Category Budget or Project Budget Control
+        if (projInfo) {
+          const billCategory = resolveBillExpenseCategory(b);
+          const catBudget = billCategory && projInfo.catBudgets ? Number(projInfo.catBudgets[billCategory] || 0) : 0;
+
+          if (catBudget > 0) {
+            let catPaid = Number(projInfo.catPaidSpent?.[billCategory] || 0);
+            if (isBillPaid && !alreadyCountedInPaid) {
+              catPaid += grossAmt;
+            }
+            percentUsed = Math.round((catPaid / catBudget) * 100);
+            budgetSummaryText = `งบ${billCategory}   ฿${catBudget.toLocaleString("th-TH")} / เบิกแล้ว ฿${catPaid.toLocaleString("th-TH")} (${percentUsed}%)`;
+          } else if (Number(projInfo.budget) > 0) {
+            const pBudget = Number(projInfo.budget);
+            let pPaid = Number(projInfo.paidSpent || 0);
+            if (isBillPaid && !alreadyCountedInPaid) {
+              pPaid += grossAmt;
+            }
+            percentUsed = Math.round((pPaid / pBudget) * 100);
+            budgetSummaryText = `งบโครงการ   ฿${pBudget.toLocaleString("th-TH")} / เบิกแล้ว ฿${pPaid.toLocaleString("th-TH")} (${percentUsed}%)`;
+          }
+        }
+      }
 
       const imgList = getBillImages(b);
       const hasImages = imgList.length > 0;
@@ -2732,7 +3620,7 @@ export function createMultiBillFlex(
             layout: "horizontal",
             contents: [
               { type: "text", text: `#${bId} | ${projName}`, weight: "bold", size: "xs", color: "#0F172A", flex: 7, wrap: true },
-              { type: "text", text: `฿${netTransferAmt.toLocaleString("th-TH")}`, weight: "bold", size: "xs", color: "#DC2626", flex: 3, align: "end" }
+              { type: "text", text: `฿${netTransferAmt.toLocaleString("th-TH")}${hasDeduct && cleanPercent ? ` (หัก ${cleanPercent}%)` : ""}`, weight: "bold", size: "xs", color: "#DC2626", flex: 5, align: "end" }
             ]
           },
           // Row 2: Vendor/Contractor (Highlighted & removed redundant requester)
@@ -2744,24 +3632,64 @@ export function createMultiBillFlex(
               { type: "text", text: `${vendorLabel}: ${vendorName}`, size: "xxs", color: "#1E293B", weight: "bold", wrap: true }
             ]
           },
-          // Row 3 (Contractor): Single Combined Line (e.g. จ่ายแล้ว 0 | เบิก ฿2,500 (3%))
-          ...(isContractor || hasDeduct ? [
+          // Row 3: Labor Breakdown (3 Clean Lines as requested by user)
+          ...(isLaborBill ? [
             {
               type: "box",
-              layout: "horizontal",
-              margin: "none",
+              layout: "vertical",
+              margin: "xs",
+              spacing: "none",
               contents: [
                 {
                   type: "text",
-                  text: contractorSummaryText,
+                  text: laborLine1,
                   size: "xxs",
-                  color: "#D97706",
+                  color: "#B45309",
                   weight: "bold",
                   wrap: true
-                }
+                },
+                ...(laborLine2 ? [
+                  {
+                    type: "text",
+                    text: laborLine2,
+                    size: "xxs",
+                    color: "#D97706",
+                    weight: "bold",
+                    wrap: true
+                  }
+                ] : []),
+                ...(laborLine3 ? [
+                  {
+                    type: "text",
+                    text: laborLine3,
+                    size: "xxs",
+                    color: "#059669",
+                    weight: "bold",
+                    wrap: true
+                  }
+                ] : [])
               ]
             }
-          ] : []),
+          ] : [
+            // Row 3 (Store / Other Bills): Budget Summary if present
+            ...(budgetSummaryText ? [
+              {
+                type: "box",
+                layout: "horizontal",
+                margin: "none",
+                contents: [
+                  {
+                    type: "text",
+                    text: budgetSummaryText,
+                    size: "xxs",
+                    color: percentUsed > 100 ? "#DC2626" : "#D97706",
+                    weight: "bold",
+                    wrap: true
+                  }
+                ]
+              }
+            ] : [])
+          ]),
           // Row 4 (Creator): If recorded on behalf of someone else
           ...(creatorName && creatorName !== requesterName && creatorName !== "-" ? [
             {
@@ -2773,8 +3701,8 @@ export function createMultiBillFlex(
               ]
             }
           ] : []),
-          // Row 6: Bank Account Information (2 Clean Lines)
-          ...(bankInfo && (bankInfo.accountNo || bankInfo.bankName || bankInfo.accountName) ? [
+          // Row 6: Bank Account Information (2 Clean Lines - skip for sub-bills / บิลย่อย)
+          ...(!isSubBill && bankInfo && (bankInfo.accountNo || bankInfo.bankName || bankInfo.accountName) ? [
             {
               type: "box",
               layout: "vertical",
@@ -2824,57 +3752,108 @@ export function createMultiBillFlex(
             }
           ] : []),
           // Row 7 (Store): Single Product Category Row
-          ...(productName && productName !== "-" && lineItems.length === 0 && !isContractor ? [
-            {
-              type: "box",
-              layout: "horizontal",
-              margin: "xs",
-              contents: [
-                { type: "text", text: `สินค้า: ${productName}${categoryName ? ` (${categoryName})` : ""}`, size: "xxs", color: "#059669", weight: "bold", wrap: true }
-              ]
+          ...(productName && productName !== "-" && lineItems.length === 0 && !isContractor ? (() => {
+            const singleBudgetField = resolveProductBudgetField(productName);
+            const { cap: singleCap, actualField } = getBudgetCapForField(singleBudgetField, projInfo?.allBudgets);
+            let singleTag = categoryName ? ` (${categoryName})` : "";
+            if (singleCap > 0 && actualField) {
+              const singlePaid = Number(projInfo?.productPaidSpent?.[actualField] || 0);
+              const singleRemaining = (isBillPaid && alreadyCountedInPaid)
+                ? (singleCap - singlePaid)
+                : (singleCap - (singlePaid + grossAmt));
+              const singleRemTag = singleRemaining < 0
+                ? `⚠️เกิน ${Math.abs(singleRemaining).toLocaleString("th-TH")}`
+                : `เหลือ ${singleRemaining.toLocaleString("th-TH")}`;
+              singleTag = ` (${singleRemTag} | งบ ${singleCap.toLocaleString("th-TH")})`;
             }
-          ] : []),
+            return [
+              {
+                type: "box",
+                layout: "horizontal",
+                margin: "xs",
+                contents: [
+                  { type: "text", text: `สินค้า: ${productName}${singleTag}`, size: "xxs", color: "#2563EB", weight: "bold", wrap: true }
+                ]
+              }
+            ];
+          })() : []),
           // Row 8: Itemized Multi-Line Products
-          ...(lineItems.length > 0 ? [
-            {
-              type: "box",
-              layout: "vertical",
-              margin: "xs",
-              paddingAll: "4px",
-              backgroundColor: "#F8FAFC",
-              cornerRadius: "4px",
-              spacing: "none",
-              contents: lineItems.map((item, iIdx) => {
-                const itemAmt = Number(item.amount ?? item.price ?? item.total ?? 0).toLocaleString("th-TH");
-                let itemCat = String(item.category || item.name || `สินค้า ${iIdx + 1}`).trim();
-                itemCat = itemCat.replace(/^\d+\.?\s*\d*\.?\s*/, "");
-                const itemType = item.categoryType || item.type || "";
-                return {
-                  type: "box",
-                  layout: "horizontal",
-                  contents: [
-                    {
-                      type: "text",
-                      text: `• ${itemCat}${itemType ? ` (${itemType})` : ""}`,
-                      size: "xxs",
-                      color: "#334155",
-                      flex: 7,
-                      wrap: true
-                    },
-                    {
-                      type: "text",
-                      text: `฿${itemAmt}`,
-                      size: "xxs",
-                      color: "#059669",
-                      weight: "bold",
-                      align: "end",
-                      flex: 3
+          ...(lineItems.length > 0 ? (() => {
+            const billRunningProductSpent: Record<string, number> = {};
+            return [
+              {
+                type: "box",
+                layout: "vertical",
+                margin: "xs",
+                paddingAll: "4px",
+                backgroundColor: "#F8FAFC",
+                cornerRadius: "4px",
+                spacing: "none",
+                contents: lineItems.map((item, iIdx) => {
+                  const itemAmtNum = Number(item.amount ?? item.price ?? item.total ?? 0);
+                  const itemAmt = itemAmtNum.toLocaleString("th-TH");
+                  const rawCat = String(item.category || "").trim();
+                  const rawName = String(item.name || "").trim();
+                  const cleanCat = rawCat.replace(/^\d+\.?\s*\d*\.?\s*/, "");
+
+                  let itemTitle = "";
+                  if (cleanCat && rawName && cleanCat !== rawName) {
+                    itemTitle = `${cleanCat} ${rawName}`;
+                  } else {
+                    itemTitle = cleanCat || rawName || `สินค้า ${iIdx + 1}`;
+                  }
+
+                  const budgetField = resolveProductBudgetField(rawCat) || resolveProductBudgetField(cleanCat) || resolveProductBudgetField(rawName);
+                  const { cap: budgetCap, actualField } = getBudgetCapForField(budgetField, projInfo?.allBudgets);
+
+                  let budgetTag = "";
+                  if (budgetCap > 0 && actualField) {
+                    const paidSpent = Number(projInfo?.productPaidSpent?.[actualField] || 0);
+                    const priorInThisBill = billRunningProductSpent[actualField] || 0;
+                    const totalSpent = paidSpent + priorInThisBill + itemAmtNum;
+                    const remaining = (isBillPaid && alreadyCountedInPaid)
+                      ? (budgetCap - (paidSpent + priorInThisBill))
+                      : (budgetCap - totalSpent);
+                    billRunningProductSpent[actualField] = priorInThisBill + itemAmtNum;
+
+                    const remTag = remaining < 0
+                      ? `⚠️เกิน ${Math.abs(remaining).toLocaleString("th-TH")}`
+                      : `เหลือ ${remaining.toLocaleString("th-TH")}`;
+                    budgetTag = ` (${remTag} | งบ ${budgetCap.toLocaleString("th-TH")})`;
+                  } else {
+                    const itemType = item.categoryType || item.type || "";
+                    if (itemType) {
+                      budgetTag = ` (${itemType})`;
                     }
-                  ]
-                };
-              })
-            }
-          ] : [])
+                  }
+
+                  return {
+                    type: "box",
+                    layout: "horizontal",
+                    contents: [
+                      {
+                        type: "text",
+                        text: `• ${itemTitle}${budgetTag}`,
+                        size: "xxs",
+                        color: "#334155",
+                        flex: 8,
+                        wrap: true
+                      },
+                      {
+                        type: "text",
+                        text: itemAmt,
+                        size: "xxs",
+                        color: "#059669",
+                        weight: "bold",
+                        align: "end",
+                        flex: 3
+                      }
+                    ]
+                  };
+                })
+              }
+            ];
+          })() : [])
         ]
       };
 
@@ -3109,7 +4088,9 @@ export function createMultiBillFlex(
 export function createWithdrawRequesterFlex(
   billsInput: Record<string, any> | Array<Record<string, any>>,
   peopleMap?: Map<string, string> | Record<string, string>,
-  bankInfoMap?: Map<string, BankLookupInfo> | Record<string, BankLookupInfo>
+  bankInfoMap?: Map<string, BankLookupInfo> | Record<string, BankLookupInfo>,
+  contractMap?: Map<string, any> | Record<string, any>,
+  projectBudgetMap?: Map<string, any> | Record<string, any>
 ): Record<string, any> {
   const bills = (Array.isArray(billsInput) ? billsInput : [billsInput]).map(b => ({
     ...b,
@@ -3119,13 +4100,15 @@ export function createWithdrawRequesterFlex(
   return createMultiBillFlex(bills, {
     title: "📄 แจ้งเตือนรายการตั้งเบิกเงิน",
     mode: "requester"
-  }, peopleMap, bankInfoMap);
+  }, peopleMap, bankInfoMap, contractMap, projectBudgetMap);
 }
 
 export function createWithdrawOwnerFlex(
   billsInput: Record<string, any> | Array<Record<string, any>>,
   peopleMap?: Map<string, string> | Record<string, string>,
-  bankInfoMap?: Map<string, BankLookupInfo> | Record<string, BankLookupInfo>
+  bankInfoMap?: Map<string, BankLookupInfo> | Record<string, BankLookupInfo>,
+  contractMap?: Map<string, any> | Record<string, any>,
+  projectBudgetMap?: Map<string, any> | Record<string, any>
 ): Record<string, any> {
   const bills = (Array.isArray(billsInput) ? billsInput : [billsInput]).map(b => ({
     ...b,
@@ -3135,13 +4118,15 @@ export function createWithdrawOwnerFlex(
   return createMultiBillFlex(bills, {
     title: "📋 คำขออนุมัติเบิกเงิน (ส่งจากผู้เบิก)",
     mode: "owner"
-  }, peopleMap, bankInfoMap);
+  }, peopleMap, bankInfoMap, contractMap, projectBudgetMap);
 }
 
 export function createWithdrawApproverFlex(
   billsInput: Record<string, any> | Array<Record<string, any>>,
   peopleMap?: Map<string, string> | Record<string, string>,
-  bankInfoMap?: Map<string, BankLookupInfo> | Record<string, BankLookupInfo>
+  bankInfoMap?: Map<string, BankLookupInfo> | Record<string, BankLookupInfo>,
+  contractMap?: Map<string, any> | Record<string, any>,
+  projectBudgetMap?: Map<string, any> | Record<string, any>
 ): Record<string, any> {
   const bills = (Array.isArray(billsInput) ? billsInput : [billsInput]).map(b => ({
     ...b,
@@ -3151,13 +4136,15 @@ export function createWithdrawApproverFlex(
   return createMultiBillFlex(bills, {
     title: "✅ รายการอนุมัติสำเร็จ (รอปิดงาน)",
     mode: "approver"
-  }, peopleMap, bankInfoMap);
+  }, peopleMap, bankInfoMap, contractMap, projectBudgetMap);
 }
 
 export function createWithdrawCompletedRequesterFlex(
   billsInput: Record<string, any> | Array<Record<string, any>>,
   peopleMap?: Map<string, string> | Record<string, string>,
-  bankInfoMap?: Map<string, BankLookupInfo> | Record<string, BankLookupInfo>
+  bankInfoMap?: Map<string, BankLookupInfo> | Record<string, BankLookupInfo>,
+  contractMap?: Map<string, any> | Record<string, any>,
+  projectBudgetMap?: Map<string, any> | Record<string, any>
 ): Record<string, any> {
   const bills = (Array.isArray(billsInput) ? billsInput : [billsInput]).map(b => ({
     ...b,
@@ -3167,7 +4154,7 @@ export function createWithdrawCompletedRequesterFlex(
   return createMultiBillFlex(bills, {
     title: "🎉 รายการเบิกเงินสำเร็จเรียบร้อย (ปิดงาน)",
     mode: "completed"
-  }, peopleMap, bankInfoMap);
+  }, peopleMap, bankInfoMap, contractMap, projectBudgetMap);
 }
 
 export async function getLineQuotaInfo() {

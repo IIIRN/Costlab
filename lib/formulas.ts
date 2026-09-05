@@ -3,6 +3,7 @@ import { isCommittedBill } from "@/lib/bill-status";
 import { computeBillAmount, computeBillDeductMultiplier, computeBillTransferAmount, isVatActive, parseDeductPercent } from "@/lib/project-summary";
 import { getRows } from "@/lib/db";
 import type { SheetRow } from "@/lib/types";
+import { getTodayDateIso } from "@/lib/dates";
 
 export async function applyBillFormulas(row: SheetRow) {
   const context = await getBillFormulaContext();
@@ -114,7 +115,7 @@ export function applyProjectFormulas(row: SheetRow) {
     }
   }
 
-  if (!hasValue(output["วันที่"])) output["วันที่"] = new Date().toISOString().slice(0, 10);
+  if (!hasValue(output["วันที่"])) output["วันที่"] = getTodayDateIso();
   if (!hasValue(output["color"])) output["color"] = "Red";
   return output;
 }
@@ -200,6 +201,11 @@ function computePaidForContract(contractRow: SheetRow, dataRows: SheetRow[]): nu
 
   for (const b of dataRows) {
     if (!isCommittedBill(b)) continue;
+
+    // Only count bills that are actually paid/withdrawn towards "ยอดเงินจ่าย"
+    const status = String(b["สถานะ"] || b.status || "").trim().toLowerCase();
+    const isPaid = status.includes("เบิกแล้ว") || status === "paid" || status === "withdrawn" || Boolean(b.paid_date) || Boolean(b.paid_at);
+    if (!isPaid) continue;
 
     const bVendorType = String(b["ร้านค้า/ผู้รับเหมา"] || "").trim();
     const bContractorRef = String(b["ผู้รับเหมา"] || b.contractor_id || b.conwork_id || "").trim();

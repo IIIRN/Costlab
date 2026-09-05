@@ -1,6 +1,7 @@
 import { getRows, bulkAppendRows, getSystemOptions } from "@/lib/db";
 import { supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase-db";
 import { clearCache } from "@/lib/cache";
+import { sendTextMessageDetailed } from "@/lib/line";
 
 export type BackupConfig = {
   enabled: boolean;
@@ -414,4 +415,129 @@ export async function restoreFromSnapshotId(snapshotId: string): Promise<{
   const parsedJson = JSON.parse(text);
 
   return await restoreFromPayload(parsedJson);
+}
+
+// 9. Download Backup Snapshot File from Supabase Storage
+export async function getBackupSnapshotFile(snapshotId: string): Promise<{
+  filename: string;
+  data: Blob;
+  sizeBytes: number;
+}> {
+  const history = await getBackupHistory();
+  const snapshot = history.find(h => h.id === snapshotId);
+  if (!snapshot) {
+    throw new Error(`ไม่พบจุดสำรองข้อมูลรหัส ${snapshotId}`);
+  }
+
+  if (!snapshot.filename && !snapshot.storagePath) {
+    throw new Error("ไม่มีไฟล์สำรองในระบบจัดเก็บ");
+  }
+
+  const filename = snapshot.storagePath || snapshot.filename;
+  const { data, error } = await supabaseAdmin.storage.from("backups").download(filename);
+
+  if (error || !data) {
+    throw new Error(`ไม่สามารถดาวน์โหลดไฟล์สำรอง ${filename} จาก Storage ได้: ${error?.message || ""}`);
+  }
+
+  return {
+    filename: snapshot.filename || filename,
+    data,
+    sizeBytes: snapshot.sizeBytes
+  };
+}
+
+// 10. Delete Backup Snapshot (File from Storage and Record from History)
+export async function deleteBackupSnapshot(snapshotId: string): Promise<{
+  success: boolean;
+  message: string;
+  history: BackupSnapshotSummary[];
+}> {
+  if (!isSupabaseConfigured()) {
+    throw new Error("ระบบฐานข้อมูล Supabase ยังไม่ได้เชื่อมต่อ");
+  }
+
+  const history = await getBackupHistory();
+  const snapshot = history.find(h => h.id === snapshotId);
+  if (!snapshot) {
+    throw new Error(`ไม่พบจุดสำรองข้อมูลรหัส ${snapshotId}`);
+  }
+
+  const filename = snapshot.storagePath || snapshot.filename;
+  if (filename) {
+    try {
+      await supabaseAdmin.storage.from("backups").remove([filename]);
+    } catch (e) {
+      console.warn(`Failed to remove file ${filename} from storage:`, e);
+    }
+  }
+
+  const updatedHistory = history.filter(h => h.id !== snapshotId);
+
+  await supabaseAdmin.from("system_options").upsert({
+    id: "backup_history",
+    data: updatedHistory,
+    updated_at: new Date().toISOString()
+  });
+
+  // If the deleted snapshot was the latest, update config
+  try {
+    const config = await getBackupConfig();
+    if (config.lastBackupAt === snapshot.createdAt) {
+      const latest = updatedHistory[0];
+      await saveBackupConfig({
+        lastBackupAt: latest ? latest.createdAt : null,
+        lastBackupStatus: latest ? latest.status : null,
+        lastBackupMessage: latest ? `สำรองข้อมูลล่าสุด (${latest.totalRows.toLocaleString()} แถว)` : null
+      });
+    }
+  } catch (e) {
+    console.warn("Failed to update lastBackupAt in config after deletion:", e);
+  }
+
+  return {
+    success: true,
+    message: `ลบจุดสำรองข้อมูล ${snapshotId} เรียบร้อยแล้ว`,
+    history: updatedHistory
+  };
+}
+
+// 11. Centralized LINE Alert Notification for Backups
+export async function sendBackupLineNotification(
+  snapshot: BackupSnapshotSummary,
+  config: BackupConfig,
+  isCron = false
+): Promise<void> {
+  if (!config.notifyLine) return;
+  try {
+    const { data: lineOpt } = await supabaseAdmin
+      .from("system_options")
+      .select("data")
+      .eq("id", "line_config")
+      .maybeSingle();
+
+    const lineConfig = lineOpt?.data || {};
+    const target = config.targetLineGroup || lineConfig.LINE_GROUP_ID_PW || lineConfig.LINE_USER_ID_OWN;
+
+    if (target) {
+      const typeLabel =
+        snapshot.type === "weekly_auto" ? "ประจำสัปดาห์ (Weekly)" :
+        snapshot.type === "daily_auto" ? "ประจำวัน (Daily)" :
+        snapshot.type === "monthly_auto" ? "ประจำเดือน (Monthly)" : "ด้วยตนเอง (Manual)";
+      const sizeKb = (snapshot.sizeBytes / 1024).toFixed(1);
+      const dateFormatted = new Date(snapshot.createdAt).toLocaleString("th-TH", { timeZone: "Asia/Bangkok" });
+      const prefix = isCron ? "🛡️ [อัตโนมัติ] สำรองข้อมูลระบบ" : "🛡️ บันทึกสำรองข้อมูลระบบสำเร็จ";
+
+      const msg = `${prefix} (${typeLabel})\n` +
+        `📅 วันที่: ${dateFormatted}\n` +
+        `📦 ข้อมูลทั้งหมด: ${snapshot.totalTables} ตาราง (${snapshot.totalRows.toLocaleString()} รายการ)\n` +
+        `💾 ขนาดไฟล์: ${sizeKb} KB\n` +
+        `📁 รหัสสำรอง: ${snapshot.id}\n` +
+        `✅ สถานะ: ${isCron ? "ปลอดภัย พร้อมกู้คืนในระบบ" : "สำรองข้อมูลสมบูรณ์พร้อมกู้คืน"}`;
+
+      await sendTextMessageDetailed(target, msg);
+    }
+  } catch (lineErr) {
+    console.warn("LINE backup alert skipped:", lineErr);
+  }
 }

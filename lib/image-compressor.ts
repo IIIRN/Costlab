@@ -1,98 +1,132 @@
 /**
- * Client-side Image Compression Utility for Bills and Attachments
- * Resizes high-resolution mobile camera photos (12-48MP, 5-15MB) down to optimized full HD (1600-1920px, 150-350KB)
- * Keeps receipt text, numbers, and barcodes crystal clear while speeding up upload and loading by 90-95%.
+ * Client-side Image Compression Utility
+ * Resizes large smartphone camera photos (5MB - 12MB) to crisp, lightweight files (~200KB - 400KB)
+ * prior to uploading to Supabase Storage.
+ * Zero-dependency, pure HTML5 Canvas implementation.
  */
 
-export async function compressImageFile(
+export type CompressionOptions = {
+  maxDimension?: number;
+  quality?: number;
+  minSizeToCompress?: number;
+};
+
+const DEFAULT_OPTIONS: Required<CompressionOptions> = {
+  maxDimension: 1600,       // 1600px is optimal for document / receipt legibility
+  quality: 0.8,            // 80% JPEG quality retains razor-sharp text
+  minSizeToCompress: 300 * 1024 // Only compress files larger than 300KB
+};
+
+export async function compressImage(
   file: File,
-  maxDimension = 1920,
-  quality = 0.82
+  optionsOrMaxDim?: number | CompressionOptions,
+  qualityArg?: number
 ): Promise<File> {
-  // If not an image (e.g. PDF or non-image), return as-is
-  if (!file || !file.type || !file.type.startsWith("image/")) {
+  // 1. Guard against SSR or non-image files (e.g. PDFs)
+  if (typeof window === "undefined" || !file || !file.type.startsWith("image/")) {
     return file;
   }
 
-  // If already very small (under 200KB), return as-is
-  if (file.size < 200 * 1024 && !file.type.includes("heic") && !file.type.includes("heif")) {
+  // 2. Skip GIFs or SVGs which shouldn't be compressed via Canvas
+  if (file.type === "image/gif" || file.type === "image/svg+xml") {
+    return file;
+  }
+
+  const options: Required<CompressionOptions> = typeof optionsOrMaxDim === "number"
+    ? {
+        maxDimension: optionsOrMaxDim,
+        quality: qualityArg ?? DEFAULT_OPTIONS.quality,
+        minSizeToCompress: DEFAULT_OPTIONS.minSizeToCompress
+      }
+    : {
+        ...DEFAULT_OPTIONS,
+        ...(optionsOrMaxDim || {})
+      };
+
+  const { maxDimension, quality, minSizeToCompress } = options;
+
+  // 3. Skip already small files to save client CPU
+  if (file.size <= minSizeToCompress) {
     return file;
   }
 
   return new Promise((resolve) => {
-    // If running server-side without window/document, return file
-    if (typeof window === "undefined" || typeof document === "undefined") {
-      resolve(file);
-      return;
-    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          let { width, height } = img;
 
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      let { width, height } = img;
-
-      // Calculate scale while maintaining aspect ratio
-      if (width > maxDimension || height > maxDimension) {
-        if (width > height) {
-          height = Math.round((height * maxDimension) / width);
-          width = maxDimension;
-        } else {
-          width = Math.round((width * maxDimension) / height);
-          height = maxDimension;
-        }
-      }
-
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext("2d", { alpha: false });
-      if (!ctx) {
-        resolve(file);
-        return;
-      }
-
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = "high";
-      // Fill white background for transparent PNGs converted to JPEG
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, width, height);
-      ctx.drawImage(img, 0, 0, width, height);
-
-      canvas.toBlob(
-        (blob) => {
-          if (!blob) {
-            resolve(file);
-            return;
+          // Calculate aspect-ratio preserved dimensions
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = Math.round((height * maxDimension) / width);
+              width = maxDimension;
+            } else {
+              width = Math.round((width * maxDimension) / height);
+              height = maxDimension;
+            }
           }
-          // Create sanitized .jpg filename
-          const cleanBaseName = file.name.replace(/\.[^/.]+$/, "").replace(/[^\w.-]/gi, "_") || "bill_photo";
-          const compressedFile = new File([blob], `${cleanBaseName}.jpg`, {
-            type: "image/jpeg",
-            lastModified: Date.now(),
-          });
-          resolve(compressedFile);
-        },
-        "image/jpeg",
-        quality
-      );
+
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            return resolve(file);
+          }
+
+          // Use smooth rendering
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = "high";
+          ctx.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob(
+            (blob) => {
+              if (!blob || blob.size >= file.size) {
+                // If compressed is somehow larger than original, keep original
+                return resolve(file);
+              }
+
+              // Create a new File instance keeping the original name (or normalizing to jpg)
+              const newFileName = file.name.replace(/\.[^.]+$/, ".jpg");
+              const compressedFile = new File([blob], newFileName, {
+                type: "image/jpeg",
+                lastModified: Date.now()
+              });
+
+              resolve(compressedFile);
+            },
+            "image/jpeg",
+            quality
+          );
+        } catch (err) {
+          console.warn("Image compression error, falling back to original file:", err);
+          resolve(file);
+        }
+      };
+
+      img.onerror = () => resolve(file);
+      img.src = event.target?.result as string;
     };
 
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      resolve(file);
-    };
-
-    img.src = url;
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
   });
 }
 
-export async function compressImageFiles(
+export async function compressFiles(
   files: File[],
-  maxDimension = 1920,
-  quality = 0.82
+  optionsOrMaxDim?: number | CompressionOptions,
+  qualityArg?: number
 ): Promise<File[]> {
-  if (!files || !files.length) return [];
-  return Promise.all(files.map((file) => compressImageFile(file, maxDimension, quality)));
+  if (!files || files.length === 0) return [];
+  return Promise.all(files.map(file => compressImage(file, optionsOrMaxDim, qualityArg)));
 }
+
+// Named aliases for full backward compatibility
+export const compressImageFiles = compressFiles;
+export const compressImageFile = compressImage;
+

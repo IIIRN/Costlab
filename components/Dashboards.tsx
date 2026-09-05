@@ -1,14 +1,15 @@
 import { TABLES } from "@/lib/config";
 import { MainDashboardClient } from "@/components/dashboards/MainDashboardClient";
-import { isCommittedBill, isUnpaidBill, normalizeBillStatus, formatVatDisplay, formatDeductDisplay, formatCreditDisplay } from "@/lib/bill-status";
+import { isCommittedBill, normalizeBillStatus } from "@/lib/bill-status";
 import { computeBillTransferAmount, hydrateProjectRowsForList, isCreditActive, isDeductActive, isVatActive } from "@/lib/project-summary";
 import { WithdrawDashboardClient, type WithdrawFilters } from "@/components/dashboards/WithdrawDashboardClient";
 import { WorkStatusDashboardClient } from "@/components/dashboards/WorkStatusDashboardClient";
 import { BillFollowDashboardClient } from "@/components/dashboards/BillFollowDashboardClient";
-import { money, toNumber } from "@/lib/numbers";
+import { toNumber } from "@/lib/numbers";
 import { getRows, getWithdrawBills, getBillFollowBills } from "@/lib/db";
 import { getUsersListFromSupabase } from "@/lib/supabase-db";
 import { cookies } from "next/headers";
+import { extractMemberPermissions, findMemberInPeopleRows } from "@/lib/user-permissions";
 import type { SheetRow } from "@/lib/types";
 
 export async function MainDashboard() {
@@ -23,9 +24,13 @@ export async function WithdrawDashboard({ filters = {} }: { filters?: WithdrawFi
     getUsersListFromSupabase()
   ]);
   const cookieStore = await cookies();
-  const isAdmin = cookieStore.get("auth_role")?.value === "Admin";
   const authEmpId = cookieStore.get("auth_employee_id")?.value || "";
   const authName = cookieStore.get("auth_name")?.value || "";
+
+  const matchedUser = findMemberInPeopleRows(peopleRows, authEmpId) || (Array.isArray(usersList) ? usersList.find((u: any) => u.id === authEmpId || u.username === authEmpId) : null);
+  const userPerms = matchedUser ? extractMemberPermissions(matchedUser) : null;
+  const effectiveRole = userPerms ? userPerms.role : (cookieStore.get("auth_role")?.value || "");
+  const isAdmin = Boolean(userPerms?.isOwner || effectiveRole === "Owner" || effectiveRole === "Admin");
 
   // If requester is not explicitly provided, default to the logged-in user
   let effectiveFilters = { ...filters };
@@ -46,7 +51,20 @@ export async function WithdrawDashboard({ filters = {} }: { filters?: WithdrawFi
 }
 
 export async function BillFollowDashboard() {
-  const [dataRows, peopleRows] = await Promise.all([getBillFollowBills(), safeRows(TABLES.PEOPLE)]);
+  const [dataRows, peopleRows, usersList] = await Promise.all([
+    getBillFollowBills(),
+    safeRows(TABLES.PEOPLE),
+    getUsersListFromSupabase()
+  ]);
+  const cookieStore = await cookies();
+  const authEmpId = cookieStore.get("auth_employee_id")?.value || "";
+  const authName = cookieStore.get("auth_name")?.value || "";
+
+  let defaultRequester = "";
+  if (authEmpId || authName) {
+    defaultRequester = findMatchingRequesterKey(peopleRows, authEmpId, authName, usersList);
+  }
+
   const rawRows = hydrateDataRows(dataRows).filter(isCommittedBill);
   const requesterNames = requesterNameMap(peopleRows);
   
@@ -57,18 +75,11 @@ export async function BillFollowDashboard() {
     return rightSeq - leftSeq;
   });
 
+  // ตามบิล จะแสดงเฉพาะบิลที่มี VAT ที่ค้างส่งใบกำกับภาษี/ใบเสร็จ (หัก ณ ที่จ่าย จะไม่แสดงในหน้านี้)
   const vatRows = rows.filter(row => isVatActive(row.vat) && !hasValue(row["วันได้บิล"]));
-  const naturalDeductRows = rows.filter(row =>
-    isDeductActive(row["หัก"]) &&
-    !hasValue(row["วันออก 3%"]) &&
-    !isCompanyLaborStatus(row["statusค่าแรง"])
-  );
-  const companyDeductRows = rows.filter(row =>
-    isDeductActive(row["หัก"]) &&
-    !hasValue(row["วันออก 3%"]) &&
-    isCompanyLaborStatus(row["statusค่าแรง"])
-  );
-  const creditRows = rows.filter(row => isCreditActive(row["เครดิต"]) && !hasValue(row["วันจ่าย"]));
+  const naturalDeductRows: SheetRow[] = [];
+  const companyDeductRows: SheetRow[] = [];
+  const creditRows = rows.filter(row => isVatActive(row.vat) && isCreditActive(row["เครดิต"]) && !hasValue(row["วันจ่าย"]));
 
   return (
     <BillFollowDashboardClient
@@ -78,6 +89,9 @@ export async function BillFollowDashboard() {
       creditRows={creditRows}
       requesterNames={requesterNames}
       peopleRows={peopleRows}
+      initialRequester={defaultRequester}
+      authEmpId={authEmpId}
+      authName={authName}
     />
   );
 }
@@ -131,78 +145,6 @@ export async function WorkStatusDashboard() {
   return <WorkStatusDashboardClient projects={rows} />;
 }
 
-function AmountPanel({ title, value, className = "" }: { title: string; value: number; className?: string }) {
-  return (
-    <div className={`bg-white rounded-md p-4 border border-slate-200 space-y-2.5 ${className}`}>
-      <header className="flex items-center justify-between text-xs text-slate-500 uppercase tracking-wider">
-        <h3>{title}</h3>
-        <small className="text-slate-400 font-normal">บาท</small>
-      </header>
-      <div className="bg-slate-50 p-3 rounded-md border border-slate-100 flex flex-col gap-0.5">
-        <span className="text-xs text-slate-500 font-medium">{title}</span>
-        <strong className="text-lg text-slate-900">{money(value)}</strong>
-      </div>
-    </div>
-  );
-}
-
-function FollowPanel({ title, count, requesterNames, rows }: { title: string; count: number; requesterNames: Record<string, string>; rows: SheetRow[] }) {
-  const visibleRows = rows.slice(0, 80);
-  const amountTotal = rows.reduce((sum, row) => sum + toNumber(row["ยอดเงิน"]), 0);
-  const rowCountText = rows.length > visibleRows.length ? `${visibleRows.length} / ${rows.length}` : String(visibleRows.length);
-
-  return (
-    <div className="bg-white rounded-md border border-slate-200 overflow-hidden">
-      <header className="p-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-xs text-slate-800">{title}</h3>
-        <div className="flex items-center gap-2.5 text-xs">
-          <span className="text-slate-500">{rowCountText} รายการ</span>
-          <strong className="text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200">{money(amountTotal)}</strong>
-        </div>
-      </header>
-      {visibleRows.length ? (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-700 border-collapse">
-            <thead>
-              <tr className="bg-slate-100 text-slate-800 border-b border-slate-200 text-xs">
-                <th className="py-2.5 px-3 border-r border-slate-200">ลำดับ</th>
-                <th className="py-2.5 px-3 border-r border-slate-200">ร้าน/บุคคล</th>
-                <th className="py-2.5 px-3 border-r border-slate-200">Project</th>
-                <th className="py-2.5 px-3 border-r border-slate-200">รายการ</th>
-                <th className="py-2.5 px-3 border-r border-slate-200">วันที่</th>
-                <th className="py-2.5 px-3 border-r border-slate-200">ผู้เบิก</th>
-                <th className="py-2.5 px-3 border-r border-slate-200 text-right">ยอดเงิน</th>
-                <th className="py-2.5 px-3">เงื่อนไข</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 font-normal">
-              {visibleRows.map((row, index) => (
-                <tr key={String(row._sheetRow || row["ลำดับ"] || index)} className="hover:bg-slate-50 transition-colors">
-                  <td className="py-2 px-3 border-r border-slate-100 text-slate-500">{formatCell(row["ลำดับ"]) || "-"}</td>
-                  <td className="py-2 px-3 border-r border-slate-100 text-slate-900">{formatCell(row["ร้าน/บุคคล"]) || "-"}</td>
-                  <td className="py-2 px-3 border-r border-slate-100 text-slate-600">{formatCell(row["ชื่อ Project"]) || "-"}</td>
-                  <td className="py-2 px-3 border-r border-slate-100 text-slate-600 max-w-[200px] truncate">{formatCell(row["สินค้า/ทำงาน"] || row["รายการ"]) || "-"}</td>
-                  <td className="py-2 px-3 border-r border-slate-100 text-slate-500 whitespace-nowrap">{formatCell(row["ว/ด/ป"]) || "-"}</td>
-                  <td className="py-2 px-3 border-r border-slate-100 text-slate-600">{requesterName(row["ผู้เบิก"], requesterNames) || "-"}</td>
-                  <td className="py-2 px-3 border-r border-slate-100 text-right text-slate-900">{money(row["ยอดเงิน"])}</td>
-                  <td className="py-2 px-3">
-                    <div className="flex flex-wrap gap-1 text-xs">
-                      {row.vat ? <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200">{formatVatDisplay(row.vat)}</span> : null}
-                      {row["หัก"] ? <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200">{formatDeductDisplay(row["หัก"])}</span> : null}
-                      {hasValue(row["เครดิต"]) ? <span className="bg-slate-100 text-slate-800 px-1.5 py-0.5 rounded border border-slate-300">{formatCreditDisplay(row["เครดิต"])}</span> : null}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className="p-6 text-center text-slate-400 text-xs">ไม่พบข้อมูล</div>
-      )}
-    </div>
-  );
-}
 
 function requesterNameMap(peopleRows: SheetRow[]) {
   return peopleRows.reduce<Record<string, string>>((names, row) => {
@@ -277,122 +219,7 @@ export function findMatchingRequesterKey(
   return targetEmpId || authEmpId || authName || "";
 }
 
-function ProjectStatusPanel({
-  title,
-  count,
-  rows,
-  tone = "default"
-}: {
-  title: string;
-  count: number;
-  rows: SheetRow[];
-  tone?: "default" | "green";
-}) {
-  return (
-    <div className="bg-white rounded-md border border-slate-200 overflow-hidden">
-      <header className="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-        <h3 className="text-xs text-slate-800">{title}</h3>
-        <strong className="text-xs text-slate-700 bg-white px-2 py-0.5 rounded border border-slate-200">{count} รายการ</strong>
-      </header>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 p-3">
-        {rows.slice(0, 60).map((row, index) => (
-          <ProjectItemCard key={String(row["ID Project"] || row._sheetRow || index)} title={title} row={row} tone={tone} />
-        ))}
-        {!rows.length ? <div className="col-span-full p-6 text-center text-slate-400 text-xs">ไม่พบข้อมูล</div> : null}
-      </div>
-    </div>
-  );
-}
 
-function ProjectItemCard({ title, row, tone }: { title: string; row: SheetRow; tone: "default" | "green" }) {
-  const projectName = row["ชื่อ Project"];
-  const date = row["วันที่"];
-  const customer = row["ชื่อลูกค้า"];
-  const company = row["บริษัท"];
-  const owner = row["รับผิดชอบ"];
-  const total = row["รวม ALL"] || row["ยอดงาน"];
-  const totalVat = row["ยอดรวม vat"];
-  const budget = row["งบไม่เกิน"];
-
-  return (
-    <article className="bg-white rounded-md border border-slate-200 overflow-hidden transition flex flex-col text-xs">
-      <div className="px-3 py-2 flex items-center justify-between text-xs text-white bg-slate-800">
-        <span>{title}</span>
-        <span className="font-mono text-xs opacity-90">#{formatCell(row["ID Project"])}</span>
-      </div>
-      <div className="p-3 space-y-2.5 flex-1 flex flex-col justify-between">
-        <div>
-          <div className="flex items-start justify-between gap-2">
-            <strong className="text-slate-900 text-xs line-clamp-2">{formatCell(projectName) || "-"}</strong>
-            <span className="text-xs font-normal text-slate-500 shrink-0">{formatCell(date) || "-"}</span>
-          </div>
-          <div className="mt-1.5 text-xs text-slate-600 space-y-0.5">
-            <div>ลูกค้า: <span className="font-medium text-slate-800">{formatCell(customer) || "-"}</span></div>
-            <div>บริษัท: <span className="font-medium text-slate-800">{formatCell(company) || "-"}</span></div>
-            <div>ผู้รับผิดชอบ: <span className="font-medium text-slate-800">{formatCell(owner) || "-"}</span></div>
-          </div>
-        </div>
-        
-        <div className="bg-slate-50 p-2 rounded border border-slate-100 grid grid-cols-2 gap-2 text-xs">
-          <div>
-            <span className="text-slate-500 text-xs">ยอดรวม</span>
-            <div className="text-slate-900">{money(total)}</div>
-          </div>
-          <div>
-            <span className="text-slate-500 text-xs">ยอดรวม vat</span>
-            <div className="text-slate-900">{money(totalVat)}</div>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100 text-slate-500">
-          <span>งบไม่เกิน: <strong className="text-slate-800">{money(budget)}</strong></span>
-          <span>รวม ALL: <strong className="text-slate-900 ">{money(total)}</strong></span>
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function SummaryTable({
-  title,
-  subtitle,
-  header,
-  rows
-}: {
-  title: string;
-  subtitle: string;
-  header: string[];
-  rows: Array<Array<string | number>>;
-}) {
-  return (
-    <div className="bg-white rounded-md border border-slate-200 overflow-hidden">
-      <header className="p-3 bg-slate-50 border-b border-slate-200">
-        <h3 className="text-xs text-slate-800">{title}</h3>
-        <small className="text-slate-500 font-normal">{subtitle}</small>
-      </header>
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs text-slate-700 border-collapse">
-          <thead>
-            <tr className="bg-slate-100 text-slate-800 border-b border-slate-200 text-xs">
-              {header.map(column => <th key={column} className="py-2.5 px-3 border-r border-slate-200">{column}</th>)}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 font-normal">
-            {rows.map((row, index) => (
-              <tr key={`${title}-${index}`} className="hover:bg-slate-50 transition-colors">
-                {row.map((cell, cellIndex) => (
-                  <td key={cellIndex} className={`py-2 px-3 border-r border-slate-100 ${typeof cell === "number" ? "text-slate-900 text-right" : "font-normal"}`}>
-                    {typeof cell === "number" ? money(cell) : cell}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
 
 function sumColumns(rows: SheetRow[], columns: string[]) {
   return rows.reduce((sum, row) => sum + columns.reduce((inner, column) => inner + toNumber(row[column]), 0), 0);
@@ -410,23 +237,6 @@ function hydrateDataRows(rows: SheetRow[]) {
   });
 }
 
-function computeTransferAmount(row: SheetRow) {
-  return computeBillTransferAmount(row);
-}
-
-function hydrateProjectSummary(project: SheetRow, dataRows: SheetRow[]): SheetRow {
-  const projectId = String(project["ID Project"] || "");
-  const projectDataRows = dataRows.filter(row => String(row["ID Project"] || "") === projectId);
-  const total = sumColumns(projectDataRows, ["ยอดเงิน"]);
-  const totalAll = project["รวม ALL"] || total;
-  const totalVat = project["ยอดรวม vat"] || toNumber(project["ยอดงาน"]) * 1.07;
-  return {
-    ...project,
-    "รวม ALL": totalAll,
-    "ยอดรวม vat": totalVat
-  };
-}
-
 function firstValue(row: SheetRow, columns: string[]) {
   for (const column of columns) {
     if (hasValue(row[column])) return row[column];
@@ -438,15 +248,7 @@ function hasValue(value: unknown) {
   return value !== null && value !== undefined && value !== "";
 }
 
-function lower(value: unknown) {
-  return String(value || "").toLowerCase();
-}
 
-function formatCell(value: unknown) {
-  if (value === null || value === undefined) return "";
-  if (typeof value === "number") return money(value);
-  return String(value);
-}
 
 async function safeRows(tableName: string): Promise<SheetRow[]> {
   try {
